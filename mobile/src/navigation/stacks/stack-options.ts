@@ -136,6 +136,33 @@ export function wizardHeaderOptions(theme: BrandTheme): NativeStackNavigationOpt
 }
 
 /**
+ * Phase 30, owner check 2026-10: the route step, the fifth of the creation, takes the header of the
+ * first three: the small centred title (the route sets "Étape 5 sur 5" once mounted, the page's own
+ * title when editing a recorded route), never the native large title (it never followed this page's
+ * scroll and overlapped the cards). Native back and swipe are off: the route draws its own back
+ * button in `headerLeft` (one question back, else the plain return to the parcel map) and handles
+ * Android back itself, so no pop is ever held back natively.
+ */
+export function routeGuideHeaderOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    title: fr.routeGuide.screen.title,
+    headerLargeTitleEnabled: false,
+    headerBackVisible: false,
+    gestureEnabled: false,
+    headerTitleAlign: "center",
+    ...(Platform.OS === "ios"
+      ? {
+          headerTitleStyle: {
+            ...brandTypography.navTitle,
+            fontWeight: "600",
+            color: theme.semanticColors.textStrong,
+          },
+        }
+      : {}),
+  }
+}
+
+/**
  * The factor help (OA-30) as a native sheet: a form sheet on iOS (system grabber and corner radius,
  * medium and large detents, swipe down or tap outside to close), where the screen has no header of
  * its own. Android has no form sheet in the stack, so it gets the stack's modal screen (slides up

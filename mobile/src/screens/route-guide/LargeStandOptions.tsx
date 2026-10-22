@@ -1,15 +1,13 @@
-import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import type { LargeStandOption } from "@cortege/ibp-domain"
-import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing4 } from "../../app/brand-tokens"
 import { LARGE_STAND_OPTION_TEXT } from "../../app/route-text"
-import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
-import { AppText as Text } from "../../ui/AppText"
 import { GlossaryInfo, type GlossaryTermId } from "../../ui/GlossaryInfo"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
+import { WizardHeading, WIZARD_ANSWER_GAP } from "../survey-wizard/WizardChrome"
 import { SuggestionEntrance } from "./SuggestionEntrance"
 
 const guide = fr.routeGuide
@@ -42,15 +40,10 @@ export function LargeStandOptions({
   selected,
   onChoose,
 }: LargeStandOptionsProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
-
   return (
     <SuggestionEntrance trigger="large-stand">
       <View style={styles.root} testID="route-large-stand">
-        <Text style={styles.title} accessibilityRole="header">
-          {guide.largeStand.title}
-        </Text>
+        <WizardHeading title={guide.largeStand.title} lead={guide.reasons.largeStand} />
         <View style={styles.options} accessibilityRole="radiogroup">
           {options.map((option) => {
             const text = LARGE_STAND_OPTION_TEXT[option]
@@ -95,18 +88,12 @@ export function LargeStandOptions({
   )
 }
 
-function createStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    root: {
-      gap: brandSpacing4.smd,
-    },
-    title: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.navTitle.fontFamily,
-      color: theme.colors.textPrimary,
-    },
-    options: {
-      gap: brandSpacing4.sm,
-    },
-  })
-}
+const styles = StyleSheet.create({
+  root: {
+    gap: brandSpacing4.md,
+  },
+  options: {
+    marginTop: WIZARD_ANSWER_GAP,
+    gap: brandSpacing4.sm,
+  },
+})

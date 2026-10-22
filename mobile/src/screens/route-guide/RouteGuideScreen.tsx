@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react"
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native"
-import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing4, brandTypeScale } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
@@ -8,10 +8,9 @@ import { AppNotice } from "../../ui/AppNotice"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { AppPressable } from "../../ui/AppPressable"
-import { PageTitle } from "../../ui/PageTitle"
-import { TitledScrollView } from "../../ui/TitledScrollView"
-import { useFrameInsetBehavior } from "../../ui/frame-large-title"
 import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
+import { WizardHeading, WizardTopBar } from "../survey-wizard/WizardChrome"
+import { WIZARD_FOOTER_PADDING, createWizardStyles } from "../survey-wizard/wizard.styles"
 import { QuestionStep } from "./QuestionStep"
 import { ResultBody } from "./ResultBody"
 import { SuggestionEntrance } from "./SuggestionEntrance"
@@ -22,6 +21,9 @@ const screen = fr.routeGuide.screen
 /** Where the chooser opens: its parcours list, or its counting section (the "Modifier" link). */
 export type RouteChooserSection = "counting"
 
+/** The creation counts five steps; the route step is the fifth (O-19). */
+const CREATION_TOTAL = 5
+
 export type RouteGuideScreenProps = {
   state: RouteGuideState
   /** No estimate of the stand surface could be made: the surface card opens empty (spec section 1). */
@@ -30,8 +32,11 @@ export type RouteGuideScreenProps = {
   saveError: boolean
   /** The record is being written: the button is busy and ignores presses. */
   saving?: boolean
-  /** "Étape 5 sur 5" while the survey is being created; absent when editing a recorded route. */
-  stepLabel?: string
+  /**
+   * The creation step shown ("Étape 5 sur 5" in the header, the fifth segment of the progress):
+   * absent when editing a recorded route, which has neither.
+   */
+  creationStep?: number
   /** "Utiliser ce parcours": the one way forward, enabled once the package has a usable route. */
   onUse: () => void
   onRetry: () => void
@@ -54,14 +59,14 @@ export function RouteGuideScreen({
   state,
   saveError,
   saving = false,
-  stepLabel,
+  creationStep,
   onUse,
   onRetry,
   onOpenChooser,
 }: RouteGuideScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const insetBehavior = useFrameInsetBehavior()
+  const wizardStyles = useMemo(() => createWizardStyles(theme), [theme])
   const clearance = useTabBarClearance()
   const scrollRef = useRef<ScrollView>(null)
   const { view, actions } = state
@@ -74,6 +79,8 @@ export function RouteGuideScreen({
 
   // The footer is the one primary action of the screen: "Suivant" on a question, "Utiliser ce
   // parcours" on the result once a route is ready (no disabled button there).
+  const suggested = (view.chosenBy ?? "observer") === "guide"
+  const resultText = fr.routeGuide.screen.result
   const cta =
     open !== null
       ? {
@@ -104,21 +111,24 @@ export function RouteGuideScreen({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       testID="route-guide-screen"
     >
-      <TitledScrollView
+      {creationStep === undefined ? null : (
+        // The same top of the page as the first three steps: the header carries "Étape 5 sur 5",
+        // the progress shows the fifth segment.
+        <WizardTopBar
+          paddingTop={brandSpacing4.sm}
+          total={CREATION_TOTAL}
+          index={creationStep - 1}
+        />
+      )}
+      <ScrollView
         ref={scrollRef}
-        collapsingTitle={screen.title}
-        resetKey={view.screen}
         style={styles.scroll}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior={insetBehavior}
+        contentContainerStyle={[wizardStyles.body, styles.content]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
         testID="route-guide-scroll"
       >
-        <PageTitle>{screen.title}</PageTitle>
-        {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : null}
-
         {open !== null ? (
           <>
             <QuestionStep state={state} />
@@ -127,6 +137,10 @@ export function RouteGuideScreen({
         ) : (
           <SuggestionEntrance trigger="result">
             <View style={styles.result} testID="route-result">
+              <WizardHeading
+                title={suggested ? resultText.suggestedTitle : resultText.chosenTitle}
+                lead={suggested ? resultText.suggestedLead : resultText.chosenLead}
+              />
               {selection === null ? null : (
                 <ResultBody
                   view={view}
@@ -139,7 +153,7 @@ export function RouteGuideScreen({
             </View>
           </SuggestionEntrance>
         )}
-      </TitledScrollView>
+      </ScrollView>
 
       {cta !== null || saveError ? (
         <View
@@ -178,15 +192,9 @@ function createStyles(theme: BrandTheme) {
     scroll: {
       flex: 1,
     },
+    // On top of the wizard's body: the footer takes its own row, so only a small end padding.
     content: {
-      paddingHorizontal: brandSpacing4.lg,
-      paddingTop: brandSpacing4.sm,
       paddingBottom: brandSpacing4.lg,
-      gap: brandSpacing4.md,
-    },
-    step: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
     },
     result: {
       gap: brandSpacing4.md,
@@ -207,8 +215,8 @@ function createStyles(theme: BrandTheme) {
     // element can never sit under it; with the keyboard up it stays above it (the page resizes on
     // Android, the container pads on iOS) and the scroll area keeps the focused field in view.
     footer: {
-      paddingHorizontal: brandSpacing4.lg,
-      paddingTop: brandSpacing4.sm,
+      paddingHorizontal: WIZARD_FOOTER_PADDING.horizontal,
+      paddingTop: WIZARD_FOOTER_PADDING.top,
       gap: brandSpacing4.sm,
     },
   })

@@ -91,9 +91,18 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
   const goBack = useLatestCallback((): void => {
     if (!stepBack()) navigation.goBack()
   })
+  // The header is the first three steps' look: the small centred "Étape 5 sur 5" while creating
+  // (the page's own title when editing a recorded route), and our own back button.
+  const headerTitle =
+    mode === "create"
+      ? fr.surveyForm.wizard.stepLabel({ step: CREATION_STEPS.route, total: CREATION_STEPS.total })
+      : fr.routeGuide.screen.title
   useLayoutEffect(() => {
-    navigation.setOptions({ headerLeft: () => <RouteBackButton onPress={goBack} /> })
-  }, [navigation, goBack])
+    navigation.setOptions({
+      title: headerTitle,
+      headerLeft: () => <RouteBackButton onPress={goBack} />,
+    })
+  }, [navigation, goBack, headerTitle])
   // Android system back: one question back while there is one, else the default pop. Only while
   // this screen is the focused one (the chooser sheet above it handles its own back).
   useEffect(() => {
@@ -188,21 +197,13 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
   )
 
   return (
-    // The page draws its own title (the stack hides the native one): see the stack options.
     <ScreenFrame>
       <RouteGuideScreen
         state={guide}
         surfaceUnknown={surfaceHa === null}
         saveError={saveError}
         saving={saving}
-        stepLabel={
-          mode === "create"
-            ? fr.surveyForm.wizard.stepLabel({
-                step: CREATION_STEPS.route,
-                total: CREATION_STEPS.total,
-              })
-            : undefined
-        }
+        creationStep={mode === "create" ? CREATION_STEPS.route : undefined}
         onUse={onUse}
         onRetry={onUse}
         onOpenChooser={onOpenChooser}

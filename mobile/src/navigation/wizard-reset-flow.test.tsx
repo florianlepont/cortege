@@ -412,7 +412,7 @@ describe("the route step as the fifth step of the creation (phase 30, O-19, P-1)
     expect(observed.writes).toEqual([])
     // The surface computed on the parcel map reaches the step.
     expect(mockScreenProps.routeGuide.surfaceUnknown).toBe(false)
-    expect(mockScreenProps.routeGuide.stepLabel).toBe("Étape 5 sur 5")
+    expect(mockScreenProps.routeGuide.creationStep).toBe(5)
   })
 
   test("accepting writes the route, then finalises the draft, then opens the summary on it", async () => {

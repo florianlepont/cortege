@@ -1,11 +1,6 @@
 import { memo, useMemo, useState } from "react"
 import { StyleSheet, View } from "react-native"
-import {
-  brandInteraction,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandInteraction, brandSpacing4, brandTypeScale } from "../../app/brand-tokens"
 import { ROUTE_SURFACE_ERROR_TEXT } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -15,6 +10,7 @@ import { AppPressable } from "../../ui/AppPressable"
 import { InfoSheet } from "../../ui/InfoSheet"
 import { ABBREVIATION_INFO_ICON_SIZE } from "../../ui/AbbreviationInfo"
 import { Ionicons } from "@expo/vector-icons"
+import { WizardHeading, WIZARD_ANSWER_GAP } from "../survey-wizard/WizardChrome"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
 import type { OpenQuestion } from "./route-guide-model"
@@ -27,7 +23,8 @@ type QuestionCardProps = {
 }
 
 /**
- * The one open question (UI-SPEC section 3): its title, the one-sentence reason it is asked, then
+ * The one open question (UI-SPEC section 3), drawn like the first three creation steps: its title
+ * as the large heading with the (i) beside it, the one-sentence reason it is asked under it, then
  * its choices as radio cards with an example each, or the surface field. A tap on a choice only
  * selects it: the screen's pinned "Suivant" goes on, and the model decides what opens next.
  */
@@ -38,16 +35,21 @@ export const QuestionCard = memo(function QuestionCard({ question, actions }: Qu
   const title = questionTitle(question)
   return (
     <View style={styles.card} testID={`route-question-${question.id}`}>
-      <View style={styles.titleRow}>
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
-        </Text>
-        <QuestionInfo question={question} title={title} />
-      </View>
+      <WizardHeading
+        title={title}
+        lead={questionWhy(question)}
+        trailing={<QuestionInfo question={question} title={title} />}
+      />
       {question.id === "surface" ? (
-        <SurfaceBody question={question} actions={actions} />
+        <View style={styles.answer}>
+          <SurfaceBody question={question} actions={actions} />
+        </View>
       ) : (
-        <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel={title}>
+        <View
+          style={[styles.choices, styles.answer]}
+          accessibilityRole="radiogroup"
+          accessibilityLabel={title}
+        >
           {choicesFor(question, actions).map((choice) => (
             <RadioCard
               key={choice.key}
@@ -160,19 +162,12 @@ function SurfaceBody({
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // The heading block takes the gap of the wizard's own steps (title, helper, then the answer).
     card: {
-      gap: brandSpacing4.smd,
+      gap: brandSpacing4.md,
     },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
-    title: {
-      flex: 1,
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.navTitle.fontFamily,
-      color: theme.colors.textPrimary,
+    answer: {
+      marginTop: WIZARD_ANSWER_GAP,
     },
     choices: {
       gap: brandSpacing4.sm,

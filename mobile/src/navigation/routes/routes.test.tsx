@@ -2250,8 +2250,12 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
 
   test("opens as step 5 of 5 with the computed surface, and with no tab bar change", async () => {
     const { fixture } = creationFixture()
-    await mountGuide(fixture)
-    expect(props("routeGuide").stepLabel).toBe("Étape 5 sur 5")
+    const { navigation } = await mountGuide(fixture)
+    expect(props("routeGuide").creationStep).toBe(5)
+    // The header is the one of steps 1 to 3: the small centred "Étape 5 sur 5".
+    expect(navigation.setOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Étape 5 sur 5" }),
+    )
     expect(props("routeGuide").surfaceUnknown).toBe(false)
     expect(props("routeGuide").saveError).toBe(false)
     expect(guideState().view.canUse).toBe(false)

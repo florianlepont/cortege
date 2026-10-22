@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import { AppPressable } from "../../ui/AppPressable"
 
 const SIZE = 44
+const SYSTEM_GLASS_CONTENT_WIDTH = 35
 
 type RouteBackButtonProps = {
   onPress: () => void
@@ -37,7 +38,10 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     // iOS 26 draws every header button in its own glass capsule: a disc of ours inside it showed as
     // a ring in a ring (found on the simulator), so only the glyph is ours there.
+    // The system capsule adds about 9 pt around its content: 35 wide gives the same 44 pt disc as
+    // the system back button of steps 1 to 3 (owner check: a wider pill looked like another control).
     buttonOnSystemGlass: {
+      width: SYSTEM_GLASS_CONTENT_WIDTH,
       backgroundColor: "transparent",
       borderWidth: 0,
     },

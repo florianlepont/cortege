@@ -269,7 +269,7 @@ describe("route catalogue text rules", () => {
   test("the three exits of the step are the mandatory ones (O-19)", () => {
     const { screen } = fr.routeGuide
     expect(screen.use).toBe("Utiliser ce parcours")
-    expect(screen.next).toBe("Suivant")
+    expect(screen.next).toBe("Continuer")
     expect(Object.keys(screen)).not.toContain("skip")
   })
 

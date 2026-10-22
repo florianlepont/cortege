@@ -53,7 +53,6 @@ jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () 
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { fr } from "../../i18n"
-import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
 import { RouteGuideScreen } from "./RouteGuideScreen"
 import { useRouteGuideState, type RouteGuideState } from "./useRouteGuideState"
@@ -83,18 +82,11 @@ type Options = {
   prefill?: number | null
   saveError?: boolean
   saving?: boolean
-  stepLabel?: string
-  nativeTitle?: boolean
+  creationStep?: number
 }
 
 function mount(options: Options = {}) {
-  const {
-    prefill = null,
-    saveError = false,
-    saving = false,
-    stepLabel,
-    nativeTitle = false,
-  } = options
+  const { prefill = null, saveError = false, saving = false, creationStep } = options
   const onUse = jest.fn()
   const onRetry = jest.fn()
   const onOpenChooser = jest.fn()
@@ -103,18 +95,18 @@ function mount(options: Options = {}) {
     const state = useRouteGuideState({ surfaceHaPrefill: prefill })
     latest = state
     return (
-      <FrameLargeTitleContext.Provider value={nativeTitle}>
+      <>
         <RouteGuideScreen
           state={state}
           surfaceUnknown={prefill === null}
           saveError={saveError}
           saving={saving}
-          stepLabel={stepLabel}
+          creationStep={creationStep}
           onUse={onUse}
           onRetry={onRetry}
           onOpenChooser={onOpenChooser}
         />
-      </FrameLargeTitleContext.Provider>
+      </>
     )
   }
   let tree!: renderer.ReactTestRenderer
@@ -152,22 +144,21 @@ function reachRoute(m: Mounted): void {
 const pressNext = (m: Mounted) => act(() => m.one("route-next").props.onPress())
 
 describe("RouteGuideScreen: the first question", () => {
-  it("shows only the title, the step and the open question, with Suivant pinned", () => {
-    const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
+  it("shows only the progress, the question heading with its helper, and Continuer pinned", () => {
+    const m = mount({ prefill: 2.4, creationStep: 5 })
     m.one("route-guide-screen")
     expect(m.texts()).toEqual(
-      expect.arrayContaining([screen.title, "Étape 5 sur 5", guide.questions.surface.title]),
+      expect.arrayContaining([guide.questions.surface.title, guide.questions.surface.why]),
     )
+    // The title and the step are the header's now (steps 1 to 3 look): not drawn in the page.
+    expect(m.texts()).not.toContain(screen.title)
+    expect(m.texts()).not.toContain("Étape 5 sur 5")
     m.one("route-question-surface")
     expect(m.byId("route-refine")).toHaveLength(0)
     expect(m.byId("route-suggestion")).toHaveLength(0)
     expect(m.byId("route-answer-surface")).toHaveLength(0)
     expect(m.byId("route-result")).toHaveLength(0)
-    for (const text of [
-      guide.questions.surface.why,
-      guide.questions.surface.aid,
-      guide.questions.surface.linearHelp,
-    ]) {
+    for (const text of [guide.questions.surface.aid, guide.questions.surface.linearHelp]) {
       expect(m.texts()).not.toContain(text)
     }
     const next = m.one("route-next")
@@ -204,15 +195,20 @@ describe("RouteGuideScreen: the first question", () => {
     expect(m.one("route-use").props.disabled).toBe(false)
   })
 
-  it("shows the step label of the creation when given, and the page title on Android", () => {
-    const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
-    expect(m.texts()).toContain("Étape 5 sur 5")
-    expect(m.texts()).toContain(screen.title)
-  })
-
-  it("leaves the title to the native large title on iOS", () => {
-    const m = mount({ prefill: 2.4, nativeTitle: true })
-    expect(m.texts()).not.toContain(screen.title)
+  it("draws the five-segment progress with the fifth active while creating, none when editing", () => {
+    const creating = mount({ prefill: 2.4, creationStep: 5 })
+    const bar = creating.one("wizard-progress")
+    expect(bar.children).toHaveLength(5)
+    const flat = (node: ReactTestInstance): Record<string, unknown> =>
+      ([] as Record<string, unknown>[])
+        .concat(node.props.style)
+        .flat(3)
+        .reduce((acc, item) => ({ ...acc, ...item }), {})
+    const colours = (bar.children as ReactTestInstance[]).map((c) => flat(c).backgroundColor)
+    expect(new Set(colours).size).toBe(1)
+    expect(creating.byId("wizard-progress")).toHaveLength(1)
+    const editing = mount({ prefill: 2.4 })
+    expect(editing.byId("wizard-progress")).toHaveLength(0)
   })
 
   it("shows the shortcut as a text link of 44 pt", () => {
@@ -246,7 +242,7 @@ describe("RouteGuideScreen: the first question", () => {
     expect(m.one("route-guide-screen").props.behavior).toBeUndefined()
   })
 
-  it("Suivant is disabled while the surface shows an error", () => {
+  it("Continuer is disabled while the surface shows an error", () => {
     const m = mount({ prefill: null })
     act(() => m.one("route-surface-field").props.onChangeText("abc"))
     act(() => m.one("route-surface-field").props.onBlur())
@@ -257,15 +253,15 @@ describe("RouteGuideScreen: the first question", () => {
 })
 
 describe("RouteGuideScreen: one question a screen", () => {
-  it("Suivant moves to the next question and shows that one alone", () => {
-    const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
+  it("Continuer moves to the next question and shows that one alone", () => {
+    const m = mount({ prefill: 2.4, creationStep: 5 })
     pressNext(m)
     m.one("route-question-homogeneity")
     expect(m.byId("route-question-surface")).toHaveLength(0)
     expect(m.byId("route-answer-surface")).toHaveLength(0)
     expect(m.byId("route-know-link")).toHaveLength(0)
-    expect(m.texts()).toContain("Étape 5 sur 5")
-    // Nothing is answered yet: Suivant waits.
+    expect(m.byId("wizard-progress")).toHaveLength(1)
+    // Nothing is answered yet: Continuer waits.
     expect(m.one("route-next").props.disabled).toBe(true)
     act(() => m.one("route-choice-homogeneity-heterogeneous").props.onPress())
     expect(m.one("route-next").props.disabled).toBe(false)

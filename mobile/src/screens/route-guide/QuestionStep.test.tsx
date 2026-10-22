@@ -106,9 +106,10 @@ describe("QuestionStep: one question a screen", () => {
         guide.questions.surface.suffix,
       ]),
     )
-    // The helper sentences live in the information sheet, not on the screen.
+    // The reason it is asked is the helper sentence under the heading, like steps 1 to 3.
+    expect(texts()).toContain(guide.questions.surface.why)
+    // The other help lives in the information sheet, not on the screen.
     for (const text of [
-      guide.questions.surface.why,
       guide.questions.surface.estimated,
       guide.questions.surface.aid,
       guide.questions.surface.linearHelp,
@@ -184,8 +185,8 @@ describe("QuestionStep: answering and moving", () => {
       ]),
     )
     expect(texts()).not.toContain(guide.questions.surface.title)
-    // The reason it is asked is in the question's information sheet only.
-    expect(texts()).not.toContain(guide.questions.homogeneity.why)
+    // The reason it is asked is the helper sentence under the heading.
+    expect(texts()).toContain(guide.questions.homogeneity.why)
     const homogeneous = one("route-choice-homogeneity-homogeneous")
     expect(homogeneous.props.accessibilityRole).toBe("radio")
     expect(homogeneous.props.accessibilityLabel).toBe(

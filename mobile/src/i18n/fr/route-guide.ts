@@ -84,8 +84,17 @@ export const routeGuideFr = {
     use: "Utiliser ce parcours",
     saveError: "Le parcours n'a pas pu être enregistré.",
     retry: "Réessayer",
-    next: "Suivant",
+    // Phase 30, owner check 2026-10: the pinned button of every question reads like the first
+    // three steps of the creation.
+    next: "Continuer",
     edit: "Modifier",
+    // The result screen's heading, the same large heading as a question (steps 1 to 5 share it).
+    result: {
+      suggestedTitle: "Voici le parcours conseillé",
+      suggestedLead: "Il découle de vos réponses. Vous pouvez en changer.",
+      chosenTitle: "Voici votre parcours",
+      chosenLead: "Vous l'avez choisi vous-même. Vous pouvez encore le changer.",
+    },
   },
   questions: {
     surface: {

@@ -24,6 +24,7 @@ import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
 import { WizardNativeHeader } from "./WizardNativeHeader"
+import { WizardHeading, WizardTopBar } from "./WizardChrome"
 import { AppPressable } from "../../ui/AppPressable"
 
 const w = fr.surveyForm.wizard
@@ -147,12 +148,11 @@ export function SurveyWizardScreen({
           onStepBack={() => setStepIndex(stepIndex - 1)}
         />
       ) : null}
-      <View
-        style={[
-          styles.topBar,
-          // Under the native header the route's ScreenFrame already starts below the bar.
-          { paddingTop: nativeHeader ? brandSpacing4.sm : insets.top + 8 },
-        ]}
+      <WizardTopBar
+        // Under the native header the route's ScreenFrame already starts below the bar.
+        paddingTop={nativeHeader ? brandSpacing4.sm : insets.top + 8}
+        total={TOTAL_STEPS}
+        index={stepIndex}
       >
         {nativeHeader ? null : (
           <View style={styles.topRow}>
@@ -173,18 +173,7 @@ export function SurveyWizardScreen({
             <View style={styles.topSpacer} />
           </View>
         )}
-        <View style={styles.progress}>
-          {Array.from({ length: TOTAL_STEPS }, (_, index) => (
-            <View
-              key={`segment-${index}`}
-              style={[
-                styles.progressSegment,
-                index <= stepIndex ? styles.progressDone : styles.progressTodo,
-              ]}
-            />
-          ))}
-        </View>
-      </View>
+      </WizardTopBar>
 
       <ScrollView
         contentContainerStyle={[
@@ -194,10 +183,7 @@ export function SurveyWizardScreen({
         keyboardShouldPersistTaps="handled"
         testID="wizard-body"
       >
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
-        </Text>
-        <Text style={styles.lead}>{body}</Text>
+        <WizardHeading title={title} lead={body} />
 
         <View style={styles.answer}>
           {step === "name" ? (

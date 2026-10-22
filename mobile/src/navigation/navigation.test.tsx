@@ -639,9 +639,10 @@ describe("stack options and listeners", () => {
     await mount(<AppNavigation />)
     expect(mockScreens.surveyRouteGuide).toBeDefined()
     const options = effectiveOptions("surveyRouteGuide")
-    // The page draws its own title: the native large title never followed its scroll on iOS.
-    expect(options.headerLargeTitleEnabled).toBeUndefined()
-    expect(options.headerTitle).toBe("")
+    // The header of steps 1 to 3: a small centred title, never the native large title (it never
+    // followed this page's scroll on iOS); the route sets "Étape 5 sur 5" once mounted.
+    expect(options.headerLargeTitleEnabled).toBe(false)
+    expect(options.headerTitleAlign).toBe("center")
     expect(options.title).toBe(fr.routeGuide.screen.title)
     // Native back and swipe are off: the route draws its own back button (no native pop is held).
     expect(options.gestureEnabled).toBe(false)
@@ -654,7 +655,7 @@ describe("stack options and listeners", () => {
     await mount(<AppNavigation />)
     const options = effectiveOptions("surveyRouteGuide")
     expect(options.title).toBe(fr.routeGuide.screen.title)
-    expect(options.headerLargeTitleEnabled).toBeUndefined()
+    expect(options.headerLargeTitleEnabled).toBe(false)
     expect(options.gestureEnabled).toBe(false)
     expect(options.headerBackVisible).toBe(false)
   })
