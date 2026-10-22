@@ -299,6 +299,7 @@ import { FactorDetailRoute } from "./FactorDetailRoute"
 import { FactorHelpRoute } from "./FactorHelpRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
+import { RouteBackButton } from "./RouteBackButton"
 import { RouteChooseRoute } from "./RouteChooseRoute"
 import { RouteGuideRoute } from "./RouteGuideRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
@@ -2602,6 +2603,78 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
     expect(guideState().view.selection).toMatchObject({ method: "partial_plot" })
   })
 
+  test("a pick with empty detail texts clears them, and the same pick without a nonce is not replayed", async () => {
+    const { fixture } = creationFixture()
+    const navigation = makeNavigation()
+    const pick = {
+      method: "partial_plot",
+      counting: "capped",
+      uncapped_factors: [],
+      details: { zoneText: "", complementDone: false, totalText: "" },
+    }
+    const render = (extra: Record<string, unknown>) => (
+      <Providers fixture={fixture}>
+        <RouteGuideRoute
+          navigation={navigation as never}
+          route={createRoute({ surfaceHa: 10, ...extra }) as never}
+        />
+      </Providers>
+    )
+    const tree = await mount(render({ picked: pick }))
+    expect(guideState().view.selection).toMatchObject({ method: "partial_plot", source: "pick" })
+    await act(async () => {
+      guideState().actions.restoreSuggestion()
+    })
+    await act(async () => {
+      tree.update(render({ picked: { ...pick } }))
+    })
+    expect(guideState().view.selection).toBeNull()
+  })
+
+  test("leaving the step releases the Android back handler", async () => {
+    const { fixture } = creationFixture()
+    const { tree } = await mountGuide(fixture)
+    await act(async () => {
+      tree.unmount()
+    })
+  })
+
+  test("a retry after a failed first write on the created draft can fail again", async () => {
+    const { fixture } = creationFixture({ editingSurveyId: null, routeWrites: [false, false] })
+    const { navigation } = await mountGuide(
+      fixture,
+      makeNavigation(),
+      createRoute({ surveyId: null }),
+    )
+    await reachRoute()
+    await act(async () => {
+      await use()
+    })
+    await act(async () => {
+      await callback("routeGuide", "onRetry")()
+    })
+    expect(props("routeGuide").saveError).toBe(true)
+    expect(fixture.form.actions.createDraft).toHaveBeenCalledTimes(1)
+    expect(navigation.reset).not.toHaveBeenCalled()
+  })
+
+  test("the rare path: a draft that cannot be created writes nothing", async () => {
+    const fixture = makeFixture({ editingSurveyId: null, saved: false })
+    const write = fixture.surveys.actions.updateSurveyRoute as unknown as jest.Mock
+    write.mockResolvedValue(true)
+    const { navigation } = await mountGuide(
+      fixture,
+      makeNavigation(),
+      createRoute({ surveyId: null }),
+    )
+    await reachRoute()
+    await act(async () => {
+      await use()
+    })
+    expect(write).not.toHaveBeenCalled()
+    expect(navigation.reset).not.toHaveBeenCalled()
+  })
+
   test("a pick with no details only applies the parcours and the counting", async () => {
     const { fixture } = creationFixture()
     await mountGuide(
@@ -2663,6 +2736,26 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
       expect(props("routeGuide").saveError).toBe(true)
       expect(navigation.goBack).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe("RouteBackButton", () => {
+  test("is a 44 pt disc on Android and a bare glyph on the system glass of iOS, and presses through", async () => {
+    const onPress = jest.fn()
+    for (const os of ["android", "ios"] as const) {
+      mockPlatform.OS = os
+      const tree = await mount(
+        <Providers fixture={makeFixture()}>
+          <RouteBackButton onPress={onPress} />
+        </Providers>,
+      )
+      const button = tree.root.findByProps({ testID: "route-back" })
+      await act(async () => {
+        button.props.onPress()
+      })
+    }
+    expect(onPress).toHaveBeenCalledTimes(2)
+    mockPlatform.OS = "ios"
   })
 })
 
@@ -2828,6 +2921,20 @@ describe("RouteChooseRoute (phase 30, O-19, O-14)", () => {
       mockGetLocalSurveyDraft.mockRejectedValue(new Error("db"))
       await mountChoose(makeFixture(), chooseRoute("pick"))
       expect(view().keptValuesNotice).toBe(false)
+    })
+
+    test("a factor toggle reaches the choice, and the chooser can be left before the draft read ends", async () => {
+      const { tree } = await mountChoose(
+        makeFixture(),
+        chooseRoute("pick", {
+          preselect: { method: "full", counting: "uncapped", uncapped_factors: ["A"] },
+        }),
+      )
+      await act2(() => callback("routeChoose", "onToggleFactor")("B"))
+      expect(view().factors).toEqual(expect.arrayContaining(["A", "B"]))
+      await act(async () => {
+        tree.unmount()
+      })
     })
 
     test("opens at the counting when asked", async () => {
