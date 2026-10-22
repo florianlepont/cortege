@@ -164,13 +164,13 @@ Pour chaque scénario, le facilitateur renseigne :
 
 ### 6.3 Questions de fin de séance (une fois, après les trois scénarios)
 
-| #   | Question                                                                             | Réussi si                                                                                                                                         |
-| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Q-1 | « Quelle différence faites-vous entre "Méthode IBP v3.2" et "Parcours" ? »           | le testeur distingue la version de la méthode de la façon de parcourir le peuplement                                                              |
-| Q-2 | « Que veut dire "relevé plafonné" ? »                                                | « on arrête de compter dès que le score est sûr » ou équivalent                                                                                   |
-| Q-3 | « "Plafonné" a-t-il un rapport avec le score du facteur A ? » (si le testeur l'a vu) | le testeur ne confond pas : le plafond de comptage n'est pas un score limité à 2                                                                  |
+| #   | Question                                                                             | Réussi si                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q-1 | « Quelle différence faites-vous entre "Méthode IBP v3.2" et "Parcours" ? »           | le testeur distingue la version de la méthode de la façon de parcourir le peuplement                                                               |
+| Q-2 | « Que veut dire "relevé plafonné" ? »                                                | « on arrête de compter dès que le score est sûr » ou équivalent                                                                                    |
+| Q-3 | « "Plafonné" a-t-il un rapport avec le score du facteur A ? » (si le testeur l'a vu) | le testeur ne confond pas : le plafond de comptage n'est pas un score limité à 2                                                                   |
 | Q-4 | « Que feriez-vous si vous connaissiez déjà votre parcours ? »                        | le testeur repère « Je connais déjà mon parcours » (lien discret sous les questions, depuis le 2026-10-14) ou le sélecteur « Choisir le parcours » |
-| Q-5 | « Y a-t-il un mot que vous n'avez pas compris ? »                                    | réponse notée telle quelle, sans note de réussite                                                                                                 |
+| Q-5 | « Y a-t-il un mot que vous n'avez pas compris ? »                                    | réponse notée telle quelle, sans note de réussite                                                                                                  |
 
 Une confusion entre « plafonné » et le plafond du score du facteur A (Q-2, Q-3) est un point critique : voir la règle de passage.
 
