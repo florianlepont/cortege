@@ -159,7 +159,7 @@ describe("buildRouteBlock rows", () => {
 
     expect(html).not.toContain(t.countedFactors)
     expect(html).not.toContain(t.complement)
-    expect(html).toContain(`>${t.choiceObserver.replace("'", "&#39;")}</td>`)
+    expect(html).toContain(`>${t.choiceObserver.replace(/'/g, "&#39;")}</td>`)
   })
 
   it("prints a draft exactly like a submitted survey", () => {
