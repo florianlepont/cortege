@@ -164,6 +164,8 @@ Type: Display bug · UX friction · Functional bug · Suggestion
 
 Note 2026-10-08 (phase 12.2, plan 12.2-23): owner decision, the in-app theme choice is removed. The Apparence segmented control of Paramètres (OA-82) no longer exists; the app follows the system light or dark mode only.
 
+Note 2026-10-22 (Phase 30, plan 30-24): wording of the route-choice assistant approved by the owner on 2026-10-22. The owner asked Claude to do the sentence review itself instead of reading the sheet (`.planning/phases/30-route-choice-assistant-inserted-v1/30-WORDING-REVIEW.md`, 274 sentences, 21 sections) and confirmed the record. Review by Claude: method vocabulary, thresholds consistent across texts, no dash, gates green. One key changed: `routeGuide.glossary.terms.parBande.text` ("une large allée de 20 à 50 mètres de large" became "une allée de 20 à 50 mètres de large"). Every other sentence kept.
+
 
 ### Open decision: basemap and offline maps (OA-61, OA-62, OA-66)
 
