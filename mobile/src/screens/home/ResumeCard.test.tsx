@@ -32,6 +32,7 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
@@ -254,9 +255,15 @@ describe("ResumeCard", () => {
     layoutOf("home-resume-copy", COPY)
     expect(blocks()).toEqual([COPY_IN_CARD])
     const row = tree.root.find(
+      (node) => (node.type as unknown) === "View" && styleOf(node).flexDirection === "column",
+    )
+    // The button sits under the text, so the title never shares its line with it.
+    expect(styleOf(row).gap).toBe(brandSpacing4.smd)
+    mount(makeSurvey())
+    const draftRow = tree.root.find(
       (node) => (node.type as unknown) === "View" && styleOf(node).alignItems === "center",
     )
-    expect(styleOf(row).gap).toBe(brandSpacing4.smd)
+    expect(styleOf(draftRow).gap).toBe(brandSpacing4.smd)
   })
 
   test("with a draft the segments are a block too, and nothing is drawn before both", () => {

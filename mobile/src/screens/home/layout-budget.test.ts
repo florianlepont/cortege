@@ -15,6 +15,7 @@ import {
   newSurveyCardHeight,
   recentSectionHeight,
   resumeCardHeight,
+  shouldStackResumeRow,
   toolsSectionHeight,
 } from "./layout-budget"
 
@@ -92,7 +93,8 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
     // rule over the 44 pt link) left it for a card of its own: 12 pt gap, 56 pt and its hairline.
     expect(resumeCardHeight(true, 1, 1)).toBe(159 - 45)
     expect(resumeCardHeight(true, 2, 1)).toBe(187 - 45)
-    expect(resumeCardHeight(false, 1, 2)).toBe(32 + 28 + 4 + 40 + 0)
+    expect(resumeCardHeight(false, 1, 2)).toBe(32 + 28 + 4 + 40 + 12 + 44 + 0)
+    expect(resumeCardHeight(false, 1, 2, false)).toBe(32 + 28 + 4 + 40 + 0)
     expect(newSurveyCardHeight(true)).toBe(12 + 1 + 56 + 1)
     // Without a draft the forest card is the "start a survey" action: no second card.
     expect(newSurveyCardHeight(false)).toBe(0)
@@ -183,5 +185,13 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
     expect(wrap(large).section).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY)
     expect(wrap(small).section).toBe(74)
     expect(wrap(small).map).toBe(48)
+  })
+})
+
+describe("shouldStackResumeRow", () => {
+  test("the start card always stacks its button, a draft only at a large text scale", () => {
+    expect(shouldStackResumeRow(false, 1)).toBe(true)
+    expect(shouldStackResumeRow(true, 1)).toBe(false)
+    expect(shouldStackResumeRow(true, 1.3)).toBe(true)
   })
 })
