@@ -166,7 +166,7 @@ Régénérée le 2026-10-22 depuis le catalogue (`mobile/src/i18n/fr/`), après 
 - `routeGuide.routes.partialPlot.name` : Parcours partiel par placette
 - `routeGuide.routes.partialPlot.short` : Une partie du peuplement, en placette de 1 ha.
 - `routeGuide.routes.partialPlot.suits` : Convient aux peuplements homogènes, faciles à observer et assez larges.
-- `routeGuide.routes.partialStrip.does` : Vous suivez à pied une large allée de 20 à 50 mètres de large. Une bande fait 20 à 50 mètres de large : comptez 10 à 15 mètres de chaque côté si l'on voit mal, 15 à 20 mètres si la visibilité est moyenne, 20 à 25 mètres si l'on voit loin.
+- `routeGuide.routes.partialStrip.does` : Vous suivez à pied une allée de 20 à 50 mètres de large. Une bande fait 20 à 50 mètres de large : comptez 10 à 15 mètres de chaque côté si l'on voit mal, 15 à 20 mètres si la visibilité est moyenne, 20 à 25 mètres si l'on voit loin.
 - `routeGuide.routes.partialStrip.explanation` : Vous ne décrivez qu'une partie du peuplement, bien choisie (au moins 1 hectare et 10 à 20 % du peuplement), et vous jetez un coup d'œil rapide au reste.
 - `routeGuide.routes.partialStrip.name` : Parcours partiel par bande
 - `routeGuide.routes.partialStrip.short` : Une partie du peuplement, en bande.
@@ -218,7 +218,7 @@ Régénérée le 2026-10-22 depuis le catalogue (`mobile/src/i18n/fr/`), après 
 - `routeGuide.glossary.terms.dendromicrohabitat.term` : Dendromicrohabitat
 - `routeGuide.glossary.terms.dendromicrohabitat.text` : Un petit abri sur un arbre vivant ou mort : loge de pic, cavité, écorce décollée, champignon, nid.
 - `routeGuide.glossary.terms.parBande.term` : Parcours partiel par bande
-- `routeGuide.glossary.terms.parBande.text` : Vous suivez à pied une large allée de 20 à 50 mètres de large.
+- `routeGuide.glossary.terms.parBande.text` : Vous suivez à pied une allée de 20 à 50 mètres de large.
 - `routeGuide.glossary.terms.parcoursEnPlein.term` : Parcours en plein
 - `routeGuide.glossary.terms.parcoursEnPlein.text` : Vous marchez dans tout le peuplement, par bandes régulières, et vous notez tout ce que vous voyez.
 - `routeGuide.glossary.terms.parcoursPartiel.term` : Parcours partiel

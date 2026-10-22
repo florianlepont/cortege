@@ -29,7 +29,7 @@ const TERM = {
   },
   parBande: {
     term: "Parcours partiel par bande",
-    text: "Vous suivez à pied une large allée de 20 à 50 mètres de large.",
+    text: "Vous suivez à pied une allée de 20 à 50 mètres de large.",
   },
   parPlacette: {
     term: "Parcours partiel par placette",
