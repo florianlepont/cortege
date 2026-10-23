@@ -179,9 +179,17 @@ describe("RouteChooseScreen: content", () => {
     expect(mount({ standHa: 8 }).texts()).not.toContain("Conseillé")
   })
 
-  test("shows no details card until a parcours is chosen", () => {
+  test("shows no details card until a partial parcours is chosen: a full one has nothing to type", () => {
     const { byId, press } = mount({ standHa: 8 })
     expect(byId("route-details")).toHaveLength(0)
+    press("route-parcours-full")
+    expect(byId("route-details")).toHaveLength(0)
+    press("route-parcours-partial_strip")
+    expect(byId("route-details")).toHaveLength(1)
+  })
+
+  test("a full parcours asks for the surface when the stand surface is unknown", () => {
+    const { byId, press } = mount({ standHa: null })
     press("route-parcours-full")
     expect(byId("route-details")).toHaveLength(1)
   })

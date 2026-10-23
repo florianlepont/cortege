@@ -12,7 +12,7 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { fr } from "../../i18n"
-import { PARCEL_CARD } from "./layout-budget"
+import { PARCEL_CARD, PARCEL_CARD_ROW_HEIGHT } from "./layout-budget"
 
 const t = fr.parcelSelection
 
@@ -83,6 +83,7 @@ function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: PARCEL_CARD.gap,
+      minHeight: PARCEL_CARD_ROW_HEIGHT,
     },
     copy: {
       flex: 1,

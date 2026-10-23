@@ -4,15 +4,16 @@ import {
   OFFLINE_SLIM_HEIGHT,
   PARCEL_BUDGET_DEVICES,
   PARCEL_CARD,
+  PARCEL_CARD_ROW_HEIGHT,
   parcelCardHeight,
   parcelMapShare,
 } from "./layout-budget"
 
 describe("the slim parcel-selection card", () => {
-  test("it is one 50 pt button row, 74 pt with a parcel; the help line of no parcel adds a few", () => {
-    expect(parcelCardHeight(true)).toBe(2 * 12 + 50)
-    expect(parcelCardHeight(false)).toBe(82)
-    expect(parcelCardHeight(false)).toBeLessThan(90)
+  test("it is one fixed row, the same 82 pt with or without a parcel (it does not jump)", () => {
+    expect(PARCEL_CARD_ROW_HEIGHT).toBe(58)
+    expect(parcelCardHeight()).toBe(82)
+    expect(parcelCardHeight()).toBeLessThan(90)
   })
 
   test("the controls row is the 44 pt control plus the 12 pt gap above the card", () => {
@@ -32,7 +33,7 @@ describe("the slim parcel-selection card", () => {
 
   test("owner target: 60 % of the screen is map with a parcel chosen, 50 % with the slim line", () => {
     for (const device of PARCEL_BUDGET_DEVICES) {
-      const bare = parcelMapShare(device, parcelCardHeight(true))
+      const bare = parcelMapShare(device, parcelCardHeight())
       // The slim line sits at the top of the same area, so it takes its height from the map.
       const withLine = bare - OFFLINE_SLIM_HEIGHT / device.mapAreaHeight
       expect(bare).toBeGreaterThanOrEqual(0.6)

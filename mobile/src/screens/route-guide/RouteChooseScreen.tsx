@@ -158,6 +158,19 @@ export function RouteChooseScreen({
           </View>
         </View>
 
+        {view.method === null || (view.method === "full" && view.standHa !== null) ? null : (
+          // Right under the parcours it belongs to, before the mode de relevé. A full parcours
+          // with a known stand surface has nothing to type, so it shows no card (owner check).
+          <RouteDetailsCard
+            method={view.method}
+            counting={view.counting}
+            uncappedFactors={view.factors}
+            standHa={view.standHa}
+            value={view.details}
+            onChange={onChangeDetails}
+          />
+        )}
+
         <View
           style={styles.section}
           onLayout={(event) => {
@@ -177,17 +190,6 @@ export function RouteChooseScreen({
           />
           <RouteAdvice advice={view.advice} />
         </View>
-
-        {view.method === null ? null : (
-          <RouteDetailsCard
-            method={view.method}
-            counting={view.counting}
-            uncappedFactors={view.factors}
-            standHa={view.standHa}
-            value={view.details}
-            onChange={onChangeDetails}
-          />
-        )}
       </ScrollView>
 
       <View

@@ -256,11 +256,9 @@ export function SurveyParcelSelectionScreen({
       ) : null}
 
       <MapTopControls
-        // While the offline proposal (or its progress) is on screen, the capsule's own download
-        // button would say the same thing twice: it comes back once the proposal is closed.
-        onOpenOfflineAreas={
-          offlineEnabled && !offlineBannerVisible ? () => toggleOfflineAreas(true) : undefined
-        }
+        // The capsule's download button stays while the offline proposal is on screen: choosing a
+        // parcel raised the proposal and the button used to vanish (owner check, Phase 30).
+        onOpenOfflineAreas={offlineEnabled ? () => toggleOfflineAreas(true) : undefined}
         top={capsuleTop}
         basemap={basemap}
         onToggleBasemap={() => setBasemap((current) => (current === "map" ? "satellite" : "map"))}
