@@ -261,7 +261,6 @@ export const routeGuideFr = {
     surface: "Surface décrite",
     hectares: (hectares: string) => `${hectares} ha`,
     duration: "Durée estimée",
-    durationCaption: "pour un observateur habitué à l'IBP",
   },
   suggestion: {
     eyebrowSuggested: "Parcours conseillé",

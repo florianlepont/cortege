@@ -21,11 +21,15 @@ type TileProps = {
   label: string
   value: string
   valueTestID: string
-  caption?: string
+}
+
+/** "53 à 63 minutes" reads on one line in a tile as "53 à 63 min" (a unit of the abbreviation list). */
+function shortDuration(range: string): string {
+  return range.replace(/ minutes?$/u, " min")
 }
 
 /** One figure: a round glyph, its label, the value large, and a small note under it. */
-function Tile({ index, icon, label, value, valueTestID, caption }: TileProps) {
+function Tile({ index, icon, label, value, valueTestID }: TileProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
@@ -50,7 +54,6 @@ function Tile({ index, icon, label, value, valueTestID, caption }: TileProps) {
         <Text style={styles.value} testID={valueTestID}>
           {value}
         </Text>
-        {caption === undefined ? null : <Text style={styles.caption}>{caption}</Text>}
       </AppCard>
     </Animated.View>
   )
@@ -83,9 +86,8 @@ export function RouteFacts({ hectares, durationRange }: RouteFactsProps) {
           index={1}
           icon="time-outline"
           label={facts.duration}
-          value={durationRange}
+          value={shortDuration(durationRange)}
           valueTestID="route-fact-duration"
-          caption={facts.durationCaption}
         />
       )}
     </View>
@@ -99,11 +101,13 @@ function createStyles(theme: BrandTheme) {
       flexWrap: "wrap",
       gap: brandSpacing4.smd,
     },
+    // Two tiles of the same size: equal width, and the card fills the height of the taller one.
     tile: {
-      flexGrow: 1,
+      flex: 1,
       flexBasis: 150,
     },
     card: {
+      flex: 1,
       gap: brandSpacing4.sm,
     },
     head: {
@@ -128,10 +132,6 @@ function createStyles(theme: BrandTheme) {
       ...brandTypeScale.title2,
       fontFamily: brandTypography.navTitle.fontFamily,
       color: theme.colors.textPrimary,
-    },
-    caption: {
-      ...brandTypeScale.footnote,
-      color: theme.colors.textSecondary,
     },
   })
 }

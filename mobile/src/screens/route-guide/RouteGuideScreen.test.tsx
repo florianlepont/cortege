@@ -365,7 +365,7 @@ describe("RouteGuideScreen: the suggestion", () => {
     reachRoute(m)
     expect(m.byId("route-refine")).toHaveLength(0)
     expect(textOf(m.one("route-fact-surface"))).toContain("ha")
-    expect(textOf(m.one("route-fact-duration"))).toContain("minutes")
+    expect(textOf(m.one("route-fact-duration"))).toContain("min")
     const before = m.state().view.selection
     act(() => m.actions().setHoursText("0,5"))
     expect(m.state().view.selection).toEqual(before)
