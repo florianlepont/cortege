@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons"
 import { type ReactNode, useMemo } from "react"
-import { Modal, StyleSheet, View } from "react-native"
+import { Modal, ScrollView, StyleSheet, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -65,11 +65,15 @@ export function InfoSheet({
             <Ionicons name="close-outline" size={24} color={theme.semanticColors.accent} />
           </AppPressable>
         </View>
-        <View style={styles.body}>
+        {/* A long sheet (a schema, an explanation and the reasons) scrolls instead of being cut. */}
+        <ScrollView
+          contentContainerStyle={styles.body}
+          testID={testID ? `${testID}-scroll` : undefined}
+        >
           {illustration}
           {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={styles.explanation}>{body}</Text>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   )

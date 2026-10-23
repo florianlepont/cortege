@@ -33,9 +33,12 @@ export const SurveyParcelsPageRoute = memo(function SurveyParcelsPageRoute({
     })
   })
 
-  // The chooser reads the recorded answers itself, so only the survey travels (phase 30, D-09).
+  // "Modifier" and "Choisir le parcours" open the assistant, like the creation does (owner check,
+  // Phase 30): a recorded route comes back as the advised or chosen parcours, with "Changer de
+  // parcours" to reach the list. The assistant reads the recorded answers itself, so only the
+  // survey travels (D-09).
   const onEditRoute = useLatestCallback((surveyId: string) =>
-    navigation.navigate("surveyRouteChoose", { surveyId, mode: "edit", surfaceHa: null }),
+    navigation.navigate("surveyRouteGuide", { surveyId, mode: "edit", surfaceHa: null }),
   )
 
   return (

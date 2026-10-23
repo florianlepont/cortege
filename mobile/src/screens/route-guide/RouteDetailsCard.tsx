@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons"
 import { useMemo } from "react"
 import { StyleSheet, Switch, View } from "react-native"
 import {
@@ -131,9 +132,19 @@ export function RouteDetailsCard({
   return (
     <AppCard variant="glass" padding={brandSpacing4.md}>
       <View style={styles.root} testID="route-details">
-        <Text style={styles.title} accessibilityRole="header">
-          {details.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <View style={styles.badge}>
+            <Ionicons
+              name="options-outline"
+              size={20}
+              color={theme.semanticColors.accent}
+              accessible={false}
+            />
+          </View>
+          <Text style={styles.title} accessibilityRole="header">
+            {details.title}
+          </Text>
+        </View>
 
         {!showZoneField && standHa !== null ? (
           <Text style={styles.line}>{details.fullLine(formatHectares(standHa))}</Text>
@@ -227,8 +238,22 @@ function createStyles(theme: BrandTheme) {
     root: {
       gap: brandSpacing4.md,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+    },
+    badge: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.surfaceSoft,
+    },
     title: {
-      ...brandTypeScale.headline,
+      flex: 1,
+      ...brandTypeScale.title3,
       fontFamily: brandTypography.navTitle.fontFamily,
       color: theme.colors.textPrimary,
     },

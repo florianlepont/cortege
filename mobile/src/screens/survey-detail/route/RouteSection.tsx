@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons"
 import type { SurveyRoute } from "@cortege/ibp-domain"
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
@@ -7,7 +8,7 @@ import {
   brandTypeScale,
   brandTypography,
 } from "../../../app/brand-tokens"
-import { routeDisplayRows } from "../../../app/route-display"
+import { type RouteDisplayRowId, routeDisplayRows } from "../../../app/route-display"
 import { type BrandTheme, useBrandTheme } from "../../../app/theme"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
@@ -16,6 +17,17 @@ import { AppSectionHeader } from "../../../ui/AppSectionHeader"
 import { AppText as Text } from "../../../ui/AppText"
 
 const t = fr.surveyDetail.route
+
+/** Outline glyphs of the rows (owner check, Phase 30: the card read as a plain list). */
+const ROW_ICON: Readonly<Record<RouteDisplayRowId, keyof typeof Ionicons.glyphMap>> = {
+  method: "trail-sign-outline",
+  counting: "speedometer-outline",
+  factors: "layers-outline",
+  zone: "scan-outline",
+  complement: "eye-outline",
+  choice: "sparkles-outline",
+  answers: "list-outline",
+}
 
 type RouteSectionProps = {
   /** The recorded route (`readSurveyRoute`), or null when absent, older, newer or damaged. */
@@ -91,14 +103,60 @@ export function RouteSection({
   }
 
   const rows = routeDisplayRows(route, variant)
+  const method = rows.find((row) => row.id === "method")
+  const pills = rows.filter((row) => row.id === "counting" || row.id === "zone")
+  const others = rows.filter(
+    (row) => row.id !== "method" && row.id !== "counting" && row.id !== "zone",
+  )
   return (
     <View testID="route-section">
       <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
         <AppSectionHeader title={t.title} titleAccessibilityRole="header" />
-        {rows.map((row) => (
+        {method === undefined ? null : (
+          <View style={styles.hero} testID={`route-row-${method.id}`}>
+            <View style={styles.badge}>
+              <Ionicons
+                name={ROW_ICON.method}
+                size={26}
+                color={theme.semanticColors.accent}
+                accessible={false}
+              />
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.caption}>{method.caption}</Text>
+              <Text style={styles.heroName}>{method.value}</Text>
+            </View>
+          </View>
+        )}
+        <View style={styles.pills}>
+          {pills.map((row) => (
+            <View key={row.id} style={styles.pill} testID={`route-row-${row.id}`}>
+              <Ionicons
+                name={ROW_ICON[row.id]}
+                size={18}
+                color={theme.semanticColors.accent}
+                accessible={false}
+              />
+              <View style={styles.pillCopy}>
+                <Text style={styles.pillCaption}>{row.caption}</Text>
+                <Text style={styles.pillValue}>{row.value}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+        {others.map((row) => (
           <View key={row.id} style={styles.row} testID={`route-row-${row.id}`}>
-            <Text style={styles.caption}>{row.caption}</Text>
-            <Text style={styles.value}>{row.value}</Text>
+            <Ionicons
+              name={ROW_ICON[row.id]}
+              size={18}
+              color={theme.colors.textSecondary}
+              accessible={false}
+              style={styles.rowIcon}
+            />
+            <View style={styles.rowCopy}>
+              <Text style={styles.caption}>{row.caption}</Text>
+              <Text style={styles.value}>{row.value}</Text>
+            </View>
           </View>
         ))}
         {editable && status === "draft" && onEdit ? (
@@ -109,6 +167,12 @@ export function RouteSection({
             onPress={onEdit}
             style={styles.link}
           >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={theme.visual.accentText}
+              accessible={false}
+            />
             <Text style={styles.linkText}>{t.edit}</Text>
           </AppPressable>
         ) : null}
@@ -122,8 +186,66 @@ function createStyles(theme: BrandTheme) {
     card: {
       gap: brandSpacing4.smd,
     },
+    hero: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.md,
+    },
+    badge: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.surfaceSoft,
+    },
+    heroCopy: {
+      flex: 1,
+      gap: brandSpacing4.xxs,
+    },
+    heroName: {
+      ...brandTypeScale.title3,
+      fontFamily: brandTypography.navTitle.fontFamily,
+      color: theme.colors.textPrimary,
+    },
+    pills: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: brandSpacing4.sm,
+    },
+    pill: {
+      flexGrow: 1,
+      flexBasis: 140,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      borderRadius: 16,
+      padding: brandSpacing4.smd,
+      backgroundColor: theme.semanticColors.surfaceSoft,
+    },
+    pillCopy: {
+      flex: 1,
+    },
+    pillCaption: {
+      ...brandTypeScale.footnote,
+      color: theme.colors.textSecondary,
+    },
+    pillValue: {
+      ...brandTypeScale.subhead,
+      fontFamily: brandTypography.navTitle.fontFamily,
+      color: theme.colors.textPrimary,
+    },
     row: {
-      gap: brandSpacing4.xs,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: brandSpacing4.smd,
+    },
+    rowIcon: {
+      marginTop: 2,
+    },
+    rowCopy: {
+      flex: 1,
+      gap: brandSpacing4.xxs,
     },
     caption: {
       ...brandTypography.meta,
@@ -136,7 +258,9 @@ function createStyles(theme: BrandTheme) {
     },
     link: {
       minHeight: 44,
-      justifyContent: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
       alignSelf: "flex-start",
     },
     linkText: {

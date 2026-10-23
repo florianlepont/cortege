@@ -13,6 +13,7 @@ jest.mock("react-native", () => {
     TextInput: mockComponent("TextInput"),
     Switch: mockComponent("Switch"),
     Modal: mockComponent("Modal"),
+    ScrollView: mockComponent("ScrollView"),
     Pressable: ({
       children,
       style,
