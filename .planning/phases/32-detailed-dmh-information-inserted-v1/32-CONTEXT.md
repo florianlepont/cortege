@@ -25,14 +25,14 @@ While recording factor F, the observer reaches detailed identification informati
 - **D-05:** Navigation entries live in the survey stack (typed in `navigation/types.ts`), never in the map screens. Screen files respect the 400-line cap (`structure.test.ts`).
 
 ### Content
-- **D-06:** Short text only, no illustrations (images deferred, see below). Per group: definition, how to identify it, frequent confusions, the WSL types attached to the group. Crossing IBP and WSL means each of the 15 IBP groups lists its WSL types.
+- **D-06:** Short text plus illustrations (owner, corrected 2026-10-23). Per group: definition, how to identify it, frequent confusions, the WSL types attached to the group, and an image per group or type. Crossing IBP and WSL means each of the 15 IBP groups lists its WSL types. Images are embedded offline; their licence is checked like the text (D-01), and app size is budgeted in the plan. If the images are not reusable, fall back to text only (D-02) and flag it to the owner.
 - **D-07:** All strings go through the typed `fr` catalogue (new module under `mobile/src/i18n/fr/`), no em dash (U+2014), abbreviations written out or explained (`AbbreviationInfo`). The group labels stay those of `factorInput.dmhGroupOptions`.
 
 ### Faster recording
-- **D-08:** Recording speed is owner-open ("no preference"): see Claude's Discretion. Hard constraints: the stored payload is unchanged, the capped score is unchanged (parity cases untouched), and the speed gain is measured on a real survey (timed before and after, protocol written in the plan).
+- **D-08:** Owner-chosen levers (2026-10-23): (a) +/- counters directly on the group row, (b) search and grouping of the 15 groups by form, (c) frequent or already ticked groups first. A timed baseline on a real survey comes first, so the plan can drop a lever that does not help. Hard constraints: the stored payload is unchanged, the capped score is unchanged (parity cases untouched), and the speed gain is measured on a real survey (timed before and after, protocol written in the plan).
 
 ### Claude's Discretion
-- Which speed levers to build (counters on the row, search or grouping by form, ordering), chosen by what the timed baseline shows is slow; the plan proposes them and the owner validates on the phone.
+- Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone.
 - Exact sheet layout, within the visual layer rules of CLAUDE.md.
 
 </decisions>
@@ -87,8 +87,7 @@ While recording factor F, the observer reaches detailed identification informati
 <deferred>
 ## Deferred Ideas
 
-- Illustrations or photos per DMH (licence and app size): possible later phase.
-- Photos attached to each DMH and photo recognition: V1.x, phase 34.
+- Photos attached by the observer to each DMH and photo recognition: V1.x, phase 34.
 
 </deferred>
 

@@ -4,5 +4,5 @@ Human reference only. Areas discussed: source and licence, form of the tool, con
 
 - Source WSL: owner supplies the PDF, licence to verify. Options considered: licence known, own wording.
 - Form: both an info affordance per group and a searchable catalogue (recommended).
-- Content: short text only, no illustrations (recommended).
-- Speed: no preference; left to Claude's discretion with a timed before/after on a real survey.
+- Content: short text plus illustrations (corrected by owner after first answer).
+- Speed (asked again): +/- counters on the row, search and grouping by form, frequent groups first; timed baseline on a real survey.
