@@ -74,8 +74,7 @@ describe("code to text maps", () => {
     expect(ROUTE_WARNING_TEXT.partial_over_half).toBe(ROUTE_ZONE_ISSUE_TEXT.partial_over_half)
   })
 
-  test("the two long presets carry the advice of R-17, the others none", () => {
-    expect(UNCAPPED_PRESET_TEXT.mature.note).toBe(fr.routeGuide.counting.presetNote)
+  test("the long preset carries the advice of R-17, the others none", () => {
     expect(UNCAPPED_PRESET_TEXT.always_max.note).toBe(fr.routeGuide.counting.presetNote)
     expect(UNCAPPED_PRESET_TEXT.all_factors.note).toBeUndefined()
     expect(UNCAPPED_PRESET_TEXT.minimum.note).toBeUndefined()

@@ -151,22 +151,16 @@ export const ROUTE_ZONE_ISSUE_SEVERITY: Readonly<Record<RouteZoneIssueCode, "err
   }
 
 /** Presets of the uncapped counting (R-17, O-01). */
-export const UNCAPPED_PRESET_IDS = [
-  "all_factors",
-  "mature",
-  "always_max",
-  "minimum",
-  "custom",
-] as const
+export const UNCAPPED_PRESET_IDS = ["all_factors", "always_max", "minimum", "custom"] as const
 export type UncappedPresetId = (typeof UNCAPPED_PRESET_IDS)[number]
 
 /**
  * Factors counted in full by preset (R-17; M p. 23, p. 24; S p. 20, p. 21 note 1). `always_max` is
- * the candidate set, all proposed at the start; `custom` starts empty and needs at least one.
+ * the candidate set, all proposed at the start (the mature stands of M chapter 8 are one case of
+ * it, so they have no preset of their own); `custom` starts empty and needs at least one.
  */
 export const UNCAPPED_PRESETS: Readonly<Record<UncappedPresetId, readonly UncappableFactor[]>> = {
   all_factors: ["A", "B", "C", "D", "E", "F", "G", "I", "J"],
-  mature: ["A", "C", "D", "E", "F"],
   always_max: ["A", "C", "D", "E", "F", "I", "J"],
   minimum: ["C", "D", "E"],
   custom: [],

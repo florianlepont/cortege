@@ -87,16 +87,11 @@ export const COUNTING_TEXT: Readonly<Record<CountingMode, CountingText>> = {
 
 type PresetText = { name: string; caption: string; note?: string }
 
-/** The five presets of the factors counted in full; R-17 advises the two long ones. */
+/** The four presets of the factors counted in full; R-17 advises the long one. */
 export const UNCAPPED_PRESET_TEXT: Readonly<Record<UncappedPresetId, PresetText>> = {
   all_factors: {
     name: guide.counting.presets.allFactors,
     caption: guide.counting.presetCaptions.allFactors,
-  },
-  mature: {
-    name: guide.counting.presets.mature,
-    caption: guide.counting.presetCaptions.mature,
-    note: guide.counting.presetNote,
   },
   always_max: {
     name: guide.counting.presets.alwaysMax,

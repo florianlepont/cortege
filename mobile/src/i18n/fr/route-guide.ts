@@ -41,7 +41,7 @@ const TERM = {
   },
   releveDeplafonne: {
     term: "Relevé déplafonné",
-    text: "On compte tout, sans s'arrêter, pour les facteurs choisis. C'est plus long, mais cela donne le détail.",
+    text: "On compte tout, sans s'arrêter, pour les facteurs choisis. C'est plus long, mais cela donne le détail. Réservé aux situations extrêmes et aux études.",
   },
   surfaceDecrite: {
     term: "Surface décrite",
@@ -231,25 +231,27 @@ export const routeGuideFr = {
       short: "On compte tout, facteur par facteur.",
       explanation: TERM.releveDeplafonne.text,
     },
+    // M chapter 8: the déplafonné mode answers "certaines situations extrêmes" and the studies.
+    rareNotice:
+      "Le relevé déplafonné est réservé aux situations extrêmes, par exemple des scores toujours au maximum ou toujours nuls, et aux études. Le relevé plafonné suffit dans la grande majorité des cas.",
     factorsLead: "Quels facteurs comptez-vous en entier ? Plus il y en a, plus le relevé est long.",
     factorH: "Le facteur H n'est jamais compté en entier : c'est une classe, pas un comptage.",
     presetsTitle: "Préréglages",
     presets: {
       allFactors: "Tous les facteurs",
-      mature: "Peuplement mature",
       alwaysMax: "Scores toujours au maximum",
       minimum: "Scores minimum",
       custom: "Choisir moi-même",
     },
     presetCaptions: {
-      allFactors: "Tout compter, pour le détail ou la recherche.",
-      mature: "Pour un peuplement à forte maturité.",
-      alwaysMax: "Pour un peuplement dont certains scores sont toujours au maximum.",
+      allFactors: "Tout compter, pour des études ou des travaux de recherche.",
+      alwaysMax:
+        "Pour un peuplement dont certains scores sont toujours au maximum, par exemple une forêt à forte maturité.",
       minimum:
         "Pour un peuplement dont certains scores sont toujours nuls, comme une jeune plantation.",
       custom: "Vous choisissez les facteurs un par un.",
     },
-    // R-17: advice for the two presets that start from many factors.
+    // R-17: advice for the preset that starts from many factors.
     presetNote:
       "Pour les bois morts de dimension moyenne et les gros bois, gardez le plafond de 1 arbre par hectare, sauf besoin particulier.",
     atLeastOne: "Choisissez au moins un facteur.",

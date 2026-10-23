@@ -79,11 +79,11 @@ describe("initialChooseModel", () => {
     const preselect: RoutePick = {
       method: "full",
       counting: "uncapped",
-      uncapped_factors: [...UNCAPPED_PRESETS.mature],
+      uncapped_factors: [...UNCAPPED_PRESETS.always_max],
     }
     const model = initialChooseModel({ preselect, record: guideRecord, standHa: 3 })
     expect(model.method).toBe("full")
-    expect(model.preset).toBe("mature")
+    expect(model.preset).toBe("always_max")
   })
 
   test("starts on the recorded route in edit mode and keeps its suggestion and answers", () => {
@@ -241,7 +241,7 @@ describe("chooseReducer: the mode and the factors", () => {
 
   test("each preset sets the chips from the package", () => {
     const base = run(withMethod(), { type: "selectCounting", counting: "uncapped" })
-    for (const preset of ["mature", "always_max", "minimum", "all_factors"] as const) {
+    for (const preset of ["always_max", "minimum", "all_factors"] as const) {
       const model = run(base, { type: "selectPreset", preset })
       expect(model.preset).toBe(preset)
       expect(model.factors).toEqual(

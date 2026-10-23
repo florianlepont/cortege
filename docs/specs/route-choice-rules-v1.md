@@ -172,7 +172,7 @@ arrière ramène à la carte des parcelles sans rien écrire (point P-1, confirm
 
 **Deux choix qui ne sont pas des questions.**
 
-- Le relevé déplafonné : il se choisit à la main dans le sélecteur, par cinq préréglages et une
+- Le relevé déplafonné : il se choisit à la main dans le sélecteur, par quatre préréglages et une
   puce par facteur (décision O-01), jamais suggéré par l'assistant. L'assistant ne pose aucune
   question qui le justifierait.
 - Le peuplement linéaire (largeur inférieure à 15 m, haie, ripisylve) de la règle R-03 : aucune
@@ -263,7 +263,7 @@ et la raison du mode de relevé en dernier.
 | Id | Condition | Résultat | Source | Nature | Cas de test |
 |---|---|---|---|---|---|
 | R-16 | mode de relevé par défaut | `capped` pour les trois parcours (`full`, `partial_strip`, `partial_plot`) : l'assistant ne propose jamais le relevé déplafonné | M p. 5 (tableau 2) | T | `full` → `capped` ; `partial_strip` → `capped` ; `partial_plot` → `capped` |
-| R-17 | mode `uncapped` choisi à la main dans le sélecteur (décision O-01) | le relevé est déplafonné pour une liste de facteurs, jamais pour H ; préréglages : `all_factors` = A B C D E F G I J ; `mature` = A C D E F ; `always_max` = un sous-ensemble choisi de A C D E F I J (tous proposés au départ) ; `minimum` = C D E ; `custom` = au choix, au moins un facteur. Conseil pour `mature` et `always_max` : garder le plafond de 1 arbre par hectare pour les bois morts de dimension moyenne et les gros bois, sauf besoin particulier | M p. 23, p. 24 ; S p. 20, p. 21 (note 1) | T (les listes) ; les offrir en préréglages est J (décision O-01) | préréglage `mature` → [A,C,D,E,F] ; `minimum` → [C,D,E] ; `all_factors` → [A,B,C,D,E,F,G,I,J] ; `custom` sans aucun facteur → refusé (au moins un facteur) |
+| R-17 | mode `uncapped` choisi à la main dans le sélecteur (décision O-01) | le relevé est déplafonné pour une liste de facteurs, jamais pour H ; préréglages : `all_factors` = A B C D E F G I J ; `always_max` = un sous-ensemble choisi de A C D E F I J (tous proposés au départ) ; `minimum` = C D E ; `custom` = au choix, au moins un facteur. Conseil pour `always_max` : garder le plafond de 1 arbre par hectare pour les bois morts de dimension moyenne et les gros bois, sauf besoin particulier | M p. 23, p. 24 ; S p. 20, p. 21 (note 1) | T (les listes) ; les offrir en préréglages est J (décision O-01) | préréglage `always_max` → [A,C,D,E,F,I,J] ; `minimum` → [C,D,E] ; `all_factors` → [A,B,C,D,E,F,G,I,J] ; `custom` sans aucun facteur → refusé (au moins un facteur) |
 | R-18 | tout mode `uncapped` | conseil `uncapped_longer` : le relevé déplafonné demande plus de temps | S p. 19 ; M p. 17 | T | `uncapped` choisi dans le sélecteur → conseils contiennent `uncapped_longer` ; `full` et `capped` → absent |
 
 **Étape 4 : durée et conseils, information seule (jamais un changement de parcours)**
@@ -365,14 +365,13 @@ détail. Il se choisit à la main (décision O-01), jamais depuis une question.
 | `partial_plot` | `capped` | une seule fiche continue ; plusieurs placettes se somment (R-15) |
 
 **Les facteurs comptés en entier (R-17).** L'enregistrement porte la liste des facteurs du champ
-« Facteurs déplafonnés » de la fiche (S p. 20). Cinq préréglages sont proposés ; toucher un facteur
+« Facteurs déplafonnés » de la fiche (S p. 20). Quatre préréglages sont proposés, chacun avec son explication visible ; toucher un facteur
 bascule le préréglage sur `custom`.
 
 | Préréglage | Facteurs comptés en entier | Cas visé | Source |
 |---|---|---|---|
-| `all_factors` | A B C D E F G I J | tout compter, pour le détail ou la recherche | M p. 24 |
-| `mature` | A C D E F | peuplement à forte maturité | M p. 23 |
-| `always_max` | sous-ensemble choisi de A C D E F I J (tous proposés au départ) | peuplement dont certains scores sont toujours maximaux | M p. 23 |
+| `all_factors` | A B C D E F G I J | tout compter, pour des études ou des travaux de recherche | M p. 24 |
+| `always_max` | sous-ensemble choisi de A C D E F I J (tous proposés au départ) | peuplement dont certains scores sont toujours maximaux, par exemple une forêt à forte maturité (cas particulier du même cas : M p. 23, chapitre 8) | M p. 23 |
 | `minimum` | C D E | peuplement dont certains scores sont toujours nuls (jeune plantation, garrigue) | M p. 24 |
 | `custom` | au choix, au moins un facteur | tout autre besoin | S p. 21 (note 1) |
 
@@ -600,7 +599,7 @@ pour une replanification.
 
 | Id | Question | Défaut conseillé | Décision validée | Effet si différent |
 |---|---|---|---|---|
-| O-01 | Comptage par facteur ou un seul indicateur ? Offrir les préréglages ? (lié à U-O12) | enregistrer `counting` et `uncapped_factors` ; cinq préréglages (`all_factors`, `mature`, `always_max`, `minimum`, `custom`) et une puce par facteur ; le relevé déplafonné est un choix manuel, jamais suggéré | 2026-10-13, réponse en discussion : « Par facteur, avec préréglages » | un seul indicateur : `uncapped_factors` disparaît (enregistrement, règle R-17, sélecteur, écrans de facteurs) |
+| O-01 | Comptage par facteur ou un seul indicateur ? Offrir les préréglages ? (lié à U-O12) | enregistrer `counting` et `uncapped_factors` ; quatre préréglages (`all_factors`, `always_max`, `minimum`, `custom`) et une puce par facteur ; le relevé déplafonné est un choix manuel, jamais suggéré | 2026-10-13, réponse en discussion : « Par facteur, avec préréglages » | un seul indicateur : `uncapped_factors` disparaît (enregistrement, règle R-17, sélecteur, écrans de facteurs) |
 | O-02 | Où se place la limite de 10 à 20 ha, et comment l'hétérogénéité la déplace-t-elle ? | 10 ha pour un peuplement varié, 20 ha pour un peuplement homogène | 2026-10-13, réponse en discussion : « 10 ha varié / 20 ha homogène » | constantes `ROUTE_SUBDIVIDE_*` et cas de R-11 et R-11b |
 | O-03 | Au-dessus de la limite, quelle option est préselectionnée ? (lié à U-O5) | « Découper en sous-peuplements » préselectionnée et étiquetée « Conseillé » ; seule autre option : le parcours partiel | 2026-10-13, réponse en discussion : « Découper en sous-peuplements » | préselection de R-11b |
 | O-04 | L'expérience et le temps disponible changent-ils la proposition ? (lié à U-O4) | non : information seule (R-19 à R-21), jamais une règle | 2026-10-13, réponse en discussion : « Oui, ils déplacent la proposition » (temps et expérience, débutant x 2) ; puis 2026-10-14, réponse en discussion : « Retire ces critères de temps s'ils ne sont pas dans la méthode, ça devient une information ». Retenue : information seule, aucun coefficient | R-20 et R-21 deviendraient des règles de parcours (écarté) |
@@ -631,7 +630,7 @@ pour une replanification.
 | U-O9 | La ligne « Contexte » du résumé du relevé porte-t-elle l'étiquette courte du parcours ? | oui, tronquée sur une ligne (retrait peu coûteux) | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » (U-O9, U-O10, U-O11, U-O14) | résumé du relevé |
 | U-O10 | Détails de B et de F quand un facteur sort de la liste des facteurs comptés en entier : conservés et masqués, jamais lus par un calculateur ; la clé notée garde sa dernière valeur (section 7) | règle de la section 7 | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | si les détails comptent tant qu'ils sont présents : calculateurs et cas de parité `MAT-B-*` et `MAT-F-*` changés ; changement structurel |
 | U-O11 | Surface maximale acceptée et phrase d'erreur | 5000 ha ; « Cette surface semble trop grande. Vérifiez-la. » | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | constante `ROUTE_SURFACE_MAX_HA` |
-| U-O12 | Offrir les cinq préréglages et les puces par facteur (O-01) | oui | voir O-01 : « Par facteur, avec préréglages » (2026-10-13) | idem O-01 |
+| U-O12 | Offrir les préréglages et les puces par facteur (O-01) | oui | voir O-01 : « Par facteur, avec préréglages » (2026-10-13) | idem O-01 |
 | U-O13 | Relecture de chaque phrase française (questions, légendes, raisons, avertissements, conseils, glossaire, phrases des facteurs) | relecture avant la clôture ; la structure et le ton sont fixés | Défaut confirmé par le propriétaire le 2026-10-14 (point P-4) : relecture en fin de phase, avant le test avec des testeurs | calendrier de la relecture |
 | U-O14 | Les réponses partielles d'un assistant abandonné ne sont pas conservées | non conservées : l'enregistrement se fait une seule fois, à l'acceptation | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | questionnaire et écran |
 | U-O15 | Parcours en lecture seule sur le relevé d'un autre membre (O-15) | oui ; réutiliser les lignes de Contexte dans la page communautaire | voir O-15 : « Oui » (2026-10-13) | idem O-15 |
@@ -759,3 +758,12 @@ Le score ne dépend pas du parcours.
 **Ce qui ne change pas.** Section 7 (détails de B et F), constantes de partiel, règles de surface
 décrite, forme canonique de l'enregistrement. La section 13 reste vide : le propriétaire relit cette
 version et la valide par écrit plus tard.
+
+### 2026-10-23, relevé déplafonné réservé aux situations extrêmes, préréglage « mature » fusionné
+
+À la demande du propriétaire, après relecture du chapitre 8 du document de méthodes (« L'IBP ne permet pas de discriminer les peuplements dans certaines situations extrêmes », M p. 23 de l'édition 2025, p. 20 de l'édition 2022) :
+
+- Le sélecteur dit que le relevé déplafonné est réservé aux situations extrêmes et aux études, et que le relevé plafonné suffit dans la grande majorité des cas (S p. 18 : « seuls quelques cas particuliers »).
+- Le préréglage `mature` disparaît : le texte officiel dit que les peuplements matures sont un cas particulier des peuplements aux scores maximaux. `always_max` (A C D E F I J proposés au départ, à réduire) le couvre. Les préréglages sont quatre : `all_factors`, `always_max`, `minimum`, `custom`. L'enregistrement ne change pas (il ne garde que `counting` et `uncapped_factors`).
+- Chaque préréglage s'affiche comme une carte avec son explication visible, comme les parcours et les modes de relevé.
+

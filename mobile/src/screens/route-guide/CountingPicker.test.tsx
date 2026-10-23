@@ -129,10 +129,10 @@ describe("CountingPicker: déplafonné", () => {
   const uncapped = (extra: Partial<PickerProps> = {}) =>
     baseProps({ counting: "uncapped", factors: ["A", "C"], preset: "custom", ...extra })
 
-  test("shows the lead, the five presets and one chip per factor, never H", () => {
+  test("shows the lead, the four presets and one chip per factor, never H", () => {
     const { one, byId, texts } = mount(uncapped())
     expect(texts()).toContain(guide.counting.factorsLead)
-    expect(UNCAPPED_PRESET_IDS).toHaveLength(5)
+    expect(UNCAPPED_PRESET_IDS).toHaveLength(4)
     for (const id of UNCAPPED_PRESET_IDS) {
       expect(byId(`route-preset-${id}`)).toHaveLength(1)
       expect(texts()).toContain(UNCAPPED_PRESET_TEXT[id].name)
@@ -153,25 +153,27 @@ describe("CountingPicker: déplafonné", () => {
   test("marks the active preset and the selected factors", () => {
     const { one } = mount(uncapped({ preset: "minimum", factors: ["C", "D", "E"] }))
     expect(one("route-preset-minimum").props.accessibilityState).toMatchObject({ selected: true })
-    expect(one("route-preset-mature").props.accessibilityState).toMatchObject({ selected: false })
+    expect(one("route-preset-all_factors").props.accessibilityState).toMatchObject({
+      selected: false,
+    })
     expect(one("route-factor-C").props.accessibilityState).toMatchObject({ selected: true })
     expect(one("route-factor-A").props.accessibilityState).toMatchObject({ selected: false })
   })
 
   test("pressing a preset or a factor chip reports it (the active preset stays a no-op)", () => {
-    const props = uncapped({ preset: "mature" })
+    const props = uncapped({ preset: "always_max" })
     const { one } = mount(props)
     act(() => one("route-preset-minimum").props.onPress())
     expect(props.onSelectPreset).toHaveBeenCalledWith("minimum")
-    act(() => one("route-preset-mature").props.onPress())
+    act(() => one("route-preset-always_max").props.onPress())
     expect(props.onSelectPreset).toHaveBeenCalledTimes(1)
     act(() => one("route-factor-G").props.onPress())
     expect(props.onToggleFactor).toHaveBeenCalledWith("G")
   })
 
-  test("the long-count note shows under Peuplement mature and Scores toujours au maximum only", () => {
-    for (const preset of ["mature", "always_max"] as const) {
-      const { one } = mount(uncapped({ preset }))
+  test("the long-count note shows under Scores toujours au maximum only", () => {
+    {
+      const { one } = mount(uncapped({ preset: "always_max" }))
       expect(one("route-preset-note")).toBeDefined()
     }
     for (const preset of ["all_factors", "minimum", "custom"] as const) {
@@ -180,6 +182,24 @@ describe("CountingPicker: déplafonné", () => {
     const { texts } = mount(uncapped({ preset: "always_max" }))
     expect(texts()).toContain(guide.counting.presetNote)
     expect(texts()).toContain(guide.counting.presetCaptions.alwaysMax)
+  })
+
+  test("shows the explanation of every preset at once, not only the active one", () => {
+    const { texts } = mount(uncapped({ preset: "minimum", factors: ["C", "D", "E"] }))
+    expect(texts()).toEqual(
+      expect.arrayContaining([
+        guide.counting.presetCaptions.allFactors,
+        guide.counting.presetCaptions.alwaysMax,
+        guide.counting.presetCaptions.minimum,
+        guide.counting.presetCaptions.custom,
+      ]),
+    )
+  })
+
+  test("says the déplafonné mode is for extreme situations and studies, only in that mode", () => {
+    const { byId, texts } = mount(uncapped({ preset: "minimum", factors: ["C", "D", "E"] }))
+    expect(byId("route-counting-rare")).toHaveLength(1)
+    expect(texts()).toContain(guide.counting.rareNotice)
   })
 
   test("asks for at least one factor when none is left", () => {
