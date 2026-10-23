@@ -84,7 +84,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
 - [x] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10) (completed 2026-10-13; the Android phone pass is deferred to Phase 37)
 - [x] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list; completed 2026-10-13)
-- [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
+- [x] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand (completed 2026-10-23; criterion 4, the recorded tester test, is deferred to the field tests)
 - [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
 - [ ] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
 - [ ] **Phase 33: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners
@@ -1058,9 +1058,9 @@ Plans:
   1. The method's rules for choosing a route are written down and validated with the owner before any screen is built (a short spec in `docs/`).
   2. A guided flow suggests the route from the parcel's characteristics, and explains each choice in plain French.
   3. The route actually used is recorded with the survey and shown as text in the survey detail and the PDF (the display on the parcel map moves to Phase 31).
-  4. A tester who does not know the method completes the choice without help, in a recorded test.
+  4. A tester who does not know the method completes the choice without help, in a recorded test. *(Deferred to the field tests, owner decision 2026-10-23: the protocol is written and approved, the session needs testers who do not know the method.)*
 
-**Plans**: 23/25 plans executed
+**Plans**: 24/25 plans executed (30-24 owner wording review and device checks done 2026-10-23; 30-25, the recorded tester session, is deferred to the field tests by the owner because there is no tester before them: protocol, scenario sheets and empty report are ready in `docs/user-tests/route-choice-assistant.md`)
 
 - [x] 30-01-PLAN.md
 - [x] 30-02-PLAN.md
@@ -1085,8 +1085,8 @@ Plans:
 - [x] 30-21-PLAN.md
 - [x] 30-22-PLAN.md
 - [x] 30-23-PLAN.md
-- [ ] 30-24-PLAN.md
-- [ ] 30-25-PLAN.md
+- [x] 30-24-PLAN.md
+- [ ] 30-25-PLAN.md (deferred to the field tests, owner 2026-10-23)
 
 **UI hint**: yes
 

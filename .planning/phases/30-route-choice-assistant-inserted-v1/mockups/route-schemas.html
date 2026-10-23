@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schémas des parcours</title>
+<style>
+  :root { --forest:#334E2B; --moss:#89A33A; --sage:#B0C78E; --ground:#EDF1E6; --stand:#DDE6D0; --ink:#1F3319; --muted:#6B7A63; }
+  body { margin:0; padding:24px 16px; background:#F6F7F2; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; gap:16px; justify-content:center; }
+  .sheet { width:340px; background:var(--ground); border-radius:22px; padding:18px 18px 22px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+  h2 { margin:0 0 10px; font-size:22px; color:var(--forest); }
+  p { margin:10px 0 0; font-size:14px; line-height:1.4; }
+  svg { display:block; width:100%; height:auto; border-radius:14px; background:#F6F7F2; }
+  .cap { font-size:12px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="row">
+
+  <div class="sheet">
+    <h2>Parcours en plein</h2>
+    <svg viewBox="0 0 300 190" role="img" aria-label="Un point parcourt tout le peuplement par bandes régulières">
+      <rect x="30" y="20" width="240" height="150" rx="10" fill="var(--stand)" stroke="var(--sage)" stroke-width="2"/>
+      <!-- regular strips, boustrophedon -->
+      <path d="M48 38 H252 V62 H48 V86 H252 V110 H48 V134 H252 V158 H48" fill="none" stroke="var(--moss)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="48" cy="38" r="6" fill="var(--forest)"/>
+      <circle cx="180" cy="110" r="7" fill="var(--forest)" stroke="#fff" stroke-width="2"/>
+    </svg>
+    <div class="cap">Image finale. Animé : le trait se dessine par bandes, le point avance.</div>
+    <p>Vous marchez dans tout le peuplement, par bandes régulières, et vous notez tout ce que vous voyez.</p>
+  </div>
+
+  <div class="sheet">
+    <h2>Parcours partiel par bande</h2>
+    <svg viewBox="0 0 300 190" role="img" aria-label="Un point suit une seule large bande du peuplement">
+      <rect x="30" y="20" width="240" height="150" rx="10" fill="var(--stand)" stroke="var(--sage)" stroke-width="2"/>
+      <!-- the strip -->
+      <rect x="30" y="68" width="240" height="46" fill="var(--moss)" opacity=".35"/>
+      <rect x="30" y="68" width="240" height="46" fill="none" stroke="var(--moss)" stroke-width="2" stroke-dasharray="5 4"/>
+      <line x1="44" y1="91" x2="256" y2="91" stroke="var(--forest)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="44" cy="91" r="6" fill="var(--forest)"/>
+      <circle cx="170" cy="91" r="7" fill="var(--forest)" stroke="#fff" stroke-width="2"/>
+      <!-- width mark -->
+      <line x1="286" y1="68" x2="286" y2="114" stroke="var(--muted)" stroke-width="1.5"/>
+      <text x="292" y="94" font-size="11" fill="var(--muted)" transform="rotate(90 292 94)" text-anchor="middle">20 à 50 m</text>
+      <!-- the rest, a quick glance -->
+      <text x="150" y="150" font-size="11" fill="var(--muted)" text-anchor="middle">coup d'œil rapide au reste</text>
+    </svg>
+    <div class="cap">Image finale. Animé : le point suit la bande d'un bout à l'autre.</div>
+    <p>Vous ne décrivez qu'une partie du peuplement, en suivant à pied une allée de 20 à 50 mètres de large.</p>
+  </div>
+
+  <div class="sheet">
+    <h2>Parcours partiel par placette</h2>
+    <svg viewBox="0 0 300 190" role="img" aria-label="Un cercle d'un hectare est relevé au milieu du peuplement">
+      <rect x="30" y="20" width="240" height="150" rx="10" fill="var(--stand)" stroke="var(--sage)" stroke-width="2"/>
+      <circle cx="150" cy="95" r="52" fill="var(--moss)" opacity=".35"/>
+      <circle cx="150" cy="95" r="52" fill="none" stroke="var(--moss)" stroke-width="2" stroke-dasharray="5 4"/>
+      <line x1="150" y1="95" x2="202" y2="95" stroke="var(--forest)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="150" cy="95" r="5" fill="var(--forest)"/>
+      <text x="176" y="88" font-size="11" fill="var(--forest)" text-anchor="middle">R = 56,4 m</text>
+      <text x="150" y="168" font-size="11" fill="var(--muted)" text-anchor="middle">1 ha = un cercle de 56,4 m de rayon</text>
+    </svg>
+    <div class="cap">Image finale. Animé : le cercle se dessine autour du centre, puis pulse doucement.</div>
+    <p>Vous relevez tout dans une surface de forme simple et de taille connue, un cercle par exemple.</p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
-status: executing
-stopped_at: "Phase 30: waves 1 to 11 done (23/25 plans); remaining: 30-24 (device checks and owner wording review), 30-25 (recorded tester session)"
-last_updated: "2026-10-14T08:00:00.000Z"
-last_activity: 2026-10-14
-last_activity_desc: Phase 30 spec validated by the owner (gate 30-02 passed); phase 29 merged into the branch
+status: complete
+stopped_at: "Phase 30 complete (24/25 plans); 30-25, the recorded tester session, is deferred to the field tests (owner, 2026-10-23)"
+last_updated: "2026-10-23T20:00:00.000Z"
+last_activity: 2026-10-23
+last_activity_desc: Phase 30 closed after the owner checks on the iPhone; PRs 299, 307, 308 and 309 merged
 progress:
   total_phases: 39
-  completed_phases: 21
+  completed_phases: 22
   total_plans: 220
-  completed_plans: 295
+  completed_plans: 296
   percent: 46
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 30 — Route Choice Assistant (INSERTED, V1)
+**Current focus:** Phase 30 closed (Route Choice Assistant, INSERTED, V1); next: Phase 31 (Parcel Annotation & Remarkable Elements)
 
 ## Current Position
 
-Phase: 30 (Route Choice Assistant (INSERTED, V1)) — EXECUTING
-Plan: 2 of 25
-Status: Executing Phase 30 (gate 30-02 passed; next wave 3)
-Last activity: 2026-10-14 — owner validated the route-choice spec
+Phase: 30 (Route Choice Assistant (INSERTED, V1)) — COMPLETE
+Plan: 24 of 25 (30-25, the recorded tester session, is deferred to the field tests)
+Status: Phase 30 closed 2026-10-23; criterion 4 and REQ-FT-route-test wait for the field tests
+Last activity: 2026-10-23 — owner device checks on the iPhone, wording approved, PR 309 merged
 
-Progress: [█████████░] 29/39 phases complete
+Progress: [█████████░] 30/39 phases complete
 
 ## Performance Metrics
 
@@ -282,5 +282,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-13T17:49:24.125Z
-Stopped at: Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)
-Resume file: .planning/phases/30-route-choice-assistant-inserted-v1/30-01-PLAN.md
+Stopped at: Phase 30 complete (24/25 plans); the recorded tester session (30-25) is deferred to the field tests
+Resume file: docs/user-tests/route-choice-assistant.md

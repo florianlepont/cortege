@@ -238,12 +238,12 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 
 ---
 
-- [ ] **REQ-DOC-route-rules** — The CNPF rules for choosing the survey route and the counting mode are written in a French spec (`docs/specs/route-choice-rules-v1.md`), each rule citing its CNPF page with one test case, and validated by the owner in writing before any screen is built. *(New — Phase 30, seminar card "Aide au choix du parcours")*
-- [ ] **REQ-C-route-guide** — A skippable step in survey creation, after the parcel choice, suggests the route and the counting mode from the parcel and the observer's answers and explains each choice in plain French; the observer can change it or choose directly; it works offline. *(New — Phase 30)*
-- [ ] **REQ-C-route-record** — The route used (method, counting mode and lifted factors, evaluated surface, complement in the non-sampled zone, group name, the reasons) is stored with the survey, syncs, is draft-only to edit and read-only after submit. *(New — Phase 30, card "Parcours utilisé"; the map display is Phase 31)*
-- [ ] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
-- [ ] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
-- [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4)*
+- [x] **REQ-DOC-route-rules** — The CNPF rules for choosing the survey route and the counting mode are written in a French spec (`docs/specs/route-choice-rules-v1.md`), each rule citing its CNPF page with one test case, and validated by the owner in writing before any screen is built. *(New — Phase 30, seminar card "Aide au choix du parcours")*
+- [x] **REQ-C-route-guide** — A mandatory step in survey creation (one question per screen, with a quick path "Je connais déjà mon parcours"), after the parcel choice, suggests the route and the counting mode from the parcel and the observer's answers and explains each choice in plain French; the observer can change it or choose directly; it works offline. *(New — Phase 30)*
+- [x] **REQ-C-route-record** — The route used (parcours, counting mode and factors counted in full, surface described, complement in the non-sampled zone, the reasons; no group name since the group of plots is out of scope) is stored with the survey, syncs, is draft-only to edit and read-only after submit. *(New — Phase 30, card "Parcours utilisé"; the map display is Phase 31)*
+- [x] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
+- [x] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
+- [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4. Deferred to the field tests by the owner on 2026-10-23: the protocol and the scenario sheets are ready, no tester is available before them.)*
 
 ## Traceability
 
@@ -295,6 +295,12 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-D-offline-layers | New | Phase 28 | Build |
 | REQ-D-offline-percent | New | Phase 28 | Build |
 | REQ-C-privacy-choice | New | Phase 29 | Build |
+| REQ-DOC-route-rules | New | Phase 30 | Build |
+| REQ-C-route-guide | New | Phase 30 | Build |
+| REQ-C-route-record | New | Phase 30 | Build |
+| REQ-C-route-display | New | Phase 30 | Build |
+| REQ-C-uncapped-entry | New | Phase 30 | Build |
+| REQ-FT-route-test | New | Phase 30 | Verify (deferred to the field tests) |
 | REQ-C-pdf-export | New | Phase 19 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |
