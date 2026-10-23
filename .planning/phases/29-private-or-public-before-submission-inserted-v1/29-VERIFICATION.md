@@ -2,7 +2,7 @@
 phase: 29-private-or-public-before-submission-inserted-v1
 verified: 2026-10-13T00:00:00Z
 status: passed
-score: 20/20 must-haves verified (3 success criteria, 17 decisions); device checks DV-29-01 to DV-29-04 approved by the owner, DV-29-05 (Android) moved to Phase 35
+score: 20/20 must-haves verified (3 success criteria, 17 decisions); device checks DV-29-01 to DV-29-04 approved by the owner, DV-29-05 (Android) moved to Phase 37
 behavior_unverified: 0
 overrides_applied: 0
 gaps: []
@@ -46,7 +46,7 @@ Verified from the code, not from the SUMMARY files. Tests run by the verifier: A
 
 | D | Decision | Status | Evidence |
 |---|----------|--------|----------|
-| D-01 | Depends on Phase 11 not 36 | VERIFIED (tracking pending) | ROADMAP Phase 29 block already reads "Depends on: Phase 11 ... Not Phase 36". The exact wording and the progress rows are plan 29-10 Task 4, intentionally pending. |
+| D-01 | Depends on Phase 11 not 36 | VERIFIED (tracking pending) | ROADMAP Phase 29 block already reads "Depends on: Phase 11 ... Not Phase 38". The exact wording and the progress rows are plan 29-10 Task 4, intentionally pending. |
 | D-02 | Two values, UI never says "public"; labels Privé and Partagé avec l'association with one line each | VERIFIED | `survey-finish.ts:12-20`; only mapper of the wire value is `app/visibility-display.ts`; no globe glyph (`people-outline` / `lock-closed-outline`); `catalogue-additions-29.test.ts` and the `__checks__` gates pass. |
 | D-03 | Names stay `visibility`, column not renamed | VERIFIED | No rename in migration 024 or contract (`packages/ibp-domain/src/contract/survey.ts` only re-documents `SurveyVisibility`). |
 | D-04 | Selector in the submission step, shared pre-selected | VERIFIED | `FinishSheetRoute`/`FinishSheet`; `useFinishSheet.ts:62-64` opens on shared unless the draft is private; `createLocalDraft` now stores `public` (`storage/surveys.ts:50,97`); `finishSheetScreenOptions` native form sheet (`stack-options.ts`), registered in `SurveysStack.tsx`. |
@@ -122,7 +122,7 @@ Intentionally pending (plan 29-10 Task 3, owner device checks; Task 4 tracking f
 
 - DV-29-01 to DV-29-03: approved by the owner on 2026-10-13, one global approval without per-check detail.
 - DV-29-04: validated by the owner on the production server on 2026-10-14 (production runs the merge commit `647699d9`, migration 024 included).
-- DV-29-05 (Android emulator, optional): not run, reported to Phase 35 with the Android phone pass.
+- DV-29-05 (Android emulator, optional): not run, reported to Phase 37 with the Android phone pass.
 - Follow-up #301 (2026-10-14): a draft no longer shows a visibility line (draft strings removed from the catalogue), so the draft wording named in item 3 above no longer exists; a finished survey keeps its line.
 
 ## Gaps Summary
