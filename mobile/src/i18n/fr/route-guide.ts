@@ -358,7 +358,6 @@ export const routeGuideFr = {
     title: "Choisir le parcours",
     // The header of a draft that already has a route (Contexte, "Modifier le parcours").
     titleEdit: "Modifier le parcours",
-    lead: "Choisissez le parcours, le mode de relevé et la surface que vous décrivez. Vous pourrez le modifier depuis Parcelles tant que le relevé est un brouillon.",
     cancel: "Annuler",
     parcours: "Parcours",
     counting: "Mode de relevé",

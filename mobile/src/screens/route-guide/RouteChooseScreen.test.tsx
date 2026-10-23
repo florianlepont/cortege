@@ -139,7 +139,7 @@ describe("RouteChooseScreen: content", () => {
   test("shows the lead, the three parcours with their words, the mode and the glossary", () => {
     const { one, byId, texts } = mount({ standHa: 8 })
     expect(one("route-choose-screen")).toBeDefined()
-    expect(texts()).toContain(guide.chooser.lead)
+    expect(texts()).not.toContain("Choisissez le parcours, le mode de relevé")
     expect(texts()).toContain("Parcours")
     for (const method of ROUTE_METHODS) {
       expect(byId(`route-parcours-${method}`)).toHaveLength(1)
@@ -306,12 +306,12 @@ describe("RouteChooseScreen: footer, link and sections", () => {
     const edit = mount({ standHa: 8 }, { mode: "edit" })
     expect(edit.texts()).toContain("Pas sûr ?")
     expect(edit.texts()).toContain("Être conseillé")
-    // One line at the top of the scroll content: under the intro, above the Parcours cards.
+    // One line at the top of the scroll content, above the Parcours cards.
     const scroll = edit.one("route-choose-scroll")
     const order = scroll.children.map((child) =>
       typeof child === "string" ? child : (child.props.testID as string | undefined),
     )
-    expect(order.indexOf("route-advise-line")).toBe(1)
+    expect(order.indexOf("route-advise-line")).toBe(0)
     expect(edit.one("route-advise-link").props.accessibilityRole).toBe("button")
     expect(
       edit.byId("route-advise-line")[0].findAll((n) => n.props.testID === "route-advise-link"),
@@ -331,6 +331,44 @@ describe("RouteChooseScreen: footer, link and sections", () => {
     expect(scrollTo).toHaveBeenCalledWith({ y: 420, animated: false })
     act(() => sections[0].props.onLayout({ nativeEvent: { layout: { y: 430 } } }))
     expect(scrollTo).toHaveBeenCalledTimes(1)
+  })
+
+  test("choosing the déplafonné mode scrolls to the mode de relevé once the part has appeared", () => {
+    jest.useFakeTimers()
+    try {
+      const { tree, press, scrollTo } = mount({ standHa: 8 })
+      const sections = tree.root.findAll(
+        (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
+      )
+      act(() => sections[0].props.onLayout({ nativeEvent: { layout: { y: 420 } } }))
+      press("route-counting-capped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).not.toHaveBeenCalled()
+      press("route-counting-uncapped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).toHaveBeenCalledWith({ y: 420, animated: true })
+      expect(scrollTo).toHaveBeenCalledTimes(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test("does not scroll when the déplafonné mode opens before the layout is known", () => {
+    jest.useFakeTimers()
+    try {
+      const { press, scrollTo } = mount({ standHa: 8 })
+      press("route-counting-uncapped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).not.toHaveBeenCalled()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   test("does not scroll by itself without the section", () => {
