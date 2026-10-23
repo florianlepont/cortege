@@ -33,12 +33,17 @@ export const QuestionCard = memo(function QuestionCard({ question, actions }: Qu
   const styles = useMemo(() => createStyles(theme), [theme])
 
   const title = questionTitle(question)
+  const infoParts = questionInfoParts(question)
   return (
     <View style={styles.card} testID={`route-question-${question.id}`}>
       <WizardHeading
         title={title}
         lead={questionWhy(question)}
-        trailing={<QuestionInfo question={question} title={title} />}
+        trailing={
+          infoParts.length > 0 ? (
+            <QuestionInfo parts={infoParts} title={title} id={question.id} />
+          ) : undefined
+        }
       />
       {question.id === "surface" ? (
         <View style={styles.answer}>
@@ -83,20 +88,25 @@ export const QuestionCard = memo(function QuestionCard({ question, actions }: Qu
 })
 
 /**
- * The one information sheet of a question (simplified 2026-10-14): its short helper sentence and,
- * for the surface, what an hectare is and the limit on hedges and tree lines. Opened by the glyph
- * beside the title, so the card itself shows only the question and its answer.
+ * What the information glyph of a question adds to the sentence already under its title (owner
+ * check, Phase 30: the sheet repeated that sentence). Only the surface has more to say: what an
+ * hectare is, the limit on hedges and tree lines, and how the estimate was made. The other
+ * questions show no glyph.
  */
-function QuestionInfo({ question, title }: { question: OpenQuestion; title: string }) {
+function questionInfoParts(question: OpenQuestion): string[] {
+  if (question.id !== "surface") return []
+  const texts = fr.routeGuide.questions.surface
+  const parts: string[] = []
+  if (!question.subStand && question.estimated) parts.push(texts.estimated)
+  parts.push(texts.aid, texts.linearHelp)
+  return parts
+}
+
+/** The information sheet of a question: the glyph beside the title and what it opens. */
+function QuestionInfo({ parts, title, id }: { parts: string[]; title: string; id: string }) {
   const theme = useBrandTheme()
   const [open, setOpen] = useState(false)
   const slop = (brandInteraction.hitTarget.min - ABBREVIATION_INFO_ICON_SIZE) / 2
-  const texts = fr.routeGuide.questions.surface
-  const parts = [questionWhy(question)]
-  if (question.id === "surface") {
-    if (!question.subStand && question.estimated) parts.push(texts.estimated)
-    parts.push(texts.aid, texts.linearHelp)
-  }
 
   return (
     <>
@@ -104,7 +114,7 @@ function QuestionInfo({ question, title }: { question: OpenQuestion; title: stri
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={fr.routeGuide.a11y.questionInfo(title)}
-        testID={`route-question-info-${question.id}`}
+        testID={`route-question-info-${id}`}
         disableScale
         hitSlop={{ top: slop, bottom: slop, left: slop, right: slop }}
       >

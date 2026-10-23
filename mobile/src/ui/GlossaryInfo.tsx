@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons"
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { brandInteraction } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
@@ -18,6 +18,8 @@ export type GlossaryInfoProps = {
   color?: string
   /** Replaces the term's sentence in the sheet (a parcours card shows its full explanation there). */
   text?: string
+  /** A drawing shown above the sentence in the sheet (the schema of a parcours). */
+  illustration?: ReactNode
   testID?: string
 }
 
@@ -28,7 +30,7 @@ export type GlossaryInfoProps = {
  * `fr.routeGuide.glossary.terms`. Same glyph size and hit slop as `AbbreviationInfo`. The sheet is
  * mounted only while open.
  */
-export function GlossaryInfo({ term, color, text, testID }: GlossaryInfoProps) {
+export function GlossaryInfo({ term, color, text, illustration, testID }: GlossaryInfoProps) {
   const theme = useBrandTheme()
   const [open, setOpen] = useState(false)
   const entry = fr.routeGuide.glossary.terms[term]
@@ -54,6 +56,7 @@ export function GlossaryInfo({ term, color, text, testID }: GlossaryInfoProps) {
         open={open}
         title={entry.term}
         body={text ?? entry.text}
+        illustration={illustration}
         closeLabel={fr.routeGuide.glossary.close}
         onClose={() => setOpen(false)}
       />

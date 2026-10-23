@@ -130,13 +130,21 @@ describe("QuestionStep: one question a screen", () => {
     )
     expect(byId("route-question-info-homogeneity")).toHaveLength(0)
     press("route-question-info-surface")
+    // The sentence under the title is not repeated in the sheet.
     const body = [
-      guide.questions.surface.why,
       guide.questions.surface.estimated,
       guide.questions.surface.aid,
       guide.questions.surface.linearHelp,
     ].join("\n\n")
     expect(texts()).toContain(body)
+  })
+
+  it("the other questions have no information glyph: their helper is already under the title", () => {
+    const { next, byId } = mount(2.4)
+    next()
+    expect(byId("route-question-homogeneity")).toHaveLength(1)
+    expect(byId("route-question-info-homogeneity")).toHaveLength(0)
+    expect(byId("route-question-info-surface")).toHaveLength(0)
   })
 
   it("opens empty with its explanation when no surface could be estimated", () => {
@@ -316,11 +324,7 @@ describe("QuestionStep: answering and moving", () => {
     expect(texts()).toContain(guide.questions.surface.subStand)
     press("route-question-info-surface")
     expect(texts()).toContain(
-      [
-        guide.questions.surface.subStandWhy,
-        guide.questions.surface.aid,
-        guide.questions.surface.linearHelp,
-      ].join("\n\n"),
+      [guide.questions.surface.aid, guide.questions.surface.linearHelp].join("\n\n"),
     )
     expect(one("route-surface-field").props.value).toBe("")
   })

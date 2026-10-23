@@ -78,13 +78,7 @@ describe("route guide constants (spec section 5, validated 2026-10-14)", () => {
       "partial_below_minimum",
       "complement_below_zone",
     ])
-    expect(UNCAPPED_PRESET_IDS).toEqual([
-      "all_factors",
-      "mature",
-      "always_max",
-      "minimum",
-      "custom",
-    ])
+    expect(UNCAPPED_PRESET_IDS).toEqual(["all_factors", "always_max", "minimum", "custom"])
   })
 
   it("creates no code for a linear stand (O-10) and none for a purpose or a systematic group", () => {
@@ -116,7 +110,6 @@ describe("defaultCountingFor (R-16)", () => {
 describe("uncapped presets (R-17)", () => {
   it("lists the factors of each preset", () => {
     expect(UNCAPPED_PRESETS.all_factors).toEqual(["A", "B", "C", "D", "E", "F", "G", "I", "J"])
-    expect(UNCAPPED_PRESETS.mature).toEqual(["A", "C", "D", "E", "F"])
     expect(UNCAPPED_PRESETS.always_max).toEqual(["A", "C", "D", "E", "F", "I", "J"])
     expect(UNCAPPED_PRESETS.minimum).toEqual(["C", "D", "E"])
     expect(UNCAPPED_PRESETS.custom).toEqual([])
@@ -132,11 +125,11 @@ describe("uncapped presets (R-17)", () => {
   })
 
   it("returns a sorted copy that does not alias the preset", () => {
-    const mature = uncappedFactorsForPreset("mature")
-    expect(mature).toEqual(["A", "C", "D", "E", "F"])
-    expect(mature).not.toBe(UNCAPPED_PRESETS.mature)
-    mature.push("J")
-    expect(UNCAPPED_PRESETS.mature).toEqual(["A", "C", "D", "E", "F"])
+    const minimum = uncappedFactorsForPreset("minimum")
+    expect(minimum).toEqual(["C", "D", "E"])
+    expect(minimum).not.toBe(UNCAPPED_PRESETS.minimum)
+    minimum.push("J")
+    expect(UNCAPPED_PRESETS.minimum).toEqual(["C", "D", "E"])
     expect(uncappedFactorsForPreset("custom")).toEqual([])
   })
 

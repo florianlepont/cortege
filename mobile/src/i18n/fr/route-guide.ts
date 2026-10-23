@@ -41,7 +41,7 @@ const TERM = {
   },
   releveDeplafonne: {
     term: "Relevé déplafonné",
-    text: "On compte tout, sans s'arrêter, pour les facteurs choisis. C'est plus long, mais cela donne le détail.",
+    text: "On compte tout, sans s'arrêter, pour les facteurs choisis. C'est plus long, mais cela donne le détail. Réservé aux situations extrêmes et aux études.",
   },
   surfaceDecrite: {
     term: "Surface décrite",
@@ -231,25 +231,26 @@ export const routeGuideFr = {
       short: "On compte tout, facteur par facteur.",
       explanation: TERM.releveDeplafonne.text,
     },
+    // M chapter 8: the déplafonné mode answers "certaines situations extrêmes" and the studies.
+    rareNotice:
+      "Le relevé déplafonné est réservé aux situations extrêmes, par exemple des scores toujours au maximum ou toujours nuls, et aux études. Le relevé plafonné suffit dans la grande majorité des cas.",
     factorsLead: "Quels facteurs comptez-vous en entier ? Plus il y en a, plus le relevé est long.",
-    factorH: "Le facteur H n'est jamais compté en entier : c'est une classe, pas un comptage.",
     presetsTitle: "Préréglages",
     presets: {
       allFactors: "Tous les facteurs",
-      mature: "Peuplement mature",
       alwaysMax: "Scores toujours au maximum",
       minimum: "Scores minimum",
       custom: "Choisir moi-même",
     },
     presetCaptions: {
-      allFactors: "Tout compter, pour le détail ou la recherche.",
-      mature: "Pour un peuplement à forte maturité.",
-      alwaysMax: "Pour un peuplement dont certains scores sont toujours au maximum.",
+      allFactors: "Tout compter, pour des études ou des travaux de recherche.",
+      alwaysMax:
+        "Pour un peuplement dont certains scores sont toujours au maximum, par exemple une forêt à forte maturité.",
       minimum:
         "Pour un peuplement dont certains scores sont toujours nuls, comme une jeune plantation.",
       custom: "Vous choisissez les facteurs un par un.",
     },
-    // R-17: advice for the two presets that start from many factors.
+    // R-17: advice for the preset that starts from many factors.
     presetNote:
       "Pour les bois morts de dimension moyenne et les gros bois, gardez le plafond de 1 arbre par hectare, sauf besoin particulier.",
     atLeastOne: "Choisissez au moins un facteur.",
@@ -312,7 +313,7 @@ export const routeGuideFr = {
   // Advice is information, never a rule (R-18 to R-21, O-04).
   advice: {
     duration: ({ range }: { range: string }) =>
-      `Pour cette surface, comptez ${range} pour une personne habituée à l'IBP.`,
+      `Pour cette surface : ${range}, repère officiel pour une personne habituée à l'IBP.`,
     // Wording of the duration range (S p. 19; M p. 17): minutes below two hours, then hours rounded
     // to the half hour. `app/route-text.ts` computes the numbers, the words stay here.
     durationUnderMinute: "moins d'une minute",
@@ -357,7 +358,6 @@ export const routeGuideFr = {
     title: "Choisir le parcours",
     // The header of a draft that already has a route (Contexte, "Modifier le parcours").
     titleEdit: "Modifier le parcours",
-    lead: "Choisissez le parcours, le mode de relevé et la surface que vous décrivez. Vous pourrez le modifier depuis Parcelles tant que le relevé est un brouillon.",
     cancel: "Annuler",
     parcours: "Parcours",
     counting: "Mode de relevé",
@@ -369,6 +369,17 @@ export const routeGuideFr = {
     // Read by a screen reader on the disabled button of the chooser: its name, then why.
     useDisabledA11y:
       "Utiliser ce parcours. Choisissez d'abord un parcours et vérifiez les détails.",
+  },
+  // The small drawings of the parcours in their explanation sheet (owner request, Phase 30).
+  schema: {
+    stripWidth: "20 à 50 m",
+    plotArea: "1 ha",
+    restGlance: "Coup d'œil rapide au reste",
+    a11y: {
+      full: "Schéma : un point parcourt tout le peuplement par bandes régulières.",
+      partialStrip: "Schéma : un point suit une seule large bande du peuplement.",
+      partialPlot: "Schéma : un cercle se dessine au milieu du peuplement, c'est la placette.",
+    },
   },
   glossary: {
     close: "Fermer",

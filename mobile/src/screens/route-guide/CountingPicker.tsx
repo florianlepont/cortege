@@ -95,23 +95,40 @@ export function CountingPicker({
           style={styles.factors}
           testID="route-counting-factors"
         >
+          <View testID="route-counting-rare">
+            <AppNotice
+              tone="info"
+              icon="information-circle-outline"
+              message={counting.rareNotice}
+            />
+          </View>
           <Text style={styles.lead}>{counting.factorsLead}</Text>
           <Text style={styles.label} accessibilityRole="header">
             {counting.presetsTitle}
           </Text>
-          <View style={styles.chips} accessibilityRole="radiogroup">
-            {UNCAPPED_PRESET_IDS.map((id) => (
-              <AppChoiceChip
-                key={id}
-                label={UNCAPPED_PRESET_TEXT[id].name}
-                active={preset === id}
-                accessibilityRole="radio"
-                onPress={() => onSelectPreset(id)}
-                testID={`route-preset-${id}`}
-              />
-            ))}
+          <View style={styles.cards} accessibilityRole="radiogroup">
+            {UNCAPPED_PRESET_IDS.map((id) => {
+              const text = UNCAPPED_PRESET_TEXT[id]
+              return (
+                <RadioCard
+                  key={id}
+                  selected={preset === id}
+                  onPress={() => {
+                    if (preset === id) return
+                    feedback.selection()
+                    onSelectPreset(id)
+                  }}
+                  title={text.name}
+                  caption={text.caption}
+                  accessibilityLabel={guide.a11y.optionLabel({
+                    label: text.name,
+                    caption: text.caption,
+                  })}
+                  testID={`route-preset-${id}`}
+                />
+              )
+            })}
           </View>
-          <Text style={styles.helper}>{presetText.caption}</Text>
           {presetText.note ? (
             <Text style={styles.helper} testID="route-preset-note">
               {presetText.note}
@@ -134,7 +151,6 @@ export function CountingPicker({
               )
             })}
           </View>
-          <Text style={styles.helper}>{counting.factorH}</Text>
           {factorsMissing ? (
             <View accessibilityLiveRegion="polite" testID="route-factors-missing">
               <AppNotice tone="warning" icon="alert-circle-outline" message={counting.atLeastOne} />

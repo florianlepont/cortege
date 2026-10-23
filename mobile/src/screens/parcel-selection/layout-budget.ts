@@ -22,6 +22,16 @@ export const PARCEL_CARD = {
   buttonHeight: brandComponentTokens.button.minHeightLarge,
 } as const
 
+/**
+ * The row is always as tall as the no-parcel row (title, two help lines): the card keeps one size
+ * whether or not a parcel is chosen, so it does not jump when the first parcel is touched (owner
+ * check, Phase 30, 2026-10-23).
+ */
+export const PARCEL_CARD_ROW_HEIGHT = Math.max(
+  PARCEL_CARD.buttonHeight,
+  PARCEL_CARD.titleLineHeight + PARCEL_CARD.metaMaxLines * PARCEL_CARD.metaLineHeight,
+)
+
 /** The map controls row above the card: the 44 pt control and the 12 pt gap above the card. */
 export const MAP_CONTROLS_ROW = brandInteraction.hitTarget.min + brandSpacing4.smd
 
@@ -47,11 +57,9 @@ export const PARCEL_BUDGET_DEVICES: readonly ParcelBudgetDevice[] = [
   { name: "iPhone 393 x 852", height: 852, mapAreaHeight: 852, bottomInset: 96 },
 ]
 
-/** The card: padding, then the taller of the copy and the button. */
-export function parcelCardHeight(hasSelection: boolean): number {
-  const c = PARCEL_CARD
-  const copy = c.titleLineHeight + (hasSelection ? 0 : c.metaMaxLines * c.metaLineHeight)
-  return 2 * c.padding + Math.max(c.buttonHeight, copy)
+/** The card: padding around the one fixed row, with or without a parcel. */
+export function parcelCardHeight(): number {
+  return 2 * PARCEL_CARD.padding + PARCEL_CARD_ROW_HEIGHT
 }
 
 /** The share of the map area left once the card, its bottom inset and the controls row are drawn. */

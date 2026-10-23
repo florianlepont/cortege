@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { ScrollView, StyleSheet, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { ROUTE_METHODS } from "@cortege/ibp-domain"
@@ -18,6 +18,7 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
+import { RouteSchema } from "./RouteSchema"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
 import { CountingPicker } from "./CountingPicker"
@@ -84,6 +85,21 @@ export function RouteChooseScreen({
     scrollRef.current?.scrollTo({ y: countingTop.current, animated: false })
   }
 
+  // Choosing "Relevé déplafonné" opens the presets and the factors under the two cards: the sheet
+  // scrolls to the mode de relevé so the part that just appeared is on screen (owner check).
+  const previousCounting = useRef(view.counting)
+  useEffect(() => {
+    const opened = previousCounting.current !== "uncapped" && view.counting === "uncapped"
+    previousCounting.current = view.counting
+    if (!opened) return undefined
+    const timer = setTimeout(() => {
+      if (countingTop.current !== null) {
+        scrollRef.current?.scrollTo({ y: countingTop.current, animated: true })
+      }
+    }, 80)
+    return () => clearTimeout(timer)
+  }, [view.counting])
+
   return (
     <View style={styles.root} collapsable={false} testID="route-choose-screen">
       {/*
@@ -108,8 +124,6 @@ export function RouteChooseScreen({
         automaticallyAdjustKeyboardInsets
         testID="route-choose-scroll"
       >
-        <Text style={styles.lead}>{chooser.lead}</Text>
-
         {mode === "edit" ? (
           <View style={styles.adviseLine} testID="route-advise-line">
             <Text style={styles.adviseLead}>{chooser.adviseLead}</Text>
@@ -144,7 +158,11 @@ export function RouteChooseScreen({
                   caption={caption}
                   tag={tag}
                   trailing={
-                    <GlossaryInfo term={METHOD_TERM[method]} text={routeSheetText(method)} />
+                    <GlossaryInfo
+                      term={METHOD_TERM[method]}
+                      text={routeSheetText(method)}
+                      illustration={<RouteSchema method={method} />}
+                    />
                   }
                   accessibilityLabel={
                     tag
@@ -157,6 +175,19 @@ export function RouteChooseScreen({
             })}
           </View>
         </View>
+
+        {view.method === null || (view.method === "full" && view.standHa !== null) ? null : (
+          // Right under the parcours it belongs to, before the mode de relevé. A full parcours
+          // with a known stand surface has nothing to type, so it shows no card (owner check).
+          <RouteDetailsCard
+            method={view.method}
+            counting={view.counting}
+            uncappedFactors={view.factors}
+            standHa={view.standHa}
+            value={view.details}
+            onChange={onChangeDetails}
+          />
+        )}
 
         <View
           style={styles.section}
@@ -177,17 +208,6 @@ export function RouteChooseScreen({
           />
           <RouteAdvice advice={view.advice} />
         </View>
-
-        {view.method === null ? null : (
-          <RouteDetailsCard
-            method={view.method}
-            counting={view.counting}
-            uncappedFactors={view.factors}
-            standHa={view.standHa}
-            value={view.details}
-            onChange={onChangeDetails}
-          />
-        )}
       </ScrollView>
 
       <View
@@ -232,10 +252,6 @@ function createStyles(theme: BrandTheme) {
       paddingTop: brandSpacing4.md,
       paddingBottom: brandSpacing4.lg,
       gap: brandSpacing4.lg,
-    },
-    lead: {
-      ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
     },
     section: {
       gap: brandSpacing4.smd,

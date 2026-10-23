@@ -610,7 +610,6 @@ export const ROUTE_RULE_CASES: readonly RouteRuleCase[] = [
     rule: "R-17",
     source: "M p. 23, p. 24; S p. 20, p. 21 (note 1)",
     examples: [
-      { kind: "preset", preset: "mature", factors: ["A", "C", "D", "E", "F"], valid: true },
       { kind: "preset", preset: "minimum", factors: ["C", "D", "E"], valid: true },
       { kind: "preset", preset: "all_factors", factors: FULL_FACTORS, valid: true },
       {

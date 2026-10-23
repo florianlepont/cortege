@@ -35,6 +35,7 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 34, left: 0, right: 0 }),
 }))
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../../ui/useScreenVisible", () => ({ useScreenVisible: () => true }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
 jest.mock("../../ui/AppCard", () => ({ AppCard: "AppCard" }))
 jest.mock("../../ui/GlassButton", () => {
@@ -139,7 +140,7 @@ describe("RouteChooseScreen: content", () => {
   test("shows the lead, the three parcours with their words, the mode and the glossary", () => {
     const { one, byId, texts } = mount({ standHa: 8 })
     expect(one("route-choose-screen")).toBeDefined()
-    expect(texts()).toContain(guide.chooser.lead)
+    expect(texts()).not.toContain("Choisissez le parcours, le mode de relevé")
     expect(texts()).toContain("Parcours")
     for (const method of ROUTE_METHODS) {
       expect(byId(`route-parcours-${method}`)).toHaveLength(1)
@@ -179,9 +180,17 @@ describe("RouteChooseScreen: content", () => {
     expect(mount({ standHa: 8 }).texts()).not.toContain("Conseillé")
   })
 
-  test("shows no details card until a parcours is chosen", () => {
+  test("shows no details card until a partial parcours is chosen: a full one has nothing to type", () => {
     const { byId, press } = mount({ standHa: 8 })
     expect(byId("route-details")).toHaveLength(0)
+    press("route-parcours-full")
+    expect(byId("route-details")).toHaveLength(0)
+    press("route-parcours-partial_strip")
+    expect(byId("route-details")).toHaveLength(1)
+  })
+
+  test("a full parcours asks for the surface when the stand surface is unknown", () => {
+    const { byId, press } = mount({ standHa: null })
     press("route-parcours-full")
     expect(byId("route-details")).toHaveLength(1)
   })
@@ -298,12 +307,12 @@ describe("RouteChooseScreen: footer, link and sections", () => {
     const edit = mount({ standHa: 8 }, { mode: "edit" })
     expect(edit.texts()).toContain("Pas sûr ?")
     expect(edit.texts()).toContain("Être conseillé")
-    // One line at the top of the scroll content: under the intro, above the Parcours cards.
+    // One line at the top of the scroll content, above the Parcours cards.
     const scroll = edit.one("route-choose-scroll")
     const order = scroll.children.map((child) =>
       typeof child === "string" ? child : (child.props.testID as string | undefined),
     )
-    expect(order.indexOf("route-advise-line")).toBe(1)
+    expect(order.indexOf("route-advise-line")).toBe(0)
     expect(edit.one("route-advise-link").props.accessibilityRole).toBe("button")
     expect(
       edit.byId("route-advise-line")[0].findAll((n) => n.props.testID === "route-advise-link"),
@@ -323,6 +332,44 @@ describe("RouteChooseScreen: footer, link and sections", () => {
     expect(scrollTo).toHaveBeenCalledWith({ y: 420, animated: false })
     act(() => sections[0].props.onLayout({ nativeEvent: { layout: { y: 430 } } }))
     expect(scrollTo).toHaveBeenCalledTimes(1)
+  })
+
+  test("choosing the déplafonné mode scrolls to the mode de relevé once the part has appeared", () => {
+    jest.useFakeTimers()
+    try {
+      const { tree, press, scrollTo } = mount({ standHa: 8 })
+      const sections = tree.root.findAll(
+        (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
+      )
+      act(() => sections[0].props.onLayout({ nativeEvent: { layout: { y: 420 } } }))
+      press("route-counting-capped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).not.toHaveBeenCalled()
+      press("route-counting-uncapped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).toHaveBeenCalledWith({ y: 420, animated: true })
+      expect(scrollTo).toHaveBeenCalledTimes(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test("does not scroll when the déplafonné mode opens before the layout is known", () => {
+    jest.useFakeTimers()
+    try {
+      const { press, scrollTo } = mount({ standHa: 8 })
+      press("route-counting-uncapped")
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+      expect(scrollTo).not.toHaveBeenCalled()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   test("does not scroll by itself without the section", () => {

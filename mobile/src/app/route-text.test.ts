@@ -74,8 +74,7 @@ describe("code to text maps", () => {
     expect(ROUTE_WARNING_TEXT.partial_over_half).toBe(ROUTE_ZONE_ISSUE_TEXT.partial_over_half)
   })
 
-  test("the two long presets carry the advice of R-17, the others none", () => {
-    expect(UNCAPPED_PRESET_TEXT.mature.note).toBe(fr.routeGuide.counting.presetNote)
+  test("the long preset carries the advice of R-17, the others none", () => {
     expect(UNCAPPED_PRESET_TEXT.always_max.note).toBe(fr.routeGuide.counting.presetNote)
     expect(UNCAPPED_PRESET_TEXT.all_factors.note).toBeUndefined()
     expect(UNCAPPED_PRESET_TEXT.minimum.note).toBeUndefined()
@@ -103,7 +102,7 @@ describe("routeAdviceText", () => {
 
   test("the duration carries its range", () => {
     expect(routeAdviceText("duration", { estimated_minutes: { min: 25, max: 30 } })).toBe(
-      "Pour cette surface, comptez 25 à 30 minutes pour une personne habituée à l'IBP.",
+      "Pour cette surface : 25 à 30 minutes, repère officiel pour une personne habituée à l'IBP.",
     )
   })
 

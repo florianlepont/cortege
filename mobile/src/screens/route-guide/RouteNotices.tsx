@@ -2,7 +2,6 @@ import { StyleSheet, View } from "react-native"
 import type { RouteAdvice as RouteAdviceResult, RouteWarningCode } from "@cortege/ibp-domain"
 import { brandSpacing4 } from "../../app/brand-tokens"
 import { ROUTE_WARNING_TEXT, routeAdviceText } from "../../app/route-text"
-import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
 
 export type RouteNoticesProps = {
@@ -47,18 +46,9 @@ export function RouteAdvice({ advice }: RouteAdviceProps) {
   const lines = advice.advice.map((code) =>
     routeAdviceText(code, { estimated_minutes: advice.estimated_minutes }),
   )
-  // A duration says it is only an indication, once, after the lines.
-  if (advice.advice.includes("duration") && advice.estimated_minutes !== null) {
-    lines.push(fr.routeGuide.advice.durationNote)
-  }
   return (
     <View testID="route-advice">
-      <AppNotice
-        tone="info"
-        icon="information-circle-outline"
-        title={fr.routeGuide.suggestion.adviceTitle}
-        message={lines.join("\n")}
-      />
+      <AppNotice tone="info" icon="information-circle-outline" message={lines.join("\n")} />
     </View>
   )
 }
