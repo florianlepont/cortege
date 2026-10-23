@@ -144,7 +144,7 @@ describe("CountingPicker: déplafonné", () => {
     }
     expect(byId("route-factor-H")).toHaveLength(0)
     expect(texts()).toContain(`A ${fr.labels.factorTitles.A}`)
-    expect(texts()).toContain(guide.counting.factorH)
+    expect(texts()).not.toContain("Le facteur H n'est jamais compté en entier")
     expect(one("route-counting-uncapped").props.accessibilityState).toMatchObject({
       selected: true,
     })

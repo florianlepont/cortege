@@ -102,7 +102,7 @@ describe("routeAdviceText", () => {
 
   test("the duration carries its range", () => {
     expect(routeAdviceText("duration", { estimated_minutes: { min: 25, max: 30 } })).toBe(
-      "Pour cette surface, comptez 25 à 30 minutes pour une personne habituée à l'IBP.",
+      "Pour cette surface : 25 à 30 minutes, repère officiel pour une personne habituée à l'IBP.",
     )
   })
 

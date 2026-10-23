@@ -151,7 +151,6 @@ export function CountingPicker({
               )
             })}
           </View>
-          <Text style={styles.helper}>{counting.factorH}</Text>
           {factorsMissing ? (
             <View accessibilityLiveRegion="polite" testID="route-factors-missing">
               <AppNotice tone="warning" icon="alert-circle-outline" message={counting.atLeastOne} />

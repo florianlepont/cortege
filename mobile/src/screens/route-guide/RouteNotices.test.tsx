@@ -97,9 +97,9 @@ describe("RouteAdvice", () => {
     expect(byId("route-advice")).toHaveLength(1)
     const range = formatDurationRange(advice.estimated_minutes!)
     const all = texts()
-    expect(all).toContain(guide.suggestion.adviceTitle)
+    expect(all).not.toContain(guide.suggestion.adviceTitle)
     expect(all.some((text) => text.includes(range))).toBe(true)
-    expect(all.some((text) => text.includes(guide.advice.durationNote))).toBe(true)
+    expect(all.some((text) => text.includes(guide.advice.durationNote))).toBe(false)
     expect(icons()).toContain("information-circle-outline")
   })
 

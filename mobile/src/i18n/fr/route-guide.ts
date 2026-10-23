@@ -235,7 +235,6 @@ export const routeGuideFr = {
     rareNotice:
       "Le relevé déplafonné est réservé aux situations extrêmes, par exemple des scores toujours au maximum ou toujours nuls, et aux études. Le relevé plafonné suffit dans la grande majorité des cas.",
     factorsLead: "Quels facteurs comptez-vous en entier ? Plus il y en a, plus le relevé est long.",
-    factorH: "Le facteur H n'est jamais compté en entier : c'est une classe, pas un comptage.",
     presetsTitle: "Préréglages",
     presets: {
       allFactors: "Tous les facteurs",
@@ -314,7 +313,7 @@ export const routeGuideFr = {
   // Advice is information, never a rule (R-18 to R-21, O-04).
   advice: {
     duration: ({ range }: { range: string }) =>
-      `Pour cette surface, comptez ${range} pour une personne habituée à l'IBP.`,
+      `Pour cette surface : ${range}, repère officiel pour une personne habituée à l'IBP.`,
     // Wording of the duration range (S p. 19; M p. 17): minutes below two hours, then hours rounded
     // to the half hour. `app/route-text.ts` computes the numbers, the words stay here.
     durationUnderMinute: "moins d'une minute",
