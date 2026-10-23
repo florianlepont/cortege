@@ -105,8 +105,10 @@ export function RouteSection({
   const rows = routeDisplayRows(route, variant)
   const method = rows.find((row) => row.id === "method")
   const pills = rows.filter((row) => row.id === "counting" || row.id === "zone")
+  // "Choix" and "Vos réponses" stay in the PDF (traceability) but say nothing useful to someone
+  // reading the page (owner check, Phase 30): the card keeps what describes the survey itself.
   const others = rows.filter(
-    (row) => row.id !== "method" && row.id !== "counting" && row.id !== "zone",
+    (row) => !["method", "counting", "zone", "choice", "answers"].includes(row.id),
   )
   return (
     <View testID="route-section">
