@@ -752,7 +752,7 @@ export const ROUTE_RULE_CASES: readonly RouteRuleCase[] = [
         expect: {
           status: "options",
           options: ["subdivide", "partial"],
-          preselected_option: "subdivide",
+          preselected_option: "partial",
           reasons: ["large_stand"],
         },
       },
@@ -923,7 +923,7 @@ export const ROUTE_RULE_CASES: readonly RouteRuleCase[] = [
         expect: {
           status: "options",
           options: ["subdivide", "partial"],
-          preselected_option: "subdivide",
+          preselected_option: "partial",
           reasons: ["large_stand"],
         },
       },
