@@ -35,6 +35,18 @@ Out of scope: map screens and the annotations of phase 31 (the PDF only gets an 
 ### Extension point (phase 31)
 - **D-10:** Page composition must not freeze the section list: sections register through a small ordered list (a section = builder + CSS + which versions include it), so phase 31 can add its annotations and the route trace to the exhaustive version, and optionally to the summary, without editing the assembler's body.
 
+### Decisions taken after the research (owner, 2026-10-23)
+- **D-11:** Cover page of the exhaustive version: a half-bleed forest panel (top half forest green with static contour lines, logo, site name, large score), the rest of the page light. Not a full dark cover, not omitted. The cover must cost no extra page (the research shows it fits).
+- **D-12:** The map frame of the exhaustive version drops from 340 to about 250 design units so that the map and the trend share a page (saves a page in every scenario with a map). To be judged on the phone.
+- **D-13:** File names: `Cortege-IBP-<site>-<year>[-brouillon].pdf` stays for the exhaustive version; the summary gets the suffix `-resume` (`Cortege-IBP-<site>-<year>-resume.pdf`; a summary is never a draft).
+- **D-14:** Choice sheet: two radio cards ("Complet" preselected, "Résumé") and an "Exporter" button, like the finish sheet. A new `surveyExportChoice` form sheet (iOS) or modal (Android) returns the mode to the summary screen, which owns the data and runs the export.
+
+### Defaults taken from the research, not yet reviewed by the owner (revisit at the phone review)
+- **D-15:** The header button keeps its "Partager" label and share icon; the sheet title makes the PDF explicit ("Quel PDF voulez-vous ?").
+- **D-16:** The commune prints as "77186 (département 77)"; no table of département names (the app stores only the code).
+- **D-17:** Photos: keep the cap of 24 and 6 per page; trial a lighter encoding (about 640 px, quality 0.6) and fix the numbers after the device measurement.
+- **D-18:** Summary when the trend is unavailable offline: a quiet panel with one short sentence, the page layout unchanged. A submitted survey not yet synced may still produce the summary (same rule as the export today).
+
 ### Claude's Discretion
 - Cover page content and layout, graphics style, exact page count targets, photo cap and JPEG settings, how the summary behaves when the trend or the map basemap is unavailable offline (omit with a short note, as the trend does today).
 - File name of the summary: keep the existing rule; whether a suffix tells the two apart is for the planner to propose to the owner.
