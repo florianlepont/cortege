@@ -183,9 +183,10 @@ describe("RouteDetailsCard: partial parcours", () => {
     expect(sheet).not.toContain(guide.details.stripAdvice)
   })
 
-  it("the glyph of the rest of the stand explains it and what the glance gives", () => {
-    const { one, texts } = partial()
-    act(() => one("glossary-info-resteDuPeuplement").props.onPress())
+  it("the one glyph of the card also explains the rest of the stand and what the glance gives", () => {
+    const { one, texts, byId } = partial()
+    expect(byId("glossary-info-resteDuPeuplement")).toHaveLength(0)
+    act(() => one("glossary-info-surfaceDecrite").props.onPress())
     expect(texts().some((text) => text.includes(guide.details.complementHint))).toBe(true)
   })
 

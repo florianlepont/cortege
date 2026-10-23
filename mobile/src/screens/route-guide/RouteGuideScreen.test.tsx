@@ -320,7 +320,7 @@ describe("RouteGuideScreen: the suggestion", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
     m.one("route-suggestion")
-    m.one("route-reasons-info")
+    m.one("route-facts")
     m.one("route-details")
     expect(m.byId("route-glossary")).toHaveLength(0)
     expect(m.byId("route-large-stand")).toHaveLength(0)
@@ -350,22 +350,22 @@ describe("RouteGuideScreen: the suggestion", () => {
     m.one("route-question-surface")
   })
 
-  it("orders the result zone: suggestion, details, shortcut", () => {
+  it("orders the result zone: suggestion, facts, details, shortcut", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
-    const order = ["route-suggestion", "route-details", "route-know-link"]
+    const order = ["route-suggestion", "route-facts", "route-details", "route-know-link"]
     const flat = JSON.stringify(m.tree.toJSON())
     const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect([...positions].sort((a, b) => a - b)).toEqual(positions)
   })
 
-  it("shows the estimated duration on the suggestion, information only, and no Pour affiner", () => {
+  it("shows the surface and the estimated duration in tiles under the suggestion, and no Pour affiner", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
     expect(m.byId("route-refine")).toHaveLength(0)
-    const duration = m.one("route-suggestion-duration")
-    expect(textOf(duration)).toContain("Durée estimée : ")
+    expect(textOf(m.one("route-fact-surface"))).toContain("ha")
+    expect(textOf(m.one("route-fact-duration"))).toContain("minutes")
     const before = m.state().view.selection
     act(() => m.actions().setHoursText("0,5"))
     expect(m.state().view.selection).toEqual(before)
@@ -404,14 +404,18 @@ describe("RouteGuideScreen: the suggestion", () => {
     expect(m.state().view.chosenBy).toBe("guide")
   })
 
-  it("keeps the reasons for the suggestion only, not for an own choice", () => {
+  it("puts the reasons in the parcours sheet for the suggestion only, not for an own choice", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
-    m.one("route-reasons-info")
+    const sheetOf = () =>
+      m.tree.root.findAll(
+        (node) => typeof node.props.term === "string" && typeof node.props.text === "string",
+      )[0].props.text as string
+    expect(sheetOf()).toContain(fr.routeGuide.suggestion.reasonsTitle)
     act(() =>
       m.actions().applyPick({ method: "full", counting: "uncapped", uncappedFactors: ["A"] }),
     )
-    expect(m.byId("route-reasons-info")).toHaveLength(0)
+    expect(sheetOf()).not.toContain(fr.routeGuide.suggestion.reasonsTitle)
     m.one("route-suggestion")
   })
 

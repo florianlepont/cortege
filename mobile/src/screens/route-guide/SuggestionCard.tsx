@@ -12,6 +12,7 @@ import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../
 import {
   COUNTING_TEXT,
   ROUTE_METHOD_TEXT,
+  ROUTE_REASON_TEXT,
   formatHectares,
   routeSheetText,
 } from "../../app/route-text"
@@ -24,8 +25,7 @@ import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RESUME_LAYOUT } from "../home/layout-budget"
-import { COUNTING_TERM, METHOD_TERM } from "./glossary-terms"
-import { ReasonsInfo } from "./ReasonsInfo"
+import { METHOD_TERM } from "./glossary-terms"
 import { RouteSchema } from "./RouteSchema"
 import { SuggestionEntrance } from "./SuggestionEntrance"
 
@@ -40,8 +40,6 @@ export type SuggestionCardProps = {
   zoneHa: number | null
   /** "guide": the parcours advised; "observer": the one the observer chose. */
   chosenBy: RouteChosenBy
-  /** The estimated duration for an observer used to the IBP, already worded ("25 à 30 minutes"). */
-  durationRange?: string
   /** The package's reasons, shown behind an information glyph on the advised parcours. */
   reasons?: readonly RouteReasonCode[]
   /** Opens the chooser with the current selection. */
@@ -71,7 +69,6 @@ export function SuggestionCard({
   uncappedFactors,
   zoneHa,
   chosenBy,
-  durationRange,
   reasons,
   onChange,
   onRestore,
@@ -120,6 +117,15 @@ export function SuggestionCard({
           hectares,
         })
   const hint = [methodText.does, countingText.explanation].join(" ")
+  // One glyph on the parcours: its drawing and explanation, and (for the advised one) why it is advised.
+  const parcoursSheetText =
+    suggested && reasons && reasons.length > 0
+      ? [
+          routeSheetText(method),
+          guide.suggestion.reasonsTitle,
+          ...reasons.slice(0, 4).map((code) => `• ${ROUTE_REASON_TEXT[code]}`),
+        ].join("\n\n")
+      : routeSheetText(method)
 
   return (
     <SuggestionEntrance trigger={[method, counting, chosenBy].join("|")}>
@@ -137,17 +143,12 @@ export function SuggestionCard({
               onLayout={measure("method")}
               testID="route-suggestion-method"
             >
-              <View style={styles.nameRow}>
-                <Text style={styles.eyebrow}>{eyebrow}</Text>
-                {suggested && reasons ? (
-                  <ReasonsInfo reasons={reasons} color={forest.titleAccent} />
-                ) : null}
-              </View>
+              <Text style={styles.eyebrow}>{eyebrow}</Text>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{methodText.name}</Text>
                 <GlossaryInfo
                   term={METHOD_TERM[method]}
-                  text={routeSheetText(method)}
+                  text={parcoursSheetText}
                   illustration={<RouteSchema method={method} />}
                   color={forest.titleAccent}
                 />
@@ -158,7 +159,6 @@ export function SuggestionCard({
               <Text style={styles.caption}>{guide.counting.caption}</Text>
               <View style={styles.nameRow}>
                 <Text style={styles.modeName}>{countingText.name}</Text>
-                <GlossaryInfo term={COUNTING_TERM[counting]} color={forest.titleAccent} />
               </View>
               <Text style={styles.sentence}>{countingText.short}</Text>
               {counting === "uncapped" ? (
@@ -179,21 +179,6 @@ export function SuggestionCard({
             </View>
           </View>
           <View style={styles.foot} onLayout={measure("foot")} testID="route-suggestion-foot">
-            {hectares === null ? null : (
-              // The summary above already says the surface: it is hidden from a screen reader here.
-              <Text
-                style={styles.surface}
-                accessible={false}
-                importantForAccessibility="no-hide-descendants"
-              >
-                {guide.suggestion.surfaceLine(hectares)}
-              </Text>
-            )}
-            {durationRange === undefined ? null : (
-              <Text style={styles.surface} testID="route-suggestion-duration">
-                {guide.suggestion.durationLine(durationRange)}
-              </Text>
-            )}
             <View style={styles.links}>
               <AppPressable
                 style={styles.link}
@@ -284,6 +269,8 @@ function createStyles(theme: BrandTheme) {
     },
     foot: {
       gap: brandSpacing4.xs,
+      // Air between the sentences above and the link, which read as one block otherwise.
+      paddingTop: brandSpacing4.md,
     },
     surface: {
       ...brandTypeScale.subhead,

@@ -255,13 +255,17 @@ export const routeGuideFr = {
     keptValues:
       "Les valeurs déjà saisies en relevé déplafonné sont conservées, mais elles ne seront plus affichées.",
   },
+  // The two figures under the suggestion card (owner check, Phase 30): the surface described and the
+  // estimate for an observer used to the IBP (S p. 19), set apart from the forest card to read first.
+  facts: {
+    surface: "Surface décrite",
+    hectares: (hectares: string) => `${hectares} ha`,
+    duration: "Durée estimée",
+    durationCaption: "pour un observateur habitué à l'IBP",
+  },
   suggestion: {
     eyebrowSuggested: "Parcours conseillé",
     eyebrowChosen: "Parcours choisi par vous",
-    surfaceLine: (hectares: string) => `Surface décrite : ${hectares} ha`,
-    // The estimate for an observer used to the IBP (S p. 19), under the surface line of the card.
-    durationLine: (range: string) =>
-      `Durée estimée : ${range}, pour un observateur habitué à l'IBP`,
     countedLead: "Facteurs comptés en entier",
     change: "Changer de parcours",
     restore: "Revenir au parcours conseillé",

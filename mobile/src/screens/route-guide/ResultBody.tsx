@@ -1,8 +1,9 @@
 import { useMemo } from "react"
 import type { RouteRecommendation } from "@cortege/ibp-domain"
-import { formatDurationRange } from "../../app/route-text"
+import { formatDurationRange, formatHectares } from "../../app/route-text"
 import type { GuideView } from "./route-guide-model"
 import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
+import { RouteFacts } from "./RouteFacts"
 import { RouteNotices } from "./RouteNotices"
 import { SuggestionCard } from "./SuggestionCard"
 import type { RouteChooserSection } from "./RouteGuideScreen"
@@ -17,7 +18,7 @@ type ResultBodyProps = {
 
 /**
  * The result screen of the route step: the suggestion (or the parcours picked, its reasons behind a
- * glyph, and the estimated duration for an observer used to the IBP), the details card and the
+ * glyph), the two facts tiles (surface described, estimated duration), the details card and the
  * warnings. Everything comes from the model's view; nothing is decided here.
  */
 export function ResultBody({ view, actions, recommendation, onOpenChooser }: ResultBodyProps) {
@@ -57,6 +58,12 @@ export function ResultBody({ view, actions, recommendation, onOpenChooser }: Res
         uncappedFactors={selection.uncappedFactors}
         zoneHa={selection.zoneHa}
         chosenBy={view.chosenBy ?? "observer"}
+        reasons={recommendation.status === "route" ? recommendation.reasons : undefined}
+        onChange={() => onOpenChooser("pick")}
+        onRestore={recommendation.status === "route" ? actions.restoreSuggestion : undefined}
+      />
+      <RouteFacts
+        hectares={selection.zoneHa === null ? null : formatHectares(selection.zoneHa)}
         durationRange={
           view.advice !== null &&
           view.advice.advice.includes("duration") &&
@@ -64,9 +71,6 @@ export function ResultBody({ view, actions, recommendation, onOpenChooser }: Res
             ? formatDurationRange(view.advice.estimated_minutes)
             : undefined
         }
-        reasons={recommendation.status === "route" ? recommendation.reasons : undefined}
-        onChange={() => onOpenChooser("pick")}
-        onRestore={recommendation.status === "route" ? actions.restoreSuggestion : undefined}
       />
       <RouteDetailsCard
         method={selection.method}

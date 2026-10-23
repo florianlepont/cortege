@@ -1,6 +1,5 @@
 import React from "react"
 import renderer, { act, ReactTestInstance } from "react-test-renderer"
-import { ROUTE_REASON_CODES } from "@cortege/ibp-domain"
 
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -45,7 +44,6 @@ import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { LargeStandOptions } from "./LargeStandOptions"
-import { ReasonsInfo } from "./ReasonsInfo"
 import { SuggestionCard } from "./SuggestionCard"
 
 const originalConsoleError = console.error
@@ -124,7 +122,6 @@ describe("SuggestionCard: what it shows", () => {
         guide.counting.caption,
         guide.counting.capped.name,
         guide.counting.capped.short,
-        guide.suggestion.surfaceLine(formatHectares(2.4)),
         guide.suggestion.change,
       ]),
     )
@@ -139,15 +136,32 @@ describe("SuggestionCard: what it shows", () => {
     expect(glyphs[0].props.text).toBe(routeSheetText("full"))
   })
 
-  it("puts a glossary glyph after the parcours and after the mode, in the forest ink", () => {
-    const { one } = mount(card({ method: "partial_plot", counting: "capped" }))
+  it("puts one glossary glyph on the card, after the parcours, in the forest ink", () => {
+    const { one, byId } = mount(card({ method: "partial_plot", counting: "capped" }))
     const parcours = one("glossary-info-parPlacette")
-    const mode = one("glossary-info-relevePlafonne")
-    const ink = defaultTheme.visual.forest.titleAccent
-    for (const trigger of [parcours, mode]) {
-      const glyph = trigger.findAll((node) => (node.type as unknown) === "Ionicons")[0]
-      expect(glyph.props.color).toBe(ink)
-    }
+    const glyph = parcours.findAll((node) => (node.type as unknown) === "Ionicons")[0]
+    expect(glyph.props.color).toBe(defaultTheme.visual.forest.titleAccent)
+    // The mode has its short line, no glyph of its own; the reasons live in the parcours sheet.
+    expect(byId("glossary-info-relevePlafonne")).toHaveLength(0)
+    expect(byId("route-reasons-info")).toHaveLength(0)
+  })
+
+  it("the parcours sheet lists why it is advised, only for the advised one", () => {
+    const advised = mount(
+      card({ method: "partial_plot", reasons: ["partial_homogeneous", "capped_default"] }),
+    )
+    const sheetText = advised.tree.root.findAll((node) => node.props.term === "parPlacette")[0]
+      .props.text as string
+    expect(sheetText).toContain(guide.suggestion.reasonsTitle)
+    expect(sheetText).toContain(`• ${guide.reasons.partialHomogeneous}`)
+    expect(sheetText).toContain(`• ${guide.reasons.cappedDefault}`)
+
+    const own = mount(
+      card({ method: "partial_plot", chosenBy: "observer", reasons: ["capped_default"] }),
+    )
+    const ownText = own.tree.root.findAll((node) => node.props.term === "parPlacette")[0].props
+      .text as string
+    expect(ownText).not.toContain(guide.suggestion.reasonsTitle)
   })
 
   it("uses the words of each parcours and of the mode déplafonné", () => {
@@ -163,7 +177,6 @@ describe("SuggestionCard: what it shows", () => {
       ]),
     )
     expect(strip.byId("glossary-info-parBande")).toHaveLength(1)
-    expect(strip.byId("glossary-info-releveDeplafonne")).toHaveLength(1)
   })
 
   it("lists the factors counted in full as chips, only for a relevé déplafonné", () => {
@@ -181,9 +194,10 @@ describe("SuggestionCard: what it shows", () => {
     ])
   })
 
-  it("leaves the surface line out when no surface can be told", () => {
-    const { texts } = mount(card({ zoneHa: null }))
-    expect(texts().some((text) => text.startsWith(guide.suggestion.surfaceLine("")))).toBe(false)
+  it("keeps the surface and the duration off the card: they sit in tiles of their own", () => {
+    const { texts } = mount(card())
+    expect(texts().some((text) => text.includes("Surface décrite"))).toBe(false)
+    expect(texts().some((text) => text.includes("Durée estimée"))).toBe(false)
   })
 
   it("never mentions a group, a name field or a time-based parcours", () => {
@@ -392,32 +406,5 @@ describe("LargeStandOptions", () => {
     )
     expect(groups).toHaveLength(1)
     expect(texts()).toContain(guide.largeStand.title)
-  })
-})
-
-describe("ReasonsInfo", () => {
-  it("is one glyph; the sheet lists one sentence per reason code, in the package order", () => {
-    const { one, texts } = mount(
-      React.createElement(ReasonsInfo, { reasons: ["whole_stand_small", "capped_default"] }),
-    )
-    expect(one("route-reasons-info").props.accessibilityLabel).toBe(guide.suggestion.reasonsTitle)
-    act(() => one("route-reasons-info").props.onPress())
-    expect(texts()).toContain(
-      [guide.reasons.wholeStandSmall, guide.reasons.cappedDefault].join("\n\n"),
-    )
-  })
-
-  it("shows at most four reasons", () => {
-    const { one, texts } = mount(
-      React.createElement(ReasonsInfo, { reasons: [...ROUTE_REASON_CODES] }),
-    )
-    act(() => one("route-reasons-info").props.onPress())
-    const body = texts().find((text) => text.includes("\n\n"))
-    expect(body?.split("\n\n")).toHaveLength(4)
-  })
-
-  it("draws nothing without a reason", () => {
-    const { tree } = mount(React.createElement(ReasonsInfo, { reasons: [] }))
-    expect(tree.toJSON()).toBeNull()
   })
 })

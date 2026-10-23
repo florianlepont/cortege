@@ -70,13 +70,15 @@ function zoneSheetText(method: RouteMethod): string {
   if (method === "partial_plot") {
     parts.push(details.zoneHelperPartial, details.plotAdvice, details.plotsAdded)
   }
+  // The one glyph of the card also explains the switch under it.
+  if (method !== "full") {
+    parts.push(
+      `${fr.routeGuide.glossary.terms.resteDuPeuplement.term} : ${fr.routeGuide.glossary.terms.resteDuPeuplement.text}`,
+      details.complementHint,
+    )
+  }
   return parts.join("\n\n")
 }
-
-const complementSheetText = [
-  fr.routeGuide.glossary.terms.resteDuPeuplement.text,
-  details.complementHint,
-].join("\n\n")
 
 /**
  * "Détails du parcours" (UI-SPEC section 6, spec sections 5 and 9), shared by the route step and the
@@ -171,7 +173,6 @@ export function RouteDetailsCard({
             <View style={styles.switchRow}>
               <View style={styles.switchCopy}>
                 <Text style={styles.switchLabel}>{details.complementLabel}</Text>
-                <GlossaryInfo term="resteDuPeuplement" text={complementSheetText} />
               </View>
               <Switch
                 value={value.complementDone}
