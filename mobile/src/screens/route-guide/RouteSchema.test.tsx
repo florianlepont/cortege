@@ -18,7 +18,14 @@ let mockVisible = true
 jest.mock("../../ui/useScreenVisible", () => ({ useScreenVisible: () => mockVisible }))
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
-import { PLOT, STRIP_BAND } from "../../app/route-schema-geometry"
+import {
+  NEIGHBOURS,
+  PLOT,
+  fullWalkPoints,
+  pointsAttribute,
+  stripBand,
+  stripWalkPoints,
+} from "../../app/route-schema-geometry"
 import { fr } from "../../i18n"
 import { RouteSchema } from "./RouteSchema"
 
@@ -70,19 +77,40 @@ describe("RouteSchema", () => {
   test("the full parcours draws the whole walk and a dot at its head", () => {
     const { byType, texts } = mount("full")
     const paths = byType("Path")
-    expect(paths).toHaveLength(1)
-    expect(String(paths[0].props.d).startsWith("M48 38")).toBe(true)
-    expect(byType("Circle")).toHaveLength(1)
+    // The trail and the halo under it, the same walk.
+    expect(paths).toHaveLength(2)
+    const [first] = fullWalkPoints()
+    expect(String(paths[0].props.d).startsWith(`M${first[0]} ${first[1]}`)).toBe(true)
+    expect(paths[1].props.d).toBe(paths[0].props.d)
+    expect(byType("Circle").some((circle) => circle.props.animatedProps !== undefined)).toBe(true)
     expect(texts()).toEqual([])
   })
 
-  test("the strip parcours highlights one band with its width and the glance at the rest", () => {
+  test("the strip parcours highlights one band of the parcel with its width and the glance at the rest", () => {
     const { byType, texts } = mount("partial_strip")
-    const rects = byType("Rect")
-    expect(rects.some((rect) => rect.props.height === STRIP_BAND.height)).toBe(true)
+    const band = pointsAttribute(stripBand())
+    expect(byType("Polygon").filter((polygon) => polygon.props.points === band)).toHaveLength(2)
     expect(texts()).toEqual(
       expect.arrayContaining([fr.routeGuide.schema.stripWidth, fr.routeGuide.schema.restGlance]),
     )
+  })
+
+  test("every schema sits on the same map: the neighbouring parcels, the road and the parcel", () => {
+    for (const method of ["full", "partial_strip", "partial_plot"] as const) {
+      const { byType } = mount(method)
+      const polygons = byType("Polygon")
+      // The neighbours, the road, the parcel and its strong outline (the strip adds its band).
+      expect(polygons.length).toBeGreaterThanOrEqual(NEIGHBOURS.length + 3)
+      expect(byType("Line")).toHaveLength(1)
+    }
+  })
+
+  test("the stand is drawn as a forest: many tree crowns, in the theme accent", () => {
+    const crowns = mount("full")
+      .byType("Circle")
+      .filter((circle) => circle.props.animatedProps === undefined)
+    expect(crowns.length).toBeGreaterThan(60)
+    expect(new Set(crowns.map((crown) => crown.props.fillOpacity)).size).toBeGreaterThan(10)
   })
 
   test("the plot parcours draws a circle of one hectare around the centre", () => {
@@ -111,9 +139,16 @@ describe("RouteSchema", () => {
 
   test("the strip and full dots end on the last corner when the picture is finished", () => {
     setReducedMotion(true)
-    const full = mount("full").byType("Circle")[0]
-    expect(full.props.animatedProps).toMatchObject({ cx: 48, cy: 158 })
-    const strip = mount("partial_strip").byType("Circle")[0]
-    expect(strip.props.animatedProps).toMatchObject({ cx: 256, cy: 91 })
+    const dot = (method: "full" | "partial_strip") =>
+      mount(method)
+        .byType("Circle")
+        .find((circle) => circle.props.r === 7)
+    const fullEnd = fullWalkPoints().slice(-1)[0]
+    const stripEnd = stripWalkPoints().slice(-1)[0]
+    expect(dot("full")?.props.animatedProps).toMatchObject({ cx: fullEnd[0], cy: fullEnd[1] })
+    expect(dot("partial_strip")?.props.animatedProps).toMatchObject({
+      cx: stripEnd[0],
+      cy: stripEnd[1],
+    })
   })
 })

@@ -13,17 +13,22 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated"
-import { Circle, Path, Rect, Svg, Text as SvgText } from "react-native-svg"
+import { Circle, Line, Path, Polygon, Rect, Svg, Text as SvgText } from "react-native-svg"
 import type { RouteMethod } from "@cortege/ibp-domain"
 import {
+  NEIGHBOURS,
+  PARCEL,
   PLOT,
-  SCHEMA_STAND,
+  ROAD,
+  ROAD_CENTRE,
   SCHEMA_VIEWBOX,
-  STRIP_BAND,
   type Walk,
+  fullWalkPoints,
   measureWalk,
-  FULL_WALK,
-  STRIP_WALK,
+  pointsAttribute,
+  stripBand,
+  stripWalkPoints,
+  treeCrowns,
 } from "../../app/route-schema-geometry"
 import { brandRadius } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -37,8 +42,11 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const PASS_MS = 3200
 const HOLD_MS = 1200
 
-const FULL = measureWalk(FULL_WALK)
-const STRIP = measureWalk(STRIP_WALK)
+const FULL = measureWalk(fullWalkPoints())
+const STRIP = measureWalk(stripWalkPoints())
+const CROWNS = treeCrowns()
+const PARCEL_POINTS = pointsAttribute(PARCEL)
+const BAND_POINTS = pointsAttribute(stripBand())
 
 const A11Y: Readonly<Record<RouteMethod, string>> = {
   full: fr.routeGuide.schema.a11y.full,
@@ -87,6 +95,7 @@ type Palette = {
   standEdge: string
   band: string
   trail: string
+  canopy: string
   ink: string
   label: string
 }
@@ -97,25 +106,70 @@ function paletteOf(theme: BrandTheme): Palette {
     standEdge: theme.semanticColors.textSecondary,
     band: theme.semanticColors.accent,
     trail: theme.semanticColors.accent,
+    canopy: theme.semanticColors.accent,
     ink: theme.semanticColors.textStrong,
     label: theme.semanticColors.textSecondary,
   }
 }
 
-function Stand({ colors }: { colors: Palette }) {
-  const { x, y, width, height, radius } = SCHEMA_STAND
+/**
+ * The map under every schema, like a cadastral sheet: the neighbouring parcels, the road, and the
+ * parcel itself with a strong outline and the crowns of its trees. Static; only the walk on top of
+ * it moves.
+ */
+function ParcelMap({ colors }: { colors: Palette }) {
   return (
-    <Rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      rx={radius}
-      fill={colors.stand}
-      stroke={colors.standEdge}
-      strokeOpacity={0.45}
-      strokeWidth={2}
-    />
+    <>
+      {NEIGHBOURS.map((piece, index) => (
+        <Polygon
+          key={index}
+          points={pointsAttribute(piece)}
+          fill={colors.canopy}
+          fillOpacity={0.05 + 0.025 * (index % 3)}
+          stroke={colors.standEdge}
+          strokeOpacity={0.3}
+          strokeWidth={1}
+        />
+      ))}
+      <Polygon
+        points={pointsAttribute(ROAD)}
+        fill={colors.standEdge}
+        fillOpacity={0.14}
+        stroke={colors.standEdge}
+        strokeOpacity={0.3}
+        strokeWidth={1}
+      />
+      <Line
+        x1={ROAD_CENTRE[0][0]}
+        y1={ROAD_CENTRE[0][1]}
+        x2={ROAD_CENTRE[1][0]}
+        y2={ROAD_CENTRE[1][1]}
+        stroke={colors.standEdge}
+        strokeOpacity={0.5}
+        strokeWidth={1.5}
+        strokeDasharray={[6, 5]}
+      />
+      <Polygon points={PARCEL_POINTS} fill={colors.stand} />
+      <Polygon points={PARCEL_POINTS} fill={colors.canopy} fillOpacity={0.1} />
+      {CROWNS.map((crown, index) => (
+        <Circle
+          key={index}
+          cx={crown.cx}
+          cy={crown.cy}
+          r={crown.r}
+          fill={colors.canopy}
+          fillOpacity={0.2 + 0.3 * crown.tone}
+        />
+      ))}
+      <Polygon
+        points={PARCEL_POINTS}
+        fill="none"
+        stroke={colors.ink}
+        strokeOpacity={0.75}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+    </>
   )
 }
 
@@ -143,6 +197,17 @@ function WalkLayer({
       <AnimatedPath
         d={walk.path}
         fill="none"
+        stroke={colors.stand}
+        strokeOpacity={0.9}
+        strokeWidth={strokeWidth + 4}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        strokeDasharray={[walk.length, walk.length]}
+        animatedProps={trailProps}
+      />
+      <AnimatedPath
+        d={walk.path}
+        fill="none"
         stroke={colors.trail}
         strokeWidth={strokeWidth}
         strokeLinejoin="round"
@@ -165,36 +230,49 @@ function FullSchema({ colors }: { colors: Palette }) {
   const progress = useSchemaProgress()
   return (
     <>
-      <Stand colors={colors} />
+      <ParcelMap colors={colors} />
       <WalkLayer walk={FULL} progress={progress} colors={colors} strokeWidth={3} />
+    </>
+  )
+}
+
+/** A label of the drawing on a light pill, so it stays readable over the trees. */
+function MapLabel({ x, y, text, colors }: { x: number; y: number; text: string; colors: Palette }) {
+  const width = text.length * 5.6 + 12
+  return (
+    <>
+      <Rect
+        x={x - width / 2}
+        y={y - 12}
+        width={width}
+        height={17}
+        rx={8}
+        fill={colors.stand}
+        fillOpacity={0.9}
+      />
+      <SvgText x={x} y={y} fontSize={11} fill={colors.ink} textAnchor="middle">
+        {text}
+      </SvgText>
     </>
   )
 }
 
 function StripSchema({ colors }: { colors: Palette }) {
   const progress = useSchemaProgress()
-  const { x, y, width, height } = STRIP_BAND
   return (
     <>
-      <Stand colors={colors} />
-      <Rect x={x} y={y} width={width} height={height} fill={colors.band} fillOpacity={0.3} />
-      <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
+      <ParcelMap colors={colors} />
+      <Polygon points={BAND_POINTS} fill={colors.band} fillOpacity={0.3} />
+      <Polygon
+        points={BAND_POINTS}
         fill="none"
         stroke={colors.band}
         strokeWidth={2}
         strokeDasharray={[5, 4]}
       />
       <WalkLayer walk={STRIP} progress={progress} colors={colors} strokeWidth={3} />
-      <SvgText x={150} y={y - 8} fontSize={11} fill={colors.label} textAnchor="middle">
-        {fr.routeGuide.schema.stripWidth}
-      </SvgText>
-      <SvgText x={150} y={150} fontSize={11} fill={colors.label} textAnchor="middle">
-        {fr.routeGuide.schema.restGlance}
-      </SvgText>
+      <MapLabel x={150} y={70} text={fr.routeGuide.schema.stripWidth} colors={colors} />
+      <MapLabel x={150} y={144} text={fr.routeGuide.schema.restGlance} colors={colors} />
     </>
   )
 }
@@ -209,7 +287,7 @@ function PlotSchema({ colors }: { colors: Palette }) {
   }))
   return (
     <>
-      <Stand colors={colors} />
+      <ParcelMap colors={colors} />
       <AnimatedCircle
         cx={PLOT.cx}
         cy={PLOT.cy}
@@ -234,9 +312,7 @@ function PlotSchema({ colors }: { colors: Palette }) {
         animatedProps={radiusProps}
       />
       <Circle cx={PLOT.cx} cy={PLOT.cy} r={5} fill={colors.ink} />
-      <SvgText x={150} y={165} fontSize={11} fill={colors.label} textAnchor="middle">
-        {fr.routeGuide.schema.plotArea}
-      </SvgText>
+      <MapLabel x={150} y={122} text={fr.routeGuide.schema.plotArea} colors={colors} />
     </>
   )
 }
