@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons"
-import { useMemo } from "react"
+import { type ReactNode, useMemo } from "react"
 import { Modal, StyleSheet, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
@@ -14,6 +14,8 @@ export type InfoSheetProps = {
   /** A small line above the body (the abbreviation itself). */
   eyebrow?: string
   body: string
+  /** A drawing above the text (the schema of a parcours). */
+  illustration?: ReactNode
   closeLabel: string
   onClose: () => void
   testID?: string
@@ -30,6 +32,7 @@ export function InfoSheet({
   title,
   eyebrow,
   body,
+  illustration,
   closeLabel,
   onClose,
   testID,
@@ -63,6 +66,7 @@ export function InfoSheet({
           </AppPressable>
         </View>
         <View style={styles.body}>
+          {illustration}
           {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={styles.explanation}>{body}</Text>
         </View>

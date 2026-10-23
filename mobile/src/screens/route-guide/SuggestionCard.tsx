@@ -24,6 +24,7 @@ import { ForestCard } from "../../ui/ForestCard"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RESUME_LAYOUT } from "../home/layout-budget"
 import { COUNTING_TERM, METHOD_TERM } from "./glossary-terms"
+import { RouteSchema } from "./RouteSchema"
 import { SuggestionEntrance } from "./SuggestionEntrance"
 
 const guide = fr.routeGuide
@@ -134,6 +135,7 @@ export function SuggestionCard({
                 <GlossaryInfo
                   term={METHOD_TERM[method]}
                   text={routeSheetText(method)}
+                  illustration={<RouteSchema method={method} />}
                   color={forest.titleAccent}
                 />
               </View>

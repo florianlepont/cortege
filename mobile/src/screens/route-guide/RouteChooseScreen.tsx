@@ -18,6 +18,7 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
+import { RouteSchema } from "./RouteSchema"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
 import { CountingPicker } from "./CountingPicker"
@@ -157,7 +158,11 @@ export function RouteChooseScreen({
                   caption={caption}
                   tag={tag}
                   trailing={
-                    <GlossaryInfo term={METHOD_TERM[method]} text={routeSheetText(method)} />
+                    <GlossaryInfo
+                      term={METHOD_TERM[method]}
+                      text={routeSheetText(method)}
+                      illustration={<RouteSchema method={method} />}
+                    />
                   }
                   accessibilityLabel={
                     tag

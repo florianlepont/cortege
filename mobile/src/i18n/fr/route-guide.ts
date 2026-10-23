@@ -370,6 +370,17 @@ export const routeGuideFr = {
     useDisabledA11y:
       "Utiliser ce parcours. Choisissez d'abord un parcours et vérifiez les détails.",
   },
+  // The small drawings of the parcours in their explanation sheet (owner request, Phase 30).
+  schema: {
+    stripWidth: "20 à 50 m",
+    plotArea: "1 ha",
+    restGlance: "Coup d'œil rapide au reste",
+    a11y: {
+      full: "Schéma : un point parcourt tout le peuplement par bandes régulières.",
+      partialStrip: "Schéma : un point suit une seule large bande du peuplement.",
+      partialPlot: "Schéma : un cercle se dessine au milieu du peuplement, c'est la placette.",
+    },
+  },
   glossary: {
     close: "Fermer",
     terms: {

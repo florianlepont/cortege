@@ -38,6 +38,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../../ui/useScreenVisible", () => ({ useScreenVisible: () => true }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
 jest.mock("../../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
 jest.mock("../../ui/AppCard", () => ({ AppCard: "AppCard" }))

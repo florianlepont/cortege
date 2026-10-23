@@ -23,6 +23,7 @@ jest.mock("./AppText", () => ({ AppText: "Text" }))
 
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { View } from "react-native"
 import { GlossaryInfo, type GlossaryTermId } from "./GlossaryInfo"
 
 const originalConsoleError = console.error
@@ -39,10 +40,17 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-function mount(term: GlossaryTermId = "parPlacette", testID?: string, color?: string) {
+function mount(
+  term: GlossaryTermId = "parPlacette",
+  testID?: string,
+  color?: string,
+  illustration?: React.ReactNode,
+) {
   let tree!: renderer.ReactTestRenderer
   act(() => {
-    tree = renderer.create(<GlossaryInfo term={term} testID={testID} color={color} />)
+    tree = renderer.create(
+      <GlossaryInfo term={term} testID={testID} color={color} illustration={illustration} />,
+    )
   })
   const byType = (type: string) => tree.root.findAll((node) => (node.type as unknown) === type)
   const trigger = () => tree.root.findAll((node) => node.props.testID !== undefined)[0]
@@ -88,6 +96,23 @@ describe("GlossaryInfo", () => {
       (node) => node.props.accessibilityLabel === fr.routeGuide.glossary.close,
     )
     expect(closeButton).toBeDefined()
+  })
+
+  it("shows a drawing above the sentence in the sheet when given one, and none otherwise", () => {
+    const withDrawing = mount("parPlacette", undefined, undefined, <View testID="drawing" />)
+    act(() => withDrawing.trigger().props.onPress())
+    expect(
+      withDrawing.tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "drawing",
+      ),
+    ).toHaveLength(1)
+    const without = mount()
+    act(() => without.trigger().props.onPress())
+    expect(
+      without.tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "drawing",
+      ),
+    ).toHaveLength(0)
   })
 
   it("closes, and leaves no Modal mounted", () => {
