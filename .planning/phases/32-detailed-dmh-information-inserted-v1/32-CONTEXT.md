@@ -31,6 +31,10 @@ While recording factor F, the observer reaches detailed identification informati
 ### Faster recording
 - **D-08:** Owner-chosen levers (2026-10-23): (a) +/- counters directly on the group row, (b) search and grouping of the 15 groups by form, (c) frequent or already ticked groups first. A timed baseline on a real survey comes first, so the plan can drop a lever that does not help. Hard constraints: the stored payload is unchanged, the capped score is unchanged (parity cases untouched), and the speed gain is measured on a real survey (timed before and after, protocol written in the plan).
 
+### Licence outcome and counters (owner, 2026-10-23, after research)
+- **D-09:** Research found the WSL pocket guide (2024) carries only "© WSL 2024", no reuse licence, photos by 7 creators. So texts are our own wording with sources cited (D-02 applies), and no WSL image is embedded without written permission. Owner choice: illustrations are original drawings owned by the association (not WSL photos). The plan treats the drawings as a deliverable with its own lead time: the guide ships text-first and the drawings slot in per group when delivered. Who produces them (commission or in-house) is an open item for the owner.
+- **D-10:** The +/- counter on the group row exists only when the recorded route counts F in full (the only case where `dmh_counts` is stored); in capped mode the tick stays. Going down to 0 leaves the group ticked. No stored data changes.
+
 ### Claude's Discretion
 - Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone.
 - Exact sheet layout, within the visual layer rules of CLAUDE.md.
