@@ -125,7 +125,7 @@ afterEach(() => {
 })
 
 describe("SurveyContextScreen (variant I)", () => {
-  test("shows the weather first, then the method editor: no map, no parcel list (D-32, D-41)", () => {
+  test("shows the weather first, then the method editor: no map, no parcel list, no route card (D-32, D-41, 2026-10-14)", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
@@ -135,6 +135,7 @@ describe("SurveyContextScreen (variant I)", () => {
     const first = scroll.children[1] as ReactTestInstance
     expect(first.findAllByType("ConditionsSection" as never)).toHaveLength(1)
     expect(tree.root.findAllByType("ParcelMapCard" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("RouteSection" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("GlassIconButton" as never)).toHaveLength(0)
   })

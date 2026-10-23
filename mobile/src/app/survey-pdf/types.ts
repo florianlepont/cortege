@@ -1,4 +1,4 @@
-import type { SurveyWeather } from "@cortege/ibp-domain"
+import type { SurveyRoute, SurveyWeather } from "@cortege/ibp-domain"
 import type {
   DisplayedFactorResult,
   DisplayedScores,
@@ -147,6 +147,9 @@ export type SurveyExportData = Omit<
   rawFactors: Record<string, unknown>
   // The conditions of the survey (phase 27, D-17): its note and its weather, as stored on the phone.
   conditions: { note: string | null; weather: SurveyWeather | null }
+  // The route used (phase 30, D-09), as stored on the phone; null for a survey recorded before the
+  // phase or whose record cannot be read, which then prints exactly as it did before.
+  route: SurveyRoute | null
   photos: { items: ExportPhoto[]; total: number; unavailable: number }
   map: ExportMap | null
   history: ExportHistory | null

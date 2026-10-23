@@ -51,3 +51,10 @@ export type {
   WeatherSkyCode,
   WeatherSource,
 } from "./weather"
+export type {
+  RouteAnswers,
+  RouteComplement,
+  RouteGuideRecord,
+  RouteSuggestion,
+  SurveyRoute,
+} from "./route"

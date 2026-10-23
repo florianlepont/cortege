@@ -1,3 +1,4 @@
+import type { SurveyRoute } from "./route"
 import type { SurveyWeather } from "./weather"
 import type { FactorCanonical, IbpMethodFields, SurveyStatus, SurveyVisibility } from "./survey"
 
@@ -72,6 +73,8 @@ export type SyncChangeSurvey = IbpMethodFields & {
   survey_note?: string | null
   /** Phase 27, D-01: null or absent means no weather. */
   weather?: SurveyWeather | null
+  /** Phase 30, D-08: the route used; null or absent when none or on an older server. */
+  survey_route?: SurveyRoute | null
   created_at?: string | null
   updated_at?: string
   submitted_at?: string | null

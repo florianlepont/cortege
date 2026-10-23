@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from "react"
+import { Fragment, useMemo, type ReactElement } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
@@ -21,7 +21,14 @@ import { FactorCounterInput } from "../ui/FactorCounterInput"
 import { FactorGenusListInput } from "../ui/FactorGenusListInput"
 import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../ui/FactorSliderInput"
+import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
+import {
+  hasUncappedBlock,
+  UncappedFieldBlock,
+  type UncappedEntryProps,
+} from "./factor-detail/UncappedFieldBlock"
+import { useRouteSurfacePrefill } from "./factor-detail/useRouteSurfacePrefill"
 import { fr } from "../i18n"
 import { AppPressable } from "../ui/AppPressable"
 
@@ -51,6 +58,10 @@ const COMPANION_LABELS: Record<Companion, string> = {
 }
 
 const ignoreSelectionChange = (): void => undefined
+
+// Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
+const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
+const NO_FACTORS: readonly FactorKey[] = []
 
 function fieldVariantsFor(
   factor: FactorKey,
@@ -97,13 +108,28 @@ type FactorDetailScreenProps = {
   onChangeNote: (text: string) => void
   /** The note is written to the draft (typing pause, blur, page change). */
   onCommitNote: () => void
+  /** Phase 30 (D-07): the factors counted in full, from the recorded route (none: nothing new). */
+  uncappedFactors?: readonly FactorKey[]
+  /** The surface décrite of the recorded route (ha): C, D and E start from it. Null: none. */
+  zoneSurfaceHa?: number | null
+  /**
+   * Phase 30 (D-07, plan 30-19): the typed detail inputs of the relevé déplafonné and their setters.
+   * B counted in full shows its cover per stratum, F its counts per group and its own surface.
+   * Absent: the capped entry everywhere.
+   */
+  uncappedEntry?: UncappedEntryProps
 }
 
 /**
  * One factor's entry (OA-30): the input first, then the factor's score on one line, then a link to
  * the help. The factor's name and the running total are in the pager's header, not here. Factor A
  * opens with the photo identification (OA-31). Phase 27 (D-16): the flat doubt and note strip sits
- * between the score line and the help link; it never changes the score line.
+ * between the score line and the help link; it never changes the score line. Phase 30 (D-07): a
+ * factor counted in full opens with its one-line caption, and the surface field of C, D and E starts
+ * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
+ * B counted in full swaps its strata chips for a cover per stratum, F adds a counter per ticked
+ * group and its own surface under its group chips (the detail values are kept, never deleted, when
+ * the factor goes back to the capped entry, U-O10).
  */
 export function FactorDetailScreen({
   factor,
@@ -116,6 +142,9 @@ export function FactorDetailScreen({
   onChangeDoubt,
   onChangeNote,
   onCommitNote,
+  uncappedFactors = NO_FACTORS,
+  zoneSurfaceHa = null,
+  uncappedEntry,
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
@@ -124,15 +153,64 @@ export function FactorDetailScreen({
   // so a confirmed suggestion can be merged straight into whatever the surveyor already picked.
   const genusListField = factor === "A" ? fields[0] : null
   const variants = useMemo(() => fieldVariantsFor(factor, methodVersion), [factor, methodVersion])
+  const countedInFull = uncappedFactors.includes(factor)
+  const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
+  // Found by its place (the numeric variant), not by its label: the form hands the French label
+  // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).
+  const surfaceIndex = SURFACE_FACTORS.includes(factor)
+    ? variants.findIndex((variant) => variant.kind === "numeric")
+    : -1
+  const surfaceField = surfaceIndex >= 0 ? fields[surfaceIndex] : undefined
+  const { fromRoute } = useRouteSurfacePrefill({
+    zoneSurfaceHa,
+    surfaceText: surfaceField?.value ?? "",
+    onChangeSurface: surfaceField?.onChange ?? ignoreSelectionChange,
+    enabled: surfaceField !== undefined,
+  })
 
   return (
     <View style={detailStyles.screen}>
       <AppCard variant="glass" padding={16} style={detailStyles.panel}>
+        {countedInFull ? <CountingModeCaption factor={factor} /> : null}
         {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
         <View style={detailStyles.fieldsList}>
-          {fields.map((field, index) =>
-            renderFactorField(factor, variants[index], field, methodVersion, detailStyles),
-          )}
+          {fields.map((field, index) => {
+            const block = detailEntry ? (
+              <UncappedFieldBlock
+                key={`${factor}-${field.label}-uncapped`}
+                factor={factor}
+                field={field}
+                methodVersion={methodVersion}
+                entry={detailEntry}
+                zoneSurfaceHa={zoneSurfaceHa}
+              />
+            ) : null
+            // B: the cover per stratum replaces the strata chips.
+            if (block !== null && factor === "B") return block
+            const input = renderFactorField(
+              factor,
+              variants[index],
+              field,
+              methodVersion,
+              detailStyles,
+            )
+            if (block !== null) {
+              return (
+                <Fragment key={`${factor}-${field.label}-detail`}>
+                  {input}
+                  {block}
+                </Fragment>
+              )
+            }
+            return fromRoute && field === surfaceField ? (
+              <Fragment key={`${factor}-${field.label}-from-route`}>
+                {input}
+                <FromRouteCaption />
+              </Fragment>
+            ) : (
+              input
+            )
+          })}
         </View>
       </AppCard>
 

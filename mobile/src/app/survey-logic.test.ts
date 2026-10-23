@@ -14,6 +14,7 @@ import {
 } from "./vegetation"
 import {
   buildAttachmentCountBySurvey,
+  computeSurveyStats,
   filterAndSortSurveys,
   formatSurveySyncDisplayLabel,
   formatSurveyUiStatusLabel,
@@ -437,5 +438,25 @@ describe("labels read from the catalogue (D-06)", () => {
     expect(formatSurveyUiStatusLabel("draft")).toBe(status.draft)
     expect(formatSurveySyncDisplayLabel("sync")).toBe(status.synced)
     expect(formatSurveySyncDisplayLabel("local")).toBe(status.local)
+  })
+})
+
+describe("a draft without route (phase 30)", () => {
+  const routeless = makeSurvey({ route_missing: 1 })
+
+  test("reads route_pending, labelled Parcours à choisir, and is not counted as to send", () => {
+    expect(resolveSurveyUiStatus(routeless)).toBe("route_pending")
+    expect(formatSurveyUiStatusLabel("route_pending")).toBe("Parcours à choisir")
+    expect(resolveSurveySyncDisplay(routeless)).toBe("route_pending")
+    expect(formatSurveySyncDisplayLabel("route_pending")).toBe("Parcours à choisir")
+    const stats = computeSurveyStats([routeless, makeSurvey({ id: "b", route_missing: 0 })])
+    expect(stats.pending).toBe(1)
+    expect(stats.draft).toBe(2)
+  })
+
+  test("a failure or a submitted survey keeps its own status", () => {
+    expect(resolveSurveyUiStatus({ ...routeless, sync_state: "failed" })).toBe("sync_error")
+    expect(resolveSurveyUiStatus({ ...routeless, status: "submitted" })).toBe("submitted")
+    expect(resolveSurveyUiStatus(makeSurvey({ route_missing: 0 }))).toBe("sync_pending")
   })
 })

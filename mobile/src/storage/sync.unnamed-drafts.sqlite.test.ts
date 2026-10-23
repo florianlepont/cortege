@@ -8,10 +8,21 @@
  * Real SQL against the global expo-sqlite mock, same approach as sync.engine.sqlite.test.ts.
  */
 
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { syncPending } from "./sync"
 
 const NOW = "2026-01-01T00:00:00.000Z"
+
+// Phase 30 (O-19, P-1): a draft without route stays on the phone, so these drafts carry a route and
+// only their name decides here.
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
 
 type MockResponse = { ok: boolean; status: number; text: () => Promise<string> }
 
@@ -77,7 +88,13 @@ async function insertSurvey(
       overrides.last_sync_error ? "bad_request" : null,
       overrides.last_sync_error ? NOW : null,
       overrides.sync_blocked ?? 0,
-      JSON.stringify({ id, sync_version: 1, site_name: siteName, status: "draft" }),
+      JSON.stringify({
+        id,
+        sync_version: 1,
+        site_name: siteName,
+        status: "draft",
+        survey_route: ROUTE,
+      }),
       NOW,
       NOW,
     ],
@@ -89,7 +106,12 @@ async function queueUpsert(surveyId: string, siteName: string): Promise<number> 
   const result = await db.runAsync(
     `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
      VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,
-    [surveyId, JSON.stringify({ id: surveyId, sync_version: 1, site_name: siteName }), NOW, NOW],
+    [
+      surveyId,
+      JSON.stringify({ id: surveyId, sync_version: 1, site_name: siteName, survey_route: ROUTE }),
+      NOW,
+      NOW,
+    ],
   )
   return Number(result.lastInsertRowId)
 }

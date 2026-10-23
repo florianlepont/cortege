@@ -177,7 +177,9 @@ jest.mock("../storage/attachments", () => ({
   computeResizeTarget: jest.fn(),
 }))
 
+const mockPatchLocalSurveyRoute = jest.fn()
 jest.mock("../storage/surveys", () => ({
+  patchLocalSurveyRoute: (...args: unknown[]) => mockPatchLocalSurveyRoute(...args),
   cacheSurveyCanonicalFields: jest.fn().mockResolvedValue(undefined),
   listLocalSurveys: jest.fn(async () => [
     {
@@ -520,6 +522,38 @@ describe("AppStateProvider", () => {
     const { surveys } = latest()
     expect(surveys.actions.updateSurveyNote).toEqual(expect.any(Function))
     expect(surveys.actions.updateSurveyWeather).toEqual(expect.any(Function))
+  })
+
+  test("updateSurveyRoute is a stable action wired to the draft patcher (phase 30, D-08)", async () => {
+    const first = snapshots[0].surveys.actions.updateSurveyRoute
+    expect(first).toEqual(expect.any(Function))
+    expect(snapshots.every((s) => s.surveys.actions.updateSurveyRoute === first)).toBe(true)
+    expect(snapshots.every((s) => s.surveyActions.updateSurveyRoute === first)).toBe(true)
+
+    const route = {
+      version: 1 as const,
+      method: "full" as const,
+      counting: "capped" as const,
+      zone_surface_ha: 2,
+      guide: { chosen_by: "observer" as const },
+    }
+    mockPatchLocalSurveyRoute.mockResolvedValueOnce({ id: "s-01" })
+    let saved: boolean | undefined
+    await act(async () => {
+      saved = await latest().surveys.actions.updateSurveyRoute("s-01", route)
+    })
+    expect(saved).toBe(true)
+    expect(mockPatchLocalSurveyRoute).toHaveBeenCalledWith({
+      survey_id: "s-01",
+      survey_route: route,
+    })
+
+    mockPatchLocalSurveyRoute.mockResolvedValueOnce(null)
+    await act(async () => {
+      saved = await latest().surveys.actions.updateSurveyRoute("s-01", route)
+    })
+    expect(saved).toBe(false)
+    expect(snapshots.every((s) => s.surveys.actions.updateSurveyRoute === first)).toBe(true)
   })
 
   test("a weather request in flight changes only the weather value (phase 27, D-10)", async () => {

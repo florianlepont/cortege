@@ -10,10 +10,25 @@
  * the in-memory database.
  */
 
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { syncPending } from "./sync"
 
 const NOW = "2026-01-01T00:00:00.000Z"
+
+// Phase 30 (O-19, P-1): a draft without route stays on the phone, so a draft that must be sent
+// carries a valid route.
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
+
+function routedPayload(id: string, siteName: string): string {
+  return JSON.stringify({ id, sync_version: 1, site_name: siteName, survey_route: ROUTE })
+}
 
 type MockResponse = {
   ok: boolean
@@ -30,13 +45,27 @@ async function insertSurvey(id: string): Promise<void> {
   await db.runAsync(
     `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, payload_json, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, "Site", "draft", "private", 1, "pending", null, null, null, 0, null, NOW, NOW],
+    [
+      id,
+      "Site",
+      "draft",
+      "private",
+      1,
+      "pending",
+      null,
+      null,
+      null,
+      0,
+      routedPayload(id, "Site"),
+      NOW,
+      NOW,
+    ],
   )
 }
 
 async function insertSurveyUpsertQueueRow(surveyId: string): Promise<number> {
   const db = await getDb()
-  const payload = { id: surveyId, sync_version: 1, site_name: "Site" }
+  const payload = { id: surveyId, sync_version: 1, site_name: "Site", survey_route: ROUTE }
   const result = await db.runAsync(
     `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
      VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,

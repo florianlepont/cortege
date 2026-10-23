@@ -1,4 +1,5 @@
 import type { FactorAnnotations } from "./survey"
+import type { SurveyRoute } from "./route"
 import type { SurveyWeather } from "./weather"
 
 // Wire types of the public map endpoints, shared by the API and the app.
@@ -89,6 +90,11 @@ export type CommunitySurveyDetail = {
   /** Phase 27: absent on an older server; only submitted surveys reach other members (D-06). */
   survey_note?: string | null
   weather?: SurveyWeather | null
+  /**
+   * Phase 30, O-15: absent on an older server; only submitted surveys visible to the reader reach
+   * other members.
+   */
+  survey_route?: SurveyRoute | null
   factor_annotations?: FactorAnnotations | null
   history: CommunitySurveyHistoryItem[]
 }

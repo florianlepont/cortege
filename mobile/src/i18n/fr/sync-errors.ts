@@ -29,6 +29,7 @@ export const syncErrorsFr = {
     invalid_sync_operation: "Opération refusée par le serveur",
     sync_fatal_error: "Erreur de synchronisation : ouvrez le relevé pour corriger",
     parcel_required: "Aucune parcelle choisie : ouvrez le relevé pour en choisir une",
+    route_required: "Parcours non choisi : ouvrez le relevé pour le choisir",
     parcel_invalid: "Parcelle invalide : ouvrez le relevé pour en choisir une autre",
     parcel_version_conflict: "La parcelle a changé sur le serveur : ouvrez le relevé pour vérifier",
     survey_id_conflict: "Ce relevé existe déjà sur le serveur",

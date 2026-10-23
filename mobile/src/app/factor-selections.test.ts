@@ -1,3 +1,5 @@
+import { B_STRATUM_CODES, DMH_GROUP_CODES } from "@cortege/ibp-domain"
+import { fr } from "../i18n"
 import {
   SELECTION_KEYS,
   readSelection,
@@ -61,6 +63,20 @@ describe("factor-selections", () => {
       expect(selectionOptionsFor("B", V3_2, null)).toHaveLength(5)
       expect(selectionOptionsFor("F", V3_2, null)).toHaveLength(15)
       expect(selectionOptionsFor("H", null, null)).toHaveLength(3)
+    })
+  })
+
+  describe("code parity with the package (phase 30, spec section 7)", () => {
+    it("offers the strata the package derives the count from, in the same order", () => {
+      expect(fr.factorInput.strataOptions.map((option) => option.value)).toEqual([
+        ...B_STRATUM_CODES,
+      ])
+    })
+
+    it("offers the dendromicrohabitat groups the package counts, in the same order", () => {
+      expect(fr.factorInput.dmhGroupOptions.map((option) => option.value)).toEqual([
+        ...DMH_GROUP_CODES,
+      ])
     })
   })
 

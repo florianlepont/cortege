@@ -18,6 +18,8 @@ export const commonFr = {
     pending: "En attente",
     submitted: "Soumis",
     syncPending: "Sync en attente",
+    // Phase 30: a draft without its parcours is held on the phone, it is not waiting for the network.
+    routePending: "Parcours à choisir",
     syncError: "Erreur de sync",
     syncBlocked: "Sync bloqué",
     synced: "Sync",

@@ -21,7 +21,8 @@ const SECTION_AT_TOP_MAX_Y = 120
 /**
  * "Contexte" (OA-46, D-32, D-41): the weather first, in one card (read-out, status line, sky chips
  * and the full dated source sentence, phase 27 D-15), then the method and the station context. The
- * parcels and their map are the "Parcelles" page; the survey note is a card of the summary (D-33).
+ * parcels, their map and the "Parcours utilisé" card (phase 30, D-09, moved there on 2026-10-14)
+ * are the "Parcelles et parcours" page; the survey note is a card of the summary (D-33).
  * With the `conditions` section param the page scrolls once to the weather after its first layout,
  * unless the weather already sits at the top, where there is nothing to scroll to; no field takes
  * focus by itself.

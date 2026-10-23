@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import React from "react"
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { notificationAsync } from "../../test/expo-haptics.mock"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
@@ -48,7 +49,7 @@ afterEach(() => {
 const mockScrollTo = jest.fn()
 const RANGE_DISPLAY = {
   value: "21 \u2192 34",
-  accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+  accessibilityLabel: "Historique. de 21 à 34 sur 50",
   pressable: true,
 }
 let mockHistoryDisplay: {
@@ -113,6 +114,10 @@ let mockConditions: {
 } = { note: null, weather: null, parcelIds: [], loaded: true }
 jest.mock("./survey-detail/conditions/useSurveyConditions", () => ({
   useSurveyConditions: jest.fn(() => mockConditions),
+}))
+let mockRoute: SurveyRoute | null = null
+jest.mock("../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: jest.fn(() => ({ route: mockRoute, loaded: true })),
 }))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
@@ -410,6 +415,27 @@ describe("SurveyDetailScreen summary", () => {
     expect(contextRow.onPress).toBe(props.onOpenContext)
   })
 
+  test("the Parcelles row carries the short route label after the parcel count (U-O9)", () => {
+    mockRoute = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2,
+      guide: { chosen_by: "observer" },
+    }
+    const tree = mount("draft")
+    const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows[0].value).toBe("v3.0")
+    expect(rows[1].label).toBe("Parcelles")
+    expect(rows[1].value).toMatch(/ · Parcours en plein$/)
+  })
+
+  test("a draft with no route says Parcours à choisir on the parcels row", () => {
+    mockRoute = null
+    const draftRows = byType(mount("draft"), "AppGroupedList")[0].props.sections[0].rows
+    expect(draftRows[1].value).toMatch(/ · Parcours à choisir$/)
+  })
+
   test("the source of the summary no longer imports the chart", () => {
     const source = readFileSync(join(__dirname, "SurveyDetailScreen.tsx"), "utf8")
     expect(source).not.toContain("FactorBarsChart")
@@ -440,7 +466,7 @@ describe("SurveyDetailScreen summary", () => {
     const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
     expect(rows[1].key).toBe("parcels")
     expect(rows[1].onPress).toBe(props.onOpenParcelsPage)
-    expect(rows[1].value).toBe("Aucune")
+    expect(rows[1].value).toBe("Aucune · Parcours à choisir")
     expect(rows[2].onPress).toBe(props.onOpenScore)
   })
 
@@ -465,7 +491,7 @@ describe("SurveyDetailScreen summary", () => {
       label: fr.surveyDetail.rows.history,
       value: "21 \u2192 34",
       multiline: true,
-      accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+      accessibilityLabel: "Historique. de 21 à 34 sur 50",
       onPress: props.onOpenHistory,
     })
     expect(useHistoryRow).toHaveBeenCalledWith({
@@ -480,7 +506,7 @@ describe("SurveyDetailScreen summary", () => {
   test("D-01: without a parcel the history row has no press (and so no chevron)", () => {
     mockHistoryDisplay = {
       value: "Aucune parcelle",
-      accessibilityLabel: "Historique de la parcelle. Aucune parcelle",
+      accessibilityLabel: "Historique. Aucune parcelle",
       pressable: false,
     }
     const tree = mount("draft")

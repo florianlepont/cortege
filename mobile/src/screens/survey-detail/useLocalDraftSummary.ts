@@ -1,4 +1,9 @@
-import { FACTOR_KEYS, readFactorAnnotations, type FactorAnnotations } from "@cortege/ibp-domain"
+import {
+  FACTOR_KEYS,
+  readFactorAnnotations,
+  readSurveyRoute,
+  type FactorAnnotations,
+} from "@cortege/ibp-domain"
 import { useEffect, useState } from "react"
 import {
   computeIbpTotalsFromRetainedScores,
@@ -51,6 +56,9 @@ export type LocalDraftSummary = {
   // The draft's per-factor doubts and notes (phase 27), also carried by the entries above.
   annotations: FactorAnnotations
   submitReady: boolean | null
+  // Phase 30 (O-19): the draft holds a valid route (`readSurveyRoute`). False when it has none or
+  // while the draft is not read yet; the finish needs it (spec section 8).
+  hasRoute: boolean
   missingFactorCount: number | null
   meta: LocalDraftMeta | null
 }
@@ -62,6 +70,7 @@ const EMPTY_SUMMARY: LocalDraftSummary = {
   factorEntries: [],
   annotations: {},
   submitReady: null,
+  hasRoute: false,
   missingFactorCount: null,
   meta: null,
 }
@@ -135,6 +144,7 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           factorEntries: entries,
           annotations,
           submitReady: readiness.ready,
+          hasRoute: readSurveyRoute(draft.survey_route) !== null,
           missingFactorCount: FACTOR_KEYS.length - filledFactorCount,
           meta: {
             site_name:

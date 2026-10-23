@@ -848,6 +848,227 @@ describe("useSurveyForm", () => {
     })
   })
 
+  // ─── Detail inputs of the releve deplafonne (phase 30, D-07, spec section 7) ──
+
+  describe("detail inputs of the releve deplafonne (U-O10)", () => {
+    const useRealRules = () => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factors = (result: FormResult) =>
+      result.current.draftInput.factors as Record<string, Record<string, unknown>>
+
+    beforeEach(useRealRules)
+
+    test("a stratum cover derives the strata count and goes out with it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "30")
+        result.current.setStratumCover("high", "19")
+        result.current.setStratumCover("herbaceous", "20")
+      })
+      expect(result.current.factorSections.B[0].value).toBe("2")
+      expect(factors(result).B).toEqual({
+        strata_count: 2,
+        strata_cover: { low: 30, high: 19, herbaceous: 20 },
+      })
+      expect(result.current.uncapped.strataCoverText).toEqual({
+        low: "30",
+        high: "19",
+        herbaceous: "20",
+      })
+    })
+
+    test("the strata ticked before are dropped when the count is derived from covers", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.B[0].selection?.onChange(["low", "high", "intermediate"])
+      })
+      await act(async () => {
+        result.current.setStratumCover("low", "50")
+      })
+      expect(result.current.factorSections.B[0].value).toBe("1")
+      expect(result.current.factorSections.B[0].selection?.selected).toBeNull()
+      expect(factors(result).B).toEqual({ strata_count: 1, strata_cover: { low: 50 } })
+    })
+
+    test("covers with no valid strata count write no B key (a detail never goes out alone)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "x")
+        result.current.setStratumCover("high", "150")
+      })
+      expect(factors(result)).not.toHaveProperty("B")
+      expect(result.current.uncapped.strataCoverText.high).toBe("150")
+    })
+
+    test("a typed strata count stays editable and keeps the covers (detail kept, last value)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "30")
+      })
+      await act(async () => {
+        result.current.factorSections.B[0].onChange("4")
+      })
+      expect(factors(result).B).toEqual({ strata_count: 4, strata_cover: { low: 30 } })
+    })
+
+    test("group counts and F's surface derive the trees per hectare and go out with it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("2")
+        result.current.setDmhCount("dmh_01", 3)
+        result.current.setDmhCount("dmh_05", 1)
+      })
+      // 3 / 2 ha + 1 / 2 ha = 2 trees per hectare.
+      expect(result.current.factorSections.F[0].value).toBe("2")
+      expect(factors(result).F).toEqual({
+        trees_per_ha: 2,
+        dmh_counts: { dmh_01: 3, dmh_05: 1 },
+        surface_ha: 2,
+      })
+    })
+
+    test("each group is capped at 2 trees per hectare by the package", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_01", 9)
+        result.current.setDmhCount("dmh_02", 1)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("3")
+    })
+
+    test("a count without a valid surface changes no F field and writes no F key", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setDmhCount("dmh_01", 3)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+      expect(factors(result)).not.toHaveProperty("F")
+      await act(async () => {
+        result.current.setFSurface("0")
+      })
+      expect(factors(result)).not.toHaveProperty("F")
+    })
+
+    test("F keeps its ticked groups beside the counts", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].selection?.onChange(["dmh_02"])
+      })
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_02", 1)
+      })
+      expect(factors(result).F).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_02"],
+        dmh_counts: { dmh_02: 1 },
+        surface_ha: 1,
+      })
+    })
+
+    test("editing another factor keeps the details (autosave, research Pitfall 5)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "40")
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_03", 1)
+      })
+      const before = { B: factors(result).B, F: factors(result).F }
+      await act(async () => {
+        result.current.factorSections.C[0].onChange("2")
+        result.current.factorSections.G[0].onChange("20")
+      })
+      expect(factors(result).B).toEqual(before.B)
+      expect(factors(result).F).toEqual(before.F)
+      expect(factors(result).G).toEqual({ open_flowering_percent: 20 })
+    })
+
+    test("applyDraftToForm restores the details and the payload round-trips", async () => {
+      const result = await renderForm()
+      const stored = {
+        B: { strata_count: 2, strata_cover: { very_low: 22.5, high: 60 } },
+        F: { trees_per_ha: 1.5, dmh_counts: { dmh_01: 1, dmh_07: 2 }, surface_ha: 2 },
+      }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: stored })
+      })
+      expect(result.current.uncapped).toEqual({
+        strataCoverText: { very_low: "22.5", high: "60" },
+        dmhCounts: { dmh_01: 1, dmh_07: 2 },
+        fSurfaceText: "2",
+      })
+      expect(factors(result).B).toEqual(stored.B)
+      expect(factors(result).F).toEqual(stored.F)
+    })
+
+    test("loading a draft without details clears the previous ones", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "40")
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_03", 1)
+      })
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: { B: { strata_count: 1 } } })
+      })
+      expect(result.current.uncapped).toEqual({
+        strataCoverText: {},
+        dmhCounts: {},
+        fSurfaceText: "",
+      })
+      expect(factors(result).B).toEqual({ strata_count: 1 })
+      expect(factors(result)).not.toHaveProperty("F")
+    })
+
+    test("resetSurveyForm clears the details with the rest of the form", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setStratumCover("low", "40")
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_03", 1)
+      })
+      await act(async () => {
+        result.current.resetSurveyForm()
+      })
+      expect(result.current.uncapped).toEqual({
+        strataCoverText: {},
+        dmhCounts: {},
+        fSurfaceText: "",
+      })
+      expect(factors(result)).toEqual({})
+    })
+
+    test("the retained scores are the same with and without the detail keys (D-09)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.B[0].onChange("2")
+        result.current.factorSections.F[0].onChange("1")
+      })
+      const without = result.current.factorRetainedScores
+      expect(without.B).not.toBeNull()
+      expect(without.F).not.toBeNull()
+      await act(async () => {
+        result.current.setStratumCover("low", "30")
+        result.current.setStratumCover("high", "30")
+        result.current.setFSurface("2")
+        result.current.setDmhCount("dmh_01", 1)
+        result.current.setDmhCount("dmh_02", 1)
+      })
+      // 2 strata and 1 tree per hectare again: the derived values equal the typed ones.
+      expect(result.current.factorSections.B[0].value).toBe("2")
+      expect(result.current.factorSections.F[0].value).toBe("1")
+      expect(result.current.factorRetainedScores).toEqual(without)
+    })
+  })
+
   // ─── resetSurveyForm ──────────────────────────────────────────────────────
 
   // ─── Doubt flag and note per factor (phase 27, D-12, D-23) ──────────────────

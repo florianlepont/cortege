@@ -204,6 +204,61 @@ describe("assembleSurveyExportData", () => {
       }
     })
 
+    test("reads the recorded route of the local draft (phase 30, D-09) with no network read", async () => {
+      const route = {
+        version: 1,
+        method: "partial_plot",
+        counting: "uncapped",
+        uncapped_factors: ["C", "D"],
+        zone_surface_ha: 4,
+        complement: { done: true, total_surface_ha: 12.5 },
+        guide: { chosen_by: "observer" },
+      }
+      const deps = fakeDeps({
+        loadDraft: async () => ({ factors: {}, survey_route: route }),
+      })
+
+      const data = await assembleSurveyExportData(input(), deps)
+
+      expect(data.route).toEqual(route)
+      expect(deps.fetchParcelStatuses).not.toHaveBeenCalled()
+    })
+
+    test("the route is null when it is absent, damaged or not an object, or the draft cannot be read", async () => {
+      const draft = (survey_route: unknown) =>
+        fakeDeps({ loadDraft: async () => ({ factors: {}, survey_route }) })
+      const absent = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => ({ factors: {} }) }),
+      )
+      const nulled = await assembleSurveyExportData(input(), draft(null))
+      const damaged = await assembleSurveyExportData(
+        input(),
+        draft({ version: 1, method: "full", counting: "capped" }),
+      )
+      const newer = await assembleSurveyExportData(
+        input(),
+        draft({ version: 2, method: "full", counting: "capped", zone_surface_ha: 3, guide: {} }),
+      )
+      const text = await assembleSurveyExportData(input(), draft("full"))
+      const missing = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => null }),
+      )
+      const broken = await assembleSurveyExportData(
+        input(),
+        fakeDeps({
+          loadDraft: async () => {
+            throw new Error("sqlite")
+          },
+        }),
+      )
+
+      for (const data of [absent, nulled, damaged, newer, text, missing, broken]) {
+        expect(data.route).toBeNull()
+      }
+    })
+
     test("takes the layout from the platform and the date from the injected clock", async () => {
       const ios = await assembleSurveyExportData(input(), fakeDeps({ platform: "ios" }))
       const android = await assembleSurveyExportData(input(), fakeDeps({ platform: "android" }))
@@ -703,6 +758,7 @@ describe("assembleSurveyExportData", () => {
 
     expect(data.rawFactors).toEqual({})
     expect(data.conditions).toEqual({ note: null, weather: null })
+    expect(data.route).toBeNull()
     expect(data.photos).toEqual({ items: [], total: 0, unavailable: 0 })
     expect(data.history).toBeNull()
     expect(data.assets).toEqual({ fonts: [], logoDataUri: null })

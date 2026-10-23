@@ -5,24 +5,16 @@ import {
   brandTypeScale,
 } from "../../app/brand-tokens"
 
-// The vertical budget of the parcel-selection card on small screens (D-08, field feedback: on an
-// iPhone SE the card plus the tab bar inset covered more than half of the map). The compact styles
-// of `ParcelSelectionCard` read these constants and `parcelMapShare` sums the same numbers, so the
-// budget the test asserts is the budget the screen draws. The switch reads the window size, never
-// the measured card height: a card that changes its own height from its own height would flip back
-// and forth (research Pitfall 10). The tab bar is never hidden here (rule OA-28).
+// The vertical budget of the parcel-selection card (D-08, then the owner check on the iPhone 17e,
+// where the offline card, the pill, the chip and a 6-line bottom card left half of the map). The
+// styles of `ParcelSelectionCard` read these constants and `parcelMapShare` sums the same numbers,
+// so the budget the test asserts is the budget the screen draws. The tab bar is never hidden here
+// (rule OA-28).
 
-/**
- * Below this window height (divided by the font scale) the card is compact. It covers the iPhone SE
- * 667 pt and the small Androids under 700 dp, and leaves the iPhone 13 mini 812 and the common
- * Androids on the full card.
- */
-export const COMPACT_HEIGHT_THRESHOLD = 700
-
-/** The compact card: a one-line title, one meta line of at most two lines, the 50 pt button. */
-export const PARCEL_CARD_COMPACT = {
+/** One slim row: the title (and a line of help without a parcel) beside the 50 pt button. */
+export const PARCEL_CARD = {
   padding: brandComponentTokens.card.compactPadding,
-  gap: brandSpacing4.sm,
+  gap: brandSpacing4.smd,
   titleLineHeight: brandTypeScale.headline.lineHeight,
   metaLineHeight: brandTypeScale.footnote.lineHeight,
   metaMaxLines: 2,
@@ -32,6 +24,9 @@ export const PARCEL_CARD_COMPACT = {
 
 /** The map controls row above the card: the 44 pt control and the 12 pt gap above the card. */
 export const MAP_CONTROLS_ROW = brandInteraction.hitTarget.min + brandSpacing4.smd
+
+/** The slim offline line under the step pill (a 32 pt row, 4 pt above and below, its hairline). */
+export const OFFLINE_SLIM_HEIGHT = 32 + 2 * brandSpacing4.xs + 2
 
 export type ParcelBudgetDevice = {
   name: string
@@ -43,35 +38,20 @@ export type ParcelBudgetDevice = {
   bottomInset: number
 }
 
-/**
- * The smallest supported screens and a tall reference. Token arithmetic from the research, to be
- * confirmed on the simulator and the emulator in plan 26-10.
- */
+/** The smallest supported screens and a tall reference. */
 export const PARCEL_BUDGET_DEVICES: readonly ParcelBudgetDevice[] = [
   // The map is full screen under the transparent header; native tab bar 84 + 12.
   { name: "iPhone SE 375 x 667", height: 667, mapAreaHeight: 667, bottomInset: 96 },
   // The opaque header (56) and the in-flow JS tab bar (64) are taken off; gesture inset 24 + 12.
   { name: "Android 360 x 640 dp", height: 640, mapAreaHeight: 520, bottomInset: 36 },
-  // The full card, native tab bar 84 + 12.
   { name: "iPhone 393 x 852", height: 852, mapAreaHeight: 852, bottomInset: 96 },
 ]
 
-/** Compact when the window height, corrected for a large system font, is under the threshold. */
-export function isCompactParcelCard(height: number, fontScale: number): boolean {
-  return height / Math.max(1, fontScale) < COMPACT_HEIGHT_THRESHOLD
-}
-
-/** The compact card: padding, title, meta lines, button, with the gaps between them. */
-export function compactParcelCardHeight(metaLines: 1 | 2): number {
-  const c = PARCEL_CARD_COMPACT
-  return (
-    2 * c.padding +
-    c.titleLineHeight +
-    c.gap +
-    metaLines * c.metaLineHeight +
-    c.gap +
-    c.buttonHeight
-  )
+/** The card: padding, then the taller of the copy and the button. */
+export function parcelCardHeight(hasSelection: boolean): number {
+  const c = PARCEL_CARD
+  const copy = c.titleLineHeight + (hasSelection ? 0 : c.metaMaxLines * c.metaLineHeight)
+  return 2 * c.padding + Math.max(c.buttonHeight, copy)
 }
 
 /** The share of the map area left once the card, its bottom inset and the controls row are drawn. */

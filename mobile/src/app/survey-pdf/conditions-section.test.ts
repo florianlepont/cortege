@@ -76,6 +76,7 @@ function makeData(conditions: SurveyExportData["conditions"]): SurveyExportData 
     coordinates: null,
     rawFactors: {},
     conditions,
+    route: null,
     photos: { items: [], total: 0, unavailable: 0 },
     map: null,
     history: null,

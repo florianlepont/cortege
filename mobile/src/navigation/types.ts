@@ -1,8 +1,15 @@
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs"
 import type { CompositeScreenProps, NavigatorScreenParams } from "@react-navigation/native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
-import type { SearchPlaceKind } from "@cortege/ibp-domain"
+import type {
+  CountingMode,
+  RouteMethod,
+  SearchPlaceKind,
+  UncappableFactor,
+} from "@cortege/ibp-domain"
 import type { FactorKey } from "../app/types"
+import type { RouteDetailsValue } from "../screens/route-guide/RouteDetailsCard"
+import type { WeatherPoint } from "../storage/weather"
 
 /**
  * Navigation param lists (phase 01.9-18) and the global RootParamList
@@ -21,6 +28,18 @@ export type AccountStackParamList = {
 
 export type HomeStackParamList = AccountStackParamList & {
   homeRoot: undefined
+}
+
+/**
+ * Phase 30: a parcours the observer chose in the chooser, handed back to the route step in the
+ * `picked` param of `surveyRouteGuide` (with a fresh `pickNonce`), or offered to the chooser as
+ * `preselect`. The details are the typed zone and complement of `RouteDetailsCard`.
+ */
+export type RoutePick = {
+  method: RouteMethod
+  counting: CountingMode
+  uncapped_factors: UncappableFactor[]
+  details?: RouteDetailsValue
 }
 
 export type SurveysStackParamList = AccountStackParamList & {
@@ -45,6 +64,35 @@ export type SurveysStackParamList = AccountStackParamList & {
     mode: "wizard" | "edit"
     /** Edit: the survey's own position, where the map starts (the form holds none). */
     startPoint?: { lat: number; lng: number }
+  }
+  /**
+   * Phase 30 (O-19): "Choix du parcours", the mandatory fifth step of a new survey (`create`: the
+   * draft is finalised only when the route is accepted) and the guided choice from the chooser
+   * (`edit`: saves the recorded route and goes back). `surveyId` is the wizard's open draft, null
+   * when it has none yet. `surfaceHa` is the stand surface estimated from the chosen parcels, null
+   * when it could not be computed; `weatherPoint` is kept for the weather lookup of the new survey.
+   */
+  surveyRouteGuide: {
+    surveyId: string | null
+    mode: "create" | "edit"
+    surfaceHa: number | null
+    weatherPoint?: WeatherPoint | null
+    /** The chooser's pick, applied once per `pickNonce`. */
+    picked?: RoutePick
+    pickNonce?: number
+  }
+  /**
+   * Phase 30: "Choisir le parcours" (registered by plan 30-21). `pick` returns the choice to the
+   * route step; `edit` saves it on the draft. `section` opens it at the counting.
+   */
+  surveyRouteChoose: {
+    surveyId: string | null
+    mode: "pick" | "edit"
+    surfaceHa?: number | null
+    preselect?: RoutePick
+    section?: "counting"
+    /** What the guide advised, to mark that parcours "Conseillé" (pick mode). */
+    suggested?: { method: RouteMethod; counting: CountingMode }
   }
 }
 
@@ -145,6 +193,8 @@ export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "sur
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">
+export type RouteGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyRouteGuide">
+export type RouteChooseRouteProps = StackRouteProps<SurveysStackParamList, "surveyRouteChoose">
 export type PublicMapRouteProps = StackRouteProps<PublicMapStackParamList, "publicMapHome">
 export type AccountRouteProps = StackRouteProps<AccountStackParamList, "accountHome">
 export type SettingsRouteProps = StackRouteProps<AccountStackParamList, "settings">

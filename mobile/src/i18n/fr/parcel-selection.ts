@@ -9,13 +9,9 @@ export const parcelSelectionFr = {
   loadingOverlay: "Chargement des parcelles…",
   visibleCount: ({ count }: { count: number }) =>
     count > 1 ? `${count} parcelles visibles` : `${count} parcelle visible`,
-  zoomToSelect: "Zoomez pour sélectionner des parcelles",
-  selectionRequired: "Sélectionnez au moins une parcelle pour continuer.",
-  // The compact card of small screens (D-08): one meta line carries the requirement, no notice.
-  compact: {
-    selectionRequired: "Touchez au moins une parcelle pour continuer.",
-  },
-  tapHint: "Touchez les parcelles pour les ajouter ou les retirer de ce relevé.",
+  // The bottom card keeps one line: the count of the chip above it says the rest. Only with no
+  // parcel chosen yet does it add what to do.
+  selectionHelper: "Touchez au moins une parcelle pour continuer.",
   saving: "Enregistrement…",
   done: "Terminé",
   continue: "Continuer",

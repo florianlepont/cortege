@@ -25,6 +25,11 @@ type AppGroupedListNavRow = {
    * parcelle" rows, whose label would be truncated at 375 pt).
    */
   multiline?: boolean
+  /**
+   * The opposite choice: the label stays on one line whole and the value wraps to at most this many
+   * lines, right-aligned (the summary's "Parcelles" row, whose value names the parcours).
+   */
+  valueLines?: number
 }
 
 type AppGroupedListCustomRow = {
@@ -128,6 +133,7 @@ function NavRow({
     styles.label,
     row.destructive ? styles.labelDestructive : null,
     row.centered ? styles.labelCentered : null,
+    row.valueLines ? styles.valueFixed : null,
   ]
 
   return (
@@ -154,8 +160,12 @@ function NavRow({
         <View style={styles.rowTrailing}>
           {row.value ? (
             <Text
-              style={[styles.value, row.multiline ? styles.valueFixed : null]}
-              numberOfLines={1}
+              style={[
+                styles.value,
+                row.multiline ? styles.valueFixed : null,
+                row.valueLines ? styles.valueWrapped : null,
+              ]}
+              numberOfLines={row.valueLines ?? 1}
             >
               {row.value}
             </Text>
@@ -267,6 +277,10 @@ function createStyles(theme: BrandTheme) {
     // multiline rows: the label wraps instead, the value stays whole.
     valueFixed: {
       flexShrink: 0,
+    },
+    valueWrapped: {
+      flexShrink: 1,
+      textAlign: "right",
     },
   })
 }

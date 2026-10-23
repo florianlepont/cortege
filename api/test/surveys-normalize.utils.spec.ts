@@ -39,6 +39,7 @@ function makeRow(overrides: Partial<SurveyRow> = {}): SurveyRow {
     ibp_cas3_scale: null,
     survey_note: null,
     weather: null,
+    survey_route: null,
     factors: { A: 1, B: 2 },
     factor_results: {},
     scores: { ibp_total: 10 },
@@ -782,6 +783,40 @@ describe("classifySameVersionContent", () => {
     ).toBe("conflict")
   })
 
+  it("treats an identical route replay as identical and a different route as a conflict", () => {
+    const route = {
+      version: 1 as const,
+      method: "full" as const,
+      counting: "capped" as const,
+      zone_surface_ha: 2.5,
+      guide: { chosen_by: "observer" as const },
+    }
+    const existing = makeRow({ survey_route: route })
+    const replay: SurveyUpsertBody = {
+      ...sameBody(existing),
+      survey_route: {
+        guide: { chosen_by: "observer" },
+        zone_surface_ha: 2.5,
+        counting: "capped",
+        method: "full",
+        version: 1,
+      },
+    }
+    expect(classifySameVersionContent(replay, existing, ["12345AB0042"])).toBe("identical")
+    expect(
+      classifySameVersionContent({ ...replay, survey_route: null }, existing, ["12345AB0042"]),
+    ).toBe("identical")
+    const { survey_route: _omitted, ...withoutRoute } = replay
+    expect(classifySameVersionContent(withoutRoute, existing, ["12345AB0042"])).toBe("identical")
+    expect(
+      classifySameVersionContent(
+        { ...replay, survey_route: { ...route, zone_surface_ha: 3 } },
+        existing,
+        ["12345AB0042"],
+      ),
+    ).toBe("conflict")
+  })
+
   it("does not treat absent or null fields as changes", () => {
     const existing = makeRow()
     const body = {
@@ -792,6 +827,73 @@ describe("classifySameVersionContent", () => {
     } as unknown as SurveyUpsertBody
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
     expect(classifySameVersionContent({}, existing, ["12345AB0042"])).toBe("identical")
+  })
+})
+
+describe("getChangedSubmittedReadOnlyFields: survey_route (phase 30, D-09)", () => {
+  const ROUTE = {
+    version: 1 as const,
+    method: "partial_strip" as const,
+    counting: "uncapped" as const,
+    uncapped_factors: ["A" as const, "B" as const],
+    zone_surface_ha: 12,
+    complement: { done: true, total_surface_ha: 14.5 },
+    guide: {
+      chosen_by: "guide" as const,
+      suggested: { method: "partial_strip" as const, counting: "uncapped" as const },
+      answers: { surface_ha: 12, narrow: true },
+    },
+  }
+  const changed = (body: SurveyUpsertBody, overrides: Partial<SurveyRow> = {}) => {
+    const existing = makeRow(overrides)
+    return getChangedSubmittedReadOnlyFields(body, existing, existing.parcel_ids ?? [])
+  }
+
+  it("ignores an equal route, whatever the key order", () => {
+    const reordered = {
+      guide: {
+        answers: { narrow: true, surface_ha: 12 },
+        suggested: { counting: "uncapped" as const, method: "partial_strip" as const },
+        chosen_by: "guide" as const,
+      },
+      complement: { total_surface_ha: 14.5, done: true },
+      zone_surface_ha: 12,
+      uncapped_factors: ["A" as const, "B" as const],
+      counting: "uncapped" as const,
+      method: "partial_strip" as const,
+      version: 1 as const,
+    }
+    expect(changed({ survey_route: ROUTE }, { survey_route: ROUTE })).toEqual([])
+    expect(changed({ survey_route: reordered }, { survey_route: ROUTE })).toEqual([])
+  })
+
+  it("reports a different route, at any depth", () => {
+    expect(
+      changed({ survey_route: { ...ROUTE, method: "full" } }, { survey_route: ROUTE }),
+    ).toEqual(["survey_route"])
+    expect(
+      changed(
+        { survey_route: { ...ROUTE, complement: { done: true, total_surface_ha: 15 } } },
+        { survey_route: ROUTE },
+      ),
+    ).toEqual(["survey_route"])
+    expect(
+      changed(
+        { survey_route: { ...ROUTE, guide: { chosen_by: "observer" } } },
+        { survey_route: ROUTE },
+      ),
+    ).toEqual(["survey_route"])
+  })
+
+  it("reports a route sent for a row that has none", () => {
+    expect(changed({ survey_route: ROUTE }, { survey_route: null })).toEqual(["survey_route"])
+    expect(changed({ survey_route: ROUTE }, {})).toEqual(["survey_route"])
+  })
+
+  it("never reports a null or absent route, whatever is stored (a route is never deleted)", () => {
+    expect(changed({ survey_route: null }, { survey_route: ROUTE })).toEqual([])
+    expect(changed({}, { survey_route: ROUTE })).toEqual([])
+    expect(changed({ survey_route: undefined }, { survey_route: ROUTE })).toEqual([])
   })
 })
 

@@ -44,7 +44,7 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   conditionsOffline: boolean
   /** Phase 27 (D-33): silent draft write of the survey note, from the summary's note card. */
   onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
-  /** Opens the "Parcelles" page (map, list, offline map), from the map card and its row (D-32). */
+  /** Opens the "Parcelles et parcours" page (map, list, route, offline map), from the map card and its row (D-32). */
   onOpenParcelsPage: () => void
   onOpenScore: () => void
   /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
@@ -86,10 +86,18 @@ export type SurveyContextScreenProps = Omit<SurveyDetailBaseProps, "apiUrl" | "a
   onRetryWeather: (surveyId: string) => Promise<void> | void
 }
 
-/** "Parcelles": the map, the list of parcels and the offline map of the survey (D-32). */
+/**
+ * "Parcelles et parcours": the map, the list of parcels, the "Parcours utilisé" card and the
+ * offline map of the survey (D-32; the route card moved here from Contexte on 2026-10-14).
+ */
 export type SurveyParcelsScreenProps = SurveyDetailBaseProps & {
   /** Opens the parcel editor (the pencil on the map). */
   onOpenParcels: (surveyId: string) => Promise<void> | void
+  /**
+   * Phase 30: "Modifier le parcours" / "Choisir le parcours" of the "Parcours utilisé" card (a
+   * draft of the observer only): opens the chooser in edit mode.
+   */
+  onEditRoute: (surveyId: string) => void
 }
 
 /** "Facteurs IBP": the total, the two sub-scores and the ten factors. */

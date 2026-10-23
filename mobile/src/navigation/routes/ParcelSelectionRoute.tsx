@@ -1,7 +1,6 @@
 import { memo } from "react"
 import { SurveyParcelSelectionScreen } from "../../screens/SurveyParcelSelectionScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
-import { useSurveyActions } from "../../state/surveys-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useWeatherPrefillState } from "../../state/weather-context"
 import type { WeatherPoint } from "../../storage/weather"
@@ -11,7 +10,8 @@ import type { ParcelSelectionRouteProps } from "../types"
 /**
  * Parcel selection route (phase 01.9-18, D-01): the form context and the API URL. Phase 27, D-10:
  * after a successful save the centre of the chosen parcels goes to the weather hook, which asks
- * for the weather at once when online and keeps the point for the catch-up when offline.
+ * for the weather at once when online and keeps the point for the catch-up when offline. Phase 30:
+ * in the wizard the map hands the point and the computed surface to the route step instead.
  */
 export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   navigation,
@@ -21,42 +21,36 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   const accessToken = useAccessToken()
   const { state, actions } = useSurveyFormState()
   const weather = useWeatherPrefillState()
-  const surveyActions = useSurveyActions()
 
   const isWizard = route.params.mode === "wizard"
-  // Last step of a new survey: the draft is finalised, then the survey page replaces the whole
-  // creation flow so back returns to the list.
-  const onSave = useLatestCallback(async (weatherPoint: WeatherPoint | null) => {
-    // Read before the save: it may close the editing session. The wizard opens its draft with the
-    // first step, so the id is already known here; the rare path that creates the draft at save
-    // time has none, gets no stored point, and the hook falls back to the cached parcel geometry.
-    const surveyId = state.editingSurveyId
-    const rememberPoint = (): void => {
-      if (surveyId !== null && weatherPoint !== null) {
-        void weather.actions.rememberPoint(surveyId, weatherPoint)
-      }
-    }
-    if (isWizard) {
-      const createdId = await actions.createDraft()
-      if (createdId !== null) {
-        rememberPoint()
-        navigation.reset({
-          index: 1,
-          routes: [{ name: "surveysHome" }, { name: "surveyDetail" }],
+  const onSave = useLatestCallback(
+    async (weatherPoint: WeatherPoint | null, surfaceHa: number | null) => {
+      if (isWizard) {
+        // Phase 30 (O-19, P-1): the parcel map is the fourth of the five steps of a new survey. The
+        // draft is NOT finalised here any more: the route step comes next and finalises it only when
+        // the route is accepted (`RouteGuideRoute`: route written, draft finalised, weather point
+        // kept, the creation flow replaced by the survey page). Going back from the route step lands
+        // on this map with the selection and the editing session intact and nothing written.
+        navigation.navigate("surveyRouteGuide", {
+          surveyId: state.editingSurveyId,
+          mode: "create",
+          surfaceHa,
+          weatherPoint,
         })
-        // Selected after the reset: removing an older summary screen (the wizard launched from
-        // Accueil, a search or Explorer keeps the stack) clears the selection while the reset
-        // runs, and the new summary would open on no survey (D-45).
-        surveyActions.openSurvey(createdId)
+        return
       }
-      return
-    }
-    const saved = await actions.saveSurveyEdits()
-    if (saved) {
-      rememberPoint()
-      navigation.goBack()
-    }
-  })
+      // Read before the save: it may close the editing session.
+      const surveyId = state.editingSurveyId
+      const saved = await actions.saveSurveyEdits()
+      if (saved) {
+        // The point of the weather lookup follows the saved parcels.
+        if (surveyId !== null && weatherPoint !== null) {
+          void weather.actions.rememberPoint(surveyId, weatherPoint)
+        }
+        navigation.goBack()
+      }
+    },
+  )
 
   return (
     <SurveyParcelSelectionScreen

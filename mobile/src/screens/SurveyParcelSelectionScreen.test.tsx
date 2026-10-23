@@ -54,8 +54,9 @@ jest.mock("../hooks/useOfflineMapPrompt", () => ({
 jest.mock("./public-map/useAreaDownloadAction", () => ({ useAreaDownloadAction: () => jest.fn() }))
 
 let mockItems: unknown[] = []
+let mockSettled = true
 jest.mock("../hooks/useParcelStatuses", () => ({
-  useParcelStatuses: () => ({ items: mockItems, loading: false }),
+  useParcelStatuses: () => ({ items: mockItems, loading: !mockSettled, settled: mockSettled }),
 }))
 
 jest.mock("../map/maplibre/ParcelMap", () => {
@@ -80,6 +81,7 @@ jest.mock("./parcel-selection/ParcelSelectionCard", () => ({
   },
 }))
 
+import { parcelAreaHa } from "../map/parcel-area"
 import { SurveyParcelSelectionScreen } from "./SurveyParcelSelectionScreen"
 
 const squareParcel = (parcelId: string, west: number, south: number, size: number) => ({
@@ -124,6 +126,7 @@ describe("SurveyParcelSelectionScreen weather point", () => {
   beforeEach(() => {
     mockOnDone = null
     mockItems = []
+    mockSettled = true
   })
 
   test("saving passes the centre of the tapped parcels' geometry", async () => {
@@ -137,11 +140,75 @@ describe("SurveyParcelSelectionScreen weather point", () => {
     expect(point.lng).toBeCloseTo(2.1, 5)
   })
 
+  test("saving passes the surface in hectares of the chosen parcels as the second argument", async () => {
+    mockItems = [
+      squareParcel("P1", 2.0, 46.0, 0.001),
+      squareParcel("P2", 3.0, 46.0, 0.002),
+      squareParcel("P3", 5.0, 45.0, 0.2),
+    ]
+
+    const onSave = await mountAndSave(["P1", "P2"])
+
+    const surfaceHa = (onSave.mock.calls[0] as unknown[])[1]
+    // About 0.86 ha plus 3.4 ha: the 0.2 degree parcel P3 is not counted.
+    expect(surfaceHa).toBe(parcelAreaHa(mockItems as never, ["P1", "P2"]))
+    expect(surfaceHa as number).toBeGreaterThan(4)
+    expect(surfaceHa as number).toBeLessThan(5)
+  })
+
   test("saving passes null when the geometry of the chosen parcels is not loaded", async () => {
     mockItems = [squareParcel("P2", 5.0, 45.0, 0.2)]
 
     const onSave = await mountAndSave(["P1"])
 
-    expect(onSave).toHaveBeenCalledWith(null)
+    expect(onSave).toHaveBeenCalledWith(null, null)
+  })
+})
+
+describe("SurveyParcelSelectionScreen late geometry (RC-01)", () => {
+  beforeEach(() => {
+    mockOnDone = null
+    mockItems = []
+    mockSettled = false
+    jest.useFakeTimers()
+  })
+  afterEach(() => jest.useRealTimers())
+
+  test("Continuer waits for the pending read and then passes the surface", async () => {
+    const onSave = jest.fn(async () => undefined)
+    const element = () => (
+      <SurveyParcelSelectionScreen
+        apiUrl="http://api.test/v1"
+        accessToken="token"
+        gpsLocation={{ lat: "48.1", lng: "2.1", collected_at: "" }}
+        siteName="Bois"
+        selectedParcelIds={["P1"]}
+        onToggleParcelSelection={jest.fn()}
+        onCaptureGpsLocation={jest.fn(async () => null)}
+        onSave={onSave}
+      />
+    )
+    let tree!: renderer.ReactTestRenderer
+    await act(async () => {
+      tree = renderer.create(element())
+    })
+    await act(async () => {
+      mockOnDone?.()
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(300)
+    })
+    expect(onSave).not.toHaveBeenCalled()
+
+    mockItems = [squareParcel("P1", 2.0, 46.0, 0.001)]
+    mockSettled = true
+    await act(async () => {
+      tree.update(element())
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(200)
+    })
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect((onSave.mock.calls[0] as unknown[])[1]).toBeGreaterThan(0)
   })
 })

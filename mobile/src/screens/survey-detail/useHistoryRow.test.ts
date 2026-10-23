@@ -77,7 +77,7 @@ describe("useHistoryRow", () => {
     const { result } = await renderHook(() => useHistoryRow(BASE))
     expect(result.current).toEqual({
       value: "21 → 34",
-      accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+      accessibilityLabel: "Historique. de 21 à 34 sur 50",
       pressable: true,
     })
   })
@@ -116,7 +116,7 @@ describe("useHistoryRow", () => {
     const { result } = await renderHook(() => useHistoryRow({ ...BASE, parcelId: null }))
     expect(result.current).toEqual({
       value: "Aucune parcelle",
-      accessibilityLabel: "Historique de la parcelle. Aucune parcelle",
+      accessibilityLabel: "Historique. Aucune parcelle",
       pressable: false,
     })
   })
@@ -126,7 +126,7 @@ describe("useHistoryRow", () => {
     const { result } = await renderHook(() => useHistoryRow(BASE))
     expect(result.current).toEqual({
       value: undefined,
-      accessibilityLabel: "Historique de la parcelle",
+      accessibilityLabel: "Historique",
       pressable: true,
     })
   })

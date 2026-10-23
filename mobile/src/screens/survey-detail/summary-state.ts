@@ -33,6 +33,8 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
   if (syncDisplay === "sync") return { status, sync: h.sync.synced, syncTone: "ok" }
   if (syncDisplay === "sync_error") return { status, sync: h.sync.error, syncTone: "danger" }
   if (syncDisplay === "sync_blocked") return { status, sync: h.sync.blocked, syncTone: "danger" }
+  if (syncDisplay === "route_pending")
+    return { status, sync: h.sync.routePending, syncTone: "pending" }
   return { status, sync: h.sync.pending, syncTone: "pending" }
 }
 
@@ -40,10 +42,17 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
  * Whether the "Terminer le relevé" button is live (D-25): the ten factors and the information are
  * filled in, the survey is named, not blocked and not finished yet. Whether it is synced does not
  * matter: the finish sends the last changes itself before the submit call. An unnamed draft never
- * leaves the phone (OA-18), so it is asked for a name first.
+ * leaves the phone (OA-18), so it is asked for a name first. Phase 30 (O-19, spec section 8): a
+ * draft without route cannot be finished either (it never leaves the phone before it has one); its
+ * route is chosen from the Contexte page. `hasRoute` is whether the draft holds a valid route.
  */
-export const canFinishSurvey = (survey: LocalSurvey, isComplete: boolean | null): boolean =>
+export const canFinishSurvey = (
+  survey: LocalSurvey,
+  isComplete: boolean | null,
+  hasRoute: boolean,
+): boolean =>
   isComplete === true &&
+  hasRoute &&
   survey.status !== "submitted" &&
   survey.sync_blocked !== 1 &&
   (survey.site_name ?? "").trim() !== ""
@@ -51,7 +60,7 @@ export const canFinishSurvey = (survey: LocalSurvey, isComplete: boolean | null)
 /**
  * The single button at the bottom (OA-40). `hidden` once the survey is finished; `next` opens the
  * first factor still to fill ("Commencer" with none filled, then "Continuer"); `disabled` says
- * what is missing (a name, or a blocked sync); `ready` finishes the survey. There is no sync step
+ * what is missing (a name, the route, or a blocked sync); `ready` finishes the survey. There is no sync step
  * to wait for (D-25).
  */
 export type FinishCta =
@@ -70,10 +79,11 @@ export const resolveFinishCta = (
   if (survey.status === "submitted") return { kind: "hidden" }
   if (canFinishNow) return { kind: "ready", label: c.finish }
   if (isComplete === true) {
-    return {
-      kind: "disabled",
-      label: survey.sync_blocked === 1 ? c.blocked : c.nameRequired,
-    }
+    // Blocked first, then the name (OA-18), then the route (phase 30, O-19): a complete draft that
+    // is named and not blocked, and still cannot be finished, is missing only its route.
+    if (survey.sync_blocked === 1) return { kind: "disabled", label: c.blocked }
+    if ((survey.site_name ?? "").trim() === "") return { kind: "disabled", label: c.nameRequired }
+    return { kind: "disabled", label: c.routeRequired }
   }
   if (filledFactorCount === null) return { kind: "disabled", label: c.remainingUnknown }
   if (nextFactor === null) return { kind: "disabled", label: c.contextMissing }

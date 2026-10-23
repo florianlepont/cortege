@@ -6,6 +6,7 @@ import type {
   SyncOperation,
   SyncOperationResult,
   SyncResultError,
+  SurveyRoute,
   SurveyWeather,
 } from "@cortege/ibp-domain"
 
@@ -29,6 +30,13 @@ export type LocalSurvey = {
    * percentage of 14 slots and is not a factor count.
    */
   factors_filled: number
+  /**
+   * 1 for a pending draft whose payload holds no route (phase 30, O-19, P-1): `drainQueue` holds it
+   * on the phone, so it is not "waiting for network" but waiting for its route. Computed by
+   * `listLocalSurveys` in SQL from the payload (no column, no schema change); absent on a survey
+   * returned by a write, which reads as 0.
+   */
+  route_missing?: number
   /**
    * The IBP total (/50) the server last reported for a submitted survey, read from the local payload
    * by `listLocalSurveys` (12.2-14). Null when there is none; absent on a survey returned by a write.
@@ -127,6 +135,9 @@ export type SurveyQueuePayload = IbpMethodFields & {
   // after submit; the factor annotations travel inside `factors`.
   survey_note?: string | null
   weather?: SurveyWeather | null
+  // Phase 30 (D-08): the recorded route, payload only, no SQLite column (SCHEMA_VERSION stays 5).
+  // Written to a draft by `patchLocalSurveyRoute`, never cleared, read-only after submit (D-09).
+  survey_route?: SurveyRoute | null
 }
 
 /**
@@ -139,6 +150,16 @@ export type ConditionsPatch = {
   survey_id: string
   survey_note?: string | null
   weather?: SurveyWeather | null | ((current: SurveyWeather | null) => SurveyWeather | null)
+}
+
+/**
+ * One write of the recorded route (phase 30, D-08). A separate type from `ConditionsPatch`: another
+ * meaning, same write helper. The route is non-null because it is changed on a draft, never deleted
+ * (spec section 8, D-09).
+ */
+export type RoutePatch = {
+  survey_id: string
+  survey_route: SurveyRoute
 }
 
 export type SurveyDeleteQueuePayload = {

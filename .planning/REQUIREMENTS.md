@@ -238,6 +238,13 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 
 ---
 
+- [ ] **REQ-DOC-route-rules** — The CNPF rules for choosing the survey route and the counting mode are written in a French spec (`docs/specs/route-choice-rules-v1.md`), each rule citing its CNPF page with one test case, and validated by the owner in writing before any screen is built. *(New — Phase 30, seminar card "Aide au choix du parcours")*
+- [ ] **REQ-C-route-guide** — A skippable step in survey creation, after the parcel choice, suggests the route and the counting mode from the parcel and the observer's answers and explains each choice in plain French; the observer can change it or choose directly; it works offline. *(New — Phase 30)*
+- [ ] **REQ-C-route-record** — The route used (method, counting mode and lifted factors, evaluated surface, complement in the non-sampled zone, group name, the reasons) is stored with the survey, syncs, is draft-only to edit and read-only after submit. *(New — Phase 30, card "Parcours utilisé"; the map display is Phase 31)*
+- [ ] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
+- [ ] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
+- [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4)*
+
 ## Traceability
 
 Every MVP requirement maps to exactly one phase. **Build** = the phase delivers new work;
@@ -342,4 +349,4 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 
 ---
 *Requirements defined: 2026-09-22*
-*Last updated: 2026-10-07 — phases renumbered flat (1 to 28), added `REQ-B-nearby-parcels-home` (Phase 23), `REQ-C-history-split` (Phase 24) and `REQ-B-global-search` (Phase 25). Earlier the same day, added `REQ-QA-ux-audit` (Phase 26); the deep audit moved to Phase 27. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 23) and `REQ-QA-deep-audit` (Phase 26). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*
+*Last updated: 2026-10-13 (six Phase 30 requirements added). Earlier: 2026-10-07 — phases renumbered flat (1 to 28), added `REQ-B-nearby-parcels-home` (Phase 23), `REQ-C-history-split` (Phase 24) and `REQ-B-global-search` (Phase 25). Earlier the same day, added `REQ-QA-ux-audit` (Phase 26); the deep audit moved to Phase 27. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 23) and `REQ-QA-deep-audit` (Phase 26). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*

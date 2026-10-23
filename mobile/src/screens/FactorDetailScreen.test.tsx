@@ -1,6 +1,12 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
-import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type IbpMethodVersion } from "@cortege/ibp-domain"
+import {
+  IBP_METHOD_V3_0,
+  IBP_METHOD_V3_2,
+  type BStratumCode,
+  type DmhGroupCode,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 import type { FactorField, FactorKey } from "../app/types"
 import { FACTOR_TITLES } from "../app/constants"
 import { fr } from "../i18n"
@@ -109,6 +115,23 @@ jest.mock("./factor-detail/DoubtNoteStrip", () => {
   return {
     DoubtNoteStrip: (props: Record<string, unknown>) =>
       ReactRef.createElement("DoubtNoteStrip", props),
+  }
+})
+
+// Phase 30 (plan 30-19): the two detail blocks are under test in factor-detail/*.test.tsx; here
+// they are probes that keep their props.
+jest.mock("./factor-detail/StrataCoverFields", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    StrataCoverFields: (props: Record<string, unknown>) =>
+      ReactRef.createElement("StrataCoverFields", props),
+  }
+})
+jest.mock("./factor-detail/DmhCountFields", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    DmhCountFields: (props: Record<string, unknown>) =>
+      ReactRef.createElement("DmhCountFields", props),
   }
 })
 
@@ -573,3 +596,221 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
     expect(scoreText(renderWith({ doubt: true }, scored))).toBe(scoreText(renderWith({}, scored)))
   })
 })
+
+describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", () => {
+  const mount = (
+    factor: FactorKey,
+    fields: FactorField[],
+    extra: { uncappedFactors?: FactorKey[]; zoneSurfaceHa?: number | null } = {},
+  ) => {
+    const element = (nextFields: FactorField[]) => (
+      <FactorDetailScreen
+        factor={factor}
+        fields={nextFields}
+        retainedScore={null}
+        methodVersion={IBP_METHOD_V3_2}
+        onOpenHelp={jest.fn()}
+        {...STRIP_PROPS}
+        {...extra}
+      />
+    )
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(element(fields))
+    })
+    return {
+      tree,
+      update: (next: FactorField[]) => act(() => tree.update(element(next))),
+      caption: () =>
+        tree.root.findAll(
+          (n) => typeof n.type === "string" && n.props.testID === "counting-caption",
+        ),
+      fromRoute: () =>
+        tree.root.findAll(
+          (n) => typeof n.type === "string" && n.props.testID === "surface-from-route",
+        ),
+    }
+  }
+  const cFields = (surface: Partial<FactorField> = {}) => [
+    field("bmg_count"),
+    field("bmm_count"),
+    field("surface_ha", surface),
+  ]
+
+  test("a factor counted in full opens with its caption", () => {
+    const { caption } = mount("B", [field("strata_count")], { uncappedFactors: ["B", "F"] })
+    expect(caption()).toHaveLength(1)
+    expect(caption()[0].props.accessibilityLabel).toBe(fr.factorDetail.countingMode.B)
+  })
+
+  test("a capped factor, or a survey with no route, shows no caption", () => {
+    expect(mount("B", [field("strata_count")], { uncappedFactors: ["F"] }).caption()).toHaveLength(
+      0,
+    )
+    expect(mount("B", [field("strata_count")]).caption()).toHaveLength(0)
+  })
+
+  test("C starts from the zone: the empty field is filled once and says where it comes from", () => {
+    const onChange = jest.fn()
+    const { update, fromRoute } = mount("C", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith("1,2")
+    expect(fromRoute()).toHaveLength(0)
+    update(cFields({ onChange, value: "1,2" }))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(fromRoute()).toHaveLength(1)
+    expect(textsIn(fromRoute()[0])).toBe("D'après le parcours")
+  })
+
+  test("the surface field is found by its place, whatever its label (the form hands French labels)", () => {
+    const onChange = jest.fn()
+    const labels = fr.validation.fields
+    mount(
+      "C",
+      [field(labels.bmg_count), field(labels.bmm_count), field(labels.surface_ha, { onChange })],
+      { zoneSurfaceHa: 1 },
+    )
+    expect(onChange).toHaveBeenCalledWith("1")
+  })
+
+  test("the note goes away once the observer types another value, and the value is kept", () => {
+    const onChange = jest.fn()
+    const { update, fromRoute } = mount("D", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
+    update(cFields({ onChange, value: "1,2" }))
+    update(cFields({ onChange, value: "2" }))
+    expect(fromRoute()).toHaveLength(0)
+    update(cFields({ onChange, value: "" }))
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  test("a field that already has a value is never overwritten", () => {
+    const onChange = jest.fn()
+    const { fromRoute } = mount("E", cFields({ onChange, value: "3" }), { zoneSurfaceHa: 1.2 })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(fromRoute()).toHaveLength(0)
+  })
+
+  test("no route zone, no prefill; and other factors are untouched", () => {
+    const onChange = jest.fn()
+    mount("C", cFields({ onChange }))
+    mount("G", [field("open_flowering_percent", { onChange })], { zoneSurfaceHa: 1.2 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30, plan 30-19)", () => {
+  const entry = {
+    state: {
+      strataCoverText: { very_low: "25" } as Partial<Record<BStratumCode, string>>,
+      dmhCounts: { dmh_01: 3 } as Partial<Record<DmhGroupCode, number>>,
+      fSurfaceText: "1,2",
+    },
+    setStratumCover: jest.fn(),
+    setDmhCount: jest.fn(),
+    setFSurface: jest.fn(),
+  }
+  const mount = (
+    factor: FactorKey,
+    fields: FactorField[],
+    extra: Partial<React.ComponentProps<typeof FactorDetailScreen>> = {},
+  ) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor={factor}
+          fields={fields}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+          {...extra}
+        />,
+      )
+    })
+    const byType = (type: string) => tree.root.findAll((n) => (n.type as unknown) === type)
+    return {
+      tree,
+      strata: () => byType("StrataCoverFields"),
+      dmh: () => byType("DmhCountFields"),
+      chips: () => byType("FactorChipsInput"),
+      fields: () => byType("AppField"),
+    }
+  }
+  const bFields = [
+    field("strata_count", { value: "2", selection: { selected: null, onChange: jest.fn() } }),
+  ]
+  const fFields = [
+    field("trees_per_ha", {
+      value: "3",
+      selection: { selected: ["dmh_01", "dmh_13"], onChange: jest.fn() },
+    }),
+  ]
+
+  test("B counted in full shows the cover per stratum instead of the strata chips", () => {
+    const { strata, tree } = mount("B", bFields, { uncappedFactors: ["B"], uncappedEntry: entry })
+    expect(strata()).toHaveLength(1)
+    const props = strata()[0].props
+    expect(props.coverText).toBe(entry.state.strataCoverText)
+    expect(props.strataCountText).toBe("2")
+    expect(props.methodVersion).toBe(IBP_METHOD_V3_2)
+    expect(
+      tree.root.findAll(
+        (n) =>
+          typeof n.type !== "string" &&
+          n.props.label === fr.factorDetail.fieldLabels.strata_count &&
+          n.props.options !== undefined,
+      ),
+    ).toHaveLength(0)
+    props.onChange("low", "30")
+    expect(entry.setStratumCover).toHaveBeenCalledWith("low", "30")
+  })
+
+  test("B capped keeps the chips, with the count as it was", () => {
+    const { strata, tree } = mount("B", bFields, { uncappedFactors: ["F"], uncappedEntry: entry })
+    expect(strata()).toHaveLength(0)
+    const chips = tree.root.findAll(
+      (n) => n.props.options !== undefined && n.props.selected !== undefined,
+    )
+    expect(chips.length).toBeGreaterThan(0)
+  })
+
+  test("F counted in full keeps its fields and group chips and adds the counts and the surface", () => {
+    const { dmh, fields } = mount("F", fFields, {
+      uncappedFactors: ["F"],
+      uncappedEntry: entry,
+      zoneSurfaceHa: 1.2,
+    })
+    expect(fields()).toHaveLength(1)
+    expect(dmh()).toHaveLength(1)
+    const props = dmh()[0].props
+    expect(props.selectedGroups).toEqual(["dmh_01", "dmh_13"])
+    expect(props.counts).toBe(entry.state.dmhCounts)
+    expect(props.surfaceText).toBe("1,2")
+    expect(props.zoneSurfaceHa).toBe(1.2)
+    props.onChangeCount("dmh_13", 2)
+    props.onChangeSurface("2")
+    expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2)
+    expect(entry.setFSurface).toHaveBeenCalledWith("2")
+  })
+
+  test("F capped, or no route entry: exactly today's entry", () => {
+    expect(
+      mount("F", fFields, { uncappedFactors: ["B"], uncappedEntry: entry }).dmh(),
+    ).toHaveLength(0)
+    expect(mount("F", fFields, { uncappedFactors: ["F"] }).dmh()).toHaveLength(0)
+    expect(mount("B", bFields, { uncappedFactors: ["B"] }).strata()).toHaveLength(0)
+  })
+
+  test("the other factors get no detail block, whatever the route says", () => {
+    const g = mount("G", [field("open_flowering_percent")], {
+      uncappedFactors: ["G"],
+      uncappedEntry: entry,
+    })
+    expect(g.strata()).toHaveLength(0)
+    expect(g.dmh()).toHaveLength(0)
+  })
+})
+
+const textsIn = (node: renderer.ReactTestInstance): string =>
+  node.children.map((child) => (typeof child === "string" ? child : textsIn(child))).join("")

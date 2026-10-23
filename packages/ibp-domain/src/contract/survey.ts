@@ -1,4 +1,5 @@
 import type { FactorClass, FactorKey } from "../factors"
+import type { SurveyRoute } from "./route"
 import type { SurveyWeather } from "./weather"
 
 // Wire types of a survey, shared by the API and the app. Types only: runtime validation stays in
@@ -68,9 +69,16 @@ export type SurveyUpsertPayload = IbpMethodFields & {
   survey_note?: string | null
   /** Phase 27, D-01: nullable jsonb column of migration 023; read-only after submit (D-03). */
   weather?: SurveyWeather | null
+  /**
+   * Phase 30, D-08: nullable jsonb column `surveys.survey_route` (migration of plan 30-07);
+   * mandatory for a new survey of the new client (O-19); read-only after submit (D-09); null or
+   * absent never clears a stored route.
+   */
+  survey_route?: SurveyRoute | null
 }
 
-// SurveyPatchPayload does not take survey_note or weather: PATCH leaves them untouched (phase 27).
+// SurveyPatchPayload does not take survey_note, weather or survey_route: PATCH leaves them
+// untouched (phase 27, phase 30).
 /** Replaces API `SurveyPatchBody` (surveys.types.ts). */
 export type SurveyPatchPayload = IbpMethodFields & {
   site_name?: string
@@ -109,6 +117,8 @@ export type SurveyDetail = IbpMethodFields & {
   survey_note?: string | null
   /** Phase 27, D-01: null or absent means no weather. */
   weather?: SurveyWeather | null
+  /** Phase 30, D-08: the route used; null or absent for a survey made before the assistant. */
+  survey_route?: SurveyRoute | null
   factor_results: Record<string, FactorCanonical>
   scores: IbpScores
 }

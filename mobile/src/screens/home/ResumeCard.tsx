@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { LayoutChangeEvent, StyleSheet, View } from "react-native"
+import { LayoutChangeEvent, StyleSheet, View, useWindowDimensions } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { forestAurora } from "../../app/forest-aurora-tokens"
@@ -9,7 +9,7 @@ import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
-import { RESUME_LAYOUT } from "./layout-budget"
+import { RESUME_LAYOUT, shouldStackResumeRow } from "./layout-budget"
 
 const t = fr.home.hero
 
@@ -41,6 +41,8 @@ type ResumeCardProps = {
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const { fontScale } = useWindowDimensions()
+  const stacked = shouldStackResumeRow(resumeDraft !== null, fontScale)
   // The stored count of filled factors, the same definition as the survey detail. Never
   // `completion_rate / 10`: that percentage also counts the name, the method and the parcel.
   const resumeFactors = resumeDraft
@@ -69,8 +71,12 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   return (
     <ForestCard variant="resume" blocks={blocks} testID="home-resume-card">
       <View style={styles.main}>
-        <View style={styles.row}>
-          <View style={styles.copy} onLayout={handleCopyLayout} testID="home-resume-copy">
+        <View style={stacked ? styles.rowStacked : styles.row}>
+          <View
+            style={[styles.copy, stacked ? styles.copyStacked : null]}
+            onLayout={handleCopyLayout}
+            testID="home-resume-copy"
+          >
             <Text style={styles.title} numberOfLines={2}>
               {resumeDraft
                 ? resumeDraft.site_name
@@ -82,7 +88,7 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
               {resumeDraft ? t.resumeBody({ completed: resumeFactors }) : t.body}
             </Text>
           </View>
-          <View testID="home-resume-button">
+          <View testID="home-resume-button" style={stacked ? styles.buttonStacked : undefined}>
             <AppButton
               label={resumeDraft ? t.resumeButton : t.button}
               leadingIcon={resumeDraft ? "play-outline" : "add-outline"}
@@ -126,6 +132,19 @@ function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: ROW_GAP,
+    },
+    rowStacked: {
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: RESUME_LAYOUT.stackGap,
+    },
+    buttonStacked: {
+      alignSelf: "flex-start",
+    },
+    // In a column the copy takes its own height, not a share of an unbounded one.
+    copyStacked: {
+      flexGrow: 0,
+      flexBasis: "auto",
     },
     copy: {
       flex: 1,

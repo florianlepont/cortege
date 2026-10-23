@@ -103,6 +103,25 @@ describe("mapSyncError", () => {
     })
   })
 
+  it("maps the 422 route_required of a refused create to a fatal operation error (phase 30)", () => {
+    const error = new UnprocessableEntityException({
+      code: "route_required",
+      message: "survey_route is required",
+    })
+
+    const result = mapSyncError(error)
+
+    expect(result).toEqual({
+      status: "fatal_error",
+      error: {
+        code: "route_required",
+        message: "survey_route is required",
+        http_status: 422,
+        details: undefined,
+      },
+    })
+  })
+
   it("keeps the field names of a 422 submitted_read_only_fields in details (phase 29, D-07)", () => {
     const error = new UnprocessableEntityException({
       code: "submitted_read_only_fields",

@@ -16,6 +16,7 @@ jest.mock("react-native", () => {
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("./AppText", () => ({ AppText: "Text" }))
 
+import { View } from "react-native"
 import { defaultTheme } from "../app/theme"
 import { RadioCard, type RadioCardProps } from "./RadioCard"
 
@@ -116,5 +117,47 @@ describe("RadioCard", () => {
     expect(node.props.disabled).toBe(true)
     expect(node.props.accessibilityState).toEqual({ selected: false, disabled: true })
     expect(JSON.stringify(node.props.style)).not.toContain("opacity")
+  })
+
+  test("a tag is drawn on the title line in the accent, 12 SemiBold, label unchanged", () => {
+    const tree = render({ tag: "Conseillé", accessibilityLabel: "Titre. Conseillé. Légende" })
+    const tag = tree.root.findAll(
+      (node) => (node.type as unknown) === "Text" && node.props.children === "Conseillé",
+    )[0]
+    expect(tag).toBeDefined()
+    const style = JSON.stringify(tag.props.style)
+    expect(style).toContain(defaultTheme.semanticColors.accent)
+    expect(style).toContain('"fontSize":12')
+    expect(style).toContain("Jost-SemiBold")
+    expect(card(tree).props.accessibilityLabel).toBe("Titre. Conseillé. Légende")
+  })
+
+  test("a tag is hidden from the screen reader, the card label already carries it", () => {
+    const tree = render({ tag: "Conseillé" })
+    const tag = tree.root.findAll(
+      (node) => (node.type as unknown) === "Text" && node.props.children === "Conseillé",
+    )[0]
+    expect(tag.props.importantForAccessibility).toBe("no")
+    expect(tag.props.accessible).toBe(false)
+  })
+
+  test("a trailing node is a sibling of the press target, not a child of it", () => {
+    const tree = render({ trailing: <View testID="glossary" /> })
+    const press = card(tree)
+    expect(press.findAll((node) => node.props.testID === "glossary")).toHaveLength(0)
+    expect(tree.root.findAll((node) => node.props.testID === "glossary").length).toBeGreaterThan(0)
+    // The card is still the radio, with its own label.
+    expect(press.props.accessibilityRole).toBe("radio")
+  })
+
+  test("without a trailing node the card is the root, exactly as before", () => {
+    const tree = render()
+    expect((tree.root.children[0] as renderer.ReactTestInstance).props.testID).toBe("card")
+  })
+
+  test("without a tag nothing but the title and caption is drawn", () => {
+    const tree = render()
+    const texts = tree.root.findAll((node) => (node.type as unknown) === "Text")
+    expect(texts.map((node) => node.props.children)).toEqual(["Titre", "Légende"])
   })
 })

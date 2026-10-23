@@ -86,7 +86,7 @@ const buildScores = (): Record<FactorKey, FactorRetainedScore | null> => {
   return scores
 }
 
-const renderList = (onOpenFactor = jest.fn()) => {
+const renderList = (onOpenFactor = jest.fn(), uncappedFactors?: FactorKey[]) => {
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
@@ -103,6 +103,7 @@ const renderList = (onOpenFactor = jest.fn()) => {
           } as unknown as Parameters<typeof FactorsList>[0]["scoreTotals"]
         }
         onOpenFactor={onOpenFactor}
+        uncappedFactors={uncappedFactors}
       />,
     )
   })
@@ -244,5 +245,27 @@ describe("factor tiles in variant I glass (12.2-15)", () => {
     expect(style.paddingVertical).toBe(8)
     expect(style.paddingHorizontal).toBe(8)
     expect((style.gap as number) % 4).toBe(0)
+  })
+})
+
+describe("FactorsList counting mode (Phase 30, D-07)", () => {
+  const tagIds = (tree: renderer.ReactTestRenderer) =>
+    tree.root
+      .findAll(
+        (n) => typeof n.props.testID === "string" && n.props.testID.startsWith("factor-tile-mode-"),
+      )
+      .map((n) => n.props.testID as string)
+
+  test("only the factors counted in full carry the 'Relevé déplafonné' tag", () => {
+    const tree = renderList(jest.fn(), ["B", "F"])
+    expect(new Set(tagIds(tree))).toEqual(new Set(["factor-tile-mode-B", "factor-tile-mode-F"]))
+    const tag = tree.root.findAll((n) => n.props.testID === "factor-tile-mode-B")[0]
+    expect(textOf(tag)).toBe(fr.factorDetail.countingMode.chip)
+    expect(tag.props.numberOfLines).toBe(1)
+  })
+
+  test("no tag without a route or with a capped one", () => {
+    expect(tagIds(renderList())).toEqual([])
+    expect(tagIds(renderList(jest.fn(), []))).toEqual([])
   })
 })

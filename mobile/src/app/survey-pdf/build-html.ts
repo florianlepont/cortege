@@ -8,6 +8,7 @@ import { buildMapBlock, mapSectionCss } from "./map-section"
 import { paginateBlocks } from "./paginate"
 import { buildPdfPalette } from "./palette"
 import { buildPhotoBlocks, photosSectionCss } from "./photos-section"
+import { buildRouteBlock, routeSectionCss } from "./route-section"
 import { buildScoreSummaryBlock, scoreSectionCss } from "./score-section"
 import { PDF_CLASS, buildBaseCss, cspMetaTag, fontFaceCss, fontWarmupHtml } from "./styles"
 import { buildTrendBlock, trendSectionCss } from "./trend-section"
@@ -21,17 +22,19 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 const t = fr.surveyExport
 
 /** The content blocks in the order of the sheet: identity and method, the conditions (only when the
- * survey has a weather value or a note), scores and chart, factors A to G then H to J, map, trend,
- * photos. */
+ * survey has a weather value or a note), the route used (only when the survey has a route, phase
+ * 30), scores and chart, factors A to G then H to J, map, trend, photos. */
 function collectBlocks(data: SurveyExportData, palette: PdfPalette): PdfBlock[] {
   const blocks: PdfBlock[] = []
   // Hidden text in each embedded font, only when the device check asked for it.
   const warmup = fontWarmupHtml(data.assets.fonts)
   if (warmup !== "") blocks.push({ id: "font-warmup", html: warmup, height: 0 })
   const conditions = buildConditionsBlock(data, palette)
+  const route = buildRouteBlock(data, palette)
   blocks.push(
     ...buildIdentityBlocks(data, palette),
     ...(conditions === null ? [] : [conditions]),
+    ...(route === null ? [] : [route]),
     buildScoreSummaryBlock(data, palette),
     buildFactorChartBlock(data, palette),
     ...buildFactorBlocks(data, palette),
@@ -49,6 +52,7 @@ function collectCss(data: SurveyExportData, palette: PdfPalette): string {
     buildBaseCss(palette, data.layout),
     identityCss(palette),
     conditionsSectionCss(palette),
+    routeSectionCss(palette),
     scoreSectionCss(palette),
     factorChartCss(palette),
     factorSectionCss(palette),

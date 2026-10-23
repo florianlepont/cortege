@@ -2,6 +2,7 @@ import type {
   FactorCanonical,
   SurveyPatchPayload,
   SurveyStatus,
+  SurveyRoute,
   SurveyUpsertPayload,
   SurveyVisibility,
   SurveyWeather,
@@ -61,6 +62,9 @@ export type SurveyRow = {
   // fixtures that predate the columns keep compiling; readers use `?? null`.
   survey_note?: string | null
   weather?: SurveyWeather | null
+  // Migration 025 (phase 30, D-08, D-09): the recorded route ("Parcours utilise"). Optional for the
+  // same reason; NULL for a survey stored before the phase, which stays valid (O-07).
+  survey_route?: SurveyRoute | null
   factors: JsonObject
   factor_results: Record<string, FactorCanonical>
   scores: JsonObject

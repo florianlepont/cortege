@@ -40,6 +40,8 @@ export const RESUME_LAYOUT = {
   /** The glow button (`AppButton` size md). */
   buttonHeight: brandComponentTokens.button.minHeight,
   textGap: brandSpacing4.xs,
+  /** Between the text and the button when the button sits under it. */
+  stackGap: brandSpacing4.smd,
   /** Owner check: the button and the ten segments read as two blocks 24 pt apart. */
   progressGap: brandSpacing4.lg,
   progressHeight: 6,
@@ -128,13 +130,32 @@ export type HomeBudgetInput = {
   alertHeight?: number
 }
 
-export function resumeCardHeight(hasDraft: boolean, titleLines: number, bodyLines: number): number {
+/** Above this system text scale, a card with a draft also stacks its button under the text. */
+export const RESUME_STACK_FONT_SCALE = 1.15
+
+/**
+ * Owner check on the iPhone 17e: next to the big "Démarrer un relevé" button the title "Nouveau
+ * relevé IBP" had a third of the width and broke in the middle of a word. The card that starts a
+ * survey (a fixed title and a long button label) always puts the button under the text, so the
+ * title wraps at word boundaries only. The card of a draft keeps the row (its title is the site's
+ * name and its button is the short "Reprendre") until the system text scale grows.
+ */
+export function shouldStackResumeRow(hasDraft: boolean, fontScale: number): boolean {
+  return !hasDraft || fontScale > RESUME_STACK_FONT_SCALE
+}
+
+export function resumeCardHeight(
+  hasDraft: boolean,
+  titleLines: number,
+  bodyLines: number,
+  stacked: boolean = !hasDraft,
+): number {
   const r = RESUME_LAYOUT
   const copy =
     titleLines * brandTypography.screenTitle.lineHeight +
     r.textGap +
     bodyLines * brandTypeScale.subhead.lineHeight
-  const row = Math.max(r.buttonHeight, copy)
+  const row = stacked ? copy + r.stackGap + r.buttonHeight : Math.max(r.buttonHeight, copy)
   return 2 * r.padding + row + (hasDraft ? r.progressGap + r.progressHeight : 0)
 }
 

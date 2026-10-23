@@ -1,4 +1,4 @@
-import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type SurveyRoute } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import { buildIdentityBlocks, identityCss, inseeFromParcelId } from "./identity"
@@ -69,6 +69,7 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
     coordinates: { lat: 48.40491, lng: 2.69924 },
     rawFactors: {},
     conditions: { note: null, weather: null },
+    route: null,
     photos: { items: [], total: 0, unavailable: 0 },
     map: null,
     history: null,
@@ -77,6 +78,16 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
     ...overrides,
   }
 }
+
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 8,
+  guide: { chosen_by: "observer" },
+}
+
+const CAPPED_ROW = `<tr class="identity-row"><th class="identity-caption">${t.identity.surveyMode}</th><td class="identity-value">${t.identity.cappedMode}</td></tr>`
 
 function build(overrides: Partial<SurveyExportData> = {}) {
   const blocks = buildIdentityBlocks(makeData(overrides), palette)
@@ -134,6 +145,33 @@ describe("identity block", () => {
     expect(html).toContain(t.identity.coordinatesValue({ lat: "48,40491", lng: "2,69924" }))
     expect(html).toContain(t.identity.surveyMode)
     expect(html).toContain(t.identity.cappedMode)
+  })
+
+  it("keeps the Mode de relevé row exactly as before for a survey without a route (U-11, P-3)", () => {
+    const { identity } = build({ route: null })
+    expect(identity.html).toContain(
+      `<tr class="identity-row"><th class="identity-caption">${t.identity.surveyMode}</th><td class="identity-value">${t.identity.cappedMode}</td></tr>`,
+    )
+    // The row is the last one of the card.
+    expect(identity.html.indexOf(t.identity.surveyMode)).toBeGreaterThan(
+      identity.html.indexOf(t.identity.date),
+    )
+    expect(identity.html).toContain("</td></tr></table>")
+    expect(identity.html.endsWith(`${t.identity.cappedMode}</td></tr></table>\n</section>`)).toBe(
+      true,
+    )
+  })
+
+  it("drops the Mode de relevé row only when the route block prints (phase 30)", () => {
+    const withoutRoute = build({ route: null }).identity
+    const withRoute = build({ route: ROUTE }).identity
+    expect(withRoute.html).not.toContain(t.identity.surveyMode)
+    expect(withRoute.html).not.toContain(t.identity.cappedMode)
+    // The rest of the card is the same text, one row (6 + 13) shorter.
+    expect(withoutRoute.html.replace(CAPPED_ROW, "")).toBe(withRoute.html)
+    expect(withRoute.height).toBe(withoutRoute.height - 19)
+    // The method block does not depend on the route.
+    expect(build({ route: ROUTE }).method).toEqual(build({ route: null }).method)
   })
 
   it("derives commune and department from the first parcel only", () => {

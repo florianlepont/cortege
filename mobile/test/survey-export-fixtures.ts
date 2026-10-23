@@ -3,6 +3,7 @@ import {
   FACTOR_KEYS,
   IBP_METHOD_V3_2,
   type FactorKey,
+  type SurveyRoute,
 } from "@cortege/ibp-domain"
 import type { SurveyExportData } from "../src/app/survey-pdf/types"
 import { ownItem } from "./parcel-history-fixtures"
@@ -96,6 +97,7 @@ export const exportFixtureV32Submitted: SurveyExportData = {
   coordinates: { lat: 48.4005, lng: 2.701 },
   rawFactors: rawFactorsOf(CNPF_FACTOR_A_GENUS_CODES.slice(0, 5)),
   conditions: { note: null, weather: null },
+  route: null,
   photos: { items: [], total: 0, unavailable: 0 },
   map: null,
   history: null,
@@ -126,6 +128,7 @@ export const exportFixtureV30Draft: SurveyExportData = {
   coordinates: null,
   rawFactors: rawFactorsOf(CNPF_FACTOR_A_GENUS_CODES.slice(0, 3)),
   conditions: { note: null, weather: null },
+  route: null,
   photos: { items: [], total: 0, unavailable: 0 },
   map: null,
   history: null,
@@ -182,9 +185,32 @@ const WORST_POLYGONS: NonNullable<SurveyExportData["map"]>["polygons"] = [
 
 const WORST_PHOTO_COUNT = 24
 
+// The fullest route (phase 30, D-09): partial by plot, uncapped on three factors, the complement
+// done with its total surface, the guide's proposal accepted with answers. Every row of the
+// "Parcours utilisé" block is printed and the "Choix" sentence is the long one.
+export const WORST_ROUTE: SurveyRoute = {
+  version: 1,
+  method: "partial_plot",
+  counting: "uncapped",
+  uncapped_factors: ["C", "D", "E"],
+  zone_surface_ha: 4,
+  complement: { done: true, total_surface_ha: 12.5 },
+  guide: {
+    chosen_by: "guide",
+    suggested: { method: "partial_plot", counting: "uncapped" },
+    answers: {
+      surface_ha: 12.5,
+      homogeneity: "homogeneous",
+      difficulty: false,
+      narrow: false,
+      experience: "regular",
+    },
+  },
+}
+
 /**
  * The fullest sheet: v3.2 cas 4 with all 34 genera, three parcels on a basemap, six history
- * points ending on this survey, and 24 photos.
+ * points ending on this survey, 24 photos and the fullest route (phase 30).
  */
 export const exportFixtureWorstCase: SurveyExportData = {
   ...exportFixtureV32Submitted,
@@ -193,6 +219,7 @@ export const exportFixtureWorstCase: SurveyExportData = {
   parcelIds: WORST_POLYGONS.map((polygon) => polygon.parcelId),
   method: { ...exportFixtureV32Submitted.method, ibpCas: 4 },
   rawFactors: rawFactorsOf(CNPF_FACTOR_A_GENUS_CODES),
+  route: WORST_ROUTE,
   photos: {
     items: Array.from({ length: WORST_PHOTO_COUNT }, (_, index) => ({
       id: `photo-${index + 1}`,

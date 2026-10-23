@@ -132,6 +132,7 @@ function render(
   sectionOverrides: Partial<Record<FactorKey, FactorField[]>> = {},
   finishAction: PagerFinishAction | null = null,
   factorAnnotations: FactorAnnotationDraft = {},
+  extraProps: Partial<React.ComponentProps<typeof FactorPager>> = {},
 ) {
   const onFinish = jest.fn()
   const onActiveFactorChange = jest.fn()
@@ -154,6 +155,7 @@ function render(
         onChangeDoubt={onChangeDoubt}
         onChangeNote={onChangeNote}
         onCommitNote={onCommitNote}
+        {...extraProps}
       />,
     )
   })
@@ -738,5 +740,48 @@ describe("FactorPager keyboard and notes (phase 27, UI-SPEC 2.4, U-07)", () => {
     expect(
       tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe"),
     ).toHaveLength(1)
+  })
+})
+
+describe("FactorPager counting mode (Phase 30, D-07)", () => {
+  test("the badge shows under the title row on a factor counted in full, and only there", () => {
+    const { maybeByTestID, byTestID } = render("B", {}, null, {}, { uncappedFactors: ["B", "F"] })
+    expect(maybeByTestID("counting-chip")).toBeDefined()
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    // C is capped: the badge is gone.
+    expect(maybeByTestID("counting-chip")).toBeUndefined()
+  })
+
+  test("a capped route or no route draws nothing new", () => {
+    expect(render("B").maybeByTestID("counting-chip")).toBeUndefined()
+    expect(render("B", {}, null, {}, { uncappedFactors: [] }).maybeByTestID("counting-chip")).toBe(
+      undefined,
+    )
+  })
+
+  test("the page receives the factors counted in full and the zone", () => {
+    const { tree } = render("C", {}, null, {}, { uncappedFactors: ["C"], zoneSurfaceHa: 1.2 })
+    const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]
+    expect(probe.props.uncappedFactors).toEqual(["C"])
+    expect(probe.props.zoneSurfaceHa).toBe(1.2)
+  })
+
+  test("the page receives the detail inputs of B and F as one object (plan 30-19)", () => {
+    const uncappedEntry = {
+      state: { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "" },
+      setStratumCover: jest.fn(),
+      setDmhCount: jest.fn(),
+      setFSurface: jest.fn(),
+    }
+    const { tree } = render("B", {}, null, {}, { uncappedFactors: ["B"], uncappedEntry })
+    const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]
+    expect(probe.props.uncappedEntry).toBe(uncappedEntry)
+  })
+
+  test("the badge reads 'Relevé déplafonné'", () => {
+    const { texts } = render("B", {}, null, {}, { uncappedFactors: ["B"] })
+    expect(texts()).toContain("Relevé déplafonné")
   })
 })

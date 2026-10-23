@@ -1,4 +1,5 @@
 import { IBP_MAX } from "@cortege/ibp-domain"
+import { surveyDetailFr } from "./survey-detail"
 
 // Texts printed in the on-device PDF export (REQ-C-pdf-export, ROADMAP Phases 10 and 25.1). The HTML
 // is rendered by expo-print, never shown as an app screen, so it has its own catalogue section
@@ -91,6 +92,12 @@ export const surveyExportFr = {
     percent: ({ value }: { value: string }) => `${value} %`,
     strataCount: "Nombre de strates",
     strata: "Strates présentes",
+    // Phase 30 (spec section 7): the details of a relevé déplafonné, printed only when stored.
+    strataCover: "Couvert par strate",
+    strataCoverItem: ({ label, value }: { label: string; value: string }) =>
+      `${label} : ${value} %`,
+    dmhCounts: "Arbres par groupe de dendromicrohabitats",
+    dmhCountItem: ({ label, count }: { label: string; count: string }) => `${label} : ${count}`,
     bmg: "Bois morts de grosse dimension (BMg)",
     bmm: "Bois morts de dimension moyenne (BMm)",
     tgb: "Très gros bois (TGB)",
@@ -130,6 +137,25 @@ export const surveyExportFr = {
         `Météo-France, mesure du ${date} à ${time}, conditions saisies par l'observateur`,
       manual: "Conditions saisies par l'observateur",
     },
+  },
+  // Phase 30 (spec section 9): the "Parcours utilisé" block, printed after "Conditions du relevé".
+  // The captions and the values are those of the Contexte card (one set of words, D-09); the
+  // "Choix" value is a sentence naming "l'application" and "l'observateur". The identity row
+  // "Mode de relevé" above is dropped only when this block prints, so a survey with no route
+  // prints exactly as before (U-11, P-3).
+  route: {
+    heading: surveyDetailFr.route.title,
+    parcours: surveyDetailFr.route.parcours,
+    counting: surveyDetailFr.route.counting,
+    countedFactors: surveyDetailFr.route.countedFactors,
+    zone: surveyDetailFr.route.zone,
+    complement: surveyDetailFr.route.complement,
+    choice: surveyDetailFr.route.choice,
+    choiceGuide: ({ answers }: { answers: string | null }) =>
+      answers === null
+        ? "Conseillé par l'application."
+        : `Conseillé par l'application d'après vos réponses : ${answers}.`,
+    choiceObserver: "Choisi directement par l'observateur.",
   },
   // The "Score =" column of the CNPF sheet (v3.2) and the on-screen hints (v3.0), as display text.
   // The retained class and points printed next to them always come from the domain result.

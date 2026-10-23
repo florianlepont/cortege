@@ -9,6 +9,12 @@ import {
 import { BrandTheme } from "../../app/theme"
 import { FINISH_BAR } from "../survey-detail/finish-bar-layout"
 
+/** The footer's side and top padding, shared with the route step's in-flow footer. */
+export const WIZARD_FOOTER_PADDING = {
+  horizontal: brandSpacing.md,
+  top: FINISH_BAR.paddingTop,
+} as const
+
 /** Hit area of the round top buttons, kept from the 12.2-16 refinement (D-05). */
 export const WIZARD_ICON_BUTTON = 44
 
@@ -83,6 +89,12 @@ export function createWizardStyles(theme: BrandTheme) {
       lineHeight: 35,
       flexShrink: 1,
       color: theme.semanticColors.textStrong,
+    },
+    // The question with a glyph beside it (the route step's (i)); the glyph sits on the first line.
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: brandSpacing4.sm,
     },
     lead: {
       ...brandTypography.sectionBody,
@@ -172,8 +184,8 @@ export function createWizardStyles(theme: BrandTheme) {
       left: 0,
       right: 0,
       bottom: 0,
-      paddingHorizontal: brandSpacing.md,
-      paddingTop: FINISH_BAR.paddingTop,
+      paddingHorizontal: WIZARD_FOOTER_PADDING.horizontal,
+      paddingTop: WIZARD_FOOTER_PADDING.top,
     },
   })
 }

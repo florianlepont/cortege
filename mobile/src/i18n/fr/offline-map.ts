@@ -84,13 +84,16 @@ export const offlineMapFr = {
   // Offer to download the map around a survey (12.1 lot 3): banner in the new-survey flow, row on
   // the survey page.
   prompt: {
-    title: "Carte hors ligne",
-    message: (megabytes: string) =>
-      `Cette zone n'est pas encore sur votre téléphone. Téléchargez-la avant d'aller en forêt (environ 2 km autour, ${megabytes} Mo).`,
+    // The one slim line over the parcel map (owner check on the iPhone 17e: the 6-line card hid
+    // half of the map). The size and the "about 2 km around" stay in the accessibility hint.
+    slim: {
+      missing: "Zone absente hors ligne",
+      hint: (megabytes: string) =>
+        `Cette zone n'est pas encore sur votre téléphone : environ 2 km autour, ${megabytes} Mo.`,
+      close: "Fermer la proposition de carte hors ligne",
+    },
     download: "Télécharger",
-    later: "Plus tard",
     downloading: (percent: number) => `Téléchargement · ${percent} %`,
-    keepGoing: "Vous pouvez continuer : le relevé n'attend pas.",
     areaName: (siteName: string) => `Autour de ${siteName}`,
     row: {
       missing: (megabytes: string) => `Carte hors ligne : non téléchargée (${megabytes} Mo)`,
@@ -98,7 +101,6 @@ export const offlineMapFr = {
     },
     a11y: {
       download: "Télécharger la carte hors ligne autour de ce relevé",
-      later: "Ne pas télécharger la carte pour le moment",
     },
   },
 } as const

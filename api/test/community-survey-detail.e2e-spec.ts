@@ -324,6 +324,135 @@ describe("Community survey page (e2e)", () => {
     })
   })
 
+  // Phase 30 (O-15): another member reads the recorded route of a finished survey they may see,
+  // read-only. A draft or a private survey never reaches the reader (T-30-24).
+  describe("recorded route (phase 30, O-15)", () => {
+    const ROUTE = {
+      version: 1,
+      method: "partial_strip",
+      counting: "uncapped",
+      uncapped_factors: ["A", "B", "E"],
+      zone_surface_ha: 12.5,
+      complement: { done: true, total_surface_ha: 14.25 },
+      guide: { chosen_by: "observer" },
+    }
+
+    async function createRouteSurvey(
+      token: string,
+      id: string,
+      parcelId: string,
+      options: { submit: boolean; visibility: "public" | "private"; route: boolean },
+    ) {
+      const versionNumber = await getNextVersionNumber(db, parcelId)
+      await request(app.getHttpServer())
+        .post("/v1/surveys")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          id,
+          sync_version: 1,
+          site_name: "Bois du parcours",
+          status: "draft",
+          visibility: options.visibility,
+          parcel_id: parcelId,
+          observation_year: 2025,
+          version_number: versionNumber,
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+          factors: validDirectFactors,
+          ...(options.route ? { survey_route: ROUTE } : {}),
+          location: { source: "gps", lat: 47.2, lng: 1.2 },
+        })
+        .expect(201)
+      if (options.submit) {
+        await request(app.getHttpServer())
+          .post(`/v1/surveys/${id}/submit`)
+          .set("Authorization", `Bearer ${token}`)
+          .expect(201)
+      }
+    }
+
+    it("shows another member the route of a finished shared survey, and null for one without", async () => {
+      const authorToken = await loginTestUser(app, "e2e-community-route-author")
+      const readerToken = await loginTestUser(app, "e2e-community-route-reader")
+      const parcelId = await resolveParcel(
+        app,
+        authorToken,
+        47.8 + uniqueCoordSeed() / 100000,
+        1.8 + uniqueCoordSeed() / 100000,
+      )
+      const withRoute = uniqueId("e2e-community-route-1")
+      const legacy = uniqueId("e2e-community-route-2")
+      await createRouteSurvey(authorToken, withRoute, parcelId, {
+        submit: true,
+        visibility: "public",
+        route: true,
+      })
+      await createRouteSurvey(authorToken, legacy, parcelId, {
+        submit: true,
+        visibility: "public",
+        route: false,
+      })
+
+      const shown = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${withRoute}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(shown.body.survey_route).toEqual(ROUTE)
+      // The route is a field of the survey itself, not of its history items.
+      for (const item of shown.body.history as Array<Record<string, unknown>>) {
+        expect(item).not.toHaveProperty("survey_route")
+      }
+
+      const none = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${legacy}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(none.body).toHaveProperty("survey_route", null)
+    })
+
+    it("never shows the route of a draft or of a private finished survey to another member", async () => {
+      const authorToken = await loginTestUser(app, "e2e-community-route-hidden-author")
+      const readerToken = await loginTestUser(app, "e2e-community-route-hidden-reader")
+      const parcelId = await resolveParcel(
+        app,
+        authorToken,
+        47.85 + uniqueCoordSeed() / 100000,
+        1.85 + uniqueCoordSeed() / 100000,
+      )
+      const sharedId = uniqueId("e2e-community-route-shared")
+      const draftId = uniqueId("e2e-community-route-draft")
+      const privateId = uniqueId("e2e-community-route-private")
+      await createRouteSurvey(authorToken, sharedId, parcelId, {
+        submit: true,
+        visibility: "public",
+        route: false,
+      })
+      await createRouteSurvey(authorToken, draftId, parcelId, {
+        submit: false,
+        visibility: "public",
+        route: true,
+      })
+      await createRouteSurvey(authorToken, privateId, parcelId, {
+        submit: true,
+        visibility: "private",
+        route: true,
+      })
+
+      for (const hiddenId of [draftId, privateId]) {
+        await request(app.getHttpServer())
+          .get(`/v1/public/community-surveys/${hiddenId}`)
+          .set("Authorization", `Bearer ${readerToken}`)
+          .expect(404)
+      }
+      const shared = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${sharedId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(shared.body.survey_route).toBeNull()
+      expect(JSON.stringify(shared.body)).not.toContain("zone_surface_ha")
+    })
+  })
+
   it("answers 404 for a draft, an unknown survey and a deleted one", async () => {
     const token = await loginTestUser(app, "e2e-community-detail-404")
     const parcelId = await resolveParcel(app, token, 47.4 + uniqueCoordSeed() / 100000, 1.4)

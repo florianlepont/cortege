@@ -143,6 +143,8 @@ jest.mock("./routes/FinishSheetRoute", () => ({ FinishSheetRoute: mockRoute() })
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
+jest.mock("./routes/RouteGuideRoute", () => ({ RouteGuideRoute: mockRoute() }))
+jest.mock("./routes/RouteChooseRoute", () => ({ RouteChooseRoute: mockRoute() }))
 jest.mock("./routes/AccountRoute", () => ({ AccountRoute: mockRoute() }))
 jest.mock("./routes/SettingsRoute", () => ({ SettingsRoute: mockRoute() }))
 jest.mock("./routes/OfflineAreasRoute", () => ({ OfflineAreasRoute: mockRoute() }))
@@ -196,6 +198,7 @@ import {
 import { JsRootTabs } from "./tabs/JsRootTabs"
 import { NativeRootTabs } from "./tabs/NativeRootTabs"
 import { nativeLargeTitle } from "./stacks/stack-options"
+import { shouldHideTabBar } from "./tab-bar"
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -631,6 +634,36 @@ describe("stack options and listeners", () => {
     expectHaloHeader(wizard)
   })
 
+  test("the route step is a stack screen with its own back (native back and swipe off), and its own title on iOS (phase 30, O-19)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    expect(mockScreens.surveyRouteGuide).toBeDefined()
+    const options = effectiveOptions("surveyRouteGuide")
+    // The header of steps 1 to 3: a small centred title, never the native large title (it never
+    // followed this page's scroll on iOS); the route sets "Étape 5 sur 5" once mounted.
+    expect(options.headerLargeTitleEnabled).toBe(false)
+    expect(options.headerTitleAlign).toBe("center")
+    expect(options.title).toBe(fr.routeGuide.screen.title)
+    // Native back and swipe are off: the route draws its own back button (no native pop is held).
+    expect(options.gestureEnabled).toBe(false)
+    expect(options.headerBackVisible).toBe(false)
+    expect(options.headerShown).not.toBe(false)
+    expectHaloHeader(options)
+  })
+
+  test("Android: the route step names itself with its own title and its own back", async () => {
+    await mount(<AppNavigation />)
+    const options = effectiveOptions("surveyRouteGuide")
+    expect(options.title).toBe(fr.routeGuide.screen.title)
+    expect(options.headerLargeTitleEnabled).toBe(false)
+    expect(options.gestureEnabled).toBe(false)
+    expect(options.headerBackVisible).toBe(false)
+  })
+
+  test("the route step does not change the tab bar rule (OA-28)", () => {
+    expect(shouldHideTabBar("surveyRouteGuide")).toBe(false)
+  })
+
   test("the JS surveys stack shows its own header; the native one shows the halo header", async () => {
     await mount(<AppNavigation />)
     const jsStack = mockNavigators.stack.find(
@@ -850,6 +883,27 @@ describe("stack options and listeners", () => {
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
     expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+  })
+
+  test("the chooser Choisir le parcours is a modal on Android and a form sheet on iOS, with its own header", async () => {
+    await mount(<AppNavigation />)
+    expect(mockScreens.surveyRouteChoose).toBeDefined()
+    const android = mockScreens.surveyRouteChoose.options as Options
+    expect(android.presentation).toBe("modal")
+    // A solid header carries the title and the Annuler item the route sets: no halo frame.
+    expect(android.headerShown).toBe(true)
+    expect(android.headerTransparent).toBe(false)
+    expect(android.title).toBe(fr.routeGuide.chooser.title)
+    expect(android.headerBackVisible).toBe(false)
+    expect(shouldHideTabBar("surveyRouteChoose")).toBe(false)
+    mockPlatform.OS = "ios"
+    const { routeChooseScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      routeChooseScreenOptions: (theme: unknown) => Options
+    }
+    const ios = routeChooseScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.75, 1])
   })
 
   test("the shared stack options follow the platform at load time", () => {

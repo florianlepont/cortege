@@ -127,3 +127,36 @@ describe("useLocalDraftSummary annotations (phase 27, D-13, D-14)", () => {
     expect((await read()).annotations).toEqual({})
   })
 })
+
+describe("useLocalDraftSummary hasRoute (phase 30, O-19)", () => {
+  const ROUTE = {
+    version: 1,
+    method: "full",
+    counting: "capped",
+    zone_surface_ha: 2.5,
+    guide: { chosen_by: "observer" },
+  } as const
+
+  test("a draft with a valid route has one", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue({ ...DRAFT, survey_route: ROUTE })
+
+    expect((await read()).hasRoute).toBe(true)
+  })
+
+  test("a draft without route, or with a damaged one, has none", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue(DRAFT)
+    expect((await read()).hasRoute).toBe(false)
+
+    mockGetLocalSurveyDraft.mockResolvedValue({
+      ...DRAFT,
+      survey_route: { ...ROUTE, method: "typological" },
+    })
+    expect((await read()).hasRoute).toBe(false)
+  })
+
+  test("a draft that is not found has none", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue(null)
+
+    expect((await read()).hasRoute).toBe(false)
+  })
+})

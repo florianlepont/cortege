@@ -271,10 +271,76 @@ function cards(width: number): CardModel[] {
   return out
 }
 
+// The route step's suggestion card (phase 30, plan 30-18, UI-SPEC 4.1): three blocks of text one
+// under the other, each softened by its own shield. Worst case: a two-line parcours name, the
+// longest "what you do" sentence (seven lines), three rows of factor chips in the mode block.
+function suggestionCard(width: number): CardModel {
+  const inner = width - 2 * PAD
+  const gap = 16
+  const line = (size: { lineHeight: number }, count: number) => size.lineHeight * count
+  const methodHeight =
+    line(brandTypography.meta, 1) +
+    brandSpacing4.xs +
+    line(brandTypography.screenTitle, 2) +
+    brandSpacing4.xs +
+    line(brandTypeScale.subhead, 4) +
+    brandSpacing4.xs +
+    line(brandTypeScale.subhead, 7)
+  const modeHeight =
+    line(brandTypography.meta, 1) +
+    brandSpacing4.xs +
+    line(brandTypeScale.headline, 2) +
+    brandSpacing4.xs +
+    line(brandTypeScale.subhead, 3) +
+    brandSpacing4.sm +
+    3 * 32
+  const footHeight = line(brandTypeScale.subhead, 1) + brandSpacing4.sm + 44
+  const method = { x: PAD, y: PAD, width: inner, height: methodHeight }
+  const mode = { x: PAD, y: method.y + methodHeight + gap, width: inner, height: modeHeight }
+  const foot = { x: PAD, y: mode.y + modeHeight + gap, width: inner, height: footHeight }
+  return {
+    name: `route suggestion card, ${width} pt`,
+    key: "standard",
+    box: { width, height: foot.y + footHeight + PAD },
+    blocks: [method, mode, foot],
+    regions: [
+      {
+        name: "parcours name and sentences",
+        ...method,
+        pairs: [
+          { name: "eyebrow", colour: forest.body, target: 4.5 },
+          { name: "parcours name", colour: forest.title, target: 4.5 },
+          { name: "explanation", colour: forest.body, target: 4.5 },
+        ],
+      },
+      {
+        name: "mode line",
+        ...mode,
+        pairs: [
+          { name: "caption", colour: forest.sage, target: 4.5 },
+          { name: "mode name", colour: forest.title, target: 4.5 },
+          { name: "mode explanation", colour: forest.body, target: 4.5 },
+        ],
+      },
+      {
+        name: "surface line and links",
+        ...foot,
+        pairs: [
+          { name: "surface line", colour: forest.title, target: 4.5 },
+          { name: "link and glossary glyph", colour: forest.titleAccent, target: 4.5 },
+        ],
+      },
+    ],
+  }
+}
+
 const ALL = [343, 361].flatMap(cards)
+// The suggestion card is far taller than the others: only its text contrast and shields are
+// checked here, the aurora's own shape tests (angles, reach) stay on the cards it was drawn for.
+const SUGGESTION = [343, 361].map(suggestionCard)
 /** No point of a card is farther than this from a line (the sketch's own spread, on the score card). */
 const LINE_REACH = 104
-const CASES = ALL.flatMap((card) =>
+const CASES = [...ALL, ...SUGGESTION].flatMap((card) =>
   card.regions.map((region) => [`${card.name}: ${region.name}`, card, region] as const),
 )
 
@@ -424,7 +490,7 @@ describe("the shield: soft ellipses only, never an edge or a flat zone", () => {
 
   test("each block's ellipse keeps a feather of at least 40 pt all round, at a gentle slope", () => {
     expect(forestShield.feather).toBeGreaterThanOrEqual(40)
-    for (const card of ALL) {
+    for (const card of [...ALL, ...SUGGESTION]) {
       for (const block of card.blocks) {
         const e = textEllipse(block)
         // The block lies inside the ellipse's inner share.

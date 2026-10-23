@@ -27,6 +27,11 @@ export type SurveyFormState = {
    * factors.annotations by the form's draft payload (D-23).
    */
   factorAnnotations: SurveyForm["factorAnnotations"]
+  /**
+   * The detail inputs of the relevé déplafonné (phase 30, D-07): B cover per stratum, F counts per
+   * group and F's surface, written beside their scored keys by the form's draft payload.
+   */
+  uncapped: SurveyForm["uncapped"]
   formErrors: SurveyForm["formErrors"]
   draftInput: SurveyForm["draftInput"]
   /** Also in the surveys state; repeated here so the form routes read one context (01.9-18). */
@@ -57,6 +62,10 @@ export type SurveyFormActions = {
   /** Phase 27: the strip calls flushDraft after a doubt toggle for an immediate write. */
   setFactorDoubt: SurveyForm["setFactorDoubt"]
   setFactorNote: SurveyForm["setFactorNote"]
+  /** Phase 30: each derives its scored value with the package helpers and writes it (U-O10). */
+  setStratumCover: SurveyForm["setStratumCover"]
+  setDmhCount: SurveyForm["setDmhCount"]
+  setFSurface: SurveyForm["setFSurface"]
 }
 
 export type SurveyFormContextValue = {

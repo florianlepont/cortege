@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Platform, StyleSheet, View, useWindowDimensions } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { brandMapTokens, brandMediaBackdrop, brandSpacing4 } from "../app/brand-tokens"
@@ -17,8 +17,10 @@ import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
+import { useChosenParcelGeometry } from "./parcel-selection/useChosenParcelGeometry"
 import type { BasemapKey } from "../map/basemaps"
 import { cachedParcelCentre } from "../map/own-surveys"
+import { parcelAreaHa } from "../map/parcel-area"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { MapTitlePill } from "./public-map/MapChips"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
@@ -27,7 +29,6 @@ import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { ParcelSelectionCard } from "./parcel-selection/ParcelSelectionCard"
-import { isCompactParcelCard } from "./parcel-selection/layout-budget"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 import type { WeatherPoint } from "../storage/weather"
@@ -61,9 +62,11 @@ type SurveyParcelSelectionScreenProps = {
   onCaptureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   /**
    * Phase 27, D-10: `weatherPoint` is the centre of the parcels the observer tapped (null when
-   * their geometry is not loaded), the place the weather is looked up for.
+   * their geometry is not loaded), the place the weather is looked up for. Phase 30: `surfaceHa`
+   * is the surface of the chosen parcels, prefilling the surface question of the route step (null
+   * when no geometry is cached).
    */
-  onSave: (weatherPoint: WeatherPoint | null) => Promise<void>
+  onSave: (weatherPoint: WeatherPoint | null, surfaceHa: number | null) => Promise<void>
   /** New-survey flow (step 4 of 4): the button reads "Continuer" and needs a parcel. */
   wizard?: boolean
 }
@@ -87,11 +90,8 @@ export function SurveyParcelSelectionScreen({
   const headerHeight = useHeaderHeight()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
-  // The compact card reads the window, never the measured card height (no feedback loop, D-08).
-  const { height, fontScale } = useWindowDimensions()
-  const compact = isCompactParcelCard(height, fontScale)
   // The bottom card's height: the map controls sit just above it, bottom right and left like the
-  // Explorer's, whatever the card holds (a notice appears when no parcel is chosen).
+  // Explorer's, whatever the card holds (a line of help appears when no parcel is chosen).
   const [cardHeight, setCardHeight] = useState(0)
   const [offlineDismissed, setOfflineDismissed] = useState(false)
   // The same download button and panel as the Explorer's: the capsule is one component everywhere.
@@ -114,12 +114,22 @@ export function SurveyParcelSelectionScreen({
       }
   const [mapRegion, setMapRegion] = useState<Region>(initialRegion)
   const mapZoom = useMemo(() => computeRegionZoom(mapRegion), [mapRegion])
-  const { items: parcelStatuses, loading: parcelsLoading } = useParcelStatuses({
+  const {
+    items: listedParcels,
+    loading: parcelsLoading,
+    settled: parcelsSettled,
+  } = useParcelStatuses({
     apiUrl,
     accessToken,
     region: mapRegion,
     enabled: true,
     year: new Date().getFullYear(),
+  })
+  // The list for the visible region plus the geometry of the parcels seen before (RC-01).
+  const { waitForGeometry } = useChosenParcelGeometry({
+    items: listedParcels,
+    settled: parcelsSettled,
+    selectedParcelIds,
   })
 
   // ParcelMap holds a move until its map has loaded.
@@ -154,12 +164,6 @@ export function SurveyParcelSelectionScreen({
   const offlinePrompt = useOfflineMapPrompt({ apiUrl, accessToken, point: offlinePoint })
   const offlineBannerVisible = offlinePrompt.state !== "hidden" && !offlineDismissed
   const parcelSelectionLabel = t.selectedCount({ count: selectedParcelIds.length })
-  const parcelHelperText =
-    mapZoom >= 15
-      ? parcelsLoading
-        ? t.loadingOverlay
-        : t.visibleCount({ count: parcelStatuses.length })
-      : t.zoomToSelect
 
   // The iOS header is transparent over the map (the native back button is the glass one), so the
   // controls start under the status bar; on Android the opaque header already sits above the map.
@@ -176,9 +180,16 @@ export function SurveyParcelSelectionScreen({
       return
     }
     setSaving(true)
-    void onSave(cachedParcelCentre(parcelStatuses, selectedParcelIds)).finally(() =>
-      setSaving(false),
-    )
+    // RC-01: wait (at most 2 s, and only while a read for the region is pending) for the geometry of
+    // the chosen parcels, so the route step starts with its surface estimate. Offline it answers at once.
+    void waitForGeometry()
+      .then((items) =>
+        onSave(
+          cachedParcelCentre(items, selectedParcelIds),
+          parcelAreaHa(items, selectedParcelIds),
+        ),
+      )
+      .finally(() => setSaving(false))
   }
 
   const handleLocate = async (silent = false): Promise<void> => {
@@ -233,7 +244,7 @@ export function SurveyParcelSelectionScreen({
         initialRegion={mapRegion}
         basemap={basemap}
         cadastreEnabled={mapZoom >= 15}
-        parcels={parcelStatuses}
+        parcels={listedParcels}
         selectedParcelIds={selectedParcelIds}
         onParcelPress={onToggleParcelSelection}
         marker={hasGpsCoordinates ? { latitude: parsedLat, longitude: parsedLng } : null}
@@ -265,7 +276,7 @@ export function SurveyParcelSelectionScreen({
           mapZoom >= 15
             ? parcelsLoading
               ? t.loadingOverlay
-              : t.visibleCount({ count: parcelStatuses.length })
+              : t.visibleCount({ count: listedParcels.length })
             : t.legend.zoomIn
         }
         title={t.legend.title}
@@ -299,10 +310,8 @@ export function SurveyParcelSelectionScreen({
           onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
         >
           <ParcelSelectionCard
-            compact={compact}
             hasSelection={hasParcelSelection}
             selectionLabel={parcelSelectionLabel}
-            helperText={parcelHelperText}
             saving={saving}
             wizard={wizard}
             onDone={handleDone}

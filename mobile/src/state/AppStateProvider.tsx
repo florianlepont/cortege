@@ -4,6 +4,7 @@ import { loadStoredApiUrl, saveStoredApiUrl } from "../app/api-url-storage"
 import type { FormMode } from "../navigation/types"
 import { DEFAULT_API_URL } from "../app/constants"
 import { shouldShowDevTools } from "../app/dev-tools"
+import { isRouteMissing } from "../app/survey-logic"
 import type { SurveyDetailTab, SurveyStats } from "../app/types"
 import { useEditingDraft } from "../hooks/useEditingDraft"
 import { useGpsCapture } from "../hooks/useGpsCapture"
@@ -106,7 +107,8 @@ function useAppController() {
       total: surveys.length,
       draft: surveys.filter((s) => s.status === "draft").length,
       submitted: surveys.filter((s) => s.status === "submitted").length,
-      pending: surveys.filter((s) => s.sync_state === "pending").length,
+      // A draft held for its route is not waiting for the network (phase 30): not counted.
+      pending: surveys.filter((s) => s.sync_state === "pending" && !isRouteMissing(s)).length,
       synced: surveys.filter((s) => s.sync_state === "synced").length,
       failed: surveys.filter((s) => s.sync_state === "failed").length,
       blocked: surveys.filter((s) => s.sync_blocked).length,
@@ -254,6 +256,7 @@ function useAppController() {
     switchToV32: draftPatcher.handleSwitchSurveyToV32,
     updateSurveyNote: draftPatcher.handleUpdateSurveyNote,
     updateSurveyWeather: draftPatcher.handleUpdateSurveyWeather,
+    updateSurveyRoute: draftPatcher.handleUpdateSurveyRoute,
   })
 
   const {
@@ -340,6 +343,9 @@ function useAppController() {
     markSubmitAttempted: surveyForm.markSubmitAttempted,
     setFactorDoubt: surveyForm.setFactorDoubt,
     setFactorNote: surveyForm.setFactorNote,
+    setStratumCover: surveyForm.setStratumCover,
+    setDmhCount: surveyForm.setDmhCount,
+    setFSurface: surveyForm.setFSurface,
   })
 
   const {
@@ -354,6 +360,7 @@ function useAppController() {
     factorSections,
     factorRetainedScores,
     factorAnnotations,
+    uncapped,
     formErrors,
     draftInput,
   } = surveyForm
@@ -371,6 +378,7 @@ function useAppController() {
         factorSections,
         factorRetainedScores,
         factorAnnotations,
+        uncapped,
         formErrors,
         draftInput,
         formMode,
@@ -390,6 +398,7 @@ function useAppController() {
       factorSections,
       factorRetainedScores,
       factorAnnotations,
+      uncapped,
       formErrors,
       draftInput,
       formMode,

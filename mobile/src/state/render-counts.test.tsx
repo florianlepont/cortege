@@ -284,6 +284,7 @@ jest.mock("react-native", () => {
       openURL: jest.fn(() => Promise.resolve()),
       canOpenURL: jest.fn(() => Promise.resolve(true)),
     },
+    BackHandler: { addEventListener: () => ({ remove: () => undefined }) },
     PixelRatio: { get: () => 2, roundToNearestPixel: (n: number) => n },
     Platform: {
       OS: "android",

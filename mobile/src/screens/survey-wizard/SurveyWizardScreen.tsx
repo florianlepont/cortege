@@ -24,12 +24,16 @@ import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
 import { WizardNativeHeader } from "./WizardNativeHeader"
+import { WizardHeading, WizardTopBar } from "./WizardChrome"
 import { AppPressable } from "../../ui/AppPressable"
 
 const w = fr.surveyForm.wizard
 
-/** The three questions here and the parcel map. */
-const TOTAL_STEPS = 4
+/**
+ * The three questions here, the parcel map and the route step. Phase 30, O-19: the route step is the
+ * mandatory fifth step of a new survey, so the creation counts five steps (it was four).
+ */
+const TOTAL_STEPS = 5
 
 type WizardStep = "name" | "method" | "context"
 const STEPS: readonly WizardStep[] = ["name", "method", "context"]
@@ -43,7 +47,7 @@ type SurveyWizardScreenProps = {
   vegetationStage: VegetationStage
   setVegetationStage: (value: VegetationStage) => void
   onRegionChange: (nextRegion: RegionVersion) => void
-  /** Step 4, the full-screen parcel map, is its own screen. */
+  /** Step 4, the full-screen parcel map, is its own screen (then the route step, step 5). */
   onOpenParcels: () => void
   /** Leaving from the first step. */
   onClose: () => void
@@ -144,12 +148,11 @@ export function SurveyWizardScreen({
           onStepBack={() => setStepIndex(stepIndex - 1)}
         />
       ) : null}
-      <View
-        style={[
-          styles.topBar,
-          // Under the native header the route's ScreenFrame already starts below the bar.
-          { paddingTop: nativeHeader ? brandSpacing4.sm : insets.top + 8 },
-        ]}
+      <WizardTopBar
+        // Under the native header the route's ScreenFrame already starts below the bar.
+        paddingTop={nativeHeader ? brandSpacing4.sm : insets.top + 8}
+        total={TOTAL_STEPS}
+        index={stepIndex}
       >
         {nativeHeader ? null : (
           <View style={styles.topRow}>
@@ -170,18 +173,7 @@ export function SurveyWizardScreen({
             <View style={styles.topSpacer} />
           </View>
         )}
-        <View style={styles.progress}>
-          {Array.from({ length: TOTAL_STEPS }, (_, index) => (
-            <View
-              key={`segment-${index}`}
-              style={[
-                styles.progressSegment,
-                index <= stepIndex ? styles.progressDone : styles.progressTodo,
-              ]}
-            />
-          ))}
-        </View>
-      </View>
+      </WizardTopBar>
 
       <ScrollView
         contentContainerStyle={[
@@ -191,10 +183,7 @@ export function SurveyWizardScreen({
         keyboardShouldPersistTaps="handled"
         testID="wizard-body"
       >
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
-        </Text>
-        <Text style={styles.lead}>{body}</Text>
+        <WizardHeading title={title} lead={body} />
 
         <View style={styles.answer}>
           {step === "name" ? (
