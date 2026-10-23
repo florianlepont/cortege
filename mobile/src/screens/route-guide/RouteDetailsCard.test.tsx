@@ -13,6 +13,7 @@ jest.mock("react-native", () => {
     TextInput: mockComponent("TextInput"),
     Switch: mockComponent("Switch"),
     Modal: mockComponent("Modal"),
+    ScrollView: mockComponent("ScrollView"),
     Pressable: ({
       children,
       style,
@@ -148,28 +149,46 @@ describe("RouteDetailsCard: partial parcours", () => {
       ...overrides,
     })
 
-  it("shows the prefilled zone field, its helper and the field advice of the strip", () => {
+  it("shows the prefilled zone field and one short line; the figures sit behind the glyph", () => {
     const { one, texts, byId } = partial()
     expect(one("route-zone-field").props.value).toBe("1,2")
     expect(texts()).toEqual(
-      expect.arrayContaining([
-        guide.details.zoneLabel,
-        guide.details.zoneHelperPartial,
-        guide.details.stripAdvice,
-      ]),
+      expect.arrayContaining([guide.details.zoneLabel, guide.details.zoneShort]),
     )
-    expect(texts()).not.toContain(guide.details.plotAdvice)
-    // Several placettes are only explained for the parcours par placette.
-    expect(texts()).not.toContain(guide.details.plotsAdded)
+    // None of the long advice is on the card any more.
+    for (const long of [
+      guide.details.zoneHelperPartial,
+      guide.details.stripAdvice,
+      guide.details.plotAdvice,
+      guide.details.plotsAdded,
+      guide.details.complementHint,
+    ]) {
+      expect(texts()).not.toContain(long)
+    }
     expect(byId("glossary-info-surfaceDecrite")).toHaveLength(1)
   })
 
-  it("gives the field advice of a placette and says several are added up on one sheet", () => {
-    const { texts } = partial({ method: "partial_plot" })
-    expect(texts()).toEqual(
-      expect.arrayContaining([guide.details.plotAdvice, guide.details.plotsAdded]),
-    )
-    expect(texts()).not.toContain(guide.details.stripAdvice)
+  it("the glyph of the surface gives the figures and the advice of the strip", () => {
+    const { one, texts } = partial()
+    act(() => one("glossary-info-surfaceDecrite").props.onPress())
+    const sheet = texts().find((text) => text.includes(guide.details.stripAdvice))
+    expect(sheet).toContain(guide.details.zoneHelperPartial)
+    expect(sheet).not.toContain(guide.details.plotAdvice)
+  })
+
+  it("the glyph of the surface of a placette adds the radius and says several are added up", () => {
+    const { one, texts } = partial({ method: "partial_plot" })
+    act(() => one("glossary-info-surfaceDecrite").props.onPress())
+    const sheet = texts().find((text) => text.includes(guide.details.plotAdvice))
+    expect(sheet).toContain(guide.details.plotsAdded)
+    expect(sheet).not.toContain(guide.details.stripAdvice)
+  })
+
+  it("the one glyph of the card also explains the rest of the stand and what the glance gives", () => {
+    const { one, texts, byId } = partial()
+    expect(byId("glossary-info-resteDuPeuplement")).toHaveLength(0)
+    act(() => one("glossary-info-surfaceDecrite").props.onPress())
+    expect(texts().some((text) => text.includes(guide.details.complementHint))).toBe(true)
   })
 
   it("has no group notice and no group name field (O-14, O-20)", () => {

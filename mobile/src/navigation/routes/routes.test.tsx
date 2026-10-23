@@ -1415,8 +1415,8 @@ describe("SurveyParcelsPageRoute", () => {
     await act(async () => {
       callback("surveyParcelsPage", "onEditRoute")("s-01")
     })
-    // The chooser reads the recorded answers itself: no surface and no preselection travel.
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteChoose", {
+    // The assistant reads the recorded answers itself: no surface and no preselection travel.
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteGuide", {
       surveyId: "s-01",
       mode: "edit",
       surfaceHa: null,

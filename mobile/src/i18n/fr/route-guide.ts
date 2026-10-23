@@ -91,9 +91,7 @@ export const routeGuideFr = {
     // The result screen's heading, the same large heading as a question (steps 1 to 5 share it).
     result: {
       suggestedTitle: "Voici le parcours conseillé",
-      suggestedLead: "Il découle de vos réponses. Vous pouvez en changer.",
       chosenTitle: "Voici votre parcours",
-      chosenLead: "Vous l'avez choisi vous-même. Vous pouvez encore le changer.",
     },
   },
   questions: {
@@ -257,10 +255,16 @@ export const routeGuideFr = {
     keptValues:
       "Les valeurs déjà saisies en relevé déplafonné sont conservées, mais elles ne seront plus affichées.",
   },
+  // The two figures under the suggestion card (owner check, Phase 30): the surface described and the
+  // estimate for an observer used to the IBP (S p. 19), set apart from the forest card to read first.
+  facts: {
+    surface: "Surface décrite",
+    hectares: (hectares: string) => `${hectares} ha`,
+    duration: "Durée estimée",
+  },
   suggestion: {
     eyebrowSuggested: "Parcours conseillé",
     eyebrowChosen: "Parcours choisi par vous",
-    surfaceLine: (hectares: string) => `Surface décrite : ${hectares} ha`,
     countedLead: "Facteurs comptés en entier",
     change: "Changer de parcours",
     restore: "Revenir au parcours conseillé",
@@ -280,7 +284,8 @@ export const routeGuideFr = {
       title: "Parcours partiel, sans découper",
       caption: "Vous décrivez une partie du peuplement entier.",
     },
-    subdivideNotice: "Faites un relevé par morceau : indiquez la surface du premier morceau.",
+    subdivideNotice:
+      "Chaque morceau fait l'objet d'un relevé séparé. Commencez par le premier : indiquez sa surface.",
     subdivideCta: "Indiquer la surface d'un morceau",
   },
   // One sentence per reason code of the package (RouteReasonCode), keyed in camel case.
@@ -339,6 +344,8 @@ export const routeGuideFr = {
     fullLine: (hectares: string) => `Vous décrivez tout le peuplement : ${hectares} ha.`,
     zoneLabel: "Surface que vous allez décrire",
     zoneHelperFull: "Indiquez la surface du peuplement que vous décrivez.",
+    // The short line under the field; the rest sits behind the information glyph beside it.
+    zoneShort: "Au moins 1 hectare.",
     zoneHelperPartial:
       "Au moins 1 hectare, et entre 10 % (peuplement homogène) et 20 % (peuplement varié) de la surface du peuplement.",
     stripAdvice: STRIP_ADVICE,

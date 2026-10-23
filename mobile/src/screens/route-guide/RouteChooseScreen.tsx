@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons"
 import { useEffect, useMemo, useRef } from "react"
 import { ScrollView, StyleSheet, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -125,16 +126,32 @@ export function RouteChooseScreen({
         testID="route-choose-scroll"
       >
         {mode === "edit" ? (
-          <View style={styles.adviseLine} testID="route-advise-line">
-            <Text style={styles.adviseLead}>{chooser.adviseLead}</Text>
+          <View testID="route-advise-line">
             <AppPressable
-              style={styles.link}
+              style={styles.adviseCard}
               onPress={onAdvise}
               accessibilityRole="button"
               accessibilityLabel={chooser.advise}
               testID="route-advise-link"
             >
-              <Text style={styles.linkLabel}>{chooser.advise}</Text>
+              <View style={styles.adviseBadge}>
+                <Ionicons
+                  name="sparkles-outline"
+                  size={22}
+                  color={theme.semanticColors.accent}
+                  accessible={false}
+                />
+              </View>
+              <View style={styles.adviseCopy}>
+                <Text style={styles.adviseLead}>{chooser.adviseLead}</Text>
+                <Text style={styles.linkLabel}>{chooser.advise}</Text>
+              </View>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={20}
+                color={theme.colors.textSecondary}
+                accessible={false}
+              />
             </AppPressable>
           </View>
         ) : null}
@@ -259,11 +276,28 @@ function createStyles(theme: BrandTheme) {
     cards: {
       gap: brandSpacing4.sm,
     },
-    adviseLine: {
+    // "Pas sûr ? Être conseillé" is a card of its own with a glyph, not a line of text.
+    adviseCard: {
       flexDirection: "row",
       alignItems: "center",
-      flexWrap: "wrap",
-      columnGap: brandSpacing4.xs,
+      gap: brandSpacing4.md,
+      minHeight: 64,
+      padding: brandSpacing4.smd,
+      borderRadius: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.divider,
+      backgroundColor: theme.semanticColors.surfaceSoft,
+    },
+    adviseBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.surfaceBase,
+    },
+    adviseCopy: {
+      flex: 1,
     },
     adviseLead: {
       ...brandTypeScale.subhead,

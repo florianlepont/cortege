@@ -133,6 +133,7 @@ export function FactorCounterInput({
             onBlur={commitEdit}
             onSubmitEditing={commitEdit}
             keyboardType="numeric"
+            inputAccessoryViewButtonLabel={fr.common.actions.keyboardDone}
             autoFocus
             style={styles.input}
             testID={testID ? `${testID}-input` : undefined}

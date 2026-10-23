@@ -27,6 +27,7 @@ import {
   UNCAPPED_PRESET_IDS,
   defaultCountingFor,
   isUncappedSelectionValid,
+  preselectedLargeStandOption,
   recommendRoute,
   routeAdviceFor,
   routeQuestionsFor,
@@ -493,13 +494,18 @@ describe("recommendRoute", () => {
     })
   })
 
-  it("returns the options of a large stand with subdivide pre-selected (R-11b)", () => {
+  it("returns the options of a large stand: subdivide is advised for a varied one, partial for a homogeneous one (R-11b)", () => {
     expect(recommendRoute({ surface_ha: 30, homogeneity: "homogeneous" })).toEqual({
       status: "options",
       options: ["subdivide", "partial"],
-      preselected_option: "subdivide",
+      preselected_option: "partial",
       reasons: ["large_stand"],
     })
+    expect(recommendRoute({ surface_ha: 30, homogeneity: "heterogeneous" })).toMatchObject({
+      status: "options",
+      preselected_option: "subdivide",
+    })
+    expect(preselectedLargeStandOption(undefined)).toBe("subdivide")
     // The returned arrays are copies: changing them does not change the constants.
     const options = recommendRoute({ surface_ha: 30, homogeneity: "homogeneous" })
     if (options.status === "options") options.options.push("partial")

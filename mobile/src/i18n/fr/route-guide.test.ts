@@ -49,7 +49,7 @@ const SAMPLES: Record<string, () => string> = {
     fr.routeGuide.questions.surface.valueEstimated("2,4"),
   "routeGuide.questions.refine.hoursValue": () =>
     `${fr.routeGuide.questions.refine.hoursValue({ hours: 1, text: "1" })}|${fr.routeGuide.questions.refine.hoursValue({ hours: 3, text: "3" })}`,
-  "routeGuide.suggestion.surfaceLine": () => fr.routeGuide.suggestion.surfaceLine("1,2"),
+  "routeGuide.facts.hectares": () => fr.routeGuide.facts.hectares("2,4"),
   "routeGuide.advice.duration": () => fr.routeGuide.advice.duration({ range: "25 à 30 minutes" }),
   "routeGuide.advice.durationMinutes": () =>
     `${fr.routeGuide.advice.durationMinutes({ min: 25, max: 30 })}|${fr.routeGuide.advice.durationMinutes({ min: 1, max: 1 })}|${fr.routeGuide.advice.durationMinutes({ min: 30, max: 30 })}`,

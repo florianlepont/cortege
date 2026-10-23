@@ -9,6 +9,8 @@ export const commonFr = {
     close: "Fermer",
     save: "Enregistrer",
     ok: "OK",
+    // The button above a number keyboard (React Native writes "Done" in English otherwise).
+    keyboardDone: "Terminé",
   },
   untitledSurvey: "Relevé sans titre",
   justNow: "À l'instant",

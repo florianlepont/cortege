@@ -1,10 +1,10 @@
 import { useMemo } from "react"
 import type { RouteRecommendation } from "@cortege/ibp-domain"
+import { formatDurationRange, formatHectares } from "../../app/route-text"
 import type { GuideView } from "./route-guide-model"
-import { ReasonsCard } from "./ReasonsCard"
-import { RefineSection } from "./RefineSection"
 import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
-import { RouteAdvice, RouteNotices } from "./RouteNotices"
+import { RouteFacts } from "./RouteFacts"
+import { RouteNotices } from "./RouteNotices"
 import { SuggestionCard } from "./SuggestionCard"
 import type { RouteChooserSection } from "./RouteGuideScreen"
 import type { RouteGuideActions } from "./useRouteGuideState"
@@ -17,9 +17,9 @@ type ResultBodyProps = {
 }
 
 /**
- * The result screen of the route step: the suggestion (or the parcours picked), its reasons, the
- * details card, the warnings and the folded "Pour affiner" (experience and time available are part
- * of this screen only). Everything comes from the model's view; nothing is decided here.
+ * The result screen of the route step: the suggestion (or the parcours picked, its reasons behind a
+ * glyph), the two facts tiles (surface described, estimated duration), the details card and the
+ * warnings. Everything comes from the model's view; nothing is decided here.
  */
 export function ResultBody({ view, actions, recommendation, onOpenChooser }: ResultBodyProps) {
   const { selection } = view
@@ -58,12 +58,20 @@ export function ResultBody({ view, actions, recommendation, onOpenChooser }: Res
         uncappedFactors={selection.uncappedFactors}
         zoneHa={selection.zoneHa}
         chosenBy={view.chosenBy ?? "observer"}
+        reasons={recommendation.status === "route" ? recommendation.reasons : undefined}
         onChange={() => onOpenChooser("pick")}
         onRestore={recommendation.status === "route" ? actions.restoreSuggestion : undefined}
       />
-      {recommendation.status === "route" && suggested ? (
-        <ReasonsCard reasons={recommendation.reasons} />
-      ) : null}
+      <RouteFacts
+        hectares={selection.zoneHa === null ? null : formatHectares(selection.zoneHa)}
+        durationRange={
+          view.advice !== null &&
+          view.advice.advice.includes("duration") &&
+          view.advice.estimated_minutes !== null
+            ? formatDurationRange(view.advice.estimated_minutes)
+            : undefined
+        }
+      />
       <RouteDetailsCard
         method={selection.method}
         counting={selection.counting}
@@ -74,11 +82,6 @@ export function ResultBody({ view, actions, recommendation, onOpenChooser }: Res
         onEditCounting={() => onOpenChooser("pick", "counting")}
       />
       <RouteNotices warnings={warnings} />
-      <RefineSection
-        refine={view.refine}
-        actions={actions}
-        footer={view.advice === null ? null : <RouteAdvice advice={view.advice} />}
-      />
     </>
   )
 }

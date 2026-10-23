@@ -80,7 +80,7 @@ function texts(tree: ReactTestRenderer): string[] {
 }
 
 describe("RouteSection with a recorded route", () => {
-  test("an editable draft: the title, one caption and value per row, and the edit link", () => {
+  test("an editable draft: the title, the rows that describe the survey, and the edit link", () => {
     const { tree, onEdit } = mount()
     expect(find(tree, "route-section")).toBeDefined()
     const said = texts(tree)
@@ -95,10 +95,6 @@ describe("RouteSection with a recorded route", () => {
         "1,2 ha",
         "Reste du peuplement",
         "Regardé rapidement, surface totale évaluée 8 ha",
-        "Choix",
-        "Conseillé par l'app d'après vos réponses",
-        "Vos réponses",
-        "Peuplement de 8 ha, homogène, facile à observer, large",
       ]),
     )
     expect(find(tree, "route-choose-link")).toBeUndefined()
@@ -114,6 +110,17 @@ describe("RouteSection with a recorded route", () => {
     expect(texts(tree)).toContain("Parcours partiel par placette")
     expect(find(tree, "route-edit")).toBeUndefined()
     expect(find(tree, "route-choose-link")).toBeUndefined()
+  })
+
+  test("the observer's card leaves out Choix and Vos réponses too, which only the PDF keeps", () => {
+    const { tree } = mount()
+    const said = texts(tree)
+    expect(said).not.toContain("Choix")
+    expect(said).not.toContain("Vos réponses")
+    expect(find(tree, "route-row-choice")).toBeUndefined()
+    expect(find(tree, "route-row-answers")).toBeUndefined()
+    expect(find(tree, "route-row-method")).toBeDefined()
+    expect(find(tree, "route-row-zone")).toBeDefined()
   })
 
   test("the community variant leaves out Choix and Vos réponses", () => {
