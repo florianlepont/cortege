@@ -63,6 +63,21 @@ const ZONE_FIELD_ISSUES: readonly RouteZoneIssueCode[] = [
   "partial_below_minimum",
 ]
 
+/** What the information glyph of the surface field says: the figures and the field advice. */
+function zoneSheetText(method: RouteMethod): string {
+  const parts: string[] = [fr.routeGuide.glossary.terms.surfaceDecrite.text]
+  if (method === "partial_strip") parts.push(details.zoneHelperPartial, details.stripAdvice)
+  if (method === "partial_plot") {
+    parts.push(details.zoneHelperPartial, details.plotAdvice, details.plotsAdded)
+  }
+  return parts.join("\n\n")
+}
+
+const complementSheetText = [
+  fr.routeGuide.glossary.terms.resteDuPeuplement.text,
+  details.complementHint,
+].join("\n\n")
+
 /**
  * "Détails du parcours" (UI-SPEC section 6, spec sections 5 and 9), shared by the route step and the
  * chooser, each owning the typed `value`. Nothing is required: the owner prefills the zone from the
@@ -135,19 +150,10 @@ export function RouteDetailsCard({
             />
             <View style={styles.helperRow}>
               <Text style={styles.helper}>
-                {partial ? details.zoneHelperPartial : details.zoneHelperFull}
+                {partial ? details.zoneShort : details.zoneHelperFull}
               </Text>
-              <GlossaryInfo term="surfaceDecrite" />
+              <GlossaryInfo term="surfaceDecrite" text={zoneSheetText(method)} />
             </View>
-            {method === "partial_strip" ? (
-              <Text style={styles.helper}>{details.stripAdvice}</Text>
-            ) : null}
-            {method === "partial_plot" ? (
-              <>
-                <Text style={styles.helper}>{details.plotAdvice}</Text>
-                <Text style={styles.helper}>{details.plotsAdded}</Text>
-              </>
-            ) : null}
             {zoneWarnings.map((code) => (
               <View key={code} accessibilityLiveRegion="polite" testID={`route-zone-issue-${code}`}>
                 <AppNotice
@@ -165,7 +171,7 @@ export function RouteDetailsCard({
             <View style={styles.switchRow}>
               <View style={styles.switchCopy}>
                 <Text style={styles.switchLabel}>{details.complementLabel}</Text>
-                <GlossaryInfo term="resteDuPeuplement" />
+                <GlossaryInfo term="resteDuPeuplement" text={complementSheetText} />
               </View>
               <Switch
                 value={value.complementDone}
@@ -178,8 +184,6 @@ export function RouteDetailsCard({
                 testID="route-complement-switch"
               />
             </View>
-            {/* Under the row, so it runs the full width of the card instead of beside the switch. */}
-            <Text style={styles.helper}>{details.complementHint}</Text>
             {value.complementDone ? (
               <AppField
                 label={details.totalLabel}

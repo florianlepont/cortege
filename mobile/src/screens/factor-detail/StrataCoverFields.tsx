@@ -84,6 +84,7 @@ export function StrataCoverFields({
                   value={coverText[code] ?? ""}
                   onChangeText={(text) => onChange(code, clampCoverText(text))}
                   keyboardType="decimal-pad"
+                  inputAccessoryViewButtonLabel={fr.common.actions.keyboardDone}
                   returnKeyType={index < lastIndex ? "next" : "done"}
                   submitBehavior={index < lastIndex ? "submit" : "blurAndSubmit"}
                   onSubmitEditing={() => inputs.current[index + 1]?.focus()}

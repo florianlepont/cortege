@@ -5,6 +5,7 @@ import type {
   CountingMode,
   RouteChosenBy,
   RouteMethod,
+  RouteReasonCode,
   UncappableFactor,
 } from "@cortege/ibp-domain"
 import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
@@ -24,6 +25,7 @@ import { ForestCard } from "../../ui/ForestCard"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RESUME_LAYOUT } from "../home/layout-budget"
 import { COUNTING_TERM, METHOD_TERM } from "./glossary-terms"
+import { ReasonsInfo } from "./ReasonsInfo"
 import { RouteSchema } from "./RouteSchema"
 import { SuggestionEntrance } from "./SuggestionEntrance"
 
@@ -38,6 +40,10 @@ export type SuggestionCardProps = {
   zoneHa: number | null
   /** "guide": the parcours advised; "observer": the one the observer chose. */
   chosenBy: RouteChosenBy
+  /** The estimated duration for an observer used to the IBP, already worded ("25 à 30 minutes"). */
+  durationRange?: string
+  /** The package's reasons, shown behind an information glyph on the advised parcours. */
+  reasons?: readonly RouteReasonCode[]
   /** Opens the chooser with the current selection. */
   onChange: () => void
   /** Restores the advised parcours; the link shows only when the observer's pick differs. */
@@ -65,6 +71,8 @@ export function SuggestionCard({
   uncappedFactors,
   zoneHa,
   chosenBy,
+  durationRange,
+  reasons,
   onChange,
   onRestore,
 }: SuggestionCardProps) {
@@ -129,7 +137,12 @@ export function SuggestionCard({
               onLayout={measure("method")}
               testID="route-suggestion-method"
             >
-              <Text style={styles.eyebrow}>{eyebrow}</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.eyebrow}>{eyebrow}</Text>
+                {suggested && reasons ? (
+                  <ReasonsInfo reasons={reasons} color={forest.titleAccent} />
+                ) : null}
+              </View>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{methodText.name}</Text>
                 <GlossaryInfo
@@ -174,6 +187,11 @@ export function SuggestionCard({
                 importantForAccessibility="no-hide-descendants"
               >
                 {guide.suggestion.surfaceLine(hectares)}
+              </Text>
+            )}
+            {durationRange === undefined ? null : (
+              <Text style={styles.surface} testID="route-suggestion-duration">
+                {guide.suggestion.durationLine(durationRange)}
               </Text>
             )}
             <View style={styles.links}>

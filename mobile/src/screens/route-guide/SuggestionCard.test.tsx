@@ -45,7 +45,7 @@ import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { LargeStandOptions } from "./LargeStandOptions"
-import { ReasonsCard } from "./ReasonsCard"
+import { ReasonsInfo } from "./ReasonsInfo"
 import { SuggestionCard } from "./SuggestionCard"
 
 const originalConsoleError = console.error
@@ -395,30 +395,29 @@ describe("LargeStandOptions", () => {
   })
 })
 
-describe("ReasonsCard", () => {
-  it("lists one line per reason code, in the package order, with the catalogue sentences", () => {
-    const { texts, one } = mount(
-      React.createElement(ReasonsCard, { reasons: ["whole_stand_small", "capped_default"] }),
+describe("ReasonsInfo", () => {
+  it("is one glyph; the sheet lists one sentence per reason code, in the package order", () => {
+    const { one, texts } = mount(
+      React.createElement(ReasonsInfo, { reasons: ["whole_stand_small", "capped_default"] }),
     )
-    expect(one("route-reasons")).toBeDefined()
-    expect(texts()).toEqual([
-      guide.suggestion.reasonsTitle,
-      guide.reasons.wholeStandSmall,
-      guide.reasons.cappedDefault,
-    ])
+    expect(one("route-reasons-info").props.accessibilityLabel).toBe(guide.suggestion.reasonsTitle)
+    act(() => one("route-reasons-info").props.onPress())
+    expect(texts()).toContain(
+      [guide.reasons.wholeStandSmall, guide.reasons.cappedDefault].join("\n\n"),
+    )
   })
 
-  it("makes the title a header and shows at most four reasons", () => {
-    const { tree } = mount(React.createElement(ReasonsCard, { reasons: [...ROUTE_REASON_CODES] }))
-    const headers = tree.root.findAll(
-      (node) => (node.type as unknown) === "Text" && node.props.accessibilityRole === "header",
+  it("shows at most four reasons", () => {
+    const { one, texts } = mount(
+      React.createElement(ReasonsInfo, { reasons: [...ROUTE_REASON_CODES] }),
     )
-    expect(headers.map((node) => node.props.children)).toEqual([guide.suggestion.reasonsTitle])
-    expect(textsOf(tree.root)).toHaveLength(1 + 4)
+    act(() => one("route-reasons-info").props.onPress())
+    const body = texts().find((text) => text.includes("\n\n"))
+    expect(body?.split("\n\n")).toHaveLength(4)
   })
 
   it("draws nothing without a reason", () => {
-    const { tree } = mount(React.createElement(ReasonsCard, { reasons: [] }))
+    const { tree } = mount(React.createElement(ReasonsInfo, { reasons: [] }))
     expect(tree.toJSON()).toBeNull()
   })
 })
