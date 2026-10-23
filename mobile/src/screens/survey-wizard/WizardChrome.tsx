@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react"
 import { View } from "react-native"
-import { brandSpacing4 } from "../../app/brand-tokens"
+import { brandFontScaleCaps, brandSpacing4 } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { AppText as Text } from "../../ui/AppText"
 import { createWizardStyles } from "./wizard.styles"
@@ -62,7 +62,11 @@ export function WizardHeading({ title, lead, trailing }: WizardHeadingProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createWizardStyles(theme), [theme])
   const heading = (
-    <Text style={styles.title} accessibilityRole="header">
+    <Text
+      style={styles.title}
+      accessibilityRole="header"
+      maxFontSizeMultiplier={brandFontScaleCaps.title}
+    >
       {title}
     </Text>
   )
