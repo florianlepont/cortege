@@ -3,7 +3,7 @@ id: SEED-007
 status: dormant
 planted: 2026-10-12
 planted_during: Phase 27 closing (device checks)
-trigger_when: Phase 37 (UX/UI Audit & Design System Update), as a workflow finding of the new-survey wizard
+trigger_when: Phase 35 (UX/UI Audit & Design System Update), as a workflow finding of the new-survey wizard
 scope: medium
 ---
 
@@ -19,7 +19,7 @@ Conséquences liées : le scénario « parcelle choisie hors ligne, météo remp
 
 ## When to Surface
 
-**Trigger:** Phase 37 (audit UX/UI), au titre du parcours de création de relevé. À trancher avec le propriétaire avant la bêta si les testeurs de terrain travaillent hors couverture (Phase 35).
+**Trigger:** Phase 35 (audit UX/UI), au titre du parcours de création de relevé. À trancher avec le propriétaire avant la bêta si les testeurs de terrain travaillent hors couverture (Phase 37).
 
 ## Scope Estimate
 

@@ -8,7 +8,7 @@
 
 The observer chooses, before submitting, whether a survey is **private** (only them) or **shared with the association** (every authenticated member). The choice is stored, synced, and read-only after submit. A private survey never reaches another member through any read path (map, parcel statuses, parcel history, community search, community lists and detail, attachments), enforced on the server with API tests. The toggle removed in Phase 11 returns with the right wording. Closes `REQ-C-privacy-choice`.
 
-Not in scope: invitations or closed sign-up (Phase 36), moderation, sharing with named people, changing visibility after submit.
+Not in scope: invitations or closed sign-up (Phase 38), moderation, sharing with named people, changing visibility after submit.
 
 </domain>
 
@@ -16,7 +16,7 @@ Not in scope: invitations or closed sign-up (Phase 36), moderation, sharing with
 ## Implementation Decisions
 
 ### Dependency (resolved at the start of the discussion)
-- **D-01:** The ROADMAP line "Depends on: Phases 11 and 36 (closed accounts)" is wrong. Phase 11 (D-02) already defined "association member = any authenticated user"; private vs shared only decides whether a survey is visible to the owner alone or to every authenticated user, which is independent of who may hold an account. Phase 36 only narrows who can authenticate. So Phase 29 does **not** depend on 36: the dependency becomes "Phase 11". The ROADMAP is corrected at the end of the phase (STATE.md and ROADMAP.md are touched last, to avoid tracking conflicts with other sessions). No question for the owner is needed.
+- **D-01:** The ROADMAP line "Depends on: Phases 11 and 38 (closed accounts)" is wrong. Phase 11 (D-02) already defined "association member = any authenticated user"; private vs shared only decides whether a survey is visible to the owner alone or to every authenticated user, which is independent of who may hold an account. Phase 38 only narrows who can authenticate. So Phase 29 does **not** depend on 36: the dependency becomes "Phase 11". The ROADMAP is corrected at the end of the phase (STATE.md and ROADMAP.md are touched last, to avoid tracking conflicts with other sessions). No question for the owner is needed.
 
 ### Meaning and wording
 - **D-02:** Two values, the existing `private | public` column and wire type (`SurveyVisibility` in `@cortege/ibp-domain` contract). "public" in code means "shared with the association", never the open internet; the UI never says "public". Labels (catalogue `fr`, no em dash): "Privé" and "Partagé avec l'association", each with one explanatory line (who sees what). Exact strings are the planner's, validated with the owner at the UI gate.
