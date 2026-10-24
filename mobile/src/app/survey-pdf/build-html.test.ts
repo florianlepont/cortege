@@ -603,7 +603,6 @@ describe("buildSurveyExportHtml section registry", () => {
     ]
     const packed = paginateBlocks(blocks, {
       siteName: data.siteName,
-      logoDataUri: data.assets.logoDataUri,
       isDraft: data.isDraft,
       generatedAtText: formatDateFr(data.generatedAtIso, t.identity.unknown),
     })

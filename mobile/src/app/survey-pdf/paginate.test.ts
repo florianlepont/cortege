@@ -14,11 +14,8 @@ import type { PdfBlock } from "./types"
 
 const t = fr.surveyExport
 
-const LOGO = "data:image/png;base64,iVBORw0KGgo="
-
 const CHROME: PageChrome = {
   siteName: "Forêt de test",
-  logoDataUri: LOGO,
   isDraft: false,
   generatedAtText: "10 octobre 2026",
 }
@@ -207,34 +204,16 @@ describe("paginateBlocks page chrome", () => {
     expect(html.indexOf('id="a"')).toBeLessThan(html.indexOf(PDF_CLASS.watermark))
   })
 
-  test("the header holds the logo, the sheet title and the site name", () => {
+  test("the header holds the sheet title and the site name", () => {
     const { html } = paginateBlocks([block("a", 100)], CHROME)
-    expect(html).toContain(`<img class="${PDF_CLASS.logo}" src="${LOGO}"`)
     expect(html).toContain(`>${t.sheetTitle}<`)
     expect(html).toContain(`>${CHROME.siteName}<`)
   })
 
-  test("the logo appears on every page, once per page", () => {
+  test("the running header carries no image on any page (the logo is too small in print)", () => {
     const { html, pageCount } = paginateBlocks(blocks, CHROME)
-    expect(count(html, `class="${PDF_CLASS.logo}"`)).toBe(pageCount)
-  })
-
-  test("with no logo there is no image element", () => {
-    const { html } = paginateBlocks([block("a", 100)], { ...CHROME, logoDataUri: null })
     expect(html).not.toContain("<img")
-    expect(html).toContain(`>${t.sheetTitle}<`)
-  })
-
-  test("a logo that is not a base64 PNG or JPEG data URI is dropped", () => {
-    for (const logoDataUri of [
-      "https://example.invalid/logo.png",
-      'data:image/png;base64,AAAA" onerror="x',
-      "data:text/html;base64,AAAA",
-      "",
-    ]) {
-      const { html } = paginateBlocks([block("a", 100)], { ...CHROME, logoDataUri })
-      expect(html).not.toContain("<img")
-    }
+    expect(count(html, `class="${PDF_CLASS.header}"`)).toBe(pageCount)
   })
 
   test("the site name is escaped in every page header", () => {
@@ -268,5 +247,100 @@ describe("paginateBlocks page chrome", () => {
 
   test("is deterministic", () => {
     expect(paginateBlocks(blocks, CHROME)).toEqual(paginateBlocks(blocks, CHROME))
+  })
+})
+
+describe("paginateBlocks page kinds", () => {
+  const cover = (extra: Partial<PdfBlock> = {}) =>
+    block("cover", PDF_PAGE_BLOCK_HEIGHT, { pageStyle: "cover", ...extra })
+  const summary = () => block("summary", PDF_PAGE_BLOCK_HEIGHT - 76, { pageStyle: "summary" })
+
+  test("a cover between two blocks is alone on its page", () => {
+    const result = paginateBlocks([block("a", 100), cover(), block("b", 100)], CHROME)
+    expect(result.pageCount).toBe(3)
+    expect(pageOf(result.html, "a")).toBe(1)
+    expect(pageOf(result.html, "cover")).toBe(2)
+    expect(pageOf(result.html, "b")).toBe(3)
+  })
+
+  test("a cover first gives it page 1 and starts the body on page 2", () => {
+    const result = paginateBlocks([cover(), block("a", 100), block("b", 100)], CHROME)
+    expect(result.pageCount).toBe(2)
+    expect(pageOf(result.html, "cover")).toBe(1)
+    expect(pageOf(result.html, "a")).toBe(2)
+    expect(pageOf(result.html, "b")).toBe(2)
+  })
+
+  test("a short cover still gets a page of its own and a short block after it too", () => {
+    const result = paginateBlocks([block("c", 10, { pageStyle: "cover" }), block("a", 10)], CHROME)
+    expect(result.pageCount).toBe(2)
+  })
+
+  test("a hidden zero-height block before the cover leaves no empty first page", () => {
+    const result = paginateBlocks([block("warmup", 0), cover(), block("a", 100)], CHROME)
+    expect(result.pageCount).toBe(2)
+    expect(pageOf(result.html, "warmup")).toBe(1)
+    expect(pageOf(result.html, "cover")).toBe(1)
+    expect(pageOf(result.html, "a")).toBe(2)
+  })
+
+  test("two page style blocks never share a page, even with no height", () => {
+    const result = paginateBlocks(
+      [block("x", 0, { pageStyle: "cover" }), block("y", 0, { pageStyle: "summary" })],
+      CHROME,
+    )
+    expect(result.pageCount).toBe(2)
+  })
+
+  test("a keepWithNext heading is not held to a page style block", () => {
+    const result = paginateBlocks([block("h", 30, { keepWithNext: true }), cover()], CHROME)
+    expect(pageOf(result.html, "h")).toBe(1)
+    expect(pageOf(result.html, "cover")).toBe(2)
+  })
+
+  test("the cover has no running header, keeps the footer with its number and the cover class", () => {
+    const { html } = paginateBlocks([cover(), block("a", 100)], CHROME)
+    const [first, second] = pageSections(html)
+    expect(first.startsWith(`${PDF_CLASS.page} ${PDF_CLASS.pageCover}"`)).toBe(true)
+    expect(first).not.toContain(`class="${PDF_CLASS.header}"`)
+    expect(first).toContain(escapeHtml(t.page.number({ index: "1", total: 2 })))
+    expect(second).toContain(`class="${PDF_CLASS.header}"`)
+    expect(second).not.toContain(PDF_CLASS.pageCover)
+  })
+
+  test("the cover of a draft keeps the banner and the watermark, and still the cover class", () => {
+    const { html } = paginateBlocks([cover(), block("a", 100)], { ...CHROME, isDraft: true })
+    const [first] = pageSections(html)
+    expect(first.startsWith(`${PDF_CLASS.page} ${PDF_CLASS.draft} ${PDF_CLASS.pageCover}"`)).toBe(
+      true,
+    )
+    expect(first).toContain(`class="${PDF_CLASS.banner}"`)
+    expect(first).toContain(`class="${PDF_CLASS.watermark}"`)
+    expect(first).not.toContain(`class="${PDF_CLASS.header}"`)
+  })
+
+  test("the cover of a draft is not squeezed by the banner area", () => {
+    const result = paginateBlocks([cover(), block("a", 100)], { ...CHROME, isDraft: true })
+    expect(result.pageCount).toBe(2)
+  })
+
+  test("a summary page has no running header, the summary class and no page number", () => {
+    const result = paginateBlocks([summary()], CHROME)
+    expect(result.pageCount).toBe(1)
+    expect(result.html).toContain(`${PDF_CLASS.page} ${PDF_CLASS.pageSummary}"`)
+    expect(result.html).not.toContain(`class="${PDF_CLASS.header}"`)
+    expect(result.html).not.toContain(PDF_CLASS.footerNumber)
+    expect(result.html).not.toContain("Page")
+    expect(result.html).toContain(t.page.generatedAt({ date: CHROME.generatedAtText }))
+    expect(result.html).toContain(`>${t.appName}<`)
+  })
+
+  test("the chrome texts stay escaped on the cover and the summary", () => {
+    const hostile = "<b>x</b>"
+    const result = paginateBlocks([cover(), summary()], {
+      ...CHROME,
+      generatedAtText: hostile,
+    })
+    expect(result.html).not.toContain(hostile)
   })
 })

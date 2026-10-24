@@ -44,7 +44,6 @@ export function buildSurveyExportHtml(data: SurveyExportData): {
   const palette = buildPdfPalette()
   const { html: pages, pageCount } = paginateBlocks(collectBlocks(data, palette), {
     siteName: data.siteName,
-    logoDataUri: data.assets.logoDataUri,
     isDraft: data.isDraft,
     generatedAtText: formatDateFr(data.generatedAtIso, t.identity.unknown),
   })

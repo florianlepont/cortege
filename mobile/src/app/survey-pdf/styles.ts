@@ -26,9 +26,11 @@ export const PDF_CLASS = {
   root: "pdf-root",
   page: "page",
   draft: "page-draft",
+  // Phase 33 page kinds, set from the `pageStyle` of the block a page holds (D-11, D-07).
+  pageCover: "page-cover",
+  pageSummary: "page-summary",
   header: "page-header",
   headerMain: "page-header-main",
-  logo: "page-logo",
   sheetName: "page-title",
   site: "page-site",
   body: "page-body",
@@ -63,9 +65,36 @@ const BANNER_TOP = 56
 const BANNER_STRIP_HEIGHT = 18
 const FOOTER_BOTTOM = 14
 const FOOTER_BOX_HEIGHT = 22
-const LOGO_SIZE = 26
 const WATERMARK_SIZE = 110
 const WATERMARK_TOP = (PDF_PAGE_BLOCK_HEIGHT - WATERMARK_SIZE) / 2
+
+// Phase 33 page kinds (UI-SPEC B.1, B.4, B.10).
+
+/** Height of the forest panel at the top of the cover (B.4). */
+export const COVER_PANEL_HEIGHT = 380
+
+/** The draft banner of the cover sits directly under the forest panel, 12 units below it. */
+export const COVER_BANNER_TOP = COVER_PANEL_HEIGHT + 12
+
+/**
+ * The draft watermark of the cover is centred in the light part under the panel: the watermark
+ * colour would be invisible over forest. (380 + (840 - 380) / 2) - 110 / 2 = 555.
+ */
+export const COVER_WATERMARK_TOP =
+  COVER_PANEL_HEIGHT + (PDF_PAGE_BLOCK_HEIGHT - COVER_PANEL_HEIGHT) / 2 - WATERMARK_SIZE / 2
+
+/** The summary page has no running header: its body starts 36 units from the top (B.10). */
+export const SUMMARY_BODY_TOP = 36
+
+/** The summary body runs down to the footer: 840 - 36 - 40 (B.10). */
+export const SUMMARY_BODY_HEIGHT = PDF_PAGE_BLOCK_HEIGHT - SUMMARY_BODY_TOP - PAGE_FOOTER_HEIGHT
+
+/**
+ * The logo is a PNG made by the asset reader; anything else is not inlined (the CSP would block a
+ * remote one anyway, this keeps the attribute from being a way in). Read by the cover and the
+ * summary builders; the running header no longer draws it (UI-SPEC U-01).
+ */
+export const PDF_LOGO_DATA_URI = /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=]+$/
 
 const FONT_FALLBACK = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 
@@ -138,17 +167,29 @@ body { font-family: ${fontStack(font.body)}; font-size: 11px; line-height: 1.3; 
 section.${c.page}:last-of-type { page-break-after: auto; break-after: auto; }
 .${c.header} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${HEADER_TOP}px; width: ${contentWidth}px; height: ${HEADER_BOX_HEIGHT}px; box-sizing: border-box; border-bottom: 1px solid ${palette.line}; }
 .${c.headerMain} { position: absolute; left: 0; top: 0; height: 32px; line-height: 32px; white-space: nowrap; }
-.${c.logo} { width: ${LOGO_SIZE}px; height: ${LOGO_SIZE}px; margin-right: 8px; vertical-align: middle; }
 .${c.sheetName} { font-family: ${fontStack(font.title)}; font-size: 13px; color: ${palette.accent}; vertical-align: middle; }
 .${c.site} { position: absolute; right: 0; top: 0; max-width: 300px; height: 32px; line-height: 32px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ${fontStack(font.strong)}; font-size: 10px; color: ${palette.inkMuted}; }
 .${c.banner} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${BANNER_TOP}px; width: ${contentWidth}px; height: ${BANNER_STRIP_HEIGHT}px; line-height: ${BANNER_STRIP_HEIGHT}px; border-radius: 3px; text-align: center; background: ${palette.alertSoft}; color: ${palette.alert}; font-family: ${fontStack(font.label)}; font-size: 9px; }
 .${c.body} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${PAGE_HEADER_HEIGHT}px; width: ${contentWidth}px; height: ${bodyHeight}px; overflow: hidden; }
 .${c.draft} .${c.body} { top: ${draftBodyTop}px; height: ${draftBodyHeight}px; }
+.${c.pageCover} .${c.body}, .${c.draft}.${c.pageCover} .${c.body} { left: 0; top: 0; width: ${PDF_PAGE.width}px; height: ${PDF_PAGE_BLOCK_HEIGHT}px; }
+.${c.pageSummary} .${c.body}, .${c.draft}.${c.pageSummary} .${c.body} { top: ${SUMMARY_BODY_TOP}px; height: ${SUMMARY_BODY_HEIGHT}px; }
 .${c.footer} { position: absolute; left: ${PAGE_MARGIN_X}px; bottom: ${FOOTER_BOTTOM}px; width: ${contentWidth}px; height: ${FOOTER_BOX_HEIGHT}px; box-sizing: border-box; border-top: 1px solid ${palette.line}; font-family: ${fontStack(font.body)}; font-size: 8px; line-height: 20px; color: ${palette.inkMuted}; }
 .${c.footerDate} { position: absolute; left: 0; top: 1px; }
 .${c.footerApp} { position: absolute; left: 0; top: 1px; width: ${contentWidth}px; text-align: center; font-family: ${fontStack(font.label)}; }
 .${c.footerNumber} { position: absolute; right: 0; top: 1px; font-family: ${fontStack(font.label)}; }
 .${c.watermark} { position: absolute; left: 0; top: ${WATERMARK_TOP}px; width: ${PDF_PAGE.width}px; height: ${WATERMARK_SIZE}px; line-height: ${WATERMARK_SIZE}px; text-align: center; white-space: nowrap; font-family: ${fontStack(font.title)}; font-size: ${WATERMARK_SIZE}px; color: ${palette.watermark}; transform: rotate(-30deg); }
+.${c.pageCover} .${c.banner} { top: ${COVER_BANNER_TOP}px; }
+.${c.pageCover} .${c.watermark} { top: ${COVER_WATERMARK_TOP}px; }
 .${c.warmup} { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; color: ${palette.paper}; }
 `
+}
+
+/**
+ * The title of a section (UI-SPEC B.3): Sora-SemiBold 13 in a 24-unit line box, the accent colour
+ * and a 4-unit accent bar on the left. The line box equals the heading it replaces, so no height
+ * estimate of a section moves. One rule for the given selector.
+ */
+export function sectionTitleCss(selector: string, palette: PdfPalette): string {
+  return `${selector} { margin: 0; height: 24px; box-sizing: border-box; padding-left: 8px; border-left: 4px solid ${palette.accent}; font-family: ${fontStack(PDF_FONT_FAMILIES.heading)}; font-size: 13px; line-height: 24px; color: ${palette.accent}; }`
 }
