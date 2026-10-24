@@ -17,7 +17,6 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
 const t = fr.surveyExport.route
 
-const CARD_HEADING = 24
 const CARD_MARGIN = 10
 const LINE_HEIGHT = 13
 
