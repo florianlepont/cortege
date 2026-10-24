@@ -8,6 +8,7 @@ import {
   buildFactorChartSvg,
   factorChartCss,
 } from "./factor-chart-svg"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
@@ -95,6 +96,29 @@ function bar(svg: string, factor: string): Bar {
   const found = bars(svg).find((candidate) => candidate.factor === factor)
   if (!found) throw new Error(`no bar ${factor}`)
   return found
+}
+
+const CAPTIONS = { stand: "Peuplement et gestion : 20 / 35", context: "Contexte : 12 / 15" }
+const CAPTION_SIZE = { width: 493, height: 160 }
+const CAPTION_PLOT = CAPTION_SIZE.height - CHART_MARGIN.top - 30
+
+function captionTexts(svg: string): { x: number; y: number; text: string; tag: string }[] {
+  const found: { x: number; y: number; text: string; tag: string }[] = []
+  const pattern = /<text class="chart-caption" x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>/g
+  let match = pattern.exec(svg)
+  while (match) {
+    found.push({ x: Number(match[1]), y: Number(match[2]), text: match[3], tag: match[0] })
+    match = pattern.exec(svg)
+  }
+  return found
+}
+
+function letterY(svg: string, factor: string): number {
+  const match = svg.match(
+    new RegExp(`class="chart-letter"[^>]* y="([\\d.]+)"[^>]*>${factor}</text>`),
+  )
+  if (!match) throw new Error(`no letter ${factor}`)
+  return Number(match[1])
 }
 
 describe("buildFactorChartSvg", () => {
@@ -220,6 +244,74 @@ describe("buildFactorChartSvg", () => {
     expect(svg).not.toContain("<b>")
   })
 
+  it("rounds the bars with a radius of 4, the outlined ones too", () => {
+    const svg = buildFactorChartSvg(entriesOf({ A: 3 }), palette, SIZE)
+    expect(bar(svg, "A").tag).toContain('rx="4"')
+    expect(bar(svg, "B").tag).toContain('rx="4"')
+    expect(bar(svg, "B").tag).toContain('stroke="inkFaint"')
+  })
+
+  it("prints no caption without options and keeps the letters at 5 above the bottom", () => {
+    const svg = buildFactorChartSvg(allPoints(5), palette, { width: 299, height: 156 })
+    expect(svg).not.toContain("chart-caption")
+    expect(bar(svg, "A").height).toBe(156 - CHART_MARGIN.top - CHART_MARGIN.bottom)
+    expect(letterY(svg, "A")).toBe(156 - 5)
+    expect(buildFactorChartSvg(allPoints(3), palette, SIZE, {})).toBe(
+      buildFactorChartSvg(allPoints(3), palette, SIZE),
+    )
+  })
+
+  it("prints two captions in Jost-SemiBold 8 muted ink, one under each group", () => {
+    const svg = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, { captions: CAPTIONS })
+    const captions = captionTexts(svg)
+    expect(captions.map((caption) => caption.text)).toEqual([CAPTIONS.stand, CAPTIONS.context])
+    for (const caption of captions) {
+      expect(caption.y).toBe(CAPTION_SIZE.height - 3)
+      expect(caption.tag).toContain(`font-family="${PDF_FONT_FAMILIES.label}"`)
+      expect(caption.tag).toContain('font-size="8"')
+      expect(caption.tag).toContain('fill="inkMuted"')
+      expect(caption.tag).toContain('text-anchor="middle"')
+    }
+    const a = bar(svg, "A")
+    const g = bar(svg, "G")
+    const h = bar(svg, "H")
+    const j = bar(svg, "J")
+    expect(captions[0].x).toBeCloseTo((a.x + g.x + g.width) / 2, 0)
+    expect(captions[1].x).toBeCloseTo((h.x + j.x + j.width) / 2, 0)
+  })
+
+  it("makes room for the captions: bottom margin 30 and the letters 13 under the plot", () => {
+    const svg = buildFactorChartSvg(allPoints(5), palette, CAPTION_SIZE, { captions: CAPTIONS })
+    expect(bar(svg, "A").height).toBe(CAPTION_PLOT)
+    expect(bar(svg, "A").y).toBe(CHART_MARGIN.top)
+    expect(letterY(svg, "A")).toBe(CHART_MARGIN.top + CAPTION_PLOT + 13)
+    const plain = buildFactorChartSvg(allPoints(5), palette, SIZE)
+    expect(letterY(plain, "A")).toBe(CHART_MARGIN.top + PLOT + 13)
+  })
+
+  it("prints nothing for a group whose caption is null", () => {
+    const standOnly = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, {
+      captions: { stand: CAPTIONS.stand, context: null },
+    })
+    expect(captionTexts(standOnly).map((caption) => caption.text)).toEqual([CAPTIONS.stand])
+    const none = buildFactorChartSvg(allPoints(5), palette, CAPTION_SIZE, {
+      captions: { stand: null, context: null },
+    })
+    expect(none).not.toContain("chart-caption")
+    // The margin is still the caption one: the plot does not jump when a sub-score is missing.
+    expect(bar(none, "A").height).toBe(CAPTION_PLOT)
+  })
+
+  it("escapes a caption and holds no opacity", () => {
+    const svg = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, {
+      captions: { stand: '"><script>x</script>', context: CAPTIONS.context },
+    })
+    expect(svg).not.toContain("<script")
+    expect(svg).toContain("&quot;&gt;&lt;script&gt;")
+    expect(svg).not.toContain("opacity")
+    expect(svg).not.toContain("—")
+  })
+
   it("follows the requested size", () => {
     const small = buildFactorChartSvg(allPoints(5), palette, { width: 300, height: 100 })
     expect(small).toContain('width="300"')
@@ -270,6 +362,40 @@ describe("buildFactorChartBlock", () => {
     expect(block.html).toContain("<svg ")
     expect(block.html).not.toContain("—")
   })
+
+  it("is 214 units high: padding 20, heading 24, chart 160, margin 10", () => {
+    const block = buildFactorChartBlock(makeData(allPoints(3)), palette)
+    expect(block.height).toBe(214)
+    expect(block.html).toContain('width="493"')
+    expect(block.html).toContain('height="160"')
+  })
+
+  it("captions the two sub-scores from the survey scores", () => {
+    const block = buildFactorChartBlock(
+      {
+        ...makeData(allPoints(3)),
+        scores: { ibp_total: 32, ibp_peuplement_gestion: 20, ibp_contexte: 12 },
+      },
+      palette,
+    )
+    expect(block.html).toContain(`>${t.scores.stand(20)}</text>`)
+    expect(block.html).toContain(`>${t.scores.context(12)}</text>`)
+  })
+
+  it("leaves a caption out when its sub-score is missing or not a number", () => {
+    const none = buildFactorChartBlock(makeData(allPoints(3)), palette)
+    expect(none.html).not.toContain("chart-caption")
+    const partial = buildFactorChartBlock(
+      {
+        ...makeData(allPoints(3)),
+        scores: { ibp_total: 32, ibp_peuplement_gestion: Number.NaN, ibp_contexte: 12 },
+      },
+      palette,
+    )
+    expect(partial.html).not.toContain("NaN")
+    expect(partial.html).not.toContain(t.scores.stand(Number.NaN))
+    expect(partial.html).toContain(`>${t.scores.context(12)}</text>`)
+  })
 })
 
 describe("factorChartCss", () => {
@@ -279,6 +405,13 @@ describe("factorChartCss", () => {
     const classes = css.match(/\.[A-Za-z][\w-]*/g) ?? []
     expect(classes.length).toBeGreaterThan(0)
     for (const name of classes) expect(name.startsWith(".chart-")).toBe(true)
+  })
+
+  it("takes the section title rule, the card radius 12 and the 160 high svg", () => {
+    expect(css).toContain(sectionTitleCss(".chart-heading", palette))
+    expect(css).toContain("border-radius: 12px")
+    expect(css).not.toContain("border-radius: 6px")
+    expect(css).toContain(".chart-svg { display: block; width: 493px; height: 160px; }")
   })
 
   it("uses palette colours and the charter fonts, no hex, no CSS columns", () => {
