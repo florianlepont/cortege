@@ -1,14 +1,16 @@
 // Phase 33, D-05: the "Environ N pages" of the export choice sheet's "Complet" card. The real page
 // count exists only after the PDF is assembled, so this is an estimate: a fixed base plus the photo
-// pages. Plan 33-13 pins it to the page counts of the builder on the fixtures (research Pitfall 8),
-// so a layout change that moves the count fails a test instead of drifting silently.
+// pages. Plan 33-13 pins it to the page counts of the builder on the fixtures (research Pitfall 8:
+// exact for the typical survey, within one page for the others), so a layout change that moves the
+// count fails a test instead of drifting silently.
 import { PHOTO_EXPORT_SETTINGS } from "./export-settings"
 import { PHOTOS_PER_PAGE } from "./photos-section"
 
 /**
- * Pages of the complete PDF before its photo pages, for the typical survey with the cover (research
- * section 5: five pages). Plan 33-13 replaces this value with the final builder's count and pins it
- * to the fixtures.
+ * Pages of the complete PDF before its photo pages, for the typical survey: the cover, the identity
+ * card with the factor chart, the factors A to E, the factors F to J, and the map with the trend.
+ * This is the page count of `exportFixtureTypical` with its photos removed, measured on the final
+ * builder (plan 33-13, 2026-10-24, 250 map frame); `page-estimate.test.ts` fails when it drifts.
  */
 export const COMPLETE_BASE_PAGES = 5
 
