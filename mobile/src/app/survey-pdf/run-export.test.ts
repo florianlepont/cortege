@@ -55,6 +55,7 @@ const NAME = buildExportFileName({
   observationYear: exportFixtureV32Submitted.observationYear,
   dateIso: exportFixtureV32Submitted.dateIso,
   isDraft: exportFixtureV32Submitted.isDraft,
+  mode: exportFixtureV32Submitted.mode,
 })
 
 const INPUT: SurveyExportInput = {
@@ -326,6 +327,15 @@ describe("exportAndShareSurveyPdf", () => {
     expect(__listMockFiles()).toContain(
       `${EXPORTS}Cortege-IBP-Bois-de-la-Colline-2026-brouillon.pdf`,
     )
+  })
+
+  test("names the summary with the resume suffix, never the draft one", async () => {
+    const summary = { ...exportFixtureV32Submitted, mode: "summary" as const }
+
+    await exportAndShareSurveyPdf(INPUT, runDeps({ assemble: async () => summary }))
+
+    expect(__listMockFiles()).toContain(`${EXPORTS}Cortege-IBP-Bois-de-la-Colline-2026-resume.pdf`)
+    expect(__listMockFiles()).not.toContain(`${EXPORTS}${NAME}`)
   })
 
   test("logs once, on iOS, when the page count differs", async () => {
