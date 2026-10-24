@@ -1,6 +1,7 @@
 import { brandColors, brandMapTokens } from "../brand-tokens"
 import { buildTheme } from "../theme"
-import { mixWithWhite, withAlpha } from "../visual-tokens"
+import { compositeOver } from "../contrast"
+import { contourDrift, forestStops, mixWithWhite, withAlpha } from "../visual-tokens"
 import type { PdfPalette } from "./types"
 
 // D-07: print is always light. Every colour of the PDF comes from the light theme and the token
@@ -48,5 +49,17 @@ export function buildPdfPalette(): PdfPalette {
     parcelStroke: brandMapTokens.parcelSelected,
     mapCanvas: mixWithWhite(brandColors.sage, MAP_CANVAS_TINT),
     chartGrid: mixWithWhite(colors.textSecondary, CHART_GRID_TINT),
+    // Phase 33 (UI-SPEC Surface B): the forest panel and the inks on it. The sage contour is
+    // blended over the panel here, once, so the SVG needs no opacity (not safe in every print path).
+    forest: brandColors.forest,
+    forestDeep: forestStops.a,
+    onForest: visual.forest.title,
+    onForestAccent: visual.forest.titleAccent,
+    onForestBody: visual.forest.body,
+    contourSage: compositeOver(
+      withAlpha(visual.forest.contourSage, contourDrift.sageOpacity),
+      brandColors.forest,
+    ),
+    contourMoss: visual.forest.contourMoss,
   }
 }

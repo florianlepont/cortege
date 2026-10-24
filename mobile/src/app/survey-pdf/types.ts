@@ -89,6 +89,22 @@ export type PdfPalette = {
   parcelStroke: string
   mapCanvas: string
   chartGrid: string
+  // Phase 33 (D-02, D-11, UI-SPEC Surface B): the forest panel of the cover and of the summary
+  // score card, and the inks that sit on it.
+  /** Forest panel of the cover and the summary score card. */
+  forest: string
+  /** Ring track on the forest panel. */
+  forestDeep: string
+  /** Titles and numerals on forest. */
+  onForest: string
+  /** Eyebrow, band text and ring arc on forest. */
+  onForestAccent: string
+  /** Dates, units and "/ 50" on forest. */
+  onForestBody: string
+  /** Contour rings, pre-blended over forest so no SVG opacity is needed. */
+  contourSage: string
+  /** The one moss ring of the contour art. */
+  contourMoss: string
 }
 
 /** A packable piece of a page; height is in A4 design units (595 x 842 at 72 dpi). */
@@ -98,6 +114,11 @@ export type PdfBlock = {
   height: number
   breakBefore?: boolean
   keepWithNext?: boolean
+  /**
+   * Phase 33: a block with a page style is printed alone on its page with that page's chrome
+   * (the cover or the one-page summary); no style is a plain body page. Read by `paginate.ts`.
+   */
+  pageStyle?: "cover" | "summary"
 }
 
 // The names sit in constants, not inline in the object: the structure gate reads a literal under a
@@ -119,8 +140,15 @@ export const PDF_FONT_FAMILIES = {
   label: JOST_SEMI_BOLD,
 } as const
 
+/**
+ * Phase 33: the complete PDF or the one-page summary, chosen in the export choice sheet. A summary
+ * is never a draft (D-09): a draft always prints the complete PDF with its banner and watermark.
+ */
+export type ExportMode = "complete" | "summary"
+
 /** What the screen hands over to the export. */
 export type SurveyExportInput = {
+  mode: ExportMode
   surveyId: string
   siteName: string
   parcelIds: string[]

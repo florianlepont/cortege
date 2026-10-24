@@ -3,9 +3,9 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "dark" }))
 
 import { brandColors, brandMapTokens } from "../brand-tokens"
-import { contrastRatio } from "../contrast"
+import { compositeOver, contrastRatio } from "../contrast"
 import { buildTheme } from "../theme"
-import { withAlpha } from "../visual-tokens"
+import { contourDrift, forestStops, withAlpha } from "../visual-tokens"
 import { buildPdfPalette } from "./palette"
 import type { PdfPalette } from "./types"
 
@@ -33,6 +33,13 @@ const KEYS: Array<keyof PdfPalette> = [
   "parcelStroke",
   "mapCanvas",
   "chartGrid",
+  "forest",
+  "forestDeep",
+  "onForest",
+  "onForestAccent",
+  "onForestBody",
+  "contourSage",
+  "contourMoss",
 ]
 
 const light = buildTheme("light")
@@ -103,5 +110,50 @@ describe("buildPdfPalette", () => {
     expect(palette.mapCanvas).toMatch(/^#[0-9A-Fa-f]{6}$/)
     expect(palette.inkFaint).toMatch(/^#[0-9A-Fa-f]{6}$/)
     expect(palette.chartGrid).toMatch(/^#[0-9A-Fa-f]{6}$/)
+  })
+
+  test("the forest keys come from the token files (phase 33, UI-SPEC Surface B)", () => {
+    expect(palette.forest).toBe(brandColors.forest)
+    expect(palette.forestDeep).toBe(forestStops.a)
+    expect(palette.onForest).toBe(light.visual.forest.title)
+    expect(palette.onForestAccent).toBe(light.visual.forest.titleAccent)
+    expect(palette.onForestBody).toBe(light.visual.forest.body)
+    expect(palette.contourMoss).toBe(light.visual.forest.contourMoss)
+  })
+
+  test("contourSage is the sage at its drift opacity pre-blended over forest, an opaque hex", () => {
+    expect(palette.contourSage).toBe(
+      compositeOver(
+        withAlpha(light.visual.forest.contourSage, contourDrift.sageOpacity),
+        brandColors.forest,
+      ),
+    )
+    expect(palette.contourSage).toMatch(/^#[0-9A-Fa-f]{6}$/)
+  })
+
+  test("text on forest passes 4.5:1 (onForest 9.27, 13.49 on forestDeep, accent 6.32, body 6.90)", () => {
+    expect(contrastRatio(palette.onForest, palette.forest)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForest, palette.forestDeep)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForestAccent, palette.forest)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForestBody, palette.forest)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the contour decoration stays visible (2.66 >= 2) and a large title over it passes 3:1 (3.49)", () => {
+    expect(contrastRatio(palette.contourSage, palette.forest)).toBeGreaterThanOrEqual(2)
+    expect(contrastRatio(palette.onForest, palette.contourSage)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("muted ink and accent are readable on the panel and soft fills (4.5:1)", () => {
+    expect(contrastRatio(palette.inkMuted, palette.panel)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.inkMuted, palette.accentSoft)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.accent, palette.accentSoft)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.alert, palette.alertSoft)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the band tones are graphics readable on paper and on the panel (3:1)", () => {
+    for (const band of [palette.bandHigh, palette.bandMid, palette.bandLow]) {
+      expect(contrastRatio(band, palette.paper)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(band, palette.panel)).toBeGreaterThanOrEqual(3)
+    }
   })
 })
