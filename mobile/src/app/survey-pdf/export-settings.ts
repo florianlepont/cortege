@@ -49,6 +49,12 @@ export const PHOTO_EXPORT_SETTINGS: PhotoExportSettings = {
 /** Frame of the map snapshot and of its SVG overlay, aligned on both platforms (2026-10-10). */
 export const MAP_FRAME_SIZE = { width: 515, height: 340 } as const
 
+/**
+ * Frame of the map snapshot of the one-page summary (phase 33, UI-SPEC B.10 zone Z3). Not measured
+ * on a device yet: plan 33-14 checks the overlay alignment on iOS and Android.
+ */
+export const SUMMARY_MAP_FRAME_SIZE = { width: 515, height: 228 } as const
+
 /** Longest wait of the optional parcel geometry fetch (RESEARCH; not exercised by the spike). */
 export const GEOMETRY_FETCH_TIMEOUT_MS = 4000
 

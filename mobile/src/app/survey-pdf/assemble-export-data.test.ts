@@ -6,7 +6,12 @@ import {
   defaultAssembleDeps,
   type AssembleDeps,
 } from "./assemble-export-data"
-import { GEOMETRY_FETCH_TIMEOUT_MS, MAP_FRAME_SIZE, PHOTO_EXPORT_SETTINGS } from "./export-settings"
+import {
+  GEOMETRY_FETCH_TIMEOUT_MS,
+  MAP_FRAME_SIZE,
+  PHOTO_EXPORT_SETTINGS,
+  SUMMARY_MAP_FRAME_SIZE,
+} from "./export-settings"
 import { boundsOfRings, fitFrameToBounds, OFFLINE_ZOOM_RANGE } from "./map-projection"
 import type { BasemapChoice } from "./map-snapshot"
 import type { SurveyExportInput } from "./types"
@@ -31,6 +36,7 @@ const BASEMAP = {
 }
 
 const input = (overrides: Partial<SurveyExportInput> = {}): SurveyExportInput => ({
+  mode: "complete",
   surveyId: "S1",
   siteName: "Bois de la Colline",
   parcelIds: [PARCEL],
@@ -272,6 +278,7 @@ describe("assembleSurveyExportData", () => {
       const data = await assembleSurveyExportData(input(), fakeDeps())
 
       expect(data).toMatchObject({
+        mode: "complete",
         surveyId: "S1",
         siteName: "Bois de la Colline",
         parcelIds: [PARCEL],
@@ -299,6 +306,74 @@ describe("assembleSurveyExportData", () => {
 
       expect(ok.assets.fonts).toHaveLength(1)
       expect(broken.assets).toEqual({ fonts: [], logoDataUri: null })
+    })
+  })
+
+  describe("mode (phase 33)", () => {
+    const withPhotos = () =>
+      fakeDeps({ listPhotos: jest.fn(async () => [attachment("p1"), attachment("p2")]) })
+
+    test("a complete export carries its mode, reads the photos and frames the map at the full size", async () => {
+      const deps = withPhotos()
+
+      const data = await assembleSurveyExportData(input(), deps)
+
+      expect(data.mode).toBe("complete")
+      expect(deps.listPhotos).toHaveBeenCalled()
+      expect(data.photos.items).toHaveLength(2)
+      expect(data.map?.frameSize).toEqual(MAP_FRAME_SIZE)
+    })
+
+    test("a summary reads no photo at all and has none", async () => {
+      const deps = withPhotos()
+
+      const data = await assembleSurveyExportData(input({ mode: "summary" }), deps)
+
+      expect(data.mode).toBe("summary")
+      expect(deps.listPhotos).not.toHaveBeenCalled()
+      expect(deps.preparePhotos).not.toHaveBeenCalled()
+      expect(data.photos).toEqual({ items: [], total: 0, unavailable: 0 })
+    })
+
+    test("a summary asks the snapshot at 515 x 228 and records that size", async () => {
+      const deps = fakeDeps({ decideBasemap: jest.fn(async () => OFFLINE_CHOICE) })
+
+      const data = await assembleSurveyExportData(input({ mode: "summary" }), deps)
+
+      expect(data.map?.frameSize).toEqual({ width: 515, height: 228 })
+      expect(deps.takeBasemap).toHaveBeenCalledWith(
+        expect.objectContaining({
+          frame: expect.objectContaining({
+            width: SUMMARY_MAP_FRAME_SIZE.width,
+            height: SUMMARY_MAP_FRAME_SIZE.height,
+          }),
+        }),
+      )
+    })
+
+    test("a summary asked of a draft becomes a complete export, reads the photos and logs it once", async () => {
+      const deps = withPhotos()
+      const debug = jest.spyOn(console, "debug").mockImplementation(() => undefined)
+      debug.mockClear()
+
+      const data = await assembleSurveyExportData(input({ mode: "summary", isDraft: true }), deps)
+
+      expect(data.mode).toBe("complete")
+      expect(data.isDraft).toBe(true)
+      expect(deps.listPhotos).toHaveBeenCalled()
+      expect(data.map?.frameSize).toEqual(MAP_FRAME_SIZE)
+      const coerced = debug.mock.calls.filter(([message]) =>
+        String(message).includes("surveyExport.modeCoerced"),
+      )
+      expect(coerced).toHaveLength(1)
+    })
+
+    test("the serialised summary holds neither the access token nor the API URL", async () => {
+      const data = await assembleSurveyExportData(input({ mode: "summary" }), fakeDeps())
+
+      const json = JSON.stringify(data)
+      expect(json).not.toContain("secret-token")
+      expect(json).not.toContain("api.example.test")
     })
   })
 

@@ -7,6 +7,7 @@ import {
   PDF_PAGE_BLOCK_HEIGHT,
   PDF_PAGE_FILL_FACTOR,
   PHOTO_EXPORT_SETTINGS,
+  SUMMARY_MAP_FRAME_SIZE,
   pdfLayoutFor,
 } from "./export-settings"
 
@@ -43,5 +44,11 @@ describe("export settings (measured in plan 25.1-07, approved 2026-10-10)", () =
     expect(MAP_FRAME_SIZE).toEqual({ width: 515, height: 340 })
     expect(GEOMETRY_FETCH_TIMEOUT_MS).toBe(4000)
     expect(PDF_FONT_WARMUP).toBe(false)
+  })
+
+  test("the one-page summary has its own, shorter map frame (515 x 228, UI-SPEC B.10)", () => {
+    expect(SUMMARY_MAP_FRAME_SIZE).toEqual({ width: 515, height: 228 })
+    expect(SUMMARY_MAP_FRAME_SIZE.width).toBe(MAP_FRAME_SIZE.width)
+    expect(SUMMARY_MAP_FRAME_SIZE.height).toBeLessThan(MAP_FRAME_SIZE.height)
   })
 })
