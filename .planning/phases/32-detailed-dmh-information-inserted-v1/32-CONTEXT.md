@@ -17,6 +17,7 @@ While recording factor F, the observer reaches detailed identification informati
 
 ### Source and licence
 - **D-01 (blocker):** The WSL PDF is not in the repository and the assistant has not read it. The owner provides it outside the repository (like the CNPF PDFs; record its SHA-256 and retrieval date in `docs/references/README.md`). Planning reads the licence from the document and reports what is reusable. Nothing from it is embedded until the licence is read; in case of doubt, ask the owner.
+- **D-01 resolved (owner, 2026-10-24):** the reference is the 2024 second edition of the pocket guide, French and English, as read by the research (SHA-256 recorded in `32-RESEARCH.md`). The owner does not supply a file; no request to the Swiss institute is needed because the drawings are the association's own (D-09) and the texts are our own wording.
 - **D-02:** Fallback if the licence does not allow copying: short texts written by us, citing WSL and CNPF as sources (no copied wording). The plan must work under both outcomes.
 - **D-03:** Sources, authors, licence and retrieval date are recorded in `docs/references/README.md` and shown in the app on the tool's pages.
 
