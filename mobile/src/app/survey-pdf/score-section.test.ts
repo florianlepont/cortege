@@ -1,10 +1,18 @@
-import { FACTOR_KEYS, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import {
+  FACTOR_KEYS,
+  IBP_METHOD_V3_2,
+  bandTone,
+  contextBand,
+  standBand,
+  totalBand,
+} from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import {
   countMissingFactors,
   filledPoints,
   buildScoreSummaryBlock,
+  scoreBands,
   scoreSectionCss,
   toneColor,
 } from "./score-section"
@@ -238,6 +246,107 @@ describe("buildScoreSummaryBlock", () => {
   it("never prints a dash", () => {
     const block = buildScoreSummaryBlock(makeData({ scores: null }), palette)
     expect(block.html).not.toContain("—")
+  })
+})
+
+// The score card as it printed before `scoreBands` existed (phase 33-07 refactor): the same bytes
+// for a mid and high score, a low score and no scores, with the fake palette.
+const GOLDEN_MID_HIGH =
+  '<section class="score-card">\n<h2 class="score-title">Score IBP</h2>\n<div class="score-tiles"><div class="score-tile"><div class="score-tile-heading">Total IBP</div><div class="score-value">34 / 50</div><div class="score-band"><span class="score-dot" style="background: bandHigh"></span>Niveau : assez forte</div><div class="score-track"><div class="score-fill" style="width: 68%; background: bandHigh"></div></div></div><div class="score-tile"><div class="score-tile-heading">Peuplement et gestion forestière</div><div class="score-value">25 / 35</div><div class="score-band"><span class="score-dot" style="background: bandHigh"></span>Niveau : assez forte</div><div class="score-track"><div class="score-fill" style="width: 71.4%; background: bandHigh"></div></div></div><div class="score-tile"><div class="score-tile-heading">Contexte</div><div class="score-value">9 / 15</div><div class="score-band"><span class="score-dot" style="background: bandMid"></span>Niveau : moyenne</div><div class="score-track"><div class="score-fill" style="width: 60%; background: bandMid"></div></div></div></div>\n</section>'
+const GOLDEN_LOW =
+  '<section class="score-card">\n<h2 class="score-title">Score IBP</h2>\n<div class="score-tiles"><div class="score-tile"><div class="score-tile-heading">Total IBP</div><div class="score-value">9 / 50</div><div class="score-band"><span class="score-dot" style="background: bandLow"></span>Niveau : faible</div><div class="score-track"><div class="score-fill" style="width: 18%; background: bandLow"></div></div></div><div class="score-tile"><div class="score-tile-heading">Peuplement et gestion forestière</div><div class="score-value">6 / 35</div><div class="score-band"><span class="score-dot" style="background: bandLow"></span>Niveau : faible</div><div class="score-track"><div class="score-fill" style="width: 17.1%; background: bandLow"></div></div></div><div class="score-tile"><div class="score-tile-heading">Contexte</div><div class="score-value">3 / 15</div><div class="score-band"><span class="score-dot" style="background: bandLow"></span>Niveau : faible</div><div class="score-track"><div class="score-fill" style="width: 20%; background: bandLow"></div></div></div></div>\n</section>'
+const GOLDEN_NONE =
+  '<section class="score-card">\n<h2 class="score-title">Score IBP</h2>\n<div class="score-tiles"><div class="score-tile"><div class="score-tile-heading">Total IBP</div><div class="score-value score-value-empty">Non renseigné</div></div><div class="score-tile"><div class="score-tile-heading">Peuplement et gestion forestière</div><div class="score-value score-value-empty">Non renseigné</div></div><div class="score-tile"><div class="score-tile-heading">Contexte</div><div class="score-value score-value-empty">Non renseigné</div></div></div>\n</section>'
+
+describe("scoreBands", () => {
+  it("gives each score its maximum, band name and tone from the domain", () => {
+    const bands = scoreBands({ ibp_total: 32, ibp_peuplement_gestion: 20, ibp_contexte: 12 })
+    expect(bands.total).toEqual({
+      points: 32,
+      max: 50,
+      bandName: fr.surveyDetail.bands.stand[totalBand(32)],
+      tone: bandTone(totalBand(32)),
+    })
+    expect(bands.stand).toEqual({
+      points: 20,
+      max: 35,
+      bandName: fr.surveyDetail.bands.stand[standBand(20)],
+      tone: bandTone(standBand(20)),
+    })
+    expect(bands.context).toEqual({
+      points: 12,
+      max: 15,
+      bandName: fr.surveyDetail.bands.context[contextBand(12)],
+      tone: bandTone(contextBand(12)),
+    })
+  })
+
+  it("names the bands the score card prints today", () => {
+    // totalBand(34) and standBand(25) are assez_forte (high), contextBand(9) is moyenne (mid)
+    const bands = scoreBands({ ibp_total: 34, ibp_peuplement_gestion: 25, ibp_contexte: 9 })
+    expect(bands.total.bandName).toBe(fr.surveyDetail.bands.stand.assez_forte)
+    expect(bands.total.tone).toBe("high")
+    expect(bands.stand.tone).toBe("high")
+    expect(bands.context.bandName).toBe(fr.surveyDetail.bands.context.moyenne)
+    expect(bands.context.tone).toBe("mid")
+  })
+
+  it("follows the band edges at the bottom and the top", () => {
+    const low = scoreBands({ ibp_total: 9, ibp_peuplement_gestion: 6, ibp_contexte: 3 })
+    expect([low.total.tone, low.stand.tone, low.context.tone]).toEqual(["low", "low", "low"])
+    const top = scoreBands({ ibp_total: 50, ibp_peuplement_gestion: 35, ibp_contexte: 15 })
+    expect([top.total.tone, top.stand.tone, top.context.tone]).toEqual(["high", "high", "high"])
+    expect(top.total.bandName).toBe(fr.surveyDetail.bands.stand.forte)
+  })
+
+  it("gives null points, band name and tone for no scores, keeping the maxima", () => {
+    const none = { points: null, bandName: null, tone: null }
+    expect(scoreBands(null)).toEqual({
+      total: { ...none, max: 50 },
+      stand: { ...none, max: 35 },
+      context: { ...none, max: 15 },
+    })
+  })
+
+  it("treats a score that is not a number as missing, alone", () => {
+    const bands = scoreBands({
+      ibp_total: Number.NaN,
+      ibp_peuplement_gestion: 25,
+      ibp_contexte: Number.POSITIVE_INFINITY,
+    })
+    expect(bands.total.points).toBeNull()
+    expect(bands.total.tone).toBeNull()
+    expect(bands.stand.points).toBe(25)
+    expect(bands.context.bandName).toBeNull()
+  })
+})
+
+describe("buildScoreSummaryBlock byte equality", () => {
+  it("prints the same card as before for a v3.2 survey with mid and high scores", () => {
+    const block = buildScoreSummaryBlock(makeData(), palette)
+    expect(block.html).toBe(GOLDEN_MID_HIGH)
+    expect(block.height).toBe(138)
+  })
+
+  it("prints the same card as before for a v3.0 survey with low scores", () => {
+    const block = buildScoreSummaryBlock(
+      makeData({
+        method: {
+          version: null,
+          ibpCas: null,
+          ibpCas3Scale: false,
+          regionVersion: "plaine",
+          vegetationStage: "adulte",
+        },
+        scores: { ibp_total: 9, ibp_peuplement_gestion: 6, ibp_contexte: 3 },
+      }),
+      palette,
+    )
+    expect(block.html).toBe(GOLDEN_LOW)
+  })
+
+  it("prints the same card as before without scores", () => {
+    expect(buildScoreSummaryBlock(makeData({ scores: null }), palette).html).toBe(GOLDEN_NONE)
   })
 })
 

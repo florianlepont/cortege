@@ -9,7 +9,10 @@ import {
 import type { ScoreTone } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
-import type { DisplayedFactorResult } from "../../screens/survey-detail/useLocalDraftSummary"
+import type {
+  DisplayedFactorResult,
+  DisplayedScores,
+} from "../../screens/survey-detail/useLocalDraftSummary"
 import { escapeHtml, formatDecimal, svgNumber } from "./html"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
@@ -70,27 +73,55 @@ export function toneColor(tone: ScoreTone, palette: PdfPalette): string {
   }
 }
 
-type Tile = {
-  heading: string
+/** One score with its CNPF band: points (null when not a number), maximum, band name and tone. */
+export type ScoreBand = {
   points: number | null
   max: number
   bandName: string | null
   tone: ScoreTone | null
 }
 
-function isScore(value: number | null): value is number {
-  return value !== null && Number.isFinite(value)
+type Tile = ScoreBand & { heading: string }
+
+function isScore(value: number | null | undefined): value is number {
+  return value !== null && value !== undefined && Number.isFinite(value)
 }
 
-function tileOf(
-  heading: string,
-  value: number | null,
+function bandOf(
+  value: number | null | undefined,
   max: number,
   band: (score: number) => { name: string; tone: ScoreTone },
-): Tile {
-  if (!isScore(value)) return { heading, points: null, max, bandName: null, tone: null }
+): ScoreBand {
+  if (!isScore(value)) return { points: null, max, bandName: null, tone: null }
   const { name, tone } = band(value)
-  return { heading, points: value, max, bandName: name, tone }
+  return { points: value, max, bandName: name, tone }
+}
+
+/**
+ * The three scores of a survey with their band names and tones, the one source the score card, the
+ * cover tiles and the summary read (phase 33): the bands come from the domain, the names from the
+ * survey detail catalogue, and no threshold is written here. The total's band name keeps the stand
+ * names, as the app's total does.
+ */
+export function scoreBands(scores: DisplayedScores | null): {
+  total: ScoreBand
+  stand: ScoreBand
+  context: ScoreBand
+} {
+  return {
+    total: bandOf(scores?.ibp_total, IBP_MAX.total, (score) => {
+      const band = totalBand(score)
+      return { name: bandNames.stand[band], tone: bandTone(band) }
+    }),
+    stand: bandOf(scores?.ibp_peuplement_gestion, IBP_MAX.stand, (score) => {
+      const band = standBand(score)
+      return { name: bandNames.stand[band], tone: bandTone(band) }
+    }),
+    context: bandOf(scores?.ibp_contexte, IBP_MAX.context, (score) => {
+      const band = contextBand(score)
+      return { name: bandNames.context[band], tone: bandTone(band) }
+    }),
+  }
 }
 
 function tileHtml(tile: Tile, palette: PdfPalette): string {
@@ -109,24 +140,11 @@ function tileHtml(tile: Tile, palette: PdfPalette): string {
 /** The score card: title, the provisional line of a draft, and the three tiles with their bands. */
 export function buildScoreSummaryBlock(data: SurveyExportData, palette: PdfPalette): PdfBlock {
   const scores = data.scores
-  const tiles = [
-    tileOf(t.scores.totalHeading, scores?.ibp_total ?? null, IBP_MAX.total, (score) => {
-      const band = totalBand(score)
-      return { name: bandNames.stand[band], tone: bandTone(band) }
-    }),
-    tileOf(
-      t.scores.standHeading,
-      scores?.ibp_peuplement_gestion ?? null,
-      IBP_MAX.stand,
-      (score) => {
-        const band = standBand(score)
-        return { name: bandNames.stand[band], tone: bandTone(band) }
-      },
-    ),
-    tileOf(t.scores.contextHeading, scores?.ibp_contexte ?? null, IBP_MAX.context, (score) => {
-      const band = contextBand(score)
-      return { name: bandNames.context[band], tone: bandTone(band) }
-    }),
+  const bands = scoreBands(scores)
+  const tiles: Tile[] = [
+    { heading: t.scores.totalHeading, ...bands.total },
+    { heading: t.scores.standHeading, ...bands.stand },
+    { heading: t.scores.contextHeading, ...bands.context },
   ]
   const missing = countMissingFactors(data.factorEntries)
   const provisional = data.isDraft && missing > 0
