@@ -93,9 +93,11 @@ describe("buildSurveyExportInput", () => {
         }),
         canEditSurvey: false,
       }),
+      "complete",
     )
 
     expect(input).toEqual({
+      mode: "complete",
       surveyId: "survey-1",
       siteName: "Bois de la Colline",
       parcelIds: ["12345000AB0123"],
@@ -122,6 +124,7 @@ describe("buildSurveyExportInput", () => {
   test("falls back to the local draft and the creation date without a detail", () => {
     const input = buildSurveyExportInput(
       makeArgs({ localDraftMeta: LOCAL_META, observerName: null, accessToken: null }),
+      "complete",
     )
 
     expect(input.observationYear).toBe(2025)
@@ -140,9 +143,11 @@ describe("buildSurveyExportInput", () => {
 
     const draft = buildSurveyExportInput(
       makeArgs({ detail, localDraftMeta: LOCAL_META, canEditSurvey: true }),
+      "complete",
     )
     const submitted = buildSurveyExportInput(
       makeArgs({ detail, localDraftMeta: LOCAL_META, canEditSurvey: false }),
+      "complete",
     )
 
     expect(draft.method.regionVersion).toBe("M")
@@ -153,13 +158,14 @@ describe("buildSurveyExportInput", () => {
   test("a submitted survey without a detail falls back to the local meta", () => {
     const input = buildSurveyExportInput(
       makeArgs({ localDraftMeta: LOCAL_META, canEditSurvey: false }),
+      "complete",
     )
 
     expect(input.method.regionVersion).toBe("M")
   })
 
   test("has no region and stage when nothing knows them", () => {
-    const input = buildSurveyExportInput(makeArgs())
+    const input = buildSurveyExportInput(makeArgs(), "complete")
 
     expect(input.method.regionVersion).toBeNull()
     expect(input.method.vegetationStage).toBeNull()
@@ -169,8 +175,10 @@ describe("buildSurveyExportInput", () => {
 
   test("keeps a display location only when latitude and longitude are finite", () => {
     const location = (value: unknown) =>
-      buildSurveyExportInput(makeArgs({ detail: makeDetail({ display_location: value as never }) }))
-        .displayLocation
+      buildSurveyExportInput(
+        makeArgs({ detail: makeDetail({ display_location: value as never }) }),
+        "complete",
+      ).displayLocation
 
     expect(location({ lat: 48.4, lng: 2.7 })).toEqual({ lat: 48.4, lng: 2.7 })
     expect(location({ lat: Number.NaN, lng: 2.7 })).toBeNull()
@@ -178,6 +186,48 @@ describe("buildSurveyExportInput", () => {
     expect(location({ lat: "48.4", lng: 2.7 })).toBeNull()
     expect(location({ lat: 48.4, lng: "2.7" })).toBeNull()
     expect(location(null)).toBeNull()
+  })
+})
+
+describe("buildSurveyExportInput, mode (phase 33)", () => {
+  test("a summary asked of a submitted survey stays a summary", () => {
+    const input = buildSurveyExportInput(makeArgs({ canEditSurvey: false }), "summary")
+
+    expect(input.mode).toBe("summary")
+    expect(logMock).not.toHaveBeenCalled()
+  })
+
+  test("a summary asked of a draft becomes the complete PDF and says so in the debug console", () => {
+    const input = buildSurveyExportInput(makeArgs({ canEditSurvey: true }), "summary")
+
+    expect(input.mode).toBe("complete")
+    expect(input.isDraft).toBe(true)
+    expect(logMock).toHaveBeenCalledWith("surveyDetail.exportModeCoerced", {
+      surveyId: "survey-1",
+    })
+  })
+
+  test("a complete export stays complete for a draft and for a submitted survey", () => {
+    expect(buildSurveyExportInput(makeArgs({ canEditSurvey: true }), "complete").mode).toBe(
+      "complete",
+    )
+    expect(buildSurveyExportInput(makeArgs({ canEditSurvey: false }), "complete").mode).toBe(
+      "complete",
+    )
+    expect(logMock).not.toHaveBeenCalled()
+  })
+
+  test("share still exports the complete PDF (the mode reaches it in plan 33-12)", async () => {
+    exportMock.mockResolvedValue({ shared: true })
+    const { result } = await renderHook(() =>
+      useSurveyPdfExport(makeArgs({ canEditSurvey: false })),
+    )
+
+    await act(async () => {
+      await result.current.share()
+    })
+
+    expect(exportMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "complete" }))
   })
 })
 
@@ -192,7 +242,7 @@ describe("useSurveyPdfExport", () => {
     })
 
     expect(exportMock).toHaveBeenCalledTimes(1)
-    expect(exportMock).toHaveBeenCalledWith(buildSurveyExportInput(makeArgs()))
+    expect(exportMock).toHaveBeenCalledWith(buildSurveyExportInput(makeArgs(), "complete"))
     expect(alertMock).not.toHaveBeenCalled()
     expect(result.current.exporting).toBe(false)
   })

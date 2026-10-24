@@ -230,6 +230,7 @@ describe("buildFactorChartSvg", () => {
 
 function makeData(entries: Entries): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],

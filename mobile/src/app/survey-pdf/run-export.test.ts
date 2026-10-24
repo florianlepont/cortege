@@ -58,6 +58,7 @@ const NAME = buildExportFileName({
 })
 
 const INPUT: SurveyExportInput = {
+  mode: "complete",
   surveyId: "survey-v32",
   siteName: exportFixtureV32Submitted.siteName,
   parcelIds: [],

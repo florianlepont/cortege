@@ -70,6 +70,7 @@ const MAXIMAL_ROUTE: SurveyRoute = {
 
 function makeData(route: SurveyRoute | null, isDraft = false): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],

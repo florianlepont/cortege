@@ -1,6 +1,10 @@
 import { useRef, useState } from "react"
 import { Alert } from "react-native"
-import { exportAndShareSurveyPdf, type SurveyExportInput } from "../../app/survey-pdf-export"
+import {
+  exportAndShareSurveyPdf,
+  type ExportMode,
+  type SurveyExportInput,
+} from "../../app/survey-pdf-export"
 import { fr, logStatusDetail } from "../../i18n"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailData } from "./useSurveyDetailData"
@@ -43,8 +47,14 @@ function finiteLocation(
  * Maps the summary's data to the export input. A submitted survey is fixed on the server, so its
  * detail wins; a draft's local payload holds the latest edits (the same rule as the scoring
  * context). The year and the version number are server-assigned, so the detail wins for both.
+ * The second guard of D-09 (the sheet card is the first, the loader the third): a survey that can
+ * still be edited is a draft, and a draft is never printed as a summary, so a requested summary
+ * becomes the complete PDF.
  */
-export function buildSurveyExportInput(args: SurveyPdfExportArgs): SurveyExportInput {
+export function buildSurveyExportInput(
+  args: SurveyPdfExportArgs,
+  requested: ExportMode,
+): SurveyExportInput {
   const { detail, localDraftMeta, canEditSurvey } = args
   const [region, stage] = canEditSurvey
     ? [
@@ -55,7 +65,12 @@ export function buildSurveyExportInput(args: SurveyPdfExportArgs): SurveyExportI
         detail?.region_version ?? localDraftMeta?.region_version,
         detail?.vegetation_stage ?? localDraftMeta?.vegetation_stage,
       ]
+  const mode: ExportMode = canEditSurvey && requested === "summary" ? "complete" : requested
+  if (mode !== requested) {
+    logStatusDetail("surveyDetail.exportModeCoerced", { surveyId: args.surveyId })
+  }
   return {
+    mode,
     surveyId: args.surveyId,
     siteName: args.activeSiteName,
     parcelIds: args.parcelIds,
@@ -95,7 +110,7 @@ export function useSurveyPdfExport(args: SurveyPdfExportArgs): {
     running.current = true
     setExporting(true)
     try {
-      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args))
+      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args, "complete"))
       if (!shared) Alert.alert(menuText.share, actionsText.exportShareUnavailable)
     } catch (error) {
       logStatusDetail("surveyDetail.exportPdf", error)

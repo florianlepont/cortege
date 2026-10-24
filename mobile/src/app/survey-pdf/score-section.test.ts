@@ -60,6 +60,7 @@ function entriesMissing(missing: string[]): Entries {
 
 function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],

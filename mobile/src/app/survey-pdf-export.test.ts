@@ -14,6 +14,7 @@ jest.mock("expo-sharing", () => ({ isAvailableAsync: jest.fn(), shareAsync: jest
 const PRINTED = "file:///mock/cache/Print/abc.pdf"
 
 const INPUT: SurveyExportInput = {
+  mode: "complete",
   surveyId: "survey-v32",
   siteName: exportFixtureV32Submitted.siteName,
   parcelIds: [],
@@ -41,7 +42,7 @@ describe("survey-pdf-export facade", () => {
     expect(facade.buildSurveyExportHtml).toBe(buildHtml)
   })
 
-  test("exports nothing else: the old builder and its private escape are gone", () => {
+  test("exports nothing else: three functions (and three types, erased)", () => {
     expect(Object.keys(facade).sort()).toEqual([
       "buildSurveyExportHtml",
       "exportAndShareSurveyPdf",

@@ -55,6 +55,7 @@ const WEATHER: SurveyWeather = {
 
 function makeData(conditions: SurveyExportData["conditions"]): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],

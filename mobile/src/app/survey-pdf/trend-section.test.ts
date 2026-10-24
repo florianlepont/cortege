@@ -205,6 +205,7 @@ type Items = ReturnType<typeof ownItem>[]
 
 function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "c",
     siteName: "Forêt de test",
     parcelIds: ["940750000AB0352"],

@@ -54,6 +54,7 @@ const V30: ExportMethodContext = {
 
 function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: ["77186000AB0123", "77186000AB0124"],

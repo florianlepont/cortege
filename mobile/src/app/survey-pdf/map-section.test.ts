@@ -105,6 +105,7 @@ function snapshotFrame(): MapFrame {
 
 function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: POLYGONS.map((polygon) => polygon.parcelId),

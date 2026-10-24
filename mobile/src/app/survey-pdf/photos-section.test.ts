@@ -46,6 +46,7 @@ function photos(count: number): ExportPhoto[] {
 function makeData(photosField: Partial<SurveyExportData["photos"]> = {}): SurveyExportData {
   const items = photosField.items ?? []
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],
