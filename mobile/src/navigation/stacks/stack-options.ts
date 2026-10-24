@@ -196,6 +196,23 @@ export function finishSheetScreenOptions(theme: BrandTheme): NativeStackNavigati
 }
 
 /**
+ * The export choice (phase 33, D-14) as a native sheet, like the finish sheet: a form sheet on iOS
+ * (system grabber and corner radius, swipe down or tap outside to close), the stack's modal screen
+ * on Android. No header: the sheet draws its own title. The 0.65 detent shows both cards, the draft
+ * sentence and the two buttons at the default text size; it is checked on the owner iPhone at plan
+ * 33-15, and only the number is adjusted.
+ */
+export function exportChoiceScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    headerShown: false,
+    presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+    sheetAllowedDetents: [0.65, 1],
+    sheetGrabberVisible: true,
+    contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+  }
+}
+
+/**
  * "Choisir le parcours" (phase 30, O-19) as a native sheet, like the factor help and the finish
  * sheet: a form sheet on iOS (system grabber and corner radius, medium and large detents, swipe
  * down or tap outside to close, which writes nothing), the stack's modal screen on Android. Unlike

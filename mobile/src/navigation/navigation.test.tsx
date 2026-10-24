@@ -140,6 +140,7 @@ jest.mock("./routes/CommunityHistoryRoute", () => ({ CommunityHistoryRoute: mock
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/FactorHelpRoute", () => ({ FactorHelpRoute: mockRoute() }))
 jest.mock("./routes/FinishSheetRoute", () => ({ FinishSheetRoute: mockRoute() }))
+jest.mock("./routes/ExportChoiceRoute", () => ({ ExportChoiceRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
@@ -880,6 +881,21 @@ describe("stack options and listeners", () => {
       finishSheetScreenOptions: (theme: unknown) => Options
     }
     const ios = finishSheetScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+  })
+
+  test("the export choice sheet (phase 33) is registered, a modal on Android and a form sheet on iOS", async () => {
+    await mount(<AppNavigation />)
+    const android = mockScreens.surveyExportChoice.options as Options
+    expect(android.presentation).toBe("modal")
+    expect(android.headerShown).toBe(false)
+    mockPlatform.OS = "ios"
+    const { exportChoiceScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      exportChoiceScreenOptions: (theme: unknown) => Options
+    }
+    const ios = exportChoiceScreenOptions(defaultTheme)
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
     expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
