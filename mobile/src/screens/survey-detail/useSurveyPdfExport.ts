@@ -95,22 +95,22 @@ export function buildSurveyExportInput(
 }
 
 /**
- * The share action of the summary: runs the PDF export once at a time (a second tap while it runs
- * does nothing, so Android never sees two share sheets) and tells the member when it cannot share
- * or fails.
+ * The share action of the summary: the export choice sheet picks the mode (phase 33) and this hook
+ * runs the PDF export in it, once at a time (a second call while it runs does nothing, so Android
+ * never sees two share sheets), and tells the member when it cannot share or fails.
  */
 export function useSurveyPdfExport(args: SurveyPdfExportArgs): {
   exporting: boolean
-  share: () => Promise<void>
+  share: (mode: ExportMode) => Promise<void>
 } {
   const [exporting, setExporting] = useState(false)
   const running = useRef(false)
-  const share = useLatestCallback(async (): Promise<void> => {
+  const share = useLatestCallback(async (mode: ExportMode): Promise<void> => {
     if (running.current) return
     running.current = true
     setExporting(true)
     try {
-      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args, "complete"))
+      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args, mode))
       if (!shared) Alert.alert(menuText.share, actionsText.exportShareUnavailable)
     } catch (error) {
       logStatusDetail("surveyDetail.exportPdf", error)
