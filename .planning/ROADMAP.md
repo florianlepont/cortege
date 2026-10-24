@@ -1125,7 +1125,7 @@ Plans:
 
 **Goal**: The survey PDF is beautiful and complete, with an exhaustive version and a simplified one, usable with patrons and partners.
 **Depends on**: Phase 25.1 (the previous rework), Phase 27
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-C-pdf-two-versions, REQ-C-pdf-summary-page, REQ-C-pdf-modern-layout, REQ-C-pdf-lean-export, REQ-C-pdf-commune-row, REQ-QA-pdf-sections-registry
 **Source**: seminar 2026-10-10: the "export présentable pour mécènes" is the PDF export, to rework again because it is not yet beautiful nor exhaustive enough
 **Success Criteria** (what must be TRUE):
 
@@ -1133,7 +1133,46 @@ Plans:
   2. The gaps the owner sees in the current PDF are listed and closed, with the owner's review of both versions on their phone.
   3. Both stay offline-first, branded and named per the existing rules.
 
-**Plans**: TBD
+**Plans**: 15 plans in 7 waves (planned 2026-10-24, none executed)
+
+Plans:
+
+**Wave 1**
+
+- [ ] 33-01-PLAN.md - Throwaway Chrome render harness and design probe P-1 to P-5, page-count baseline
+- [ ] 33-02-PLAN.md - Data contract: `mode`, `PdfBlock.pageStyle`, forest palette keys, summary frame, fixtures, photo-free summary loader
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 33-03-PLAN.md - Section registry (`sections.ts`), assembler as two flatMaps, cover and summary page types
+- [ ] 33-04-PLAN.md - Catalogue strings, one "Commune" row, `-resume` file name
+- [ ] 33-05-PLAN.md - Export choice sheet content (`fr.surveyExportChoice`, picker, sheet)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 33-06-PLAN.md - Identity card with method folded in, restyled conditions, route and factor cards
+- [ ] 33-07-PLAN.md - Score ring, captioned factor chart, richer trend
+- [ ] 33-08-PLAN.md - `map-figure.ts`, map frame 515 x 250, trial photo encoding
+- [ ] 33-09-PLAN.md - `surveyExportChoice` route, `estimateCompletePages` through the facade
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 33-10-PLAN.md - Cover builder
+- [ ] 33-11-PLAN.md - One-page summary builder with fallbacks
+- [ ] 33-12-PLAN.md - Summary screen wiring: sheet from "Partager", one export per nonce
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 33-13-PLAN.md - Integration in the registry, page-count targets, one-page summary tests
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 33-14-PLAN.md - iOS simulator and Android emulator measurements, constants, RC-05, documentation
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 33-15-PLAN.md - Owner review of both versions on the iPhone, gap list
+
 **UI hint**: yes
 
 ### Phase 34: Extended Photo Recognition, Factor by Factor (INSERTED)

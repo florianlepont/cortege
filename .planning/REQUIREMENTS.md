@@ -245,6 +245,13 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 - [x] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
 - [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4. Deferred to the field tests by the owner on 2026-10-23: the protocol and the scenario sheets are ready, no tester is available before them.)*
 
+- [ ] **REQ-C-pdf-two-versions** — At export time the member chooses between a complete PDF and a one-page summary through a choice sheet; nothing is remembered; the summary is disabled on a draft with one explanatory sentence. *(New — Phase 33)*
+- [ ] **REQ-C-pdf-summary-page** — The summary is one A4 page for patrons and partners: logo, site name, date, score /50, parcel map, ten-factor chart and trend; offline first, no photo, submitted surveys only. *(New — Phase 33)*
+- [ ] **REQ-C-pdf-modern-layout** — The complete PDF has a cover page, a title hierarchy, worked graphics (score ring, factor bars, trend) and charter colours, always light, with no network resource. *(New — Phase 33)*
+- [ ] **REQ-C-pdf-lean-export** — Fewer pages, cleaner page breaks and a lighter file, with the layout constants re-measured on a device. *(New — Phase 33)*
+- [ ] **REQ-C-pdf-commune-row** — The identity block prints one "Commune" row (code and département) instead of two rows. *(New — Phase 33)*
+- [ ] **REQ-QA-pdf-sections-registry** — PDF sections register through one ordered list with a per-section mode filter, so a later phase adds a section by appending one entry. *(New — Phase 33)*
+
 ## Traceability
 
 Every MVP requirement maps to exactly one phase. **Build** = the phase delivers new work;
@@ -302,6 +309,12 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-C-uncapped-entry | New | Phase 30 | Build |
 | REQ-FT-route-test | New | Phase 30 | Verify (deferred to the field tests) |
 | REQ-C-pdf-export | New | Phase 19 | Build |
+| REQ-C-pdf-two-versions | New | Phase 33 | Build |
+| REQ-C-pdf-summary-page | New | Phase 33 | Build |
+| REQ-C-pdf-modern-layout | New | Phase 33 | Build |
+| REQ-C-pdf-lean-export | New | Phase 33 | Build |
+| REQ-C-pdf-commune-row | New | Phase 33 | Build |
+| REQ-QA-pdf-sections-registry | New | Phase 33 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |
 | REQ-INF-backups | New | Phase 20 | Build |
