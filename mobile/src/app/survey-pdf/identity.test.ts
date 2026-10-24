@@ -1,6 +1,7 @@
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type SurveyRoute } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
+import { escapeHtml } from "./html"
 import { buildIdentityBlocks, identityCss, inseeFromParcelId } from "./identity"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportMethodContext, PdfPalette, SurveyExportData } from "./types"
@@ -114,6 +115,10 @@ describe("inseeFromParcelId", () => {
     expect(inseeFromParcelId("97411000AB0001")).toEqual({ commune: "97411", department: "974" })
   })
 
+  it("takes three characters for the 98x collectivities", () => {
+    expect(inseeFromParcelId("98818000AB0001")).toEqual({ commune: "98818", department: "988" })
+  })
+
   it("gives null for a malformed id", () => {
     expect(inseeFromParcelId("")).toBeNull()
     expect(inseeFromParcelId("77186")).toBeNull()
@@ -130,15 +135,14 @@ describe("identity block", () => {
     for (const block of blocks) expect(block.height).toBeGreaterThan(0)
   })
 
-  it("lists site, parcels, commune, department, year, version, date, observer, coordinates, mode", () => {
+  it("lists site, parcels, commune, year, version, date, observer, coordinates, mode", () => {
     const { identity } = build()
     const html = identity.html
     expect(html).toContain(t.identity.heading)
     expect(html).toContain("Forêt de test")
     expect(html).toContain("77186000AB0123, 77186000AB0124")
     expect(html).toContain(t.identity.commune)
-    expect(html).toContain("77186")
-    expect(html).toContain(t.identity.department)
+    expect(html).toContain("77186 (département 77)")
     expect(html).toContain("2026")
     expect(html).toContain(t.identity.versionNumber)
     expect(html).toContain("10 octobre 2026")
@@ -175,10 +179,41 @@ describe("identity block", () => {
     expect(build({ route: ROUTE }).method).toEqual(build({ route: null }).method)
   })
 
-  it("derives commune and department from the first parcel only", () => {
-    const { identity } = build({ parcelIds: ["2A004000AB0001", "77186000AB0123"] })
-    expect(identity.html).toContain("2A004")
-    expect(identity.html).not.toContain(">77<")
+  it("prints one Commune row and no separate Département row", () => {
+    const { identity } = build()
+    expect(identity.html).not.toContain(">Département<")
+    expect(identity.html.split('class="identity-caption"').length - 1).toBe(9)
+    const captions = [...identity.html.matchAll(/<th class="identity-caption">([^<]*)<\/th>/g)].map(
+      (match) => match[1],
+    )
+    expect(captions).toEqual([
+      t.identity.site,
+      t.identity.parcels,
+      t.identity.commune,
+      escapeHtml(t.identity.observationYear),
+      t.identity.versionNumber,
+      t.identity.date,
+      t.identity.observer,
+      t.identity.coordinates,
+      t.identity.surveyMode,
+    ])
+  })
+
+  it.each([
+    ["77186000AB0123", "77186 (département 77)"],
+    ["2A004000AB0001", "2A004 (département 2A)"],
+    ["97411000AB0001", "97411 (département 974)"],
+    ["98818000AB0001", "98818 (département 988)"],
+  ])("derives the Commune value of %s from the first parcel only", (first, value) => {
+    const { identity } = build({ parcelIds: [first, "77186000AB0123"] })
+    expect(identity.html).toContain(`<td class="identity-value">${value}</td>`)
+  })
+
+  it("is one row (19 units) shorter than before for a valid parcel id", () => {
+    const valid = build({ parcelIds: ["77186000AB0123"] }).identity
+    const malformed = build({ parcelIds: ["77186000AB012"] }).identity
+    // The malformed id prints no Commune row; its parcel text is one character shorter, same line.
+    expect(valid.height - malformed.height).toBe(19)
   })
 
   it("prints Non renseigné for a missing year, version number or date", () => {
@@ -203,10 +238,9 @@ describe("identity block", () => {
     const { identity } = build({ parcelIds: [] })
     expect(identity.html).toContain(t.identity.noParcel)
     expect(identity.html).not.toContain(t.identity.commune)
-    expect(identity.html).not.toContain(t.identity.department)
   })
 
-  it("omits commune and department when the first id is malformed", () => {
+  it("omits the Commune row when the first id is malformed", () => {
     const { identity } = build({ parcelIds: ["bad-id"] })
     expect(identity.html).toContain("bad-id")
     expect(identity.html).not.toContain(t.identity.commune)

@@ -45,7 +45,12 @@ export function inseeFromParcelId(id: string): Insee | null {
   const commune = match[1]
   return {
     commune,
-    department: commune.startsWith("97") ? commune.slice(0, 3) : commune.slice(0, 2),
+    // Overseas departments 971 to 976 and the 98x collectivities have three characters (the regex
+    // keeps Corsica's 2A and 2B at two).
+    department:
+      commune.startsWith("97") || commune.startsWith("98")
+        ? commune.slice(0, 3)
+        : commune.slice(0, 2),
   }
 }
 
@@ -91,8 +96,12 @@ function identityRows(data: SurveyExportData): Row[] {
   ]
   const insee = data.parcelIds.length > 0 ? inseeFromParcelId(data.parcelIds[0]) : null
   if (insee) {
-    rows.push(textRow(t.identity.commune, insee.commune))
-    rows.push(textRow(t.identity.department, insee.department))
+    rows.push(
+      textRow(
+        t.identity.commune,
+        t.identity.communeValue({ code: insee.commune, department: insee.department }),
+      ),
+    )
   }
   rows.push(
     textRow(

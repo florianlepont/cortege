@@ -40,8 +40,7 @@ export const surveyExportFr = {
     coordinatesValue: ({ lat, lng }: { lat: string; lng: string }) =>
       `${lat}, ${lng} (WGS 84, système géodésique mondial)`,
     // Phase 33 (D-04, D-16): one row, the département being the first digits of the commune code.
-    commune: "Commune (code officiel géographique)",
-    department: "Département",
+    commune: "Commune",
     communeValue: ({ code, department }: { code: string; department: string }) =>
       `${code} (département ${department})`,
     surveyMode: "Mode de relevé",

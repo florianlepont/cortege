@@ -1,4 +1,12 @@
-import { escapeHtml, formatCoordinate, formatDateFr, formatDecimal, svgNumber } from "./html"
+import {
+  escapeHtml,
+  formatCoordinate,
+  formatDateFr,
+  formatDecimal,
+  shortenList,
+  shortenText,
+  svgNumber,
+} from "./html"
 
 describe("escapeHtml", () => {
   it("neutralises markup and quotes, and keeps one &amp; per ampersand", () => {
@@ -69,5 +77,69 @@ describe("svgNumber", () => {
   it("gives 0 for a value that is not finite", () => {
     expect(svgNumber(Number.NaN)).toBe("0")
     expect(svgNumber(Number.NEGATIVE_INFINITY)).toBe("0")
+  })
+})
+
+describe("shortenText", () => {
+  it("returns a text that fits unchanged", () => {
+    expect(shortenText("abc", 5)).toBe("abc")
+    expect(shortenText("abcde", 5)).toBe("abcde")
+  })
+
+  it("cuts inside the word, with one ellipsis, within the box", () => {
+    const out = shortenText("abcdefghijklmnop", 8)
+    expect(out).toBe("abcdefg\u2026")
+    expect(out).toHaveLength(8)
+  })
+
+  it("cuts at the last space when it lies in the second half", () => {
+    const out = shortenText("une belle foret ancienne", 16)
+    expect(out).toBe("une belle foret\u2026")
+    expect(out.length).toBeLessThanOrEqual(16)
+  })
+
+  it("cuts at a space that is the first character past the kept text", () => {
+    expect(shortenText("abcdefg hijklmn", 8)).toBe("abcdefg\u2026")
+  })
+
+  it("ignores a space in the first half and cuts inside the word", () => {
+    expect(shortenText("ab cdefghijklmnop", 10)).toBe("ab cdefgh\u2026")
+  })
+
+  it("gives an empty text for an empty box", () => {
+    expect(shortenText("abc", 0)).toBe("")
+  })
+
+  it("does not escape", () => {
+    expect(shortenText("a&b<c>d", 4)).toBe("a&b\u2026")
+  })
+})
+
+describe("shortenList", () => {
+  const IDS = ["77186000AB0001", "77186000AB0002", "77186000AB0003"]
+
+  it("gives an empty text for an empty list", () => {
+    expect(shortenList([], 10)).toBe("")
+  })
+
+  it("joins every item when they fit", () => {
+    expect(shortenList(IDS, 46)).toBe(IDS.join(", "))
+    expect(shortenList(["only"], 4)).toBe("only")
+  })
+
+  it("keeps whole items and ends with a comma and an ellipsis", () => {
+    const out = shortenList(IDS, 34)
+    expect(out).toBe("77186000AB0001, 77186000AB0002, \u2026")
+    expect(out).toHaveLength(33)
+  })
+
+  it("keeps fewer items when the mark does not fit after more", () => {
+    const out = shortenList(IDS, 32)
+    expect(out).toBe("77186000AB0001, \u2026")
+    expect(out.length).toBeLessThanOrEqual(32)
+  })
+
+  it("shortens the first item when even it and the mark do not fit", () => {
+    expect(shortenList(IDS, 10)).toBe("77186000A\u2026")
   })
 })
