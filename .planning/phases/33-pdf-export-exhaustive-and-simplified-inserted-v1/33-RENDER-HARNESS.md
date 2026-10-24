@@ -237,4 +237,175 @@ Notes for the lean-export targets (D-03):
 - Photos are by far the largest part: 24 photos at 800 px and JPEG 65 weigh about 1.1 MB of the 1.41 MB of `worst` (the six photos of `typical` about 0.3 MB of its 0.53 MB); the map JPEG is about 69 KB.
 - The map and the trend each sit alone on a page of `typical` (pages 4 and 5, `typical-4.png` shows the map page about half empty), the hole that the research located (section 5: fills of 412 and 331 of 740 units).
 
-<!-- gsd:write-continue -->
+## Design probe (Chromium)
+
+Plan 33-01, Task 2. The five risky print effects of UI-SPEC B.2 drawn on one page and printed by Chrome headless with the same shell as the builders (`@page` 595pt x 842pt, root `zoom` 1.33333 so that one design unit is one point, the CSP meta tag and the six inlined fonts of `styles.ts`). The page is a throwaway: it is never committed.
+
+### Setup and run
+
+One more JPEG is needed (a real photo for P-4, so that the clipped corners are visible against a dark panel):
+
+```bash
+sips -Z 480 -s format jpeg -s formatOptions 65 mobile/assets/herbier/composee_frene.jpg --out $HARNESS_DIR/img/probe.jpg >/dev/null
+```
+
+Create `probe.harness.test.ts` in `$HARNESS_DIR` (below), then:
+
+```bash
+cd $WORKTREE/mobile && npx jest -c $HARNESS_DIR/jest.harness.config.js probe
+cd $HARNESS_OUT && for c in probe probe-none probe-P1 probe-P2 probe-P3 probe-P4 probe-P5; do
+  "$CH" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=$HARNESS_OUT/$c.pdf file://$HARNESS_OUT/$c.html >/dev/null 2>&1
+done
+pdfinfo probe.pdf; pdffonts probe.pdf; pdfimages -list probe.pdf; pdftoppm -r 100 -png probe.pdf probe
+```
+
+`probe.html` holds the five zones; `probe-none.html` holds none (the size floor); `probe-P1.html` to `probe-P5.html` hold one zone each, to measure the size growth of every zone against the floor. Layout (design units on the 4-grid, page 595 x 840): P-1 two 240 x 120 panels at y 26 (SVG `linearGradient` at x 16, CSS `linear-gradient` at x 300, both `forestStops.a` to `.b` at 55 percent to `.c`); P-2 two 112 rings at y 182 (`rotate(-90 56 56)` at x 16, path arc at x 150); P-4 the rounded JPEG at x 300, y 182 on a forest panel; P-3 the 595 x 380 contour box at y 336; P-5 the numeral at y 740.
+
+### `probe.harness.test.ts`
+
+```ts
+// Throwaway design probe P-1 to P-5 (phase 33, plan 01, UI-SPEC B.2). Never committed.
+// Env: WORKTREE, HARNESS_DIR, HARNESS_OUT. Writes probe.html (all zones) and probe-none.html and
+// probe-P1.html ... probe-P5.html (one zone each) to measure the size growth of every zone.
+import * as fs from "fs"
+import * as path from "path"
+
+jest.mock(
+  "react-native",
+  () => ({
+    useColorScheme: () => "light",
+    Platform: { OS: "ios", select: (o: Record<string, unknown>) => o.ios ?? o.default },
+    StyleSheet: { create: (s: unknown) => s },
+  }),
+  { virtual: true },
+)
+
+const WT = process.env.WORKTREE as string
+const HARNESS = process.env.HARNESS_DIR as string
+const OUT = process.env.HARNESS_OUT as string
+const MOBILE = path.join(WT, "mobile")
+
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { cspMetaTag, fontFaceCss } = require(path.join(MOBILE, "src/app/survey-pdf/styles"))
+const { buildContourPaths, CONTOUR_VIEWBOX } = require(path.join(MOBILE, "src/app/contour-paths"))
+const { forestStops } = require(path.join(MOBILE, "src/app/visual-tokens"))
+/* eslint-enable @typescript-eslint/no-require-imports */
+
+const b64 = (file: string) => fs.readFileSync(file).toString("base64")
+const FONTS = ["Sora-ExtraBold", "Sora-SemiBold", "Sora-Medium", "Sora-Light", "Jost-Regular", "Jost-SemiBold"]
+const fonts = FONTS.map((family) => ({
+  family,
+  base64: b64(path.join(MOBILE, "assets/fonts", `${family}.ttf`)),
+}))
+const jpegUri = `data:image/jpeg;base64,${b64(path.join(HARNESS, "img/probe.jpg"))}`
+
+// Brand tones written as plain values: the probe is not app code.
+const SAGE = "#B0C78E"
+const MOSS = "#89A33A"
+const LABEL = 'style="position:absolute;font-family:Jost-SemiBold;font-size:9px;color:#33433A"'
+const label = (x: number, y: number, text: string) =>
+  `<div ${LABEL.replace("position:absolute;", `position:absolute;left:${x}px;top:${y}px;`)}>${text}</div>`
+
+// P-1: gradient fill, SVG linearGradient and CSS linear-gradient, 240 x 120 each.
+function p1(): string {
+  const stops = `<stop offset="0" stop-color="${forestStops.a}"/><stop offset="0.55" stop-color="${forestStops.b}"/><stop offset="1" stop-color="${forestStops.c}"/>`
+  return [
+    label(16, 12, "P-1 svg linearGradient"),
+    `<svg style="position:absolute;left:16px;top:26px" width="240" height="120" viewBox="0 0 240 120"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs><rect width="240" height="120" rx="12" fill="url(#g1)"/></svg>`,
+    label(300, 12, "P-1 css linear-gradient"),
+    `<div style="position:absolute;left:300px;top:26px;width:240px;height:120px;border-radius:12px;background:linear-gradient(135deg,${forestStops.a} 0%,${forestStops.b} 55%,${forestStops.c} 100%)"></div>`,
+  ].join("")
+}
+
+// P-2: ring of 112, stroke 8, ratio 0.64; first with rotate(-90), second as a path from 12 o'clock.
+function p2(): string {
+  const size = 112
+  const stroke = 8
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const ratio = 0.64
+  const mid = size / 2
+  const angle = ratio * 2 * Math.PI
+  const ex = mid + r * Math.sin(angle)
+  const ey = mid - r * Math.cos(angle)
+  const track = `<circle cx="${mid}" cy="${mid}" r="${r}" fill="none" stroke="${forestStops.a}" stroke-width="${stroke}"/>`
+  const rotated = `<circle cx="${mid}" cy="${mid}" r="${r}" fill="none" stroke="${MOSS}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${(c * ratio).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 ${mid} ${mid})"/>`
+  const arc = `<path d="M${mid} ${mid - r} A${r} ${r} 0 ${ratio > 0.5 ? 1 : 0} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}" fill="none" stroke="${MOSS}" stroke-width="${stroke}" stroke-linecap="round"/>`
+  return [
+    label(16, 168, "P-2 rotate(-90)"),
+    `<svg style="position:absolute;left:16px;top:182px" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${track}${rotated}</svg>`,
+    label(150, 168, "P-2 path arc"),
+    `<svg style="position:absolute;left:150px;top:182px" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${track}${arc}</svg>`,
+  ].join("")
+}
+
+// P-3: contour art with preserveAspectRatio slice in a 595 x 380 solid forest box, solid strokes.
+function p3(): string {
+  const { sage, moss } = buildContourPaths(7)
+  return [
+    label(16, 322, "P-3 contour art, xMaxYMax slice"),
+    `<div style="position:absolute;left:0;top:336px;width:595px;height:380px;background:${forestStops.b};overflow:hidden"><svg width="595" height="380" viewBox="${CONTOUR_VIEWBOX}" preserveAspectRatio="xMaxYMax slice"><path d="${sage}" fill="none" stroke="${SAGE}" stroke-width="1"/><path d="${moss}" fill="none" stroke="${MOSS}" stroke-width="1.4"/></svg></div>`,
+  ].join("")
+}
+
+// P-4: JPEG inside a 240 x 160 box with a 12 radius and overflow hidden.
+function p4(): string {
+  return [
+    label(300, 168, "P-4 rounded jpeg clip"),
+    `<div style="position:absolute;left:296px;top:178px;width:248px;height:168px;background:${forestStops.a}"></div><div style="position:absolute;left:300px;top:182px;width:240px;height:160px;border-radius:12px;overflow:hidden;background:#EEF1E6"><img src="${jpegUri}" style="width:240px;height:160px;object-fit:cover;display:block"/></div>`,
+  ].join("")
+}
+
+// P-5: Sora-Light 64 / 72 with letter-spacing -3, next to "/ 50" in Jost-Regular 20.
+function p5(): string {
+  return [
+    label(16, 724, "P-5 numeral letter-spacing -3"),
+    `<div style="position:absolute;left:16px;top:740px;height:72px;white-space:nowrap"><span style="font-family:Sora-Light;font-size:64px;line-height:72px;letter-spacing:-3px;color:${forestStops.a}">32</span><span style="font-family:Jost-Regular;font-size:20px;line-height:72px;margin-left:6px;color:#5B6B5E">/ 50</span></div>`,
+  ].join("")
+}
+
+const ZONES: Record<string, () => string> = { P1: p1, P2: p2, P3: p3, P4: p4, P5: p5 }
+
+function page(zones: string[]): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">${cspMetaTag()}<style>${fontFaceCss(fonts)}
+@page { size: 595pt 842pt; margin: 0 }
+html, body { margin: 0; padding: 0 }
+.root { zoom: 1.33333 }
+.page { position: relative; width: 595px; height: 840px; overflow: hidden; background: #fff; font-family: Jost-Regular }
+</style></head><body><div class="root"><div class="page">${zones.map((z) => ZONES[z]()).join("")}${label(16, 6, "probe " + (zones.join(" ") || "none"))}</div></div></body></html>`
+}
+
+describe("design probe", () => {
+  it("writes the probe pages", () => {
+    fs.mkdirSync(OUT, { recursive: true })
+    fs.writeFileSync(path.join(OUT, "probe.html"), page(Object.keys(ZONES)))
+    fs.writeFileSync(path.join(OUT, "probe-none.html"), page([]))
+    for (const z of Object.keys(ZONES)) fs.writeFileSync(path.join(OUT, `probe-${z}.html`), page([z]))
+  })
+})
+```
+
+### Results (Chromium, 2026-10-24)
+
+Page: 1 page, A4 594.96 x 841.92 pt (the scale is right: 1 unit = 1 pt, label at x 16 prints at 15.996 pt). `pdffonts probe.pdf`: three subset families embedded (Jost-SemiBold, Sora-Light, Jost-Regular: only the cuts the probe uses). `pdfimages -list probe.pdf`: exactly one raster object, the P-4 JPEG (480 x 409, `jpeg` encoding kept, 22.9 KB); the gradients, rings, contour art and numeral are all vector. Floor (`probe-none.pdf`): 4333 bytes.
+
+| Item | What was drawn | Chromium result | Size growth over the floor (KB) | Fallback named by the contract (UI-SPEC B.2) |
+|---|---|---|---:|---|
+| P-1 | 240 x 120 rounded panel filled by an SVG `linearGradient` (three stops) and a second by a CSS `linear-gradient(135deg, ...)` | Pass. Both are drawn as smooth three-stop diagonal gradients with correct rounded corners, no raster object, identical look | +3.9 for the two panels | Solid `forest` panel and solid band tones (the contract; the gradient is not part of it) |
+| P-2 | Ring 112, stroke 8, ratio 0.64, track `forestStops.a`, arc moss with round caps: (a) circle with `stroke-dasharray` and `transform="rotate(-90 56 56)"`, (b) SVG path arc from 12 o'clock with no transform | Pass. Both arcs start at 12 o'clock and run clockwise to the same end (about 8 o'clock), round caps drawn, vector. On a 4x raster crop 6939 of 602112 channel values differ by more than 40 between (a) and (b): anti-aliasing at the arc edges and caps, the two rings look the same | +5.9 for the two rings | Path arc starting at the top, no transform (variant b, which is also the safer shape) |
+| P-3 | 595 x 380 box on solid `forestStops.b` with `buildContourPaths(7)` in an SVG of viewBox `0 0 320 180`, `preserveAspectRatio="xMaxYMax slice"`, solid sage strokes (1) and moss strokes (1.4) | Pass. The art is scaled to cover the box and anchored bottom right, clipped by the box, strokes solid and vector, no `opacity` used | +3.0 | An exact viewBox that matches the box, no `slice` |
+| P-4 | Real JPEG in a 240 x 160 box with `border-radius: 12px; overflow: hidden`, on a dark forest panel | Pass. The four corners are clipped round, the JPEG stays one `jpeg` object (no re-encoding, no extra raster), geometry exact | +26.7, of which 22.9 is the JPEG itself, so +3.8 for the clip and structure | Square corners |
+| P-5 | "32" in Sora-Light 64 / 72 with `letter-spacing: -3px` next to "/ 50" in Jost-Regular 20 | Pass. `pdftotext -bbox`: with -3 the "32" spans x 16.0 to 91.3 and "/ 50" starts at 94.3; with letter-spacing 0 it spans 16.0 to 94.3 and "/ 50" starts at 100.3, so the spacing is applied (3 units per glyph) and the glyphs do not collide | +6.1, all of it the two font subsets (Sora-Light and Jost-Regular); the letter-spacing itself costs 4 bytes (10439 against 10435) | Letter-spacing 0 and sizes 62 and 38 |
+
+Conclusion for Chromium: all five effects pass and stay vector, so on Chrome nothing forces a fallback. This says nothing yet about WebKit and Skia (the 25.1 finding that iOS print ignores `column-count` and 1-px filled `div`s shows that engines differ); plan 33-14 repeats the probe there. None of the fallbacks changes a layout, and the gradient-only enhancements (the UI-SPEC probe-gated keys `forestEnd` and `bandLowTop`, `bandMidTop`, `bandHighTop`) are NOT built in this phase whatever the device result is: the solid contract is the deliverable (UI-SPEC: "Not needed by the contract").
+
+## Device probe brief for plan 33-14
+
+Goal: confirm P-1 to P-5 on WebKit (iOS simulator) and Skia (Android emulator), so that 33-14 keeps or drops the three engine-dependent choices (rounded JPEG clip on map and photos, the `rotate(-90)` ring, the `slice` contour art, the negative letter-spacing) without any new design work. The page is the same `probe.html` as above.
+
+1. Take `probe.html` from `$HARNESS_OUT` (regenerate it with the test above if the scratchpad is gone). It already carries the CSP and the six inlined fonts; nothing in it loads a file or a URL.
+2. In the throwaway in-app harness of 25.1-07 (a polling request file that runs the real print path; never committed, removed before the plan ends: see `.planning/phases/25.1-pdf-export-improvement/25.1-07-SUMMARY.md` and the project memory notes for the iOS simulator and the Android `Pixel_8` emulator, including the dead-simulator `simctl erase` fix and the clone AVD when the emulator holds a release app with another signature), feed the HTML to the real `printToFileAsync` of `expo-print`, one print per platform. Set the root `zoom` of the device copy to the platform's `PDF_LAYOUT_SCALE` (iOS 1.2487, Android 4/3): with the 25.1 per-platform page scale, one design unit then again lands on one point of the PDF, so the numbers below compare with the Chrome ones directly.
+3. Copy the PDFs to the Mac and measure with the same poppler commands as above: `pdfinfo` (pages, size), `pdffonts` (the three used families embedded), `pdfimages -list` (raster objects), `pdftotext -bbox` (positions of the P-5 numeral and the labels), `pdftoppm -r 100 -png` (look at the page with the Read tool). For the size growth print the six variant pages (`probe-none` and `probe-P1` to `probe-P5`) the same way, or print `probe.html` only and compare its size with the Chrome total of 47161 bytes (the JPEG is 22.9 KB of it).
+4. Pass criterion of UI-SPEC B.2, per item: same geometry as Chrome within 1 unit (compare rings, panels, box edges and the P-5 text boxes with the Chrome figures above: P-5 numeral x 16.0 to 91.3, "/ 50" at 94.3), vector (no raster block in `pdfimages -list` except the one P-4 JPEG and, in the real document, the logo and the photos), and file growth under 10 KB per item (P-4 counts only what exceeds the JPEG itself).
+5. Decision table to fill in 33-14: an item that fails keeps the fallback of the table above on that platform (and the same choice is then made for both platforms, so the document looks the same everywhere). Every fallback leaves the layout unchanged, so a failed item costs no re-flow and no new test of fit. P-1 is informational only: the gradient is not in the contract, so a pass changes nothing in this phase and a fail changes nothing either.
+6. Record the result (one row per item and platform) in the 33-14 summary; do not commit the HTML, the PDFs or the in-app harness.
