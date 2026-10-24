@@ -2,6 +2,7 @@ import { fr } from "../../i18n"
 import { routeDisplayRows } from "../route-display"
 import { conditionsBlockHeight } from "./conditions-section"
 import { escapeHtml } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -43,8 +44,8 @@ export function buildRouteBlock(data: SurveyExportData, _palette: PdfPalette): P
 export function routeSectionCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
-.route-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
-.route-heading { margin: 0; height: ${CARD_HEADING}px; font-family: ${font.heading}; font-size: 11px; line-height: ${CARD_HEADING}px; color: ${palette.ink}; }
+.route-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; }
+${sectionTitleCss(".route-heading", palette)}
 .route-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .route-row { vertical-align: top; }
 .route-caption { width: 150px; padding: 3px 8px 3px 0; text-align: left; font-family: ${font.label}; font-size: 8.5px; line-height: ${LINE_HEIGHT}px; font-weight: normal; color: ${palette.inkMuted}; }

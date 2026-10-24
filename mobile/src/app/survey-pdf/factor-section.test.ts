@@ -506,8 +506,66 @@ describe("escaping", () => {
   })
 })
 
+describe("factor tone strip (D-02, UI-SPEC B.7)", () => {
+  // Fake palette: each colour is its key name. POINTS: A 2 (low), D 0 (low), E 2, F 2, B 1, C 5 (high).
+  it("colours the left border of a filled factor with its tone", () => {
+    const blocks = buildFactorBlocks(
+      makeData({ factorEntries: entries({ A: ["S3", 3] }) }),
+      palette,
+    )
+    expect(blockById(blocks, "factor-A").html).toContain(
+      '<section class="factor-card" style="border-left-color: bandMid">',
+    )
+    expect(blockById(blocks, "factor-B").html).toContain('style="border-left-color: bandLow"')
+    expect(blockById(blocks, "factor-C").html).toContain('style="border-left-color: bandHigh"')
+  })
+
+  it("uses the line colour for a missing factor and for a not filled one", () => {
+    const blocks = buildFactorBlocks(
+      makeData({
+        factorEntries: entries({ B: ["Not filled", null] }).filter(([key]) => key !== "C"),
+      }),
+      palette,
+    )
+    expect(blockById(blocks, "factor-B").html).toContain('style="border-left-color: line"')
+    expect(blockById(blocks, "factor-C").html).toContain('style="border-left-color: line"')
+  })
+
+  it("takes the colour from the palette only, escaped", () => {
+    const hostile = { ...palette, bandLow: '"><script>' } as PdfPalette
+    const html = blockById(buildFactorBlocks(makeData(), hostile), "factor-B").html
+    expect(html).not.toContain("<script>")
+    expect(html).toContain("border-left-color: &quot;&gt;&lt;script&gt;")
+  })
+
+  it("keeps the genus chips of a non-counted genus muted in markup", () => {
+    const data = makeData({ rawFactors: { A: { genera: ["Ceratonia", "Fagus"] } } })
+    const html = blockById(buildFactorBlocks(data, palette), "factor-A").html
+    expect(html).toContain('<span class="factor-item factor-item-muted">Ceratonia')
+    expect(html).toContain('<span class="factor-item">Fagus')
+  })
+})
+
 describe("factorSectionCss", () => {
   const css = factorSectionCss(palette)
+
+  it("rounds the card at 12 and draws a 4 unit left border with a left padding of 8", () => {
+    expect(css).toMatch(/\.factor-card \{[^}]*border-radius: 12px/)
+    expect(css).toMatch(/\.factor-card \{[^}]*border-left: 4px solid line/)
+    expect(css).toMatch(/\.factor-card \{[^}]*padding: 8px 10px 8px 8px/)
+  })
+
+  it("rounds the items and the badge at 8 and keeps the chips at 4", () => {
+    expect(css).toMatch(/\.factor-item \{[^}]*border-radius: 8px/)
+    expect(css).toMatch(/\.factor-badge \{[^}]*border-radius: 8px/)
+    expect(css).toMatch(/\.factor-chip \{[^}]*border-radius: 4px/)
+  })
+
+  it("prints the group headings in accent and the muted chips in inkMuted (B.12)", () => {
+    expect(css).toMatch(/\.factor-group \{[^}]*color: accent/)
+    expect(css).toMatch(/\.factor-item-muted \{[^}]*color: inkMuted/)
+    expect(css).not.toContain("color: inkFaint")
+  })
 
   it("prefixes every class with factor-", () => {
     const classes = css.match(/\.[A-Za-z][\w-]*/g) ?? []

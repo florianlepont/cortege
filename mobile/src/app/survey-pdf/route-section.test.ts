@@ -4,6 +4,7 @@ import { fr } from "../../i18n"
 import { routeDisplayRows } from "../route-display"
 import { conditionsBlockHeight } from "./conditions-section"
 import { buildRouteBlock, routeSectionCss } from "./route-section"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
@@ -219,8 +220,13 @@ describe("routeSectionCss", () => {
     for (const name of classes) expect(name.startsWith(".route-")).toBe(true)
     expect(css).toContain("border: 1px solid line")
     expect(css).toContain("background: panel")
-    expect(css).toContain(`font-family: ${PDF_FONT_FAMILIES.heading}`)
+    expect(css).toContain(`font-family: ${PDF_FONT_FAMILIES.body}`)
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/)
+  })
+
+  it("draws the new section title (13 / 24, accent bar) and the radius 12 card (D-02)", () => {
+    expect(css).toContain(sectionTitleCss(".route-heading", palette))
+    expect(css).toMatch(/\.route-card \{[^}]*border-radius: 12px/)
   })
 
   it("uses a 150 px caption column and neither flex nor grid nor CSS columns", () => {

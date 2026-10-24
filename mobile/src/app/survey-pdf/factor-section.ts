@@ -8,10 +8,12 @@ import {
 import type { FactorKey } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
+import { factorTone } from "../ibp-display"
 import type { DisplayedFactorResult } from "../../screens/survey-detail/useLocalDraftSummary"
 import { buildFactorObservations, methodKeyOf } from "./factor-fields"
 import type { ObservationLine } from "./factor-fields"
 import { escapeHtml } from "./html"
+import { toneColor } from "./score-section"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -45,7 +47,10 @@ const OBS_LINE_HEIGHT = 13
 const OBS_ITEM_ROW_HEIGHT = 14 // 12 line plus 2 gap
 const OBS_NOTE_HEIGHT = 12
 const OBS_CHAR_WIDTH = 4.4 // 8.5 px Jost, average
-const OBS_WIDTH = 313 // 515 content - 20 padding - 170 result column - 12 gap
+// Was 313 (515 content - 20 padding - 170 result column - 12 gap). UI-SPEC B.9: the card now has a
+// 4 unit left border and a left padding of 8, 12 on the left instead of 11, so the line is one
+// unit narrower. The other pieces keep their legacy calibration and are not re-summed.
+const OBS_WIDTH = 312
 const ITEM_PADDING = 14 // 5 + 5 padding, 2 border, 2 gap
 const SCALE_LINE_HEIGHT = 11
 const SCALE_CHARS_PER_LINE = 110
@@ -153,6 +158,11 @@ function resultHtml(entry: Entry, palette: PdfPalette): { html: string; points: 
   }
 }
 
+/** Colour of the card's left strip: the factor's tone, the line colour for a missing factor. */
+function stripColor(points: number | null, palette: PdfPalette): string {
+  return points === null ? palette.line : toneColor(factorTone(points), palette)
+}
+
 function cardBlock(factor: FactorKey, data: SurveyExportData, palette: PdfPalette): PdfBlock {
   const entry: Entry = data.factorEntries.find(([key]) => key === factor)?.[1]
   const lines = buildFactorObservations(factor, data.rawFactors, {
@@ -170,7 +180,8 @@ function cardBlock(factor: FactorKey, data: SurveyExportData, palette: PdfPalett
     userNote === null
       ? ""
       : `<p class="factor-user-note"><span class="factor-user-note-caption">${escapeHtml(t.factors.note)}</span> ${escapeHtml(userNote)}</p>\n`
-  const html = `<section class="factor-card">
+  const style = `border-left-color: ${escapeHtml(stripColor(result.points, palette))}`
+  const html = `<section class="factor-card" style="${style}">
 <div class="factor-head"><span class="factor-letter">${factor}</span><span class="factor-title">${escapeHtml(title)}</span>${badge}</div>
 <div class="factor-body">
 <div class="factor-obs">${lines.map(observationHtml).join("")}</div>
@@ -216,12 +227,12 @@ export function buildFactorBlocks(data: SurveyExportData, palette: PdfPalette): 
 export function factorSectionCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
-.factor-group { margin: 0; padding: 14px 0 6px; font-family: ${font.heading}; font-size: 12px; line-height: 14px; color: ${palette.ink}; }
-.factor-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 8px 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
+.factor-group { margin: 0; padding: 14px 0 6px; font-family: ${font.heading}; font-size: 12px; line-height: 14px; color: ${palette.accent}; }
+.factor-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 8px 10px 8px 8px; border: 1px solid ${palette.line}; border-left: 4px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; }
 .factor-head { display: flex; align-items: center; height: ${CARD_HEAD}px; }
 .factor-letter { display: block; width: 20px; height: 20px; border-radius: 10px; background: ${palette.accent}; color: ${palette.accentInk}; font-family: ${font.title}; font-size: 11px; line-height: 20px; text-align: center; }
 .factor-title { margin-left: 8px; font-family: ${font.heading}; font-size: 11px; color: ${palette.ink}; }
-.factor-badge { flex: none; box-sizing: border-box; margin-left: auto; padding: 0 6px; border: 1px solid ${palette.warning}; border-radius: 6px; background: ${palette.warningSoft}; font-family: ${font.label}; font-size: 8px; line-height: 14px; color: ${palette.warning}; }
+.factor-badge { flex: none; box-sizing: border-box; margin-left: auto; padding: 0 6px; border: 1px solid ${palette.warning}; border-radius: 8px; background: ${palette.warningSoft}; font-family: ${font.label}; font-size: 8px; line-height: 14px; color: ${palette.warning}; }
 .factor-body { display: flex; margin-top: ${CARD_GAP}px; }
 .factor-obs { flex: 1; padding-right: 12px; }
 .factor-result { flex: none; width: 170px; }
@@ -229,8 +240,9 @@ export function factorSectionCss(palette: PdfPalette): string {
 .factor-caption { color: ${palette.inkMuted}; }
 .factor-value { font-family: ${font.label}; }
 .factor-items { margin-bottom: 0; }
-.factor-item { display: inline-block; margin: 0 4px 2px 0; padding: 0 5px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.paper}; font-family: ${font.body}; font-size: 8px; line-height: 10px; color: ${palette.ink}; }
-.factor-item-muted { color: ${palette.inkFaint}; }
+.factor-item { display: inline-block; margin: 0 4px 2px 0; padding: 0 5px; border: 1px solid ${palette.line}; border-radius: 8px; background: ${palette.paper}; font-family: ${font.body}; font-size: 8px; line-height: 10px; color: ${palette.ink}; }
+/* UI-SPEC B.12: inkFaint (2.45:1) is decoration only; the muted chips need inkMuted (6.72:1). */
+.factor-item-muted { color: ${palette.inkMuted}; }
 .factor-note { font-family: ${font.body}; font-size: 8px; line-height: ${OBS_NOTE_HEIGHT}px; color: ${palette.inkMuted}; }
 .factor-chips { height: 18px; }
 .factor-chip { display: inline-block; box-sizing: border-box; width: 22px; height: 18px; margin-right: 4px; border: 1px solid ${palette.line}; border-radius: 4px; background: ${palette.paper}; font-family: ${font.label}; font-size: 9px; line-height: 16px; text-align: center; color: ${palette.inkMuted}; }
