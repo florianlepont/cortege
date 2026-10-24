@@ -237,9 +237,10 @@ export const exportFixtureWorstCase: SurveyExportData = {
     polygons: WORST_POLYGONS,
     basemap: {
       dataUri: `data:image/jpeg;base64,${PLACEHOLDER_BASE64}`,
-      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, width: 515, height: 340 },
+      // Phase 33, D-12: the real frame of the complete PDF, like every other complete fixture.
+      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, ...MAP_FRAME_SIZE },
     },
-    frameSize: { width: 515, height: 340 },
+    frameSize: { ...MAP_FRAME_SIZE },
   },
   history: {
     fetchedAt: "2026-10-09T12:00:00.000Z",

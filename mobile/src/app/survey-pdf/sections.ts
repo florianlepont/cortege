@@ -1,11 +1,12 @@
 import { buildConditionsBlock, conditionsSectionCss } from "./conditions-section"
+import { buildCoverBlocks, coverCss } from "./cover-section"
 import { buildFactorChartBlock, factorChartCss } from "./factor-chart-svg"
 import { buildFactorBlocks, factorSectionCss } from "./factor-section"
 import { buildIdentityBlocks, identityCss } from "./identity"
 import { buildMapBlock, mapSectionCss } from "./map-section"
 import { buildPhotoBlocks, photosSectionCss } from "./photos-section"
 import { buildRouteBlock, routeSectionCss } from "./route-section"
-import { buildScoreSummaryBlock, scoreSectionCss } from "./score-section"
+import { buildSummaryBlocks, summaryCss } from "./summary-section"
 import { buildTrendBlock, trendSectionCss } from "./trend-section"
 import type { ExportMode, PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -45,12 +46,18 @@ function optional(builder: OptionalBlockBuilder): PdfSection["build"] {
 
 const COMPLETE: readonly ExportMode[] = Object.freeze(["complete"] as const)
 
+const SUMMARY: readonly ExportMode[] = Object.freeze(["summary"] as const)
+
 /**
- * Every section of the PDF in document order: identity and method, the conditions (only when the
- * survey has a weather value or a note), the route used (only when the survey has a route, phase
- * 30), scores and chart, factors A to G then H to J, map, trend, photos.
+ * Every section of the PDF in document order. The complete document reads: the cover (forest panel,
+ * total, sub-scores, six facts; it replaces the old score card, D-01), identity and method, the
+ * conditions (only when the survey has a weather value or a note), the route used (only when the
+ * survey has a route, phase 30), the factor chart, factors A to G then H to J, map, trend, photos.
+ * The summary document is the single `summary` section (D-07). A later phase appends its section
+ * after `map` (phase 31) and never edits `build-html.ts`.
  */
 export const PDF_SECTIONS: readonly PdfSection[] = Object.freeze([
+  { id: "cover", modes: COMPLETE, build: buildCoverBlocks, css: coverCss },
   { id: "identity", modes: COMPLETE, build: buildIdentityBlocks, css: identityCss },
   {
     id: "conditions",
@@ -59,17 +66,12 @@ export const PDF_SECTIONS: readonly PdfSection[] = Object.freeze([
     css: conditionsSectionCss,
   },
   { id: "route", modes: COMPLETE, build: optional(buildRouteBlock), css: routeSectionCss },
-  {
-    id: "score-summary",
-    modes: COMPLETE,
-    build: one(buildScoreSummaryBlock),
-    css: scoreSectionCss,
-  },
   { id: "factor-chart", modes: COMPLETE, build: one(buildFactorChartBlock), css: factorChartCss },
   { id: "factors", modes: COMPLETE, build: buildFactorBlocks, css: factorSectionCss },
   { id: "map", modes: COMPLETE, build: one(buildMapBlock), css: mapSectionCss },
   { id: "trend", modes: COMPLETE, build: one(buildTrendBlock), css: trendSectionCss },
   { id: "photos", modes: COMPLETE, build: buildPhotoBlocks, css: photosSectionCss },
+  { id: "summary", modes: SUMMARY, build: buildSummaryBlocks, css: summaryCss },
 ] satisfies PdfSection[])
 
 /** The sections of one export mode, in document order. */

@@ -40,12 +40,16 @@ function parcelsHtml(ids: string[]): string {
   return `<p class="map-legend"><span class="map-legend-label">${escapeHtml(t.parcels)}</span> ${escapeHtml(parcelsText(ids))}</p>`
 }
 
-function card(inner: string, height: number): PdfBlock {
+// Phase 33 (D-03, research lever L2): a drawn figure still opens its page, so that the map and the
+// trend share one page behind it. A block that is only a note (no parcel, no outline) is 53 to 72
+// units tall and follows the factors instead: forcing a page for it left a nearly empty page at
+// the end of a survey with no map (the v3.0 draft fixture went from 4 to 5 pages with the cover).
+function card(inner: string, height: number, startsPage: boolean): PdfBlock {
   return {
     id: "map",
     html: `<section class="map-card">\n${inner}\n</section>`,
     height: HEADING_HEIGHT + height + CARD_MARGIN,
-    breakBefore: true,
+    ...(startsPage ? { breakBefore: true } : {}),
   }
 }
 
@@ -54,6 +58,7 @@ function noGeometryBlock(ids: string[]): PdfBlock {
   return card(
     `${headingHtml()}\n${noteHtml(t.noOutline)}\n${parcelsHtml(ids)}`,
     textHeight(t.noOutline) + textHeight(`${t.parcels} ${parcels}`),
+    false,
   )
 }
 
@@ -65,7 +70,7 @@ function noGeometryBlock(ids: string[]): PdfBlock {
  */
 export function buildMapBlock(data: SurveyExportData, palette: PdfPalette): PdfBlock {
   if (data.parcelIds.length === 0) {
-    return card(`${headingHtml()}\n${noteHtml(t.noParcel)}`, textHeight(t.noParcel))
+    return card(`${headingHtml()}\n${noteHtml(t.noParcel)}`, textHeight(t.noParcel), false)
   }
   const figure = buildMapFigure(data.map, palette)
   if (figure.kind === "noGeometry") return noGeometryBlock(data.parcelIds)
@@ -79,7 +84,7 @@ export function buildMapBlock(data: SurveyExportData, palette: PdfPalette): PdfB
 ${figure.html}
 ${parcelsHtml(data.parcelIds)}
 ${trailingHtml}`
-  return card(inner, figure.frame.height + textHeight(parcelsLine) + textHeight(trailing))
+  return card(inner, figure.frame.height + textHeight(parcelsLine) + textHeight(trailing), true)
 }
 
 /** CSS of the map page; every class is prefixed `map-`, every colour is a palette value. */

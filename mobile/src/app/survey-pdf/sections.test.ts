@@ -24,10 +24,10 @@ function section(id: string): PdfSection {
 describe("PDF_SECTIONS", () => {
   it("lists the sections of the complete document in the order of the sheet", () => {
     expect(sectionsFor("complete").map((entry) => entry.id)).toEqual([
+      "cover",
       "identity",
       "conditions",
       "route",
-      "score-summary",
       "factor-chart",
       "factors",
       "map",
@@ -36,8 +36,15 @@ describe("PDF_SECTIONS", () => {
     ])
   })
 
-  it("holds no section for the summary yet (appended by a later plan)", () => {
-    expect(sectionsFor("summary")).toEqual([])
+  it("holds the summary alone in the summary mode, and none of the complete sections", () => {
+    expect(sectionsFor("summary").map((entry) => entry.id)).toEqual(["summary"])
+    expect(sectionsFor("complete").map((entry) => entry.id)).not.toContain("summary")
+    expect(sectionsFor("summary").map((entry) => entry.id)).not.toContain("cover")
+  })
+
+  it("has no score card entry any more (its content moved to the cover, D-01)", () => {
+    expect(PDF_SECTIONS.map((entry) => entry.id)).not.toContain("score-summary")
+    expect(sectionsFor("complete")[0].id).toBe("cover")
   })
 
   it("has unique ids and only known modes, at least one per section", () => {
@@ -56,13 +63,17 @@ describe("PDF_SECTIONS", () => {
 
   it("hands out a copy: changing the result leaves the registry alone", () => {
     const list = sectionsFor("complete")
+    const before = list.length
     list.pop()
-    expect(sectionsFor("complete")).toHaveLength(PDF_SECTIONS.length)
+    expect(sectionsFor("complete")).toHaveLength(before)
   })
 
   it("keeps the registry order whatever the mode filter", () => {
-    const ids = sectionsFor("complete").map((entry) => entry.id)
-    expect(ids).toEqual(PDF_SECTIONS.map((entry) => entry.id))
+    const registry = PDF_SECTIONS.map((entry) => entry.id)
+    for (const mode of ["complete", "summary"] as const) {
+      const ids = sectionsFor(mode).map((entry) => entry.id)
+      expect(ids).toEqual(registry.filter((id) => ids.includes(id)))
+    }
   })
 })
 
@@ -74,7 +85,8 @@ describe("section builders", () => {
 
   it("prints one block for a section that has something to show", () => {
     expect(section("route").build(exportFixtureWorstCase, palette)).toHaveLength(1)
-    expect(section("score-summary").build(exportFixtureV30Draft, palette)).toHaveLength(1)
+    expect(section("cover").build(exportFixtureV30Draft, palette)).toHaveLength(1)
+    expect(section("summary").build(exportFixtureSummary, palette)).toHaveLength(1)
     expect(section("factor-chart").build(exportFixtureV30Draft, palette)).toHaveLength(1)
     expect(section("map").build(exportFixtureV30Draft, palette)).toHaveLength(1)
     expect(section("trend").build(exportFixtureV30Draft, palette)).toHaveLength(1)

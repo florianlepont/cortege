@@ -147,11 +147,19 @@ describe("buildMapBlock without a parcel", () => {
     expect(block.html).toContain(escapeHtml(t.map.noParcel))
     expect(block.html).not.toContain("<svg")
     expect(block.html).not.toContain("<img")
-    expect(block.breakBefore).toBe(true)
+  })
+
+  it("follows the factors instead of opening a page (a note only, phase 33)", () => {
+    const block = buildMapBlock(makeData({ parcelIds: [], map: null }), palette)
+    expect(block.breakBefore).toBeUndefined()
   })
 })
 
 describe("buildMapBlock without geometry", () => {
+  it("follows the factors instead of opening a page (a note only, phase 33)", () => {
+    expect(buildMapBlock(makeData({ map: null }), palette).breakBefore).toBeUndefined()
+  })
+
   it("lists the escaped parcel ids with the no outline note when the map is null", () => {
     const block = buildMapBlock(makeData({ parcelIds: ["A<b>1", "B&2"], map: null }), palette)
     expect(block.html).toContain(escapeHtml(t.map.noOutline))
