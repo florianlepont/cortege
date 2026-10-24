@@ -90,6 +90,35 @@ describe("fr.surveyExport", () => {
     expect(t.file.fallbackSite).toBe("releve")
   })
 
+  it("words the commune row, the cover and the summary (phase 33)", () => {
+    expect(t.identity.communeValue({ code: "77186", department: "77" })).toBe(
+      "77186 (département 77)",
+    )
+    expect(t.cover.scoreA11y({ points: "32", max: "50" })).toBe("Score IBP : 32 sur 50")
+    expect(t.cover.subscoreA11y({ heading: "Contexte", points: "12", max: "15" })).toBe(
+      "Contexte : 12 sur 15",
+    )
+    expect(t.cover.outOf({ max: "50" })).toBe("/ 50")
+    expect(t.cover.methodWithCas({ version: "v3.2", cas: "2" })).toBe("v3.2, cas 2")
+    expect(t.cover.versionShort.v3_2).toBe("v3.2")
+    expect(t.cover.versionShort.v3_0).toBe("v3.0")
+    expect(t.summary.eyebrow).toBe("Résumé du relevé IBP")
+    expect(t.summary.mapHeading).toBe("Parcelle")
+    expect(t.summary.metaLine({ commune: "77186", parcels: "77186000AB0123", version: "2" })).toBe(
+      "Commune 77186, parcelle 77186000AB0123, version 2",
+    )
+    expect(t.summary.subscores({ stand: "20", context: "12" })).toBe(
+      "20 / 35 peuplement, 12 / 15 contexte",
+    )
+    expect(t.summary.trendUnavailable).toBe(
+      "Évolution de la parcelle non disponible sur cet appareil.",
+    )
+  })
+
+  it("names the summary file with its own ASCII suffix", () => {
+    expect(t.file.summarySuffix).toBe("resume")
+  })
+
   it("has the draft marks", () => {
     expect(t.draft.banner).toBe("Brouillon, non soumis")
     expect(t.draft.watermark).toBe("Brouillon")

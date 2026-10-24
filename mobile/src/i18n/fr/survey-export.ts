@@ -39,8 +39,11 @@ export const surveyExportFr = {
     coordinates: "Coordonnées",
     coordinatesValue: ({ lat, lng }: { lat: string; lng: string }) =>
       `${lat}, ${lng} (WGS 84, système géodésique mondial)`,
+    // Phase 33 (D-04, D-16): one row, the département being the first digits of the commune code.
     commune: "Commune (code officiel géographique)",
     department: "Département",
+    communeValue: ({ code, department }: { code: string; department: string }) =>
+      `${code} (département ${department})`,
     surveyMode: "Mode de relevé",
     cappedMode: "Relevé plafonné, aucun facteur déplafonné",
   },
@@ -222,6 +225,35 @@ export const surveyExportFr = {
         ? `${count} photo n'est pas disponible sur cet appareil.`
         : `${count} photos ne sont pas disponibles sur cet appareil.`,
   },
+  // Phase 33 (UI-SPEC Copywriting, Surface B): the words of the cover only. The cover reuses
+  // `sheetTitle`, `scores.*`, `map.*` and `identity.*`; nothing already above is repeated here.
+  cover: {
+    scoreA11y: ({ points, max }: { points: string; max: string }) =>
+      `Score IBP : ${points} sur ${max}`,
+    subscoreA11y: ({ heading, points, max }: { heading: string; points: string; max: string }) =>
+      `${heading} : ${points} sur ${max}`,
+    outOf: ({ max }: { max: string }) => `/ ${max}`,
+    methodWithCas: ({ version, cas }: { version: string; cas: string }) => `${version}, cas ${cas}`,
+    versionShort: { v3_2: "v3.2", v3_0: "v3.0" },
+  },
+  // Phase 33 (D-07, D-08, D-11): the words of the one-page summary. It never prints
+  // `trend.unavailable`, which is an app instruction (D-18).
+  summary: {
+    eyebrow: "Résumé du relevé IBP",
+    mapHeading: "Parcelle",
+    metaLine: ({
+      commune,
+      parcels,
+      version,
+    }: {
+      commune: string
+      parcels: string
+      version: string
+    }) => `Commune ${commune}, parcelle ${parcels}, version ${version}`,
+    subscores: ({ stand, context }: { stand: string; context: string }) =>
+      `${stand} / ${IBP_MAX.stand} peuplement, ${context} / ${IBP_MAX.context} contexte`,
+    trendUnavailable: "Évolution de la parcelle non disponible sur cet appareil.",
+  },
   page: {
     number: ({ index, total }: { index: string; total: number }) => `Page ${index} / ${total}`,
     generatedAt: ({ date }: { date: string }) => `Généré le ${date}`,
@@ -229,6 +261,8 @@ export const surveyExportFr = {
   file: {
     prefix: "Cortege-IBP",
     draftSuffix: "brouillon",
+    // Phase 33 (D-13): the one-page summary, so it never replaces the complete export.
+    summarySuffix: "resume",
     fallbackSite: "releve",
   },
   footer: (generatedAt: string) => `Généré le ${generatedAt} par l'application Cortège.`,
