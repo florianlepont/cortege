@@ -2,7 +2,8 @@ import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type SurveyRoute } from "@cortege/ibp
 
 import { fr } from "../../i18n"
 import { escapeHtml } from "./html"
-import { buildIdentityBlocks, identityCss, inseeFromParcelId } from "./identity"
+import { buildIdentityBlocks, identityCss, inseeFromParcelId, methodShortText } from "./identity"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportMethodContext, PdfPalette, SurveyExportData } from "./types"
 
@@ -93,12 +94,11 @@ const CAPPED_ROW = `<tr class="identity-row"><th class="identity-caption">${t.id
 
 function build(overrides: Partial<SurveyExportData> = {}) {
   const blocks = buildIdentityBlocks(makeData(overrides), palette)
-  const byId = (id: string) => {
-    const found = blocks.find((block) => block.id === id)
-    if (!found) throw new Error(`no block ${id}`)
-    return found
-  }
-  return { blocks, identity: byId("identity"), method: byId("identity-method") }
+  const identity = blocks[0]
+  // The method part of the merged card: everything after the sub-heading.
+  const marker = '<h3 class="identity-subheading">'
+  const method = { html: identity.html.slice(identity.html.indexOf(marker)) }
+  return { blocks, identity, method }
 }
 
 describe("inseeFromParcelId", () => {
@@ -129,10 +129,21 @@ describe("inseeFromParcelId", () => {
 })
 
 describe("identity block", () => {
-  it("returns the identity block then the method block", () => {
-    const { blocks } = build()
-    expect(blocks.map((block) => block.id)).toEqual(["identity", "identity-method"])
-    for (const block of blocks) expect(block.height).toBeGreaterThan(0)
+  it("returns exactly one block, with the method folded in (UI-SPEC B.6)", () => {
+    const { blocks, identity } = build()
+    expect(blocks.map((block) => block.id)).toEqual(["identity"])
+    expect(identity.height).toBeGreaterThan(0)
+    const html = identity.html
+    const parts = [
+      html.indexOf(`<h2 class="identity-heading">${t.identity.heading}</h2>`),
+      html.indexOf(t.identity.site),
+      html.indexOf('<div class="identity-rule"></div>'),
+      html.indexOf(`<h3 class="identity-subheading">${t.method.heading}</h3>`),
+      html.indexOf(t.method.version),
+    ]
+    expect(parts.every((index) => index >= 0)).toBe(true)
+    expect(parts).toEqual([...parts].sort((a, b) => a - b))
+    expect(html.split("<section").length - 1).toBe(1)
   })
 
   it("lists site, parcels, commune, year, version, date, observer, coordinates, mode", () => {
@@ -140,7 +151,9 @@ describe("identity block", () => {
     const html = identity.html
     expect(html).toContain(t.identity.heading)
     expect(html).toContain("Forêt de test")
-    expect(html).toContain("77186000AB0123, 77186000AB0124")
+    expect(html).toContain(
+      '<span class="identity-nowrap">77186000AB0123</span>, <span class="identity-nowrap">77186000AB0124</span>',
+    )
     expect(html).toContain(t.identity.commune)
     expect(html).toContain("77186 (département 77)")
     expect(html).toContain("2026")
@@ -162,8 +175,9 @@ describe("identity block", () => {
       identity.html.indexOf(t.identity.date),
     )
     expect(identity.html).toContain("</td></tr></table>")
-    expect(identity.html.endsWith(`${t.identity.cappedMode}</td></tr></table>\n</section>`)).toBe(
-      true,
+    // The identity table ends with it, right before the rule of the method part.
+    expect(identity.html).toContain(
+      `${t.identity.cappedMode}</td></tr></table>\n<div class="identity-rule"></div>`,
     )
   })
 
@@ -175,15 +189,19 @@ describe("identity block", () => {
     // The rest of the card is the same text, one row (6 + 13) shorter.
     expect(withoutRoute.html.replace(CAPPED_ROW, "")).toBe(withRoute.html)
     expect(withRoute.height).toBe(withoutRoute.height - 19)
-    // The method block does not depend on the route.
+    // The method part does not depend on the route.
     expect(build({ route: ROUTE }).method).toEqual(build({ route: null }).method)
   })
 
   it("prints one Commune row and no separate Département row", () => {
     const { identity } = build()
     expect(identity.html).not.toContain(">Département<")
-    expect(identity.html.split('class="identity-caption"').length - 1).toBe(9)
-    const captions = [...identity.html.matchAll(/<th class="identity-caption">([^<]*)<\/th>/g)].map(
+    const identityPart = identity.html.slice(
+      0,
+      identity.html.indexOf('<div class="identity-rule">'),
+    )
+    expect(identityPart.split('class="identity-caption"').length - 1).toBe(9)
+    const captions = [...identityPart.matchAll(/<th class="identity-caption">([^<]*)<\/th>/g)].map(
       (match) => match[1],
     )
     expect(captions).toEqual([
@@ -255,15 +273,37 @@ describe("identity block", () => {
   })
 
   it("counts one line for the 78 character v3.2 cas row and the 64 character site name", () => {
-    const { method, identity } = build({
+    const { identity } = build({
       method: { ...V32, ibpCas: 1 },
       siteName: "Foret domaniale des trois parcelles de la grande colline du nord",
     })
-    const oneLineRow = 6 + 13
-    // card padding 20, heading 24, margin 10, two rows of one line (version, cas)
-    expect(method.height).toBe(20 + 24 + 10 + 2 * oneLineRow)
     // the same card with a site name of 64 characters is not taller than with a short one
     expect(identity.height).toBe(build({ method: { ...V32, ibpCas: 1 } }).identity.height)
+  })
+
+  it("estimates the merged card as padding, heading, rows, rule, sub-heading, rows, margin", () => {
+    const oneLineRow = 6 + 13
+    // Valid parcel id (Commune row), a route (no Mode de relevé row): site, parcels, commune,
+    // year, version, date, observer, coordinates = 8 identity rows; v3.2 cas 1 = 2 method rows.
+    const { identity } = build({ route: ROUTE, parcelIds: ["77186000AB0123"] })
+    expect(identity.height).toBe(20 + 24 + 8 * oneLineRow + 1 + 24 + 2 * oneLineRow + 10)
+  })
+
+  it("is 29 units shorter than the two cards it replaces (UI-SPEC B.6)", () => {
+    const oneLineRow = 6 + 13
+    const { identity } = build({ route: ROUTE, parcelIds: ["77186000AB0123"] })
+    const oldIdentityCard = 20 + 24 + 8 * oneLineRow + 10
+    const oldMethodCard = 20 + 24 + 2 * oneLineRow + 10
+    expect(oldIdentityCard + oldMethodCard - identity.height).toBe(29)
+  })
+
+  it("counts the joined text of the parcel ids for the estimate", () => {
+    // 5 ids of 14 characters joined by ", " are 78 characters: one line. 6 ids are 94: two lines.
+    const ids = (count: number) =>
+      Array.from({ length: count }, (_, i) => `77186000AB${String(i).padStart(4, "0")}`)
+    const five = build({ parcelIds: ids(5) }).identity.height
+    const six = build({ parcelIds: ids(6) }).identity.height
+    expect(six - five).toBe(13)
   })
 
   it("grows with long parcel lists", () => {
@@ -273,7 +313,28 @@ describe("identity block", () => {
   })
 })
 
-describe("method block", () => {
+describe("methodShortText", () => {
+  it("reads v3.2 with its cas", () => {
+    expect(methodShortText({ ...V32, ibpCas: 2 })).toBe("v3.2, cas 2")
+    expect(methodShortText({ ...V32, ibpCas: 4 })).toBe("v3.2, cas 4")
+  })
+
+  it("reads v3.2 alone without a usable cas", () => {
+    expect(methodShortText({ ...V32, ibpCas: null })).toBe("v3.2")
+    expect(methodShortText({ ...V32, ibpCas: 7 as unknown as number })).toBe("v3.2")
+  })
+
+  it("reads v3.0 for a v3.0 or an untagged survey", () => {
+    expect(methodShortText(V30)).toBe("v3.0")
+    expect(methodShortText({ ...V30, version: null })).toBe("v3.0")
+  })
+
+  it("reads the unknown text for an unsupported tag", () => {
+    expect(methodShortText({ ...V30, version: "cnpf_future" })).toBe(t.identity.unknown)
+  })
+})
+
+describe("method part of the identity card", () => {
   it("shows the v3.2 label, the cas and its caption", () => {
     const { method } = build({ method: { ...V32, ibpCas: 3 } })
     expect(method.html).toContain(t.method.heading)
@@ -348,6 +409,12 @@ describe("escaping", () => {
     expect(identity.html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;")
   })
 
+  it("escapes each parcel id before it is wrapped in a nowrap span", () => {
+    const { identity } = build({ parcelIds: ['a"<b>', "77186000AB0123"] })
+    expect(identity.html).toContain('<span class="identity-nowrap">a&quot;&lt;b&gt;</span>')
+    expect(identity.html).not.toContain("<b>")
+  })
+
   it("escapes quotes in the observer name", () => {
     const { identity } = build({ observerName: '"onerror=x' })
     expect(identity.html).toContain("&quot;onerror=x")
@@ -377,6 +444,16 @@ describe("identityCss", () => {
     expect(css).toContain(PDF_FONT_FAMILIES.body)
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     expect(css).not.toMatch(/rgba?\(/)
+  })
+
+  it("draws the section title, the radius 12 card, the sub-heading, the rule and the nowrap id", () => {
+    expect(css).toContain(sectionTitleCss(".identity-heading", palette))
+    expect(css).toMatch(/\.identity-card \{[^}]*border-radius: 12px/)
+    expect(css).toMatch(
+      /\.identity-subheading \{[^}]*font-family: [^;]*Sora[^;]*; font-size: 11px; line-height: 24px; color: ink;/,
+    )
+    expect(css).toMatch(/\.identity-rule \{[^}]*border-top: 1px solid line;/)
+    expect(css).toContain(".identity-nowrap { white-space: nowrap; }")
   })
 
   it("uses no CSS columns", () => {

@@ -7,11 +7,13 @@ import {
 
 import { fr } from "../../i18n"
 import { escapeHtml, formatCoordinate, formatDateFr } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportMethodContext, PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
-// The identity and method blocks that open the sheet (phase 25.1, D-03, D-04): what the CNPF sheet
-// header carries and the app knows. Pure: values come from `SurveyExportData` and the catalogue,
+// The identity block that opens the sheet (phase 25.1, D-03, D-04; phase 33, D-01, UI-SPEC B.6): what
+// the CNPF sheet header carries and the app knows, with the method rows folded in as a second part
+// of the same card. Pure: values come from `SurveyExportData` and the catalogue,
 // every text goes through `escapeHtml`, and an unknown value reads "Non renseigné", never a dash.
 
 const t = fr.surveyExport
@@ -24,6 +26,11 @@ type Row = { caption: string; valueHtml: string; chars: number }
 const CARD_PADDING = 20 // 10 top and 10 bottom
 const CARD_HEADING = 24
 const CARD_MARGIN = 10
+// UI-SPEC B.6: the method rows sit in the same card under a 1 unit rule and an 11 / 24 sub-heading.
+// The padding, margin and heading of the old method card (20 + 10 + 24 = 54) are saved, minus these
+// two (1 + 24 = 25): the merged card is 29 units shorter than the two cards it replaces.
+const RULE_HEIGHT = 1
+const SUBHEADING_HEIGHT = 24
 const ROW_PADDING = 6 // 3 top and 3 bottom
 const ROW_LINE_HEIGHT = 13
 // 515 content - 20 padding - 150 caption column leaves 345 px at 9 px Jost, about 3.7 pt per
@@ -75,25 +82,50 @@ function rowHeight(row: Row): number {
   return ROW_PADDING + lines * ROW_LINE_HEIGHT
 }
 
-function cardBlock(id: string, heading: string, rows: Row[]): PdfBlock {
+function tableHtml(rows: Row[]): string {
+  return `<table class="identity-table">${rows.map(rowHtml).join("")}</table>`
+}
+
+function rowsHeight(rows: Row[]): number {
+  return rows.reduce((sum, row) => sum + rowHeight(row), 0)
+}
+
+function identityBlock(data: SurveyExportData): PdfBlock {
+  const identity = identityRows(data)
+  const method = methodRows(data.method)
   const html = `<section class="identity-card">
-<h2 class="identity-heading">${escapeHtml(heading)}</h2>
-<table class="identity-table">${rows.map(rowHtml).join("")}</table>
+<h2 class="identity-heading">${escapeHtml(t.identity.heading)}</h2>
+${tableHtml(identity)}
+<div class="identity-rule"></div>
+<h3 class="identity-subheading">${escapeHtml(t.method.heading)}</h3>
+${tableHtml(method)}
 </section>`
   const height =
-    CARD_PADDING + CARD_HEADING + rows.reduce((sum, row) => sum + rowHeight(row), 0) + CARD_MARGIN
-  return { id, html, height }
+    CARD_PADDING +
+    CARD_HEADING +
+    rowsHeight(identity) +
+    RULE_HEIGHT +
+    SUBHEADING_HEIGHT +
+    rowsHeight(method) +
+    CARD_MARGIN
+  return { id: "identity", html, height }
+}
+
+// Each id is escaped, then wrapped so that a line break only falls between two ids (B.6).
+function parcelsRow(parcelIds: string[]): Row {
+  if (parcelIds.length === 0) return textRow(t.identity.parcels, t.identity.noParcel)
+  return {
+    caption: t.identity.parcels,
+    valueHtml: parcelIds
+      .map((id) => `<span class="identity-nowrap">${escapeHtml(id)}</span>`)
+      .join(", "),
+    chars: parcelIds.join(", ").length,
+  }
 }
 
 function identityRows(data: SurveyExportData): Row[] {
   const unknown = t.identity.unknown
-  const rows: Row[] = [
-    textRow(t.identity.site, data.siteName),
-    textRow(
-      t.identity.parcels,
-      data.parcelIds.length > 0 ? data.parcelIds.join(", ") : t.identity.noParcel,
-    ),
-  ]
+  const rows: Row[] = [textRow(t.identity.site, data.siteName), parcelsRow(data.parcelIds)]
   const insee = data.parcelIds.length > 0 ? inseeFromParcelId(data.parcelIds[0]) : null
   if (insee) {
     rows.push(
@@ -172,20 +204,38 @@ function methodRows(method: ExportMethodContext): Row[] {
   return rows
 }
 
-/** The identity block, then the method context block (cas for v3.2, region and stage for v3.0). */
+/**
+ * The method in a few words for the cover: "v3.2, cas 2", "v3.2", "v3.0" (also an untagged
+ * survey) or the unknown text for an unsupported tag. The version rules stay the package's.
+ */
+export function methodShortText(method: ExportMethodContext): string {
+  const resolved = resolveMethodVersion(method.version)
+  if (resolved === IBP_METHOD_V3_2) {
+    const version = t.cover.versionShort.v3_2
+    const cas = method.ibpCas
+    if (cas === 1 || cas === 2 || cas === 3 || cas === 4) {
+      return t.cover.methodWithCas({ version, cas: String(cas) })
+    }
+    return version
+  }
+  if (resolved === IBP_METHOD_V3_0) return t.cover.versionShort.v3_0
+  return t.identity.unknown
+}
+
+/** The merged identity block: identity rows, then the method rows (cas for v3.2, region and stage for v3.0). */
 export function buildIdentityBlocks(data: SurveyExportData, _palette: PdfPalette): PdfBlock[] {
-  return [
-    cardBlock("identity", t.identity.heading, identityRows(data)),
-    cardBlock("identity-method", t.method.heading, methodRows(data.method)),
-  ]
+  return [identityBlock(data)]
 }
 
 /** CSS of the identity blocks; every class is prefixed `identity-`, every colour is a palette value. */
 export function identityCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
-.identity-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
-.identity-heading { margin: 0; height: ${CARD_HEADING}px; font-family: ${font.heading}; font-size: 11px; line-height: ${CARD_HEADING}px; color: ${palette.ink}; }
+.identity-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; }
+${sectionTitleCss(".identity-heading", palette)}
+.identity-subheading { margin: 0; height: ${SUBHEADING_HEIGHT}px; font-family: ${font.heading}; font-size: 11px; line-height: ${SUBHEADING_HEIGHT}px; color: ${palette.ink}; }
+.identity-rule { height: 0; border-top: ${RULE_HEIGHT}px solid ${palette.line}; }
+.identity-nowrap { white-space: nowrap; }
 .identity-table { width: 100%; border-collapse: collapse; }
 .identity-row { vertical-align: top; }
 .identity-caption { width: 150px; padding: 3px 8px 3px 0; text-align: left; font-family: ${font.label}; font-size: 8.5px; line-height: ${ROW_LINE_HEIGHT}px; font-weight: normal; color: ${palette.inkMuted}; }
