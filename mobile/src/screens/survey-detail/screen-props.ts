@@ -6,6 +6,7 @@ import {
   SurveyEventItem,
   VegetationStage,
 } from "../../app/types"
+import type { SurveyExportRequest } from "../../navigation/types"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import type { HeaderNavigation } from "./useSurveyDetailHeader"
 import type { PulseNavigation } from "./useVisiblePulse"
@@ -52,6 +53,12 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onOpenHistory: () => void
   /** Opens "Journal du relevé" from the "…" menu (D-02); stable, the header items capture it. */
   onOpenJournal: () => void
+  /** The PDF chosen in the export choice sheet, applied once per nonce (phase 33). */
+  exportRequest?: SurveyExportRequest
+  /** Opens the export choice sheet for this survey (phase 33). */
+  onOpenExportChoice: (surveyId: string) => void
+  /** Clears the request parameter once it is taken. */
+  onExportRequestHandled: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
 }

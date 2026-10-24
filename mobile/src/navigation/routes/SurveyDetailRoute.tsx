@@ -22,6 +22,7 @@ import { SelectedSurveyGate } from "./SelectedSurveyGate"
  */
 export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   navigation,
+  route,
 }: SurveyDetailRouteProps) {
   const { state: session } = useSession()
   const accessToken = useAccessToken()
@@ -47,6 +48,14 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   )
   const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
   const onOpenJournal = useLatestCallback(() => navigation.navigate("surveyJournal"))
+  // Phase 33 (D-05, D-14): "Partager" opens the export choice sheet; its answer comes back as the
+  // `exportRequest` parameter, which the screen applies once and this route then clears.
+  const onOpenExportChoice = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyExportChoice", { surveyId }),
+  )
+  const onExportRequestHandled = useLatestCallback(() =>
+    navigation.setParams({ exportRequest: undefined }),
+  )
   const onSimulateMissingAttachmentFile = useMemo(
     () => devOnlyHandler(syncActions.handleSimulateMissingAttachmentFile),
     [syncActions],
@@ -85,6 +94,9 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
             onOpenFactor={onOpenFactor}
             onOpenHistory={onOpenHistory}
             onOpenJournal={onOpenJournal}
+            exportRequest={route.params?.exportRequest}
+            onOpenExportChoice={onOpenExportChoice}
+            onExportRequestHandled={onExportRequestHandled}
             onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
             onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
           />
