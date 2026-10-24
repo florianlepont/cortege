@@ -3,6 +3,7 @@ import { __resetMockFileSystem, __setMockFile } from "../../test/expo-file-syste
 import { exportFixtureV32Submitted } from "../../test/survey-export-fixtures"
 import * as facade from "./survey-pdf-export"
 import { buildSurveyExportHtml as buildHtml } from "./survey-pdf/build-html"
+import { estimateCompletePages } from "./survey-pdf/page-estimate"
 import { exportAndShareSurveyPdf, shareSurveyExportPdf } from "./survey-pdf/run-export"
 import type { RunExportDeps } from "./survey-pdf/run-export"
 import type { SurveyExportInput } from "./survey-pdf/types"
@@ -40,11 +41,13 @@ describe("survey-pdf-export facade", () => {
     expect(facade.exportAndShareSurveyPdf).toBe(exportAndShareSurveyPdf)
     expect(facade.shareSurveyExportPdf).toBe(shareSurveyExportPdf)
     expect(facade.buildSurveyExportHtml).toBe(buildHtml)
+    expect(facade.estimateCompletePages).toBe(estimateCompletePages)
   })
 
-  test("exports nothing else: three functions (and three types, erased)", () => {
+  test("exports nothing else: four functions (and three types, erased)", () => {
     expect(Object.keys(facade).sort()).toEqual([
       "buildSurveyExportHtml",
+      "estimateCompletePages",
       "exportAndShareSurveyPdf",
       "shareSurveyExportPdf",
     ])
