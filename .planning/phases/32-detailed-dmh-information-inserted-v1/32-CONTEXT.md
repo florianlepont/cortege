@@ -26,15 +26,18 @@ While recording factor F, the observer reaches detailed identification informati
 - **D-05:** Navigation entries live in the survey stack (typed in `navigation/types.ts`), never in the map screens. Screen files respect the 400-line cap (`structure.test.ts`).
 
 ### Content
-- **D-06:** Short text plus illustrations (owner, corrected 2026-10-23). Per group: definition, how to identify it, frequent confusions, the WSL types attached to the group, and an image per group or type. Crossing IBP and WSL means each of the 15 IBP groups lists its WSL types. Images are embedded offline; their licence is checked like the text (D-01), and app size is budgeted in the plan. If the images are not reusable, fall back to text only (D-02) and flag it to the owner.
+- **D-06:** Short text plus illustrations (owner). Per group: definition, how to identify it, frequent confusions, the WSL types attached to the group, and one original drawing. Crossing IBP and WSL means each of the 15 IBP groups lists its WSL types. Amended 2026-10-24 by D-11.
 - **D-07:** All strings go through the typed `fr` catalogue (new module under `mobile/src/i18n/fr/`), no em dash (U+2014), abbreviations written out or explained (`AbbreviationInfo`). The group labels stay those of `factorInput.dmhGroupOptions`.
 
 ### Faster recording
 - **D-08:** Owner-chosen levers (2026-10-23): (a) +/- counters directly on the group row, (b) search and grouping of the 15 groups by form, (c) frequent or already ticked groups first. A timed baseline on a real survey comes first, so the plan can drop a lever that does not help. Hard constraints: the stored payload is unchanged, the capped score is unchanged (parity cases untouched), and the speed gain is measured on a real survey (timed before and after, protocol written in the plan).
 
 ### Licence outcome and counters (owner, 2026-10-23, after research)
-- **D-09:** Research found the WSL pocket guide (2024) carries only "© WSL 2024", no reuse licence, photos by 7 creators. So texts are our own wording with sources cited (D-02 applies), and no WSL image is embedded without written permission. Owner choice: illustrations are original drawings owned by the association (not WSL photos). The plan treats the drawings as a deliverable with its own lead time: the guide ships text-first and the drawings slot in per group when delivered. Who produces them (commission or in-house) is an open item for the owner.
+- **D-09:** Research found the WSL pocket guide (2024) carries only "(c) WSL 2024", no reuse licence, photos by 7 creators. So texts are our own wording with sources cited (D-02 applies) and no WSL image is embedded. The drawings are the association's own (D-11).
 - **D-10:** The +/- counter on the group row exists only when the recorded route counts F in full (the only case where `dmh_counts` is stored); in capped mode the tick stays. Going down to 0 leaves the group ticked. No stored data changes.
+
+### Drawings as animated SVG (owner, 2026-10-24)
+- **D-11:** The 15 drawings (one per IBP group) are drawn by the assistant for the association, original work, no WSL material. Style approved by the owner from three pilots (line drawing, 800x600, round caps; stroke widths 4, 5, 6, 9 and 12, dots as zero-length strokes, rotated ellipses accepted by the converter). They ship as SVG path data in the app (react-native-svg, already installed) and are drawn stroke by stroke once when the group page opens; instant under Reduce Motion; no loop; stroke colour from the theme, so no paper tile. SVG sources: `drawings/` in this phase folder. A domain expert must check each drawing for identification accuracy before release (sign-off with the content spec, plan 32-09).
 
 ### Claude's Discretion
 - Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone.

@@ -1,8 +1,8 @@
 # Phase 32: Detailed DMH Information - Pattern Map
 
-**Mapped:** 2026-10-23
-**Files analyzed:** 20 (new and modified, from UI-SPEC "Implementation notes", CONTEXT and RESEARCH)
-**Analogs found:** 19 / 20 (paths relative to `mobile/src/`)
+**Mapped:** 2026-10-23 (drawings rows revised 2026-10-24: vector path data and a one-shot stroke animation replace bundled images and the paper tile)
+**Files analyzed:** 23 (new and modified, from UI-SPEC "Implementation notes", CONTEXT and RESEARCH)
+**Analogs found:** 22 / 23 (paths relative to `mobile/src/`, except `mobile/scripts/`)
 
 ## File Classification
 
@@ -13,20 +13,23 @@
 | `app/dmh-guide/structure.ts` (forms to groups, types) | utility | transform | `app/factor-selections.ts` (`selectionOptionsFor`) | role |
 | `app/dmh-guide/order.ts` (`orderDmhRows`) | utility | transform (pure) | `app/parcel-history.ts` / `route-display.ts` (pure, tested) | role |
 | `app/dmh-guide/search.ts` | utility | transform | `app/search-text.ts` (`foldSearchText`, `normalizeSearchQuery`) | exact |
-| `app/dmh-guide/images.ts` (drawing registry, may be empty) | config | static | none for assets (see No Analog) | none |
-| `__checks__/dmh-assets.test.ts` (byte budget gate) | test | file-I/O | `__checks__/icons.test.ts` (fs walk, line 177) | role |
+| `app/dmh-guide/drawing-geometry.ts` (path parse, normalise, length; no import) | utility | transform (pure) | `map/wipe-geometry.ts` (pure, import-free), `app/trend-geometry.ts` (lengths for the dash reveal) | role |
+| `mobile/scripts/build-dmh-drawings.mjs` (SVG sources to TS module) | script | batch | `mobile/scripts/remove-white-bg.mjs` (ESM asset script) | role |
+| `app/dmh-guide/drawings.ts` (generated path data, 15 entries) | config | static | none for generated vector data (see No Analog) | none |
+| `__checks__/dmh-drawings.test.ts` (drawings gate) | test | file-I/O | `__checks__/icons.test.ts` (fs read, line 177), `structure.test.ts` (fixtures) | role |
+| `app/dmh-guide/drawing-motion.ts` (`drawingTimeline`, worklet `strokeReveal`) | utility | transform (pure) | `map/wipe-geometry.ts`, `app/forest-motion.ts` (worklet helpers, tested) | role |
 | `hooks/useSurveyForm.ts` (+ `bumpDmhGroup`) | hook | CRUD (form state) | same file `setDmhCount` lines 510-518 | exact |
 | `screens/factor-detail/DmhGroupList.tsx`, `DmhGroupRow.tsx` | component | request-response | `screens/factor-detail/DmhCountFields.tsx` | role |
 | `screens/factor-detail/DmhCountFields.tsx` (modified: rows removed) | component | CRUD | itself | exact |
 | `screens/factor-detail/renderFactorField.tsx` (extract) | component | transform | `screens/FactorDetailScreen.tsx` lines 275-345 | exact |
 | `ui/DmhCounterStepper.tsx` | component | event-driven | `ui/FactorCounterInput.tsx` (hold-repeat engine) | exact |
-| `ui/DmhIllustration.tsx` | component | static | `ui/AbbreviationInfo.tsx` (small ui primitive) | partial |
+| `ui/DmhDrawing.tsx` | component | event-driven (one-shot motion) | `screens/survey-detail/TrendCurve.tsx` dash mode (`RunPath`, lines 40-125) and `ui/ScoreRing.tsx` | exact |
 | `screens/dmh-guide/*` (Screen, Catalogue, GroupPage, SourcesPage, styles) | component | request-response | `screens/FactorHelpSheet.tsx` + `screens/route-guide/RouteChooseScreen.tsx` | role |
 | `navigation/routes/DmhGuideRoute.tsx` | route | request-response | `navigation/routes/FactorHelpRoute.tsx`, `RouteGuideRoute.tsx` | exact |
 | `navigation/stacks/stack-options.ts` (+ `dmhGuideScreenOptions`) | config | static | `finishSheetScreenOptions` lines 188-196 | exact |
 | `navigation/stacks/SurveysStack.tsx` | config | static | `surveyRouteChoose` registration lines 249-255 | exact |
 | `navigation/types.ts` | config | static | `surveyRouteChoose` line 88, alias line 197 | exact |
-| `app/theme-visual.ts` (`visual.illustration`) + `visual-tokens.test.ts` | config | static | `mapControl` token (type line 100, value line 287) | exact |
+| `visual-tokens.test.ts` (drawing ink on the glass card) | test | static | the "success and danger text on the glass card" pair (line 291) | exact |
 | `FactorDetailRoute.tsx` (prop `onOpenDmhGuide`) | route | request-response | line 101 `navigation.navigate("surveyFactorHelp", ...)` | exact |
 
 ## Pattern Assignments
@@ -77,7 +80,7 @@ const withCompanion = (input: ReactElement): ReactElement | ReactElement[] =>
 **Analog:** `app/factor-selections.ts` (typed `DmhGroupCode` option tables). Use `Record<DmhGroupCode, ...>` so a missing group is a compile error; form ids partition the 15 groups (table in UI-SPEC S1.2).
 
 ### `i18n/fr/dmh-guide.ts`
-**Analog:** `i18n/fr/route-guide.ts` (`routeGuideFr`, exported and wired in `i18n/fr/index.ts` as `routeGuide: routeGuideFr`, imports at line 26). Add `import { dmhGuideFr } from "./dmh-guide"` and `dmhGuide: dmhGuideFr` to the `fr` object. Skeleton is in UI-SPEC "Catalogue skeleton". Gates (no edit to POLICY): `__checks__/catalogue-dash.test.ts`, `abbreviations.test.ts` (no DMH, WSL, CNPF, INRAE; units cm, cm2, ha OK), `icons.test.ts` (outline glyphs; confirm `book-outline` and `image-outline` exist in the installed glyph map), `structure.test.ts` (all literals under `src/i18n`).
+**Analog:** `i18n/fr/route-guide.ts` (`routeGuideFr`, exported and wired in `i18n/fr/index.ts` as `routeGuide: routeGuideFr`, imports at line 26). Add `import { dmhGuideFr } from "./dmh-guide"` and `dmhGuide: dmhGuideFr` to the `fr` object. Skeleton is in UI-SPEC "Catalogue skeleton". Gates (no edit to POLICY): `__checks__/catalogue-dash.test.ts`, `abbreviations.test.ts` (no DMH, WSL, CNPF, INRAE; units cm, cm2, ha OK), `icons.test.ts` (outline glyphs; confirm `book-outline` exists in the installed glyph map), `structure.test.ts` (all literals under `src/i18n`).
 
 ### `navigation/stacks/stack-options.ts` (`dmhGuideScreenOptions`)
 **Analog:** `finishSheetScreenOptions`, lines 188-196 (sheet, no header, 0.65 and 1 detents, exactly what UI-SPEC S2 asks):
@@ -114,11 +117,14 @@ Validate `route.params?.group` against the known codes; fall back to the catalog
 ### `screens/dmh-guide/DmhGuideScreen.tsx` and siblings
 **Analog:** `screens/FactorHelpSheet.tsx` lines 20-50: one `ScrollView` with `contentInsetAdjustmentBehavior="never"`, the header row as first scroll item (finding: header outside the scroll view is drawn under text in the iOS form sheet), close button `AppPressable` + `Ionicons name="close-outline"` with `accessibilityLabel`. Styles via `createDetailStyles(theme)` pattern (`screens/factor-detail.styles`), so make a `dmh-guide.styles.ts` with `createDmhGuideStyles(theme)`. Local view state `catalogue | group | sources`, files under 400 lines each (`structure.test.ts`). Notice blocks: `AppNotice tone="info"`; cards: `AppCard variant="glass"`; grouped catalogue: `AppGroupedList` / `AppSectionHeader`.
 
-### `app/theme-visual.ts` (`visual.illustration`)
-**Analog:** `mapControl` (type at line 100: `mapControl: { glass; hairline; icon; text; textMuted }`; value at line 287 built from a per-scheme table in `app/visual-tokens.ts`, e.g. `mapControlGlass[scheme]`). Add `illustration: { paper: string; ink: string }`, define literals in `visual-tokens.ts` (only the five token files may hold hex), and add the contrast pairs (ink on paper 4.5:1, tile edge 3:1) to `app/visual-tokens.test.ts` for both schemes.
+### `ui/DmhDrawing.tsx` (one-shot stroke drawing)
+**Analog:** `screens/survey-detail/TrendCurve.tsx`, dash mode. `RunPath` (lines 62-79) is the per-stroke child: `Animated.createAnimatedComponent(Path)`, `strokeDasharray={[length, length]}`, `useAnimatedProps(() => ({ strokeDashoffset: length * (1 - progress.value) }))`. The one-shot timing (lines 99-118): `useSharedValue(reduced ? 1 : 0)`, a `started` ref, `useScreenVisible()`, `withDelay(..., withTiming(1, { duration, easing: Easing.bezier(...), reduceMotion: ReduceMotion.System }))`; Reduce Motion sets 1 and schedules nothing. Tests: `TrendCurve.test.tsx` spies on `withTiming` and `withDelay` (lines 53-59) and asserts one timing, no replay and the reduced-motion first frame (lines 219-320). Differences for the drawing: one window per stroke (`drawingTimeline`), `strokeReveal` also returns `strokeOpacity` so a waiting stroke shows no round-cap dot, stroke `colors.textPrimary`, data from `drawingFor(code)`. No tile, no new token: the existing glass card is the background; add the ink pair to `visual-tokens.test.ts` beside the success and danger pair (line 291).
 
-### `__checks__/dmh-assets.test.ts`
-**Analog:** `__checks__/icons.test.ts` (fs walking, `fs.statSync(target).isFile()`, line 177). No existing byte-budget test; use `fs.statSync(file).size`, sum under 3 MB, each under 80 kB, every registry entry has credit and alt, zero images valid.
+### `app/dmh-guide/drawing-geometry.ts` and `mobile/scripts/build-dmh-drawings.mjs`
+**Analog:** `map/wipe-geometry.ts` (pure, no import, header comment, colocated test) and `app/trend-geometry.ts` lines 57-66 (lengths computed in JS because react-native-svg has no `getTotalLength`). The geometry module has no import so the `.mjs` converter can load it through Node's type stripping (Node 22.18+ default; `--experimental-strip-types` before). The converter follows `mobile/scripts/remove-white-bg.mjs` (ESM, paths from `import.meta.url`); it is run by hand, not by CI; the gate checks its output.
+
+### `__checks__/dmh-drawings.test.ts`
+**Analog:** `__checks__/icons.test.ts` (fs reads, line 177) and the fixture style of `structure.test.ts`. Rules: 15 group codes, frame 800 x 600, widths from `DMH_DRAWING_STROKE_WIDTHS` (4, 5, 6, 9, 12), every path parses as one subpath, lengths fresh, 8 KiB of path data per drawing, 80 KiB module (`fs.statSync(file).size`), no colour in the module; plan 32-12 adds an alt sentence per drawing.
 
 ## Shared Patterns
 
@@ -133,8 +139,7 @@ Validate `route.params?.group` against the known codes; fall back to the catalog
 
 | File | Role | Reason |
 |---|---|---|
-| `app/dmh-guide/images.ts` | config | No bundled illustration registry exists. Use RESEARCH/UI-SPEC S5 (`require` map under `mobile/assets/dmh/`, credit and alt per entry); `mobile/assets/` has only animals, auth, fonts, herbier, models, tabs, logo-app.png (`herbier` or `animals` may show how images are required; not read). |
-| `ui/DmhIllustration.tsx` | component | No `expo-image` tile with paper token; build from UI-SPEC S5 (partial analog: `ui/AbbreviationInfo.tsx` for primitive layout). |
+| `app/dmh-guide/drawings.ts` | config | No generated vector data module exists. Shape in UI-SPEC S5 (`DMH_DRAWINGS` keyed by `DmhGroupCode`, strokes `{ d, width, length }`); written by the converter, never by hand. Keys must avoid `label`, `title`, `description` (the literal gate of `scripts/structure-report.js` reads them as user text). |
 
 ## Metadata
 
