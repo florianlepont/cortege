@@ -20,9 +20,6 @@ export const PDF_PAGE = { width: 595, height: 842 } as const
 // a device yet (RC-05 in docs/user-tests/device-checks.md).
 export const PDF_PAGE_BLOCK_HEIGHT = 840
 
-/** Share of a page block that the greedy packer of `paginate.ts` may fill (RESEARCH, not measured). */
-export const PDF_PAGE_FILL_FACTOR = 0.9
-
 /**
  * Scale applied once on the root, so that 595 design px fill the 595 pt page. A CSS px prints as
  * 0.8008 pt on iOS (100 px = 80.08 pt, same on iPhone 18 Pro and Pro Max, with or without a
@@ -36,18 +33,24 @@ export function pdfLayoutFor(platform: "ios" | "android"): PdfLayout {
 }
 
 /**
- * Photos in the PDF: 24 of 24 present, JPEG kept by both engines, PDF 2.8 to 3.0 MB on iOS and 1.7
- * to 1.8 MB on Android, about 282 ppi in the 255 px cell (measured 2026-10-10 in the simulator and
- * the emulator, 24 distinct photos).
+ * Photos in the PDF (phase 33, D-17): a trial of a lighter encoding, a 640 px long edge at JPEG
+ * quality 0.6, about 181 to 230 ppi in the 255 unit cell. The measurement of 2026-10-10 for 800 px
+ * at 0.65 gave 2.8 to 3.0 MB on iOS and 1.7 to 1.8 MB on Android for 24 photos (24 of 24 present,
+ * JPEG kept by both engines, about 282 ppi). Plan 33-14 measures the trial on devices and fixes
+ * the numbers.
  */
 export const PHOTO_EXPORT_SETTINGS: PhotoExportSettings = {
   cap: 24,
-  longEdgePx: 800,
-  jpegQuality: 0.65,
+  longEdgePx: 640,
+  jpegQuality: 0.6,
 }
 
-/** Frame of the map snapshot and of its SVG overlay, aligned on both platforms (2026-10-10). */
-export const MAP_FRAME_SIZE = { width: 515, height: 340 } as const
+/**
+ * Frame of the map snapshot and of its SVG overlay of the complete PDF (phase 33, D-12): 250 high
+ * so that the map and the trend share a page. The 340 high frame was aligned on both platforms on
+ * 2026-10-10; the 250 frame is re-measured for overlay alignment by plan 33-14.
+ */
+export const MAP_FRAME_SIZE = { width: 515, height: 250 } as const
 
 /**
  * Frame of the map snapshot of the one-page summary (phase 33, UI-SPEC B.10 zone Z3). Not measured

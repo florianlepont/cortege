@@ -5,7 +5,6 @@ import {
   PDF_LAYOUT_SCALE,
   PDF_PAGE,
   PDF_PAGE_BLOCK_HEIGHT,
-  PDF_PAGE_FILL_FACTOR,
   PHOTO_EXPORT_SETTINGS,
   SUMMARY_MAP_FRAME_SIZE,
   pdfLayoutFor,
@@ -16,7 +15,6 @@ describe("export settings (measured in plan 25.1-07, approved 2026-10-10)", () =
     expect(PDF_PAGE).toEqual({ width: 595, height: 842 })
     expect(PDF_PAGE_BLOCK_HEIGHT).toBe(840)
     expect(PDF_PAGE_BLOCK_HEIGHT).toBeLessThan(PDF_PAGE.height)
-    expect(PDF_PAGE_FILL_FACTOR).toBe(0.9)
   })
 
   test("pdfLayoutFor gives the measured scale of each platform", () => {
@@ -36,12 +34,12 @@ describe("export settings (measured in plan 25.1-07, approved 2026-10-10)", () =
     }
   })
 
-  test("the photo settings are the approved ones", () => {
-    expect(PHOTO_EXPORT_SETTINGS).toEqual({ cap: 24, longEdgePx: 800, jpegQuality: 0.65 })
+  test("the photo settings are the D-17 trial, pending the device measurement of plan 33-14", () => {
+    expect(PHOTO_EXPORT_SETTINGS).toEqual({ cap: 24, longEdgePx: 640, jpegQuality: 0.6 })
   })
 
   test("the map frame, the geometry timeout and the font warm-up", () => {
-    expect(MAP_FRAME_SIZE).toEqual({ width: 515, height: 340 })
+    expect(MAP_FRAME_SIZE).toEqual({ width: 515, height: 250 })
     expect(GEOMETRY_FETCH_TIMEOUT_MS).toBe(4000)
     expect(PDF_FONT_WARMUP).toBe(false)
   })

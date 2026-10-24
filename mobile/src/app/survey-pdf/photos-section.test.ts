@@ -1,7 +1,14 @@
 import { fr } from "../../i18n"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
 import { escapeHtml } from "./html"
-import { PHOTO_CELL, PHOTOS_PER_PAGE, buildPhotoBlocks, photosSectionCss } from "./photos-section"
+import {
+  PHOTO_CELL,
+  PHOTO_FRAME_RADIUS,
+  PHOTOS_PER_PAGE,
+  buildPhotoBlocks,
+  photosSectionCss,
+} from "./photos-section"
+import { sectionTitleCss } from "./styles"
 import type { ExportPhoto, PdfPalette, SurveyExportData } from "./types"
 
 const t = fr.surveyExport
@@ -275,6 +282,17 @@ describe("photosSectionCss", () => {
     const classes = [...css.matchAll(/\.([a-z][\w-]*)/g)].map((match) => match[1])
     expect(classes.length).toBeGreaterThan(0)
     for (const name of classes) expect(name.startsWith("photos-")).toBe(true)
+  })
+
+  it("styles the heading with the section title", () => {
+    expect(css).toContain(sectionTitleCss(".photos-heading", palette))
+  })
+
+  it("rounds and clips the photo frame", () => {
+    expect(PHOTO_FRAME_RADIUS).toBe(8)
+    const frame = css.match(/\.photos-frame \{[^}]*\}/)![0]
+    expect(frame).toContain(`border-radius: ${PHOTO_FRAME_RADIUS}px`)
+    expect(frame).toContain("overflow: hidden")
   })
 
   it("fixes the cell size and uses palette values only", () => {
