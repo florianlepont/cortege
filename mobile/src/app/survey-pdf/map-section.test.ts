@@ -1,15 +1,11 @@
 import { fr } from "../../i18n"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
 import { escapeHtml } from "./html"
-import {
-  chooseScaleBar,
-  fitFrameToBounds,
-  boundsOfRings,
-  metresPerPixel,
-  ringsToPathD,
-} from "./map-projection"
+import { fitFrameToBounds, boundsOfRings } from "./map-projection"
 import type { MapFrame } from "./map-projection"
+import { mapFigureCss } from "./map-figure"
 import { buildMapBlock, mapSectionCss } from "./map-section"
+import { sectionTitleCss } from "./styles"
 import type { PdfPalette, SurveyExportData } from "./types"
 
 const t = fr.surveyExport
@@ -92,7 +88,7 @@ const POLYGONS: Polygons = [
   },
 ]
 
-const SIZE = { width: 515, height: 340 }
+const SIZE = { width: 515, height: 250 }
 const JPEG = "data:image/jpeg;base64,QUJDREVGRw=="
 
 function snapshotFrame(): MapFrame {
@@ -143,10 +139,6 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
 
 function outlineData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return makeData({ map: { polygons: POLYGONS, basemap: null, frameSize: SIZE }, ...overrides })
-}
-
-function pathsOf(html: string): string[] {
-  return [...html.matchAll(/<path class="map-parcel"[^>]* d="([^"]*)"/g)].map((match) => match[1])
 }
 
 describe("buildMapBlock without a parcel", () => {
@@ -214,43 +206,11 @@ describe("buildMapBlock with a basemap", () => {
     expect(block.html).not.toContain("map-canvas")
   })
 
-  it("draws the overlay in the frame's own box", () => {
+  it("holds the shared figure at the snapshot frame", () => {
+    expect(block.html).toContain(`<div class="map-frame" style="width: ${frame.width}px;`)
     expect(block.html).toContain(`viewBox="0 0 ${frame.width} ${frame.height}"`)
-  })
-
-  it("draws one path per polygon, projected with the snapshot frame", () => {
-    const paths = pathsOf(block.html)
-    expect(paths).toEqual(POLYGONS.map((polygon) => ringsToPathD(polygon.rings, frame)))
-    expect(block.html).toContain("fill: parcelFill")
-    expect(block.html).toContain("stroke: parcelStroke")
-    expect(block.html).toContain('fill-rule="evenodd"')
-  })
-
-  it("keeps every polygon corner inside the frame", () => {
-    const numbers = pathsOf(block.html)
-      .join(" ")
-      .match(/-?\d+(\.\d+)?/g)!
-      .map(Number)
-    for (let index = 0; index < numbers.length; index += 2) {
-      expect(numbers[index]).toBeGreaterThanOrEqual(0)
-      expect(numbers[index]).toBeLessThanOrEqual(frame.width)
-      expect(numbers[index + 1]).toBeGreaterThanOrEqual(0)
-      expect(numbers[index + 1]).toBeLessThanOrEqual(frame.height)
-    }
-  })
-
-  it("draws a scale bar labelled with its round distance, the label clear of the line", () => {
-    const bar = chooseScaleBar(metresPerPixel(frame.centerLat, frame.zoom), frame.width)
-    expect(block.html).toContain(escapeHtml(t.map.scaleValue({ metres: String(bar.metres) })))
-    const label = block.html.match(/<text class="map-scale-label"[^>]* y="([\d.]+)"/)!
-    const line = block.html.match(/<line class="map-scale-line"[^>]* y1="([\d.]+)"/)!
-    // The baseline of the label sits at least 8 units above the line (font 9: no collision).
-    expect(Number(line[1]) - Number(label[1])).toBeGreaterThanOrEqual(8)
-  })
-
-  it("draws the north arrow with the N", () => {
     expect(block.html).toContain('class="map-north"')
-    expect(block.html).toContain(`>${escapeHtml(t.map.north)}</text>`)
+    expect(block.html).toContain("map-scale-line")
   })
 
   it("lists the parcels under the map", () => {
@@ -266,28 +226,9 @@ describe("buildMapBlock with a basemap", () => {
     expect(block.html).not.toContain(escapeHtml(t.map.outlineOnly))
   })
 
-  it("prints kilometres from 1000 m", () => {
-    const wide: MapFrame = { ...frame, zoom: 12 }
-    const out = buildMapBlock(
-      makeData({
-        map: { polygons: POLYGONS, basemap: { dataUri: JPEG, frame: wide }, frameSize: SIZE },
-      }),
-      palette,
-    )
-    const bar = chooseScaleBar(metresPerPixel(wide.centerLat, wide.zoom), wide.width)
-    expect(bar.metres).toBeGreaterThanOrEqual(1000)
-    expect(out.html).toContain(escapeHtml(t.map.scaleKm({ km: String(bar.metres / 1000) })))
-  })
-
-  it("drops a scale bar that would run over half the frame", () => {
-    const tiny: MapFrame = { ...frame, zoom: 22 }
-    const out = buildMapBlock(
-      makeData({
-        map: { polygons: POLYGONS, basemap: { dataUri: JPEG, frame: tiny }, frameSize: SIZE },
-      }),
-      palette,
-    )
-    expect(out.html).not.toContain("map-scale-line")
+  it("is 24 for the heading, the frame, one line each for parcels and source, and 10 of margin", () => {
+    // Parcels line: 3 ids of 14 characters, one line (13 + 6); source line: one line (13 + 6).
+    expect(block.height).toBe(24 + SIZE.height + 19 + 19 + 10)
   })
 })
 
@@ -313,17 +254,9 @@ describe("buildMapBlock with a basemap that is not a JPEG data URI", () => {
 describe("buildMapBlock outline only", () => {
   const block = buildMapBlock(outlineData(), palette)
 
-  it("has no image, a canvas and the polygons fitted exactly", () => {
+  it("has no image and the pale canvas", () => {
     expect(block.html).not.toContain("<img")
     expect(block.html).toContain("fill: mapCanvas")
-    const frame = fitFrameToBounds(
-      boundsOfRings(POLYGONS.flatMap((polygon) => polygon.rings))!,
-      SIZE,
-      { paddingRatio: 0.1, zoomRange: null },
-    )
-    expect(pathsOf(block.html)).toEqual(
-      POLYGONS.map((polygon) => ringsToPathD(polygon.rings, frame)),
-    )
   })
 
   it("has the scale bar, the north arrow and the outline only note, but no source line", () => {
@@ -336,34 +269,6 @@ describe("buildMapBlock outline only", () => {
   it("starts a page and fits it", () => {
     expect(block.breakBefore).toBe(true)
     expect(block.height).toBeLessThanOrEqual(PDF_PAGE_BLOCK_HEIGHT)
-  })
-
-  it("keeps a very small parcel at a zoom whose scale bar fits", () => {
-    const small = outlineData({
-      map: {
-        polygons: [
-          {
-            parcelId: "S",
-            rings: [
-              [
-                [2.7, 48.4],
-                [2.700001, 48.4],
-                [2.700001, 48.400001],
-                [2.7, 48.400001],
-                [2.7, 48.4],
-              ],
-            ],
-          },
-        ],
-        basemap: null,
-        frameSize: SIZE,
-      },
-    })
-    const out = buildMapBlock(small, palette)
-    const line = out.html.match(
-      /<line class="map-scale-line" x1="([\d.]+)" y1="[\d.]+" x2="([\d.]+)"/,
-    )!
-    expect(Number(line[2]) - Number(line[1])).toBeLessThanOrEqual(SIZE.width / 2)
   })
 })
 
@@ -394,12 +299,6 @@ describe("safety", () => {
     expect(out.html).not.toContain("<script>")
     expect(out.html).toContain(escapeHtml(hostile))
   })
-
-  it("writes SVG coordinates from numbers only", () => {
-    for (const block of blocks.slice(0, 2)) {
-      for (const path of pathsOf(block.html)) expect(path).toMatch(/^[MLZ\d\s.-]+$/)
-    }
-  })
 })
 
 describe("mapSectionCss", () => {
@@ -409,6 +308,11 @@ describe("mapSectionCss", () => {
     const classes = [...css.matchAll(/\.([a-z][\w-]*)/g)].map((match) => match[1])
     expect(classes.length).toBeGreaterThan(0)
     for (const name of classes) expect(name.startsWith("map-")).toBe(true)
+  })
+
+  it("starts with the figure rules and styles the heading with the section title", () => {
+    expect(css.trimStart().startsWith(mapFigureCss(palette).trim())).toBe(true)
+    expect(css).toContain(sectionTitleCss(".map-heading", palette))
   })
 
   it("uses palette values only and no hex or rgba literal", () => {
