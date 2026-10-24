@@ -34,8 +34,8 @@ describe("export settings (measured in plan 25.1-07, approved 2026-10-10)", () =
     }
   })
 
-  test("the photo settings are the D-17 trial, pending the device measurement of plan 33-14", () => {
-    expect(PHOTO_EXPORT_SETTINGS).toEqual({ cap: 24, longEdgePx: 640, jpegQuality: 0.6 })
+  test("the photo settings are the 25.1-07 ones: 640 / 0.6 was -29 % on iOS but only -18 % on Android (plan 33-14)", () => {
+    expect(PHOTO_EXPORT_SETTINGS).toEqual({ cap: 24, longEdgePx: 800, jpegQuality: 0.65 })
   })
 
   test("the map frame, the geometry timeout and the font warm-up", () => {
