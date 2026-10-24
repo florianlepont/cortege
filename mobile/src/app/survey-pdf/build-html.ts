@@ -1,64 +1,35 @@
 import { fr } from "../../i18n"
-import { buildConditionsBlock, conditionsSectionCss } from "./conditions-section"
-import { buildFactorChartBlock, factorChartCss } from "./factor-chart-svg"
-import { buildFactorBlocks, factorSectionCss } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
-import { buildIdentityBlocks, identityCss } from "./identity"
-import { buildMapBlock, mapSectionCss } from "./map-section"
 import { paginateBlocks } from "./paginate"
 import { buildPdfPalette } from "./palette"
-import { buildPhotoBlocks, photosSectionCss } from "./photos-section"
-import { buildRouteBlock, routeSectionCss } from "./route-section"
-import { buildScoreSummaryBlock, scoreSectionCss } from "./score-section"
+import { sectionsFor } from "./sections"
 import { PDF_CLASS, buildBaseCss, cspMetaTag, fontFaceCss, fontWarmupHtml } from "./styles"
-import { buildTrendBlock, trendSectionCss } from "./trend-section"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
 // The whole print document of the survey sheet (phase 25.1, D-01 to D-11), as one pure function:
-// the head (charset, content security policy, title, one style element) and the fixed A4 pages in
-// the order of the sheet. Every section builder escapes its own text; the chrome texts are
-// escaped by the paginator. Nothing here reads a file, a URL or the device.
+// the head (charset, content security policy, title, one style element) and the fixed A4 pages. The
+// sections and their order live in `sections.ts` (phase 33, D-10): this file flat-maps the sections
+// of the export mode and never names one. Every section builder escapes its own text; the chrome
+// texts are escaped by the paginator. Nothing here reads a file, a URL or the device.
 
 const t = fr.surveyExport
 
-/** The content blocks in the order of the sheet: identity and method, the conditions (only when the
- * survey has a weather value or a note), the route used (only when the survey has a route, phase
- * 30), scores and chart, factors A to G then H to J, map, trend, photos. */
+/** The content blocks: the font warm-up (only when the device check asked for it), then every
+ * section of the mode in the order of the registry. */
 function collectBlocks(data: SurveyExportData, palette: PdfPalette): PdfBlock[] {
   const blocks: PdfBlock[] = []
   // Hidden text in each embedded font, only when the device check asked for it.
   const warmup = fontWarmupHtml(data.assets.fonts)
   if (warmup !== "") blocks.push({ id: "font-warmup", html: warmup, height: 0 })
-  const conditions = buildConditionsBlock(data, palette)
-  const route = buildRouteBlock(data, palette)
-  blocks.push(
-    ...buildIdentityBlocks(data, palette),
-    ...(conditions === null ? [] : [conditions]),
-    ...(route === null ? [] : [route]),
-    buildScoreSummaryBlock(data, palette),
-    buildFactorChartBlock(data, palette),
-    ...buildFactorBlocks(data, palette),
-    buildMapBlock(data, palette),
-    buildTrendBlock(data, palette),
-    ...buildPhotoBlocks(data, palette),
-  )
-  return blocks
+  return [...blocks, ...sectionsFor(data.mode).flatMap((section) => section.build(data, palette))]
 }
 
-/** One style element: the fonts, the page shell, then the CSS of every section. */
+/** One style element: the fonts, the page shell, then the CSS of every section of the mode. */
 function collectCss(data: SurveyExportData, palette: PdfPalette): string {
   return [
     fontFaceCss(data.assets.fonts),
     buildBaseCss(palette, data.layout),
-    identityCss(palette),
-    conditionsSectionCss(palette),
-    routeSectionCss(palette),
-    scoreSectionCss(palette),
-    factorChartCss(palette),
-    factorSectionCss(palette),
-    mapSectionCss(palette),
-    trendSectionCss(palette),
-    photosSectionCss(palette),
+    ...sectionsFor(data.mode).map((section) => section.css(palette)),
   ].join("\n")
 }
 

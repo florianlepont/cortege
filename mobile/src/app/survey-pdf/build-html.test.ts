@@ -7,23 +7,35 @@ import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import {
   WORST_ROUTE,
+  exportFixtureSummary,
+  exportFixtureTypicalConditioned,
   exportFixtureV30Draft,
   exportFixtureV32Submitted,
   exportFixtureWorstCase,
 } from "../../../test/survey-export-fixtures"
 import { buildSurveyExportHtml } from "./build-html"
-import { buildConditionsBlock } from "./conditions-section"
-import { buildFactorChartBlock } from "./factor-chart-svg"
-import { buildFactorBlocks } from "./factor-section"
+import { buildConditionsBlock, conditionsSectionCss } from "./conditions-section"
+import { buildFactorChartBlock, factorChartCss } from "./factor-chart-svg"
+import { buildFactorBlocks, factorSectionCss } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
-import { PAGE_FILL_FACTOR } from "./paginate"
-import { buildRouteBlock } from "./route-section"
+import { buildIdentityBlocks, identityCss } from "./identity"
+import { buildMapBlock, mapSectionCss } from "./map-section"
+import { PAGE_FILL_FACTOR, paginateBlocks } from "./paginate"
+import { buildPhotoBlocks, photosSectionCss } from "./photos-section"
+import { buildRouteBlock, routeSectionCss } from "./route-section"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
 import { buildPdfPalette } from "./palette"
-import { buildScoreSummaryBlock } from "./score-section"
-import { DRAFT_BANNER_HEIGHT, PAGE_FOOTER_HEIGHT, PAGE_HEADER_HEIGHT } from "./styles"
+import { buildScoreSummaryBlock, scoreSectionCss } from "./score-section"
+import {
+  DRAFT_BANNER_HEIGHT,
+  PAGE_FOOTER_HEIGHT,
+  PAGE_HEADER_HEIGHT,
+  buildBaseCss,
+  fontFaceCss,
+} from "./styles"
 import { PDF_CSP, PDF_CLASS } from "./styles"
-import type { SurveyExportData } from "./types"
+import { buildTrendBlock, trendSectionCss } from "./trend-section"
+import type { PdfBlock, SurveyExportData } from "./types"
 
 const t = fr.surveyExport
 
@@ -566,5 +578,88 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
 
   it("never prints an em dash in the block", () => {
     expect(buildRouteBlock(exportFixtureWorstCase, buildPdfPalette())?.html).not.toContain(EM_DASH)
+  })
+})
+
+// Phase 33 (D-10): the sections come from the registry. The complete document must be the one the
+// hand-written lists of phases 25.1 to 30 produced: the same blocks in the same order, the same CSS.
+describe("buildSurveyExportHtml section registry", () => {
+  const palette = buildPdfPalette()
+
+  /** The blocks and the CSS exactly as the assembler listed them before the registry. */
+  function legacyDocument(data: SurveyExportData): { pages: string; css: string; count: number } {
+    const conditions = buildConditionsBlock(data, palette)
+    const route = buildRouteBlock(data, palette)
+    const blocks: PdfBlock[] = [
+      ...buildIdentityBlocks(data, palette),
+      ...(conditions === null ? [] : [conditions]),
+      ...(route === null ? [] : [route]),
+      buildScoreSummaryBlock(data, palette),
+      buildFactorChartBlock(data, palette),
+      ...buildFactorBlocks(data, palette),
+      buildMapBlock(data, palette),
+      buildTrendBlock(data, palette),
+      ...buildPhotoBlocks(data, palette),
+    ]
+    const packed = paginateBlocks(blocks, {
+      siteName: data.siteName,
+      logoDataUri: data.assets.logoDataUri,
+      isDraft: data.isDraft,
+      generatedAtText: formatDateFr(data.generatedAtIso, t.identity.unknown),
+    })
+    const css = [
+      fontFaceCss(data.assets.fonts),
+      buildBaseCss(palette, data.layout),
+      identityCss(palette),
+      conditionsSectionCss(palette),
+      routeSectionCss(palette),
+      scoreSectionCss(palette),
+      factorChartCss(palette),
+      factorSectionCss(palette),
+      mapSectionCss(palette),
+      trendSectionCss(palette),
+      photosSectionCss(palette),
+    ].join("\n")
+    return { pages: packed.html, css, count: packed.pageCount }
+  }
+
+  it.each([
+    ["a v3.2 submitted survey", exportFixtureV32Submitted],
+    ["a v3.0 draft", exportFixtureV30Draft],
+    ["a conditioned survey", exportFixtureTypicalConditioned],
+    ["the worst case sheet", exportFixtureWorstCase],
+  ])("prints %s exactly as the fixed lists did", (_label, data) => {
+    const legacy = legacyDocument(data)
+    const { html, pageCount } = buildSurveyExportHtml(data)
+    expect(pageCount).toBe(legacy.count)
+    expect(html).toContain(`<style>\n${legacy.css}\n</style>`)
+    expect(html).toContain(`<div class="${PDF_CLASS.root}">\n${legacy.pages}\n</div>`)
+  })
+
+  it("keeps the CSS order: fonts, shell, then the sections in sheet order", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureWorstCase)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+    expectInOrder(css, [
+      "@font-face",
+      "@page",
+      ".identity-heading",
+      ".conditions-",
+      ".route-",
+      ".score-",
+      ".chart-card",
+      ".factor-card",
+      ".map-",
+      ".trend-",
+      ".photos-",
+    ])
+  })
+
+  it("prints a summary-mode document with none of the complete-only rules or cards", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureSummary)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+    for (const rule of [".identity-", ".factor-", ".photos-", ".score-"]) {
+      expect(css).not.toContain(rule)
+    }
+    expect(html).not.toContain('class="factor-card"')
   })
 })
