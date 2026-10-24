@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
 status: complete
-stopped_at: "Phase 30 complete (24/25 plans); 30-25, the recorded tester session, is deferred to the field tests (owner, 2026-10-23)"
+stopped_at: "Phase 32 planned (16 plans, verified); awaiting the owner for the WSL edition check and the drawings"
 last_updated: "2026-10-23T20:00:00.000Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 30 closed after the owner checks on the iPhone; PRs 299, 307, 308 and 309 merged
@@ -282,5 +282,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-13T17:49:24.125Z
-Stopped at: Phase 30 complete (24/25 plans); the recorded tester session (30-25) is deferred to the field tests
-Resume file: docs/user-tests/route-choice-assistant.md
+Stopped at: Phase 32 planned (16 plans, verified); awaiting the owner for the WSL edition check and the drawings
+Resume file: .planning/phases/32-detailed-dmh-information-inserted-v1/32-01-PLAN.md

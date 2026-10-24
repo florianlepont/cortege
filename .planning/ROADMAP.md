@@ -1110,7 +1110,7 @@ Plans:
 
 **Goal**: While recording, the observer gets detailed information on dendromicrohabitats (many potential DMH), in a tool or a dedicated page.
 **Depends on**: Phase 25.1 (stored DMH details)
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-DOC-dmh-sources, REQ-C-dmh-guide, REQ-C-dmh-illustrations, REQ-C-dmh-fast-entry, REQ-FT-dmh-speed
 **Source**: seminar 2026-10-10: the card is about more detailed information during the survey, not about changing the data (owner clarification); the IBP typology crossed with the WSL one
 **Success Criteria** (what must be TRUE):
 
@@ -1118,7 +1118,7 @@ Plans:
   2. The content crosses the IBP typology with the WSL one, and its sources and licence for reuse are recorded (WSL already has PDF content).
   3. Recording a survey with many potential DMH is quicker than before, measured on a real survey.
 
-**Plans**: TBD
+**Plans**: 16 plans in 9 waves, planned 2026-10-24 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`); owner checkpoints in 32-02 (WSL edition), 32-07 (baseline timing), 32-09 (content sign-off), 32-16 (final timing)
 **UI hint**: yes
 
 ### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)
