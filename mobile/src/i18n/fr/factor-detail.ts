@@ -86,4 +86,14 @@ export const factorDetailFr = {
         `${count} caractères sur ${max}`,
     },
   },
+  // Phase 32: the dendromicrohabitat group list of factor F
+  dmhList: {
+    stepper: {
+      label: ({ label }: { label: string }) => `Nombre d'arbres, ${label}`,
+      value: ({ trees }: { trees: number }) => (trees === 1 ? "1 arbre" : `${trees} arbres`),
+      increment: "Ajouter un arbre",
+      decrement: "Retirer un arbre",
+      editHint: "Double-tapez pour saisir le nombre",
+    },
+  },
 } as const
