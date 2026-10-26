@@ -64,7 +64,6 @@ export const SUMMARY_ZONES = Object.freeze({
   sources: Object.freeze([740, 24] as const),
 })
 
-
 function logoHtml(logoDataUri: string | null): string {
   if (logoDataUri === null || !PDF_LOGO_DATA_URI.test(logoDataUri)) return ""
   return `<img class="summary-logo" alt="" src="${escapeHtml(logoDataUri)}">`
