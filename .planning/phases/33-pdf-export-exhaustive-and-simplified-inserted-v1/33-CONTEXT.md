@@ -47,6 +47,16 @@ Out of scope: map screens and the annotations of phase 31 (the PDF only gets an 
 - **D-17:** Photos: keep the cap of 24 and 6 per page; trial a lighter encoding (about 640 px, quality 0.6) and fix the numbers after the device measurement.
 - **D-18:** Summary when the trend is unavailable offline: a quiet panel with one short sentence, the page layout unchanged. A submitted survey not yet synced may still produce the summary (same rule as the export today).
 
+### Owner review on the iPhone, 2026-10-26 (build bece9af1; verdicts and new decisions)
+- **D-19 (verdict):** the owner validated everything else: the gaps of D-01 to D-04 are closed, the size of the maps, D-15 to D-18, U-01, the summary sizes, the cover white space, the page estimate, and the file sizes ("Taille ok", including the Android summary above 200 KB). The remarks below are the only changes asked.
+- **D-20 (sheet, spacing):** the title "Quel PDF voulez-vous ?" sits too close to the edges of the sheet: give it more top and side room.
+- **D-21 (sheet, close):** no "Annuler" button; closing the sheet (swipe on iOS) or a close cross is enough. Add a small close cross (outline glyph) in the corner so the Android modal, which has no swipe, closes too; the "Exporter le PDF" button stays.
+- **D-22 (sheet, height):** the sheet is too tall for its content: make it fit its content (iOS detent fitted to the content or a smaller fixed detent, never the 0.65 that leaves a large empty area).
+- **D-23 (parcels in full):** the complete PDF prints the full list of cadastral parcels, never a truncation with "…". The identity card wraps the list on as many lines as needed and its height estimate follows. (The summary keeps its short meta line.)
+- **D-24 (location on the first page):** the parcel map ("localisation") goes on the first page of the complete PDF, the cover. Decision: the cover's light lower half carries the map figure (the same `buildMapFigure`, offline outline fallback) and the six cover facts leave the cover, since the identity card holds the same facts; the map block leaves the body, which saves a page. The cover keeps the forest panel, the score and the two sub-score tiles. The cover must still cost no extra page and keep the draft banner and watermark.
+- **D-25 (date and year doublon):** the date and the observation year say the same thing: print the year row of the identity card only when it differs from the year of the survey date; no year anywhere on the cover.
+- **D-26 (chart, stand and context):** the factor chart must make the two groups plain: the stand and management factors A to G (out of 35) and the context factors H to J (out of 15), in the complete chart and in the summary chart (which has no captions today): solid-fill group panels or labelled brackets with the sub-score of each group, with the same colours rule (palette keys only, no opacity, no gradient).
+
 ### Claude's Discretion
 - Cover page content and layout, graphics style, exact page count targets, photo cap and JPEG settings, how the summary behaves when the trend or the map basemap is unavailable offline (omit with a short note, as the trend does today).
 - File name of the summary: keep the existing rule; whether a suffix tells the two apart is for the planner to propose to the owner.
