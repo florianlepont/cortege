@@ -7,8 +7,10 @@ import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import {
   WORST_ROUTE,
+  exportFixtureLowScore,
   exportFixtureManyParcels,
   exportFixtureSummary,
+  exportFixtureSummaryLowScore,
   exportFixtureSummaryWorst,
   exportFixtureTypical,
   exportFixtureTypicalConditioned,
@@ -620,6 +622,12 @@ describe("buildSurveyExportHtml page counts (B.11)", () => {
 
   it.each([
     { label: "a v3.0 draft (target 4)", data: exportFixtureV30Draft, pages: 4, target: 4 },
+    {
+      label: "a low-score v3.2 survey, every factor at 0 or 2 (target 4)",
+      data: exportFixtureLowScore,
+      pages: 4,
+      target: 4,
+    },
     { label: "the typical survey (target 6)", data: exportFixtureTypical, pages: 5, target: 6 },
     {
       label: "the typical survey with conditions and route (target 7)",
@@ -646,13 +654,37 @@ describe("buildSurveyExportHtml page counts (B.11)", () => {
   })
 
   // Plan 33-16 (owner decision 2026-10-26): PAGE_FILL_FACTOR 0.92 -> 0.94. Plan 33-18 (D-24, D-25):
-  // the body has no map and the year row is gone when it equals the date's year. Page 2 holds the
-  // identity card (269 with the year rule), the factor chart (214) and the stand heading with factor A
-  // (190), 673 against a capacity of 695.6, so the factors start on page 2 and the closing notes share
-  // the last page. The devices printed the same content in 689.8 of 740 units (33-14-MEASUREMENTS.md).
+  // the body has no map and the year row is gone when it equals the date's year. Plan 33-19 (D-27):
+  // the chart card grows from 214 to 228 (the source line and the counted border). Page 2 holds the
+  // identity card (271 with the year rule), the chart card (228) and the stand heading with factor A
+  // (190), 689 against a capacity of 695.6, so the factors still start on page 2 and the closing
+  // notes share the last page. The devices printed the same content in about 2 units less than the
+  // estimate (33-14-MEASUREMENTS.md). 6.6 units of slack: a chart block of 236 moves the typical
+  // survey to 6 pages, so no pin may be raised to make room.
   it("pins the page count of a v3.2 submitted survey at 4, the B.11 target", () => {
     expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBe(4)
   })
+
+  it.each([
+    ["a v3.2 submitted survey", exportFixtureV32Submitted],
+    ["the typical survey", exportFixtureTypical],
+    ["the low-score survey", exportFixtureLowScore],
+  ])(
+    "keeps the identity card, the chart card, the stand heading and factor A on page 2 for %s",
+    (_label, data) => {
+      const second = pagesOf(buildSurveyExportHtml(data).html)[1]
+      expectInOrder(second, [
+        t.identity.heading,
+        t.charts.heading,
+        'class="chart-plane"',
+        'class="chart-rose"',
+        escapeHtml(t.charts.source).slice(0, 24),
+        t.factors.standGroup,
+        '<span class="factor-letter">A</span>',
+      ])
+      expect(second).not.toContain('<span class="factor-letter">B</span>')
+    },
+  )
 
   it("pins a v3.2 submitted survey with the fullest route at 4 (it was 5 with the body map)", () => {
     expect(buildSurveyExportHtml(WITH_ROUTE).pageCount).toBe(4)
@@ -791,6 +823,7 @@ describe("buildSurveyExportHtml summary document (D-07)", () => {
   const CASES: [string, SurveyExportData][] = [
     ["the typical summary", exportFixtureSummary],
     ["the fullest summary", exportFixtureSummaryWorst],
+    ["the low-score summary", exportFixtureSummaryLowScore],
     ...KINDS.map((kind): [string, SurveyExportData] => [
       `the ${kind} fallback`,
       summaryVariant(kind),

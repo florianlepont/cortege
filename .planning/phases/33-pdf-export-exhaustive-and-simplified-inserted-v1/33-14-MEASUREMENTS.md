@@ -301,3 +301,56 @@ A throwaway root (a native stack with a blank screen and a screen that renders t
 
 - Cleaned: the in-app harness files and the `mobile/index.js` import removed (`git status` clean), Metro and the two servers killed, the simulator shut down (content size back to `large`), the emulator killed and its clone AVD deleted, `adb reverse` removed. No `node_modules` script was changed.
 - Open items for the owner's re-check (33-15): (1) the empty area under the button of the iOS sheet (85 pt, 27 pt of it native), see above; (2) a long site name (49 characters or more, three lines of 20 / 24) can be crossed by a contour ring on the cover (cosmetic, same as before the cover change); (3) a draft with a map was measured in Chrome only (legend bottom 791.2 pt, budget 792); the device draft run had no parcel; (4) Android summary still over 200 KB (220.5 KB), unchanged since 33-16; (5) not measured: a real phone, scrolling of the sheet at the largest text size, the offline snapshot branch, phone-photo sources, the fullest-route v3.2 and the conditioned typical on the devices (Chrome only).
+
+## Re-measurement of plan 33-19, the CNPF-like charts (2026-10-26)
+
+Chrome only (the devices are plan 33-20). Harness of `33-RENDER-HARNESS.md` recreated in the scratchpad (never committed), layout `{ platform: "android", layoutScale: 4 / 3 }` so one unit prints as one point, photos 640 px / 0.6 as in 33-18, the 14 cases of 33-18 plus `complete-low-score` and `summary-low-score` (the new `exportFixtureLowScore` and `exportFixtureSummaryLowScore`). Bottoms are from `pdftotext -bbox` (text boxes: a baseline sits 3.75 pt above the box bottom). Sizes are `pdfinfo` bytes / 1000, as in 33-18.
+
+### Chrome table
+
+| case | builder | pdfinfo | KB | KB in 33-18 | lowest body text bottom, pt (pages 2 and on for a complete PDF, rule 790) | cover legend bottom, pt (768 / 792 draft) | source line bottom, pt | card estimated bottom, pt / gap |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| complete-v32 | 4 | 4 | 172.5 | 165.9 | 725.8 | none | 536.2 (p.2) | 549 / -12.8 |
+| complete-v32-route | 4 | 4 | 177.5 | 170.7 | 699.7 | none | 699.7 (p.2) | 711 / -11.3 |
+| complete-v30-draft | 4 | 4 | 174.6 | 167.6 | 724.3 | none | 522.0 (p.2) | 535 / -13.0 |
+| complete-typical | 5 | 5 | 444.1 | 437.4 | 745.7 | 767.2 | 536.2 (p.2) | 549 / -12.8 |
+| complete-typical-conditioned | 6 | 6 | 455.1 | 448.2 | 745.7 | 767.2 | 266.2 (p.3) | 278 / -11.8 |
+| complete-worst | 9 | 9 | 1038.5 | 1031.6 | 745.7 | 767.2 | 699.7 (p.2) | 711 / -11.3 |
+| complete-worst-no-route | 9 | 9 | 1032.9 | 1026.0 | 745.7 | 767.2 | 536.2 (p.2) | 549 / -12.8 |
+| complete-many-parcels | 4 | 4 | 179.5 | 172.7 | 662.6 | none | 627.0 (p.2) | 666 / -39.0 |
+| complete-many-parcels-wide | 4 | 4 | 179.5 | 172.7 | 662.6 | none | 653.2 (p.2) | 666 / -12.8 |
+| complete-typical-outline | 5 | 5 | 383.7 | 377.0 | 745.7 | 767.2 | 536.2 (p.2) | 549 / -12.8 |
+| complete-low-score (new) | 4 | 4 | 171.7 | new | 725.8 | none | 536.2 (p.2) | 549 / -12.8 |
+| summary | 1 | 1 | 129.6 | 133.1 | 799.5 (Z5 sources line, as in 33-18) | n/a | n/a | n/a |
+| summary-worst | 1 | 1 | 133.6 | 137.0 | 799.5 | n/a | n/a | n/a |
+| summary-no-basemap | 1 | 1 | 68.1 | 71.6 | 787.5 | n/a | n/a | n/a |
+| summary-no-history | 1 | 1 | 122.2 | 127.9 | 787.5 | n/a | n/a | n/a |
+| summary-low-score (new) | 1 | 1 | 128.8 | new | 799.5 | n/a | n/a | n/a |
+
+- Builder pages equal `pdfinfo` pages for all 16 cases, and equal the pins: v3.2 4, v3.2 with the fullest route 4, v3.0 draft 4, typical 5, typical with note and route 6, worst case 9 with and without the route, 30 parcels 4 (both id widths), the new low-score survey 4, every summary 1. No pin moved and the stop rule did not fire.
+- Page 2, the binding page (identity 271 + chart 228 + stand heading and factor A 190 = 689 of 695.6): the lowest text of page 2 of the v3.2, typical and low-score documents is 725.8 pt (713.8 pt before the chart grew), 64.2 pt under the 790 rule. The chart card prints 228 units, as estimated (it printed 216 against an estimate of 214 before): every source line ends 11.3 to 13.0 pt above the card's estimated bottom (the text box of the line is 1.8 pt above the card's inner bottom, 536.2 against the 538 expected), and 39.0 pt above it for the 30 narrow ids, whose identity prints under its estimate (as in 33-18). No line ends below the estimate.
+- The lowest body text of the other complete cases is within 0.3 pt of 33-18 for pages that do not hold the chart (745.7 for typical and worst, 662.6 for the 30 parcels); the cases whose page 2 holds the chart moved up by the 12 pt the card grew (725.8, 699.7). The v3.0 draft's lowest text is on page 3 (724.3, unchanged); its page 2 ends at 695.1.
+- Sizes: the complete documents grew by 6.6 to 6.9 KB (the two charts are vector text and shapes; the source line is one text run), the summaries shrank by 3.4 to 3.6 KB (the ten bars and two group panels are replaced by one plane). The summary stays under 200 KB (129.6 KB).
+- Label boxes of page 2 of `complete-typical` (`pdftotext -bbox`; the plane panel is x 51 to 323, the rose panel x 335 to 544, both y 364.5 to 524.5; the 16 unit header band ends at y 380.5): every plane text lies inside its panel by 8.0 pt on the left (the y title starts at 59.0), 7.6 pt on the right (the last tick "35" ends at 315.4) and 0.3 pt at the bottom by font box (the x title baseline is 4 above the panel bottom, as designed: its glyphs end 2 pt above the edge). Every rose name lies inside the rose panel by 12.0 pt on both sides (x 347.0 for "Milieux ouverts" to 532.0 for "morts" of "Bois morts sur pied"), and by 0.5 pt at the bottom by font box ("bois vivants" baseline 520.2, 4.3 pt above the edge). The top names ("Milieux rocheux", "Essences autochtones") have their font boxes start at y 379.4, 0.2 pt under the bottom of the title's font box and 1.1 pt over the 16 unit band, so the boxes touch the band by about one point; the glyphs are clear (title baseline 375.5, first name cap top about 381.4). The same extents hold for `complete-low-score`, `complete-worst` and `complete-v30-draft` (identical to the decimal: the chart does not depend on the survey).
+- The summary (`summary` and `summary-low-score`): the heading "IBP contexte face à l'IBP peuplement et gestion" ends at x 520.5, 34.5 pt under the 555 pt right edge of the column (216 + 299 + the 40 margin) and on one line; the plane panel is x 256 to 555 and y 156 to 312, its texts lie from x 263.7 to 547.2 (7.7 and 7.8 pt inside) and y 159.4 to 311.0 (3.4 pt under the top, 1.0 pt over the bottom by font box; the x title baseline is 4 above the edge).
+
+### Colours (the six keys, from the real palette)
+
+| Key | Value | Contrast pinned in `palette.test.ts` |
+|---|---|---|
+| `zoneLow` / `zoneLowSoft` / `zoneMid` / `zoneHighSoft` / `zoneHigh` | `#E19B85` / `#EEC5B8` / `#F0D4BC` / `#CED6B6` / `#AAB981` | `accent` on them 4.07 / 5.88 / 6.55 / 6.14 / 4.40 (at least 4); `ink` on them 6.02 / 8.68 / 9.68 / 9.07 / 6.50 (at least 6) |
+| `contextInk` | `#7A4A0A` | on `paper` 7.47, on `panel` 6.90 (at least 4.5) |
+| (existing) `accent` on `paper` / `panel` | | 9.27 / 8.56 |
+
+The five zones against `paper`: 2.28 / 1.58 / 1.41 / 1.51 / 2.11 (fills: the band edges are also carried by the tick values and the printed band names). Ring strokes: `bandLow` on `zoneLowSoft` 2.64, `bandHigh` on `zoneHighSoft` 2.58 (the ring values are printed).
+
+### What the looked-at pages show
+
+Looked at with the Read tool at 120 dpi (whole pages) and 200 dpi (crops of the chart card): page 2 of `complete-typical`, `complete-worst`, `complete-low-score` and `complete-v30-draft`, and the summaries `summary` and `summary-low-score`.
+
+- Page 2 of `complete-typical`: the card "Lecture du score IBP" with the plane left and the rose right, side by side, both in white panels with a hairline and 8 unit corners, the source line on one line under them ending at x 462. The plane shows the five stand bands in order, terracotta, pale terracotta, ochre, pale green, strong green, with their tick values 0, 7, 14, 21, 28, 35 under the cuts and the names "faible", "assez / faible", "moyenne", "assez / forte", "forte" under the bands; the two dashed level lines at 5 and 10 run across the plot with "faible", "moyenne", "forte" in the left gutter; the survey is one dark green disc with a white ring at 20 and 12 (in "moyenne" and the "forte" level) with two thin dashed guides to the axes; the axis titles "Contexte : 12 / 15" (top left) and "Peuplement et gestion : 20 / 35" (bottom right) are bold. The rose shows the pale green zone out to the 5 ring (olive green stroke) and the pale terracotta zone out to the 2 ring (terracotta stroke), the white hub on the 0 ring, ten white spokes, a vertical scale line with 0, 2, 5, the polygon as a dark green line with ten dots, and the ten names in two lines at most: green for the seven stand factors, brown for the three context ones, "Essences autochtones" and "Milieux rocheux" flanking the top, "Dendromicrohabitats" alone on the bottom left. Nothing overlaps or touches a panel edge to the eye, with two small exceptions: the polygon passes next to the ring value "2" on this data (it is a line over the scale numerals, as on the CNPF sheet), and the lowest names end 4 pt above the panel bottom.
+- `complete-worst` page 2 (identity, route, then the card): the same card under the "Parcours utilisé" block, 228 high, the source line directly under the panels; nothing overlaps.
+- `complete-low-score` page 2: the marker sits in the first band and the first level (6 of 35, 2 of 15), on the strong terracotta tint, readable (dark green on `#E19B85` at 4.07); the dashed guides are short; the rose's polygon is a small star hugging the hub and the 2 ring, with the dots on the rings; the ring value "0" and the hub stay readable. The y title reads "Contexte : 2 / 15".
+- `complete-v30-draft` page 2 (I and J missing): the draft banner over the page, the pale "Brouillon" watermark over the chart, the plane marker at 20 and 4 just under the dashed line at 5, and on the rose two dashed grey spokes for "Milieux aquatiques" and "Milieux rocheux" with no dot; the polygon runs from A round to H and stops there (no segment to I or J, none from J back to A), so the broken line shows what is missing. The names of I and J are still printed in brown.
+- `summary`: the score row holds the forest card on the left and, on the right, the heading "IBP contexte face à l'IBP peuplement et gestion" in one line over the plane (panel fill `panel` on the white page): the five tints, the two dashed lines, the disc with its ring and guides at 20 and 12, the titles, with the bars and the group panels gone; the map, the curve and the sources are as in 33-18. The page is one page. The y title "Contexte : 12 / 15" and the "15" tick are close (the title baseline is 3.4 pt above the top of the digits) but do not touch.
+- `summary-low-score`: the marker is in the lowest band and level (dark green disc on the strong terracotta tint, guides of a few units), the forest card reads 8 / 50 "Niveau : faible" and "6 / 35 peuplement, 2 / 15 contexte", the page is one page.

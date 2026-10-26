@@ -49,12 +49,18 @@ const POINTS: Record<FactorKey, number> = {
   J: 1,
 }
 
-/** One entry per factor A to J; a key in `missing` carries the "Not filled" sentinel. */
-function entriesOf(missing: readonly FactorKey[] = []): Entries {
+/**
+ * One entry per factor A to J; a key in `missing` carries the "Not filled" sentinel. `points`
+ * defaults to the standard fixture points; a fixture may pass its own map (the low-score survey).
+ */
+function entriesOf(
+  missing: readonly FactorKey[] = [],
+  points: Record<FactorKey, number> = POINTS,
+): Entries {
   return FACTOR_KEYS.map((key) =>
     missing.includes(key)
       ? [key, { selected_class: NOT_FILLED_CLASS, warnings: [], score_points: null }]
-      : [key, { selected_class: `S${POINTS[key]}`, warnings: [], score_points: POINTS[key] }],
+      : [key, { selected_class: `S${points[key]}`, warnings: [], score_points: points[key] }],
   )
 }
 
@@ -372,6 +378,43 @@ export const exportFixtureSummaryWorst: SurveyExportData = {
     frameSize: { ...SUMMARY_MAP_FRAME_SIZE },
   },
   history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(0, "survey-summary-worst") },
+}
+
+// ---- Phase 33 (plan 19): the low-score survey, the marker in the lowest band of the plane --------
+
+const LOW_POINTS: Record<FactorKey, number> = {
+  A: 0,
+  B: 2,
+  C: 0,
+  D: 0,
+  E: 2,
+  F: 0,
+  G: 2,
+  H: 0,
+  I: 2,
+  J: 0,
+}
+
+/**
+ * The submitted v3.2 survey with every factor at 0 or 2: total 8, stand and management 6 of 35,
+ * context 2 of 15, so the plane's marker sits in the "faible" band and level, and the rose's
+ * polygon hugs the hub.
+ */
+export const exportFixtureLowScore: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  surveyId: "survey-low-score",
+  scores: { ibp_total: 8, ibp_peuplement_gestion: 6, ibp_contexte: 2 },
+  factorEntries: entriesOf([], LOW_POINTS),
+}
+
+/** The low-score survey as a one-page summary: no photo, the map frame of the summary size. */
+export const exportFixtureSummaryLowScore: SurveyExportData = {
+  ...exportFixtureLowScore,
+  mode: "summary",
+  parcelIds: exportFixtureSummary.parcelIds,
+  photos: { items: [], total: 0, unavailable: 0 },
+  map: exportFixtureSummary.map,
+  history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(3, "survey-low-score") },
 }
 
 export type SummaryVariantKind =

@@ -1,5 +1,6 @@
 import {
   exportFixtureSummary,
+  exportFixtureSummaryLowScore,
   exportFixtureSummaryWorst,
   summaryVariant,
 } from "../../../test/survey-export-fixtures"
@@ -79,6 +80,7 @@ const VARIANTS: SummaryVariantKind[] = [
 const ALL_FIXTURES: Array<[string, SurveyExportData]> = [
   ["exportFixtureSummary", typical],
   ["exportFixtureSummaryWorst", worst],
+  ["exportFixtureSummaryLowScore", exportFixtureSummaryLowScore],
   ...VARIANTS.map((kind): [string, SurveyExportData] => [kind, summaryVariant(kind)]),
 ]
 
@@ -399,6 +401,16 @@ describe("Z2 right, the plane (D-28)", () => {
     expect(html).toContain(`>${t.scores.stand(stand)}</text>`)
     expect(html).toContain(`>${t.scores.context(context)}</text>`)
     expect(html).toContain('class="plane-marker"')
+  })
+
+  test("a low-score survey puts the marker in the first band and the first level", () => {
+    const html = htmlOf(exportFixtureSummaryLowScore)
+    const marker = /<circle class="plane-marker" cx="([\d.]+)" cy="([\d.]+)"/.exec(html)
+    if (!marker) throw new Error("no marker")
+    // Plot 46 to 287 across 35 points and 112 to 18 up 15 points: 6 of 35 and 2 of 15.
+    expect(Number(marker[1])).toBeCloseTo(46 + (6 / 35) * 241, 0)
+    expect(Number(marker[2])).toBeCloseTo(112 - (2 / 15) * 94, 0)
+    expect(Number(marker[1])).toBeLessThan(46 + 48.2)
   })
 
   test("a survey with no score prints the plane without a marker and the group names alone", () => {
