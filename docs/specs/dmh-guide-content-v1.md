@@ -173,3 +173,220 @@ seule vignette les deux cavités ouvertes vers le haut (types 8 et 9) et range l
 foudre (type 23) comme variante de la fente, ce qui explique les deux types de différence avec les 43
 du guide de poche (lecture à faire confirmer par l'expert, voir la liste des points à vérifier à la fin
 de la section 6).
+
+## 6. Fiches des groupes
+
+Règles que suit chaque fiche :
+
+- Les textes sont écrits par l'association avec ses propres mots, à partir des faits relevés dans G,
+  T et I (noms, seuils, tailles). Aucune phrase de ces documents n'est reprise (D-02, D-09).
+- La règle de l'IBP (méthode 3.2, I) décide du comptage et vient toujours en premier après la
+  définition. Le repère de page en fin de règle (« fiche de l'IBP, pages 3 et 12 ») fait partie du
+  texte affiché.
+- Le seuil du guide de poche n'apparaît que dans « Écart avec le guide de poche », pour les neuf groupes
+  concernés : 3, 4, 5, 6, 7, 12, 13, 14 et 15. Pour les groupes 6 et 14, l'écart ne porte pas sur un
+  seuil mais sur ce que le guide de poche décrit en plus et que l'IBP ne compte pas.
+- Pour les groupes 6, 12 et 15, la ligne « Méthode 3.0 » remplace la règle quand le relevé suit la
+  méthode IBP version 3.0 (la fiche de la version 3.0 n'est plus en ligne : son libellé vient de
+  `docs/technical/ibp-version-comparison-v3.0-v3.2.md`, lignes F-1 à F-3).
+- Limites par champ : définition 1 à 2 phrases ; règle de l'IBP 1 à 3 phrases ; comment le
+  reconnaître 2 à 4 phrases ; 2 à 4 confusions, chacune disant où va ce qu'on confond (« va dans le
+  groupe N » ou « ne compte pas ») ; écart 1 phrase ; texte du dessin 1 phrase de moins de 20 mots.
+- Aucun sigle, aucun numéro de type, aucun code, aucun tiret cadratin dans ces textes. Les noms de
+  types sont ceux de la section 5, sans leur numéro.
+- Le texte du dessin est la phrase lue à voix haute aux personnes qui utilisent un lecteur d'écran ;
+  elle décrit le dessin livré (section 9), vu et relu pour ce brouillon.
+- La liste des points à faire vérifier par l'expert est à la fin de cette section.
+
+### `dmh_01` 1. Loges de pic
+
+**Mots-clés** : pic, loge, loge de pic, trou de pic, trou rond, nid, nidification, flute, pic noir, pic epeiche, pic vert
+
+**Définition** : Une loge de pic est un trou rond, creusé par un pic dans un tronc ou une grosse branche pour y nicher. Elle compte même si un autre animal l'occupe aujourd'hui.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Les quatre sortes de loges comptent, selon la taille de l'entrée : petite (moins de 4 cm), moyenne (de 4 à 7 cm), grande (plus de 10 cm), ou « flûte », c'est-à-dire au moins trois loges alignées sur le tronc dont l'entrée dépasse 3 cm (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Cherchez une entrée nette, au bord franc, ronde ou ovale et haute pour les plus gros pics. Les petites loges sont souvent dans une branche morte, les moyennes dans du bois en décomposition, les grandes sur un tronc sans branche. Dans une flûte, deux loges voisines sont séparées d'au plus 2 m.
+
+**Confusions fréquentes** :
+
+- Un trou en entonnoir, plus large à l'entrée qu'au fond, creusé par un pic pour se nourrir, n'est pas une loge : il va dans le groupe 4.
+- Une ouverture irrégulière qui laisse voir du terreau brun et friable est une cavité à terreau : elle va dans le groupe 2.
+- De petits trous d'insectes dispersés ne sont pas des loges : ils vont dans le groupe 3 s'ils dépassent 2 cm, sinon ils ne comptent pas.
+
+**Types comptés** : Loge de petite taille ; Loge de taille moyenne ; Loge de grande taille ; Flûte de pic
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Un tronc portant une grande loge ovale et, plus bas, deux petites loges rondes au centre sombre.
+
+### `dmh_02` 2. Cavités à terreau
+
+**Mots-clés** : terreau, cavite, creux, carie, arbre creux, tronc creux, pied creux, cheminee, branche creuse
+
+**Définition** : Une cavité à terreau est un creux du bois, abrité de la pluie par un plafond, qui contient du terreau : une matière brune et friable faite de bois décomposé, de déjections et de restes d'animaux. Elle peut se trouver au pied de l'arbre, plus haut dans le tronc ou dans une grosse branche creuse.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : L'ouverture doit mesurer plus de 10 cm, ou plus de 30 cm si la cavité est semi-ouverte (la pluie peut y entrer) ou ouverte vers le haut comme une cheminée (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Regardez un creux dont l'ouverture est plus large que celle d'une loge de pic, aux bords irréguliers, sombre à l'intérieur. Le terreau se voit à l'ouverture ou sur le plancher du creux. Au pied de l'arbre, le plancher touche le sol, même si l'entrée est assez haute sur le tronc ; dans le tronc, le plancher est au-dessus du sol. Une branche creuse forme un tube dans une grosse branche brisée.
+
+**Confusions fréquentes** :
+
+- Un creux à fond dur, sans terreau, entre les racines ou dans le tronc est une concavité : il va dans le groupe 4.
+- Dans une fourche, une cuvette qui retient l'eau est une concavité (groupe 4) ; si le bois y est altéré, c'est une cavité à terreau.
+- Un simple tas de terre ou de feuilles au pied de l'arbre n'est pas du terreau : il ne compte pas.
+- Une loge de pic est un trou rond et net, sans terreau : elle va dans le groupe 1.
+
+**Types comptés** : Cavité à terreau de pied ; Cavité à terreau de tronc ; Cavité à terreau semi-ouverte ; Cavité à terreau ouverte vers le haut, en contact avec le sol ; Cavité à terreau ouverte vers le haut, sans contact avec le sol ; Branche creuse
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Un pied de tronc vu de l'extérieur, puis en coupe : une cavité voûtée avec du terreau au fond.
+
+### `dmh_03` 3. Orifices et galeries d'insectes
+
+**Mots-clés** : insecte, trou d'insecte, galerie, scolyte, orifice, larve, xylophage, sciure, tunnel
+
+**Définition** : Ce sont des trous de sortie et des galeries creusés dans le bois par des larves d'insectes qui se nourrissent de bois. Les galeries forment un réseau de couloirs et de chambres, que l'on voit surtout là où l'écorce est tombée.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Un orifice compte à partir de 2 cm de diamètre (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Cherchez des trous ronds ou ovales de plus de 2 cm dans l'écorce ou dans le bois, souvent entourés de fine sciure. Là où l'écorce est tombée, les galeries se voient gravées dans le bois : un couloir principal et des couloirs plus fins qui partent de chaque côté. Approchez-vous de l'arbre et mesurez le trou avant de le compter.
+
+**Confusions fréquentes** :
+
+- De minuscules trous dispersés, de moins de 2 cm, ne comptent pas.
+- Un trou net et rond avec une chambre à l'intérieur est une loge de pic : il va dans le groupe 1.
+- Une poche de pourriture n'est pas un trou d'insecte : elle ne compte pas ; une grande fente va dans le groupe 6.
+
+**Écart avec le guide de poche** : Le guide de poche retient aussi de nombreux orifices plus petits répartis sur plus de 300 cm2 (environ 17 cm sur 17 cm), l'IBP retient seulement les orifices de plus de 2 cm.
+
+**Types comptés** : Orifices et galeries d'insectes
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Un tronc avec des trous ronds et, au centre, une plaque d'écorce tombée montrant des galeries dans le bois.
+
+### `dmh_04` 4. Concavités
+
+**Mots-clés** : concavite, creux, cuvette, dendrotelme, eau, fourche, racine, contrefort, trou de nourrissage, pic
+
+**Définition** : Une concavité est un creux ou une cuvette dans le bois, sec ou rempli d'eau, sans terreau, qui n'a pas été creusé par un insecte. Elle prend quatre formes : la cuvette qui retient l'eau de pluie (dendrotelme), le trou en entonnoir qu'un pic creuse pour se nourrir, le creux à fond dur dans le tronc et le creux entre les racines et le sol.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : L'ouverture doit dépasser 10 cm et la profondeur aussi (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Le creux a un fond dur et des parois couvertes d'écorce ou de bois sain, sans matière brune qui s'effrite. Au pied de l'arbre, c'est un vide entre des racines ou des contreforts et le sol. Dans une fourche ou sur une grosse branche, c'est une cuvette qui garde l'eau de pluie et des feuilles mortes. Le trou de nourrissage d'un pic est conique : plus large à l'ouverture qu'au fond.
+
+**Confusions fréquentes** :
+
+- Si le creux contient du terreau brun et friable, c'est une cavité à terreau : elle va dans le groupe 2.
+- Un trou rond et net, creusé par un pic pour nicher, est une loge de pic : il va dans le groupe 1.
+- Une écorce arrachée, sans profondeur, n'est pas une concavité : elle va dans le groupe 5.
+
+**Écart avec le guide de poche** : Le guide de poche retient plus de 15 cm d'ouverture pour la cuvette qui retient l'eau et une pente du toit de moins de 45 degrés pour le creux entre les racines, l'IBP retient plus de 10 cm d'ouverture et ne mentionne pas de pente.
+
+**Types comptés** : Dendrotelme ; Trou de nourrissage de pic ; Concavité à fond dur de tronc ; Concavité racinaire
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Une cuvette au creux d'une fourche, et un autre tronc dont le pied s'ouvre en arche.
+
+### `dmh_05` 5. Aubier apparent
+
+**Mots-clés** : bois nu, ecorce tombee, ecorce arrachee, ecorce decollee, brulure, feu, blessure, aubier, cicatrice, abri, chauve-souris
+
+**Définition** : L'aubier apparent est le bois clair mis à nu parce que l'écorce a disparu : écorce arrachée, cicatrice de feu, ou écorce décollée qui laisse un vide derrière elle. L'écorce peut avoir été arrachée par un abattage, un débardage, une chute d'arbre ou de pierres, ou par un animal.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Comptent le bois sans écorce ou la blessure de feu sur plus de 600 cm2 (environ 25 cm sur 25 cm), ou l'écorce décollée avec un vide de plus de 1 cm derrière elle et plus de 10 cm de large et de haut (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Une plage de bois clair et lisse apparaît dans l'écorce, et l'écorce forme un bord net tout autour. Une écorce décollée se détache du tronc comme une plaque : elle forme un abri si son ouverture est en bas, une poche si elle est en haut. Une cicatrice de feu est souvent triangulaire à la base du tronc, avec du bois noirci.
+
+**Confusions fréquentes** :
+
+- Une petite éraflure de l'écorce, sous 600 cm2, ne compte pas.
+- Un bois mis à nu par un éclatement du tronc, une cassure ou une longue fente va dans le groupe 6.
+- Un creux profond avec du terreau est une cavité à terreau : il va dans le groupe 2.
+- Un champignon qui pousse sur la plage nue ne la remplace pas : l'arbre compte aussi dans le groupe 10 ou 11.
+
+**Écart avec le guide de poche** : Le guide de poche retient plus de 300 cm2 de bois sans écorce, l'IBP retient plus de 600 cm2 (environ 25 cm sur 25 cm).
+
+**Types comptés** : Bois sans écorce ; Blessure due au feu ; Écorce décollée formant un abri ; Écorce décollée formant une poche
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Une plage de bois nu aux bords irréguliers sur un tronc, avec une plaque d'écorce décollée sur le côté.
+
+### `dmh_06` 6. Aubier et bois de cœur apparents
+
+**Mots-clés** : cime brisee, fente, fissure, eclatement, cassure, bris, charpentiere, branche arrachee, foudre, bois de coeur, fourche, castor
+
+**Définition** : Du bois de cœur, parfois aussi de l'aubier, est mis à nu sur un arbre vivant par une cassure ou un éclatement du bois : cime brisée, grosse branche arrachée au niveau du tronc, ou fente. Le bord de la blessure est entouré de bois vivant.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Comptent une cime brisée de plus de 20 cm de diamètre, un bris de charpentière au niveau du tronc sur plus de 300 cm2 (environ 17 cm sur 17 cm), ou une fente de plus de 1 cm de large, de plus de 10 cm de profondeur et de plus de 30 cm de long (fiche de l'IBP, pages 3 et 12).
+
+**Méthode 3.0** : Comptent une cime brisée de plus de 20 cm de diamètre, un bris de charpentière au niveau du tronc de plus de 20 cm de diamètre ou de plus de 300 cm2, ou une fente de plus de 1 cm de large, de plus de 10 cm de profondeur et de plus de 30 cm de long (fiche de l'IBP version 3.0).
+
+**Comment le reconnaître** : Le bois est nu parce qu'il a cassé ou éclaté, pas seulement parce que l'écorce est tombée : bord déchiqueté, esquilles, ou fente longue et ouverte. Le bord de la blessure est souvent entouré d'un bourrelet d'écorce vivante qui cherche à la refermer. Une fente causée par la foudre est souvent en spirale, avec plusieurs fentes et du bois éclaté. Regardez aussi les fourches : une fente peut s'ouvrir à l'insertion de deux branches.
+
+**Confusions fréquentes** :
+
+- Si seule l'écorce a disparu, sans cassure ni fente, c'est de l'aubier apparent : il va dans le groupe 5.
+- Une branche cassée dont le bout éclaté reste dans le houppier, sans toucher le tronc, va dans le groupe 7.
+- Une branche coupée compte ici seulement si elle est coupée à ras du tronc et si la surface sans écorce dépasse 300 cm2 ; si le reste de la branche est entièrement mort, long de plus de 50 cm et de plus de 20 cm de diamètre, elle va dans le groupe 7 ; dans les autres cas, elle ne compte pas.
+- Une vieille souche bien séparée des brins vivants d'une cépée ne compte pas.
+
+**Écart avec le guide de poche** : Le guide de poche retient aussi les entailles de castor sur plus de 300 cm2, l'IBP ne les retient pas.
+
+**Types comptés** : Cime brisée ; Bris de charpentière ; Fente ; Fente causée par la foudre ; Fente à l'insertion d'une fourche
+
+**Types décrits, non comptés** : Entailles de castor
+
+**Texte du dessin** : Un tronc avec, sur le côté, une cassure déchiquetée et, au milieu, une longue fente en zigzag.
+
+### `dmh_07` 7. Bois mort dans le houppier
+
+**Mots-clés** : bois mort, branche morte, cime morte, houppier, couronne, charpentiere, moignon, vestige, chandelle
+
+**Définition** : Du bois mort encore attaché à l'arbre vivant, dans le houppier : grosses branches mortes, cime entièrement morte, ou reste éclaté d'une grosse branche cassée. Ce bois sèche et chauffe au soleil, et abrite d'autres espèces que le bois mort tombé au sol.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Comptent des branches mortes de plus de 20 cm de diamètre et de plus de 50 cm de long, ou de plus de 3 cm de diamètre si plus de 20 % du houppier est mort ; une cime morte de plus de 20 cm de diamètre à la base ; le reste d'une grosse branche cassée, de plus de 20 cm de diamètre et de plus de 50 cm de long (fiche de l'IBP, pages 3 et 12).
+
+**Comment le reconnaître** : Reculez et regardez dans le houppier : des branches sans feuilles ni aiguilles au milieu d'un feuillage vivant, une pointe morte au sommet, ou un moignon épais et éclaté. Les petites brindilles mortes ne comptent pas : il faut du gros bois, ou une grande part du houppier morte.
+
+**Confusions fréquentes** :
+
+- Une cime cassée qui met à nu le bois du tronc vivant va dans le groupe 6.
+- Un arbre sans feuilles en hiver n'a pas forcément de bois mort : regardez les bourgeons et l'écorce avant de conclure.
+- Des brindilles mortes isolées ne comptent pas.
+- Un arbre entièrement mort ne compte pas : la méthode ne compte que les arbres vivants.
+
+**Écart avec le guide de poche** : Le guide de poche retient des branches de plus de 10 cm de diamètre, ou de plus de 3 cm avec plus de 10 % du houppier mort, et une cime morte de plus de 10 cm à la base, l'IBP retient plus de 20 cm de diamètre avec plus de 50 cm de long, ou plus de 20 % du houppier mort, et plus de 20 cm à la base pour la cime.
+
+**Types comptés** : Branches mortes ; Cime morte ; Vestige de charpentière brisée
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : À gauche un houppier feuillu vivant ; à droite de grosses branches mortes sans feuilles et une pointe morte.
+
+### `dmh_08` 8. Agglomérations de gourmands ou de rameaux
+
+**Mots-clés** : balai de sorciere, brogne, gourmand, rameaux, pousses, touffe, rejets, bourgeons dormants
+
+**Définition** : Un amas dense de jeunes pousses qui sortent d'un même point : soit un balai de sorcière, boule de rameaux serrés sur une branche, soit une brogne, touffe de gourmands sur le tronc. Ces pousses naissent de bourgeons dormants de l'arbre.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Comptent un balai de sorcière de plus de 50 cm, ou une brogne de plus de 5 gourmands (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : Un balai de sorcière se voit surtout dans le houppier, ou en hiver sur un arbre sans feuilles : une grosse boule de petites tiges serrées, sans ramification régulière, bien plus épaisse que la branche qui la porte. Une brogne est une touffe de pousses fines qui sortent directement de l'écorce du tronc. Comptez les pousses de la touffe : il en faut plus de 5.
+
+**Confusions fréquentes** :
+
+- Une boule de gui ressemble à un balai de sorcière, surtout en hiver : le gui est une plante qui vit sur l'arbre, aux tiges fourchues et aux feuilles épaisses, et il va dans le groupe 12.
+- Quelques gourmands isolés, 5 ou moins, ne comptent pas.
+- Un enchevêtrement de rameaux morts ne compte pas ici : un balai de sorcière est fait de pousses vivantes.
+- Un nid d'oiseau vu d'en bas peut ressembler à un balai : il est fait de branchages posés, avec un creux sur le dessus, et il va dans le groupe 13 s'il dépasse 50 cm.
+
+**Types comptés** : Balai de sorcière ; Gourmands ou brogne
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Une touffe de pousses fines sur un tronc, et une grosse boule de rameaux enchevêtrés au bout d'une branche.
