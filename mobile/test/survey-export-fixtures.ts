@@ -5,7 +5,7 @@ import {
   type FactorKey,
   type SurveyRoute,
 } from "@cortege/ibp-domain"
-import { MAP_FRAME_SIZE, SUMMARY_MAP_FRAME_SIZE } from "../src/app/survey-pdf/export-settings"
+import { COVER_MAP_FRAME_SIZE, SUMMARY_MAP_FRAME_SIZE } from "../src/app/survey-pdf/export-settings"
 import type { SurveyExportData } from "../src/app/survey-pdf/types"
 import { ownItem } from "./parcel-history-fixtures"
 
@@ -254,10 +254,10 @@ export const exportFixtureWorstCase: SurveyExportData = {
     polygons: WORST_POLYGONS,
     basemap: {
       dataUri: `data:image/jpeg;base64,${PLACEHOLDER_BASE64}`,
-      // Phase 33, D-12: the real frame of the complete PDF, like every other complete fixture.
-      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, ...MAP_FRAME_SIZE },
+      // Phase 33, D-24: the real frame of the complete PDF (its map is on the cover), like every other complete fixture.
+      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, ...COVER_MAP_FRAME_SIZE },
     },
-    frameSize: { ...MAP_FRAME_SIZE },
+    frameSize: { ...COVER_MAP_FRAME_SIZE },
   },
   history: {
     fetchedAt: "2026-10-09T12:00:00.000Z",
@@ -335,8 +335,8 @@ export const exportFixtureTypical: SurveyExportData = {
   photos: photosOf(6),
   map: {
     polygons: [WORST_POLYGONS[0]],
-    basemap: basemapOf(MAP_FRAME_SIZE, { lng: 2.701, lat: 48.4005 }),
-    frameSize: { ...MAP_FRAME_SIZE },
+    basemap: basemapOf(COVER_MAP_FRAME_SIZE, { lng: 2.701, lat: 48.4005 }),
+    frameSize: { ...COVER_MAP_FRAME_SIZE },
   },
   history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(3, "survey-v32") },
 }

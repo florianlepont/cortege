@@ -30,7 +30,6 @@ describe("PDF_SECTIONS", () => {
       "route",
       "factor-chart",
       "factors",
-      "map",
       "trend",
       "photos",
     ])
@@ -40,6 +39,13 @@ describe("PDF_SECTIONS", () => {
     expect(sectionsFor("summary").map((entry) => entry.id)).toEqual(["summary"])
     expect(sectionsFor("complete").map((entry) => entry.id)).not.toContain("summary")
     expect(sectionsFor("summary").map((entry) => entry.id)).not.toContain("cover")
+  })
+
+  it("has no map entry any more: the parcel map is on the cover (D-24)", () => {
+    expect(PDF_SECTIONS.map((entry) => entry.id)).not.toContain("map")
+    const ids = sectionsFor("complete").map((entry) => entry.id)
+    // The phase 31 anchor: a later section goes after the factors, before the trend.
+    expect(ids.indexOf("factors") + 1).toBe(ids.indexOf("trend"))
   })
 
   it("has no score card entry any more (its content moved to the cover, D-01)", () => {
@@ -88,7 +94,7 @@ describe("section builders", () => {
     expect(section("cover").build(exportFixtureV30Draft, palette)).toHaveLength(1)
     expect(section("summary").build(exportFixtureSummary, palette)).toHaveLength(1)
     expect(section("factor-chart").build(exportFixtureV30Draft, palette)).toHaveLength(1)
-    expect(section("map").build(exportFixtureV30Draft, palette)).toHaveLength(1)
+    expect(section("identity").build(exportFixtureV30Draft, palette).length).toBeGreaterThan(0)
     expect(section("trend").build(exportFixtureV30Draft, palette)).toHaveLength(1)
   })
 

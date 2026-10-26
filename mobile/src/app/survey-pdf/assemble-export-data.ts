@@ -17,7 +17,7 @@ import type { PublicParcelStatusItem } from "../types"
 import { loadExportAssets } from "./assets"
 import {
   GEOMETRY_FETCH_TIMEOUT_MS,
-  MAP_FRAME_SIZE,
+  COVER_MAP_FRAME_SIZE,
   PHOTO_EXPORT_SETTINGS,
   SUMMARY_MAP_FRAME_SIZE,
   pdfLayoutFor,
@@ -263,9 +263,13 @@ async function loadPolygons(
 
 type FrameSize = { width: number; height: number }
 
-/** The map frame of a mode: the summary has its own, shorter one (phase 33, UI-SPEC B.5). */
+/**
+ * The map frame of a mode (phase 33, UI-SPEC B.5): the complete PDF's map is on the cover (D-24, plan
+ * 33-18) and the summary has its own zone; both are 515 x 228, kept as two constants because each
+ * document owns its measurement.
+ */
 function frameSizeOf(mode: ExportMode): FrameSize {
-  return mode === "summary" ? SUMMARY_MAP_FRAME_SIZE : MAP_FRAME_SIZE
+  return mode === "summary" ? SUMMARY_MAP_FRAME_SIZE : COVER_MAP_FRAME_SIZE
 }
 
 function frameFor(bounds: LngLatBounds, size: FrameSize): MapFrame {

@@ -7,13 +7,14 @@ import { PHOTO_EXPORT_SETTINGS } from "./export-settings"
 import { PHOTOS_PER_PAGE } from "./photos-section"
 
 /**
- * Pages of the complete PDF before its photo pages, for the typical survey: the cover, the identity
- * card with the factor chart, the factors A to E, the factors F to J, and the map with the trend.
- * This is the page count of `exportFixtureTypical` with its photos removed, measured on the final
- * builder (plan 33-13, 2026-10-24, 250 map frame); `page-estimate.test.ts` fails when it drifts.
- * Re-derived by plan 33-16 with `PAGE_FILL_FACTOR` 0.94 (2026-10-26): still 5.
+ * Pages of the complete PDF before its photo pages, for the typical survey: the cover with the parcel
+ * map, the identity card with the factor chart and factor A, the factors B to G, and the context
+ * heading with the factors H to J and the trend. This is the page count of `exportFixtureTypical`
+ * with its photos removed, measured on the final builder. Plan 33-13: 5 (map and trend on their own
+ * page); re-derived by plan 33-18 (2026-10-26, D-24: the map moved to the cover): 4.
+ * `page-estimate.test.ts` fails when it drifts.
  */
-export const COMPLETE_BASE_PAGES = 5
+export const COMPLETE_BASE_PAGES = 4
 
 /** The smallest PDF there is: the cover and one page of content. */
 const MIN_PAGES = 2

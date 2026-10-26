@@ -221,3 +221,41 @@ All 30 PDFs are 1 page; the map is one `jpeg` object in each (`pdfimages -list`)
 - Photos: the 640 px / 0.6 setting is the one measured in 33-14 (worst case iOS 1035.2 KB, Android 947.9 KB, 24 of 24 photos present, no visible blocking), the photo code path is unchanged by this plan, so the photo weights were not re-run on the devices; the Chrome worst case with the 640 / 0.6 files is 1025.4 KB (against 1439.7 KB at 800 / 0.65 in the 33-14 Chrome row).
 - Not measured: a real phone; the offline snapshot branch on iOS; the complete-profile basemap is unchanged (1100 / 0.8) and was not re-measured as a PDF; phone-photo sources.
 
+
+## Re-measurement of plans 33-17 and 33-18 (2026-10-26)
+
+Changes under test: plan 33-17 (grouped factor charts, whole parcel list, year rule, export sheet) and plan 33-18 (D-24: the parcel map moves from the body to the cover, `COVER_PANEL_HEIGHT` 356, `COVER_MAP_FRAME_SIZE` 515 x 228, the body map entry and `map-section.ts` removed, `COMPLETE_BASE_PAGES` 4). Code of the branch after the Task 2 commit of plan 33-18.
+
+### Chrome: page counts (the harness of 33-RENDER-HARNESS.md on the final builders, root zoom 4/3 so 1 unit = 1 pt)
+
+14 cases of the plan plus two extra covers (a 64 character site name, a draft with a map). Photos are the 24 herbier JPEGs prepared at 640 px / JPEG 0.6 (`sips`), the cover map is a 1030 x 456 stand-in JPEG (the 2x of the cover frame; 60 KB). `complete-many-parcels` is the 30 ids `77186000AB0001` to `0030`, `complete-many-parcels-wide` the 30 ids `2A004000WM0001` to `0030`; both fixtures have no map, so their cover prints the quiet panel. `complete-typical-outline` is the typical survey with its basemap removed. "Cover legend bottom" is the bottom of the legend line under the cover map (page 1; the budget is 768 pt on a submitted cover and 792 pt on a draft); "none" means the cover holds a quiet panel and no legend line. "Lowest body text bottom" is the largest bottom of any text of pages 2 and later (body bottom 800, the 790 pt line is the rule); for a summary it is the one page.
+
+| engine | case | builder pages | pdfinfo pages | pdfinfo size KB | lowest body text bottom, pt | cover legend bottom, pt |
+|---|---|---:|---:|---:|---:|---:|
+| chrome | complete-v32 | 4 | 4 | 165.9 | 713.8 | none (quiet panel, no map in the fixture) |
+| chrome | complete-v32-route | 4 | 4 | 170.7 | 687.5 | none (quiet panel) |
+| chrome | complete-v30-draft | 4 | 4 | 167.6 | 724.3 | none (quiet panel, no parcel) |
+| chrome | complete-typical | 5 | 5 | 437.4 | 745.7 | 767.2 |
+| chrome | complete-typical-conditioned | 6 | 6 | 448.2 | 745.7 | 767.2 |
+| chrome | complete-worst | 9 | 9 | 1031.6 | 745.7 | 767.2 |
+| chrome | complete-worst-no-route | 9 | 9 | 1026.0 | 745.7 | 767.2 |
+| chrome | complete-many-parcels | 4 | 4 | 172.7 | 662.6 | none (quiet panel) |
+| chrome | complete-many-parcels-wide | 4 | 4 | 172.7 | 662.6 | none (quiet panel) |
+| chrome | complete-typical-outline | 5 | 5 | 377.0 | 745.7 | 767.2 |
+| chrome | summary | 1 | 1 | 133.1 | 799.5 | not applicable |
+| chrome | summary-worst | 1 | 1 | 137.0 | 799.5 | not applicable |
+| chrome | summary-no-basemap | 1 | 1 | 71.6 | 787.5 | not applicable |
+| chrome | summary-no-history | 1 | 1 | 127.9 | 787.5 | not applicable |
+| chrome | (extra) complete-long-name | 5 | 5 | 439.9 | 745.7 | 767.2 |
+| chrome | (extra) complete-draft-typical (typical, isDraft) | 6 | 6 | 445.6 | 769.7 | 791.2 |
+
+- Every builder count equals `pdfinfo`. Against the pins after plan 33-16 (v3.2 4, v3.2 with route 5, v3.0 draft 4, typical 6, conditioned 7, worst 10 with and without route, summaries 1) the counts are v3.2 4 (same), v3.2 with route 4 (-1), draft 4 (same), typical 5 (-1), conditioned 6 (-1), worst 9 (-1, with and without the route), summaries 1 (same): none went up. The two extra cases were not pinned before (a submitted typical draft prints 6 pages: the draft banner costs 24 units on every body page).
+- The cover legend bottom is 767.2 pt on a submitted cover (budget 768) and 791.2 pt on a draft (budget 792). The lowest text of a body page is 745.7 pt at most (724.3 on the draft fixture, 769.7 on the extra typical draft whose photo page starts 24 units lower), 20 to 54 pt above the 790 pt line.
+- The cover map JPEG is one `jpeg` object on page 1 (1030 x 456, 144 ppi; `pdfimages -list`), the logo once, the six photos on page 5; no other page holds a map.
+- Covers looked at (120 dpi PNGs of page 1):
+  - Typical, submitted: forest panel with the logo tile, "Relevé IBP", the site name on one line, the date, the 32 / 50 numeral and the "Niveau : assez forte" pill; below the panel the two tiles (20 / 35 orange ring, 12 / 15 green ring), the heading "Localisation", the map frame with the basemap, the parcel outline, the north arrow and the scale bar, and the source line under it; about 36 units of paper under the legend and the footer rule. No parcel id, no year. No contour ring touches the date, the eyebrow or the subtitle (the rings start at x 285 pt, the date ends at x 142 pt, the subtitle at x 268 pt and at y 80); the nearest ring edge sits about 5 pt right of the pill.
+  - v3.0 draft, no parcel: the provisional line "Score provisoire : 2 facteurs non renseignés" under the numeral, the draft banner strip at y 368, the tiles at 400, and the quiet panel "Aucune parcelle liée à ce relevé." in place of the map, with the pale "Brouillon" watermark crossing the tiles and the panel (readable under it), no legend line.
+  - Worst case (64 character site name, three parcels): the name takes three lines of 20 / 24 and the third line ends above the date; the second line of the title ("parcelles de la grande colline du") is crossed by a contour ring: this long name takes the 20 / 24 size, below the 24 bold of the contour rule of B.4, and the old cover (title at 156) had the same crossing for a name of this length; the date, the eyebrow and the subtitle are clear. Open item for the owner (cosmetic, only names of 49 characters or more on three lines). The map shows three outlines over the basemap and its source line.
+  - Typical outline (no basemap): the pale canvas with the one outline, the scale bar, the north arrow and the legend "Fond de carte non disponible sur cet appareil : contour des parcelles seul.".
+  - Typical draft with a map: the banner, the tiles at 400, the map zone from 528 to 792, the legend line ending at 791.2 pt (under the 804 footer rule), the pale watermark over the heading and the map.
+  - Many parcels (30 ids, no map in the fixture): a quiet panel "Contour des parcelles non disponible sur cet appareil.", no ids on the cover, no ellipsis anywhere in the document; the 30 ids are on page 2.

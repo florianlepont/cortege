@@ -8,7 +8,7 @@ import {
 } from "./assemble-export-data"
 import {
   GEOMETRY_FETCH_TIMEOUT_MS,
-  MAP_FRAME_SIZE,
+  COVER_MAP_FRAME_SIZE,
   PHOTO_EXPORT_SETTINGS,
   SUMMARY_MAP_FRAME_SIZE,
 } from "./export-settings"
@@ -313,7 +313,7 @@ describe("assembleSurveyExportData", () => {
     const withPhotos = () =>
       fakeDeps({ listPhotos: jest.fn(async () => [attachment("p1"), attachment("p2")]) })
 
-    test("a complete export carries its mode, reads the photos and frames the map at the full size", async () => {
+    test("a complete export carries its mode, reads the photos and frames the map at the cover size", async () => {
       const deps = withPhotos()
 
       const data = await assembleSurveyExportData(input(), deps)
@@ -321,7 +321,7 @@ describe("assembleSurveyExportData", () => {
       expect(data.mode).toBe("complete")
       expect(deps.listPhotos).toHaveBeenCalled()
       expect(data.photos.items).toHaveLength(2)
-      expect(data.map?.frameSize).toEqual(MAP_FRAME_SIZE)
+      expect(data.map?.frameSize).toEqual(COVER_MAP_FRAME_SIZE)
     })
 
     test("a summary reads no photo at all and has none", async () => {
@@ -383,7 +383,7 @@ describe("assembleSurveyExportData", () => {
       expect(data.mode).toBe("complete")
       expect(data.isDraft).toBe(true)
       expect(deps.listPhotos).toHaveBeenCalled()
-      expect(data.map?.frameSize).toEqual(MAP_FRAME_SIZE)
+      expect(data.map?.frameSize).toEqual(COVER_MAP_FRAME_SIZE)
       const coerced = debug.mock.calls.filter(([message]) =>
         String(message).includes("surveyExport.modeCoerced"),
       )
@@ -539,7 +539,7 @@ describe("assembleSurveyExportData", () => {
       )
       expect(data.map?.polygons.map((polygon) => polygon.parcelId)).toEqual([PARCEL, OTHER])
       expect(data.map?.basemap?.dataUri).toBe(BASEMAP.dataUri)
-      expect(data.map?.frameSize).toEqual(MAP_FRAME_SIZE)
+      expect(data.map?.frameSize).toEqual(COVER_MAP_FRAME_SIZE)
     })
 
     test("frames the snapshot on the outlines inside the offline zoom range", async () => {
@@ -550,7 +550,7 @@ describe("assembleSurveyExportData", () => {
       const rings = (data.map?.polygons ?? []).flatMap((polygon) => polygon.rings)
       const bounds = boundsOfRings(rings)
       expect(bounds).not.toBeNull()
-      const expected = fitFrameToBounds(bounds!, MAP_FRAME_SIZE, {
+      const expected = fitFrameToBounds(bounds!, COVER_MAP_FRAME_SIZE, {
         paddingRatio: 0.12,
         zoomRange: OFFLINE_ZOOM_RANGE,
       })

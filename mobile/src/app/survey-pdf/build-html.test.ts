@@ -92,7 +92,7 @@ describe("buildSurveyExportHtml document head", () => {
       ".identity-heading",
       ".chart-card",
       ".factor-card",
-      ".map-",
+      ".map-frame",
       ".trend-",
       ".photos-",
     ]) {
@@ -132,15 +132,15 @@ describe("buildSurveyExportHtml page order", () => {
   const { html } = buildSurveyExportHtml(exportFixtureWorstCase)
   const body = bodyOf(html)
 
-  it("follows the sheet: cover, identity, method, chart, factors, map, trend, photos", () => {
+  it("follows the sheet: cover with the map, identity, method, chart, factors, trend, photos", () => {
     expectInOrder(body, [
       'class="cover-page"',
+      t.map.heading,
       t.identity.heading,
       t.method.heading,
       t.scores.chartHeading,
       t.factors.standGroup,
       t.factors.contextGroup,
-      t.map.heading,
       t.trend.heading,
       t.photos.heading,
     ])
@@ -592,12 +592,12 @@ describe("buildSurveyExportHtml section registry", () => {
       "@font-face",
       "@page",
       ".cover-",
+      ".map-frame",
       ".identity-heading",
       ".conditions-",
       ".route-",
       ".chart-card",
       ".factor-card",
-      ".map-",
       ".trend-",
       ".photos-",
     ])
@@ -611,32 +611,32 @@ describe("buildSurveyExportHtml section registry", () => {
   })
 })
 
-// Phase 33 (D-03, D-11, UI-SPEC B.11): the page-count targets with the cover. The counts are those
-// of the block-height estimate against the page capacity, not a device measurement: plan 33-14
-// compares them with `pdfinfo` on the iOS simulator and the Android emulator. The exact number is
-// in each test name.
+// Phase 33 (D-03, D-11, D-24, UI-SPEC B.11): the page-count targets with the cover and the map on it.
+// The counts are those of the block-height estimate against the page capacity, not a device
+// measurement: plans 33-14 and 33-18 compare them with `pdfinfo` on Chrome, the iOS simulator and the
+// Android emulator. The exact number is in each test name; the target is the upper bound.
 describe("buildSurveyExportHtml page counts (B.11)", () => {
   const WITH_ROUTE: SurveyExportData = { ...exportFixtureV32Submitted, route: WORST_ROUTE }
 
   it.each([
     { label: "a v3.0 draft (target 4)", data: exportFixtureV30Draft, pages: 4, target: 4 },
-    { label: "the typical survey (target 6)", data: exportFixtureTypical, pages: 6, target: 6 },
+    { label: "the typical survey (target 6)", data: exportFixtureTypical, pages: 5, target: 6 },
     {
       label: "the typical survey with conditions and route (target 7)",
       data: exportFixtureTypicalConditioned,
-      pages: 7,
+      pages: 6,
       target: 7,
     },
     {
       label: "the worst case sheet (target 10)",
       data: exportFixtureWorstCase,
-      pages: 10,
+      pages: 9,
       target: 10,
     },
     {
       label: "the worst case sheet without its route (target 10)",
       data: { ...exportFixtureWorstCase, route: null },
-      pages: 10,
+      pages: 9,
       target: 10,
     },
   ])("pins the page count of $label at $pages", ({ data, pages, target }) => {
@@ -645,34 +645,68 @@ describe("buildSurveyExportHtml page counts (B.11)", () => {
     expect(pageCount).toBeLessThanOrEqual(target)
   })
 
-  // Plan 33-16 (owner decision 2026-10-26): PAGE_FILL_FACTOR 0.92 -> 0.94. Page 2 holds the identity
-  // card (288), the factor chart (214) and the stand heading with factor A (190), 692 against a
-  // capacity of 695.6, so the factors start on page 2 and the closing notes share the last page.
-  // The devices printed the same content in 689.8 of 740 units (33-14-MEASUREMENTS.md).
+  // Plan 33-16 (owner decision 2026-10-26): PAGE_FILL_FACTOR 0.92 -> 0.94. Plan 33-18 (D-24, D-25):
+  // the body has no map and the year row is gone when it equals the date's year. Page 2 holds the
+  // identity card (269 with the year rule), the factor chart (214) and the stand heading with factor A
+  // (190), 673 against a capacity of 695.6, so the factors start on page 2 and the closing notes share
+  // the last page. The devices printed the same content in 689.8 of 740 units (33-14-MEASUREMENTS.md).
   it("pins the page count of a v3.2 submitted survey at 4, the B.11 target", () => {
     expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBe(4)
   })
 
-  it("pins a v3.2 submitted survey with the fullest route at its own count", () => {
-    expect(buildSurveyExportHtml(WITH_ROUTE).pageCount).toBe(5)
+  it("pins a v3.2 submitted survey with the fullest route at 4 (it was 5 with the body map)", () => {
+    expect(buildSurveyExportHtml(WITH_ROUTE).pageCount).toBe(4)
   })
 
   it.each([
     ["the typical survey", exportFixtureTypical],
     ["the typical survey with conditions and route", exportFixtureTypicalConditioned],
     ["the worst case sheet", exportFixtureWorstCase],
-  ])("puts the map and the trend on one page for %s", (_label, data) => {
-    const pages = pagesOf(buildSurveyExportHtml(data).html)
-    const holder = pages.find((page) => page.includes(t.map.heading))
-    expect(holder).toBeDefined()
-    expect(holder).toContain(t.trend.heading)
+  ])("draws the map once, on page 1, with its heading, for %s", (_label, data) => {
+    const { html } = buildSurveyExportHtml(data)
+    const pages = pagesOf(html)
+    expect(pages[0]).toContain(`<div class="cover-map-heading">${t.map.heading}</div>`)
+    expect(countOf(pages[0], 'class="map-frame"')).toBe(1)
+    expect(countOf(bodyOf(html), 'class="map-frame"')).toBe(1)
+    expect(countOf(bodyOf(html), t.map.heading)).toBe(1)
+    for (const page of pages.slice(1)) expect(page).not.toContain("map-frame")
   })
 
-  it("keeps the map and the trend on one page for a six-point history", () => {
+  it.each([
+    ["the typical survey", exportFixtureTypical],
+    ["the worst case sheet", exportFixtureWorstCase],
+  ])(
+    "puts the trend after the factors, on the page of the factor J card, for %s",
+    (_label, data) => {
+      const pages = pagesOf(buildSurveyExportHtml(data).html)
+      const trendPage = pages.findIndex((page) => page.includes(t.trend.heading))
+      expect(trendPage).toBeGreaterThan(1)
+      const lastFactor = pages.findIndex((page) =>
+        page.includes('<span class="factor-letter">J</span>'),
+      )
+      expect(trendPage).toBe(lastFactor)
+      const page = pages[trendPage]
+      expect(page.indexOf('<span class="factor-letter">J</span>')).toBeLessThan(
+        page.indexOf(t.trend.heading),
+      )
+      const photoPage = pages.findIndex((entry) => entry.includes(t.photos.heading))
+      expect(photoPage).toBeGreaterThan(trendPage)
+    },
+  )
+
+  it("keeps one trend block for a six-point history", () => {
     expect(exportFixtureWorstCase.history?.items).toHaveLength(6)
     const pages = pagesOf(buildSurveyExportHtml(exportFixtureWorstCase).html)
-    expect(pages.filter((page) => page.includes(t.map.heading))).toHaveLength(1)
     expect(pages.filter((page) => page.includes(t.trend.heading))).toHaveLength(1)
+  })
+
+  it("prints all 30 parcel ids of the many-parcels fixture and no ellipsis in the whole document (D-23)", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureManyParcels)
+    const body = bodyOf(html)
+    for (const id of exportFixtureManyParcels.parcelIds) expect(body).toContain(id)
+    expect(body).not.toContain(String.fromCharCode(0x2026))
+    // The cover prints no parcel id at all: the list is on page 2 only.
+    expect(pagesOf(html)[0]).not.toContain(exportFixtureManyParcels.parcelIds[0])
   })
 
   it("starts the first photo page after the trend, never beside it", () => {
