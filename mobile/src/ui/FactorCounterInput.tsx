@@ -1,5 +1,5 @@
 // Why custom: no native stepper with a typeable value, 56 pt glove-sized buttons and the brand look; the SwiftUI Stepper is iOS only.
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
@@ -9,11 +9,9 @@ import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 import { AppPressable } from "./AppPressable"
+import { useHoldRepeat } from "./useHoldRepeat"
 
 const BUTTON_SIZE = 56
-const REPEAT_INTERVAL_MS = 120
-const ACCELERATE_AFTER_TICKS = 6
-const ACCELERATE_FURTHER_AFTER_TICKS = 15
 
 const t = fr.factorInput.counter
 
@@ -48,51 +46,20 @@ export function FactorCounterInput({
   const styles = useMemo(() => createStyles(theme), [theme])
   const [editing, setEditing] = useState(false)
   const [draftText, setDraftText] = useState(value)
-  const currentRef = useRef<number>(parseFiniteNumberInput(value) ?? min)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  useEffect(() => {
-    const parsed = parseFiniteNumberInput(value)
-    if (parsed !== null) currentRef.current = parsed
-  }, [value])
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [])
+  const { start, stop } = useHoldRepeat({
+    value: parseFiniteNumberInput(value),
+    min,
+    max,
+    onChange: (next) => onChange(String(next)),
+  })
 
   const hasValue = value.trim().length > 0
   const showError = touched && Boolean(error)
   const state = resolveFactorInputState(hasValue, showError)
 
-  const applyDelta = (delta: number): void => {
-    const next = Math.min(max, Math.max(min, currentRef.current + delta))
-    currentRef.current = next
-    onChange(String(next))
-  }
-
   const stopRepeat = (): void => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
+    stop()
     onTouch()
-  }
-
-  const startRepeat = (delta: number): void => {
-    applyDelta(delta)
-    let ticks = 0
-    intervalRef.current = setInterval(() => {
-      ticks += 1
-      const accelerated =
-        ticks > ACCELERATE_FURTHER_AFTER_TICKS
-          ? delta * 5
-          : ticks > ACCELERATE_AFTER_TICKS
-            ? delta * 2
-            : delta
-      applyDelta(accelerated)
-    }, REPEAT_INTERVAL_MS)
   }
 
   const openEdit = (): void => {
@@ -118,7 +85,7 @@ export function FactorCounterInput({
           accessibilityRole="button"
           accessibilityLabel={t.decrease({ label })}
           hitSlop={brandInteraction.hitTarget.min}
-          onPressIn={() => startRepeat(-step)}
+          onPressIn={() => start(-step)}
           onPressOut={stopRepeat}
           style={styles.button}
           testID={testID ? `${testID}-decrease` : undefined}
@@ -154,7 +121,7 @@ export function FactorCounterInput({
           accessibilityRole="button"
           accessibilityLabel={t.increase({ label })}
           hitSlop={brandInteraction.hitTarget.min}
-          onPressIn={() => startRepeat(step)}
+          onPressIn={() => start(step)}
           onPressOut={stopRepeat}
           style={styles.button}
           testID={testID ? `${testID}-increase` : undefined}
