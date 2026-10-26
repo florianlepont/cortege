@@ -17,8 +17,15 @@ export { DRAFT_BANNER_HEIGHT, PAGE_FOOTER_HEIGHT, PAGE_HEADER_HEIGHT }
  * estimates in design units (text wraps differently on iOS and Android), so a margin is kept to
  * stop an under-estimated block from being cut at the footer. A single block on an empty page may
  * use the whole area.
+ *
+ * 0.94 since plan 33-16 (owner decision 2026-10-26; it was 0.92). Plan 33-14 printed the layout on
+ * the iOS simulator and the Android emulator: the estimates are accurate, the real content of page 2
+ * (identity card, factor chart, stand heading and factor A) is 689.8 of the 740 units of the body,
+ * and the last text of any page ends at 746.5 pt at most with the body bottom at 800. A capacity of
+ * 695.6 (740 x 0.94) lets that content, estimated at 692, stay on page 2, so the v3.2 sheet without
+ * map and history prints the 4 pages of the B.11 target.
  */
-export const PAGE_FILL_FACTOR = 0.92
+export const PAGE_FILL_FACTOR = 0.94
 
 /** What every page repeats. `generatedAtText` is the long date, already formatted. */
 export type PageChrome = {

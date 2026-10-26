@@ -11,6 +11,7 @@ import { PHOTOS_PER_PAGE } from "./photos-section"
  * card with the factor chart, the factors A to E, the factors F to J, and the map with the trend.
  * This is the page count of `exportFixtureTypical` with its photos removed, measured on the final
  * builder (plan 33-13, 2026-10-24, 250 map frame); `page-estimate.test.ts` fails when it drifts.
+ * Re-derived by plan 33-16 with `PAGE_FILL_FACTOR` 0.94 (2026-10-26): still 5.
  */
 export const COMPLETE_BASE_PAGES = 5
 

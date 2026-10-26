@@ -113,7 +113,7 @@ describe("paginateBlocks packing", () => {
         block("a", 450),
         block("h1", 20, { keepWithNext: true }),
         block("h2", 20, { keepWithNext: true }),
-        block("b", 200),
+        block("b", 230),
       ],
       CHROME,
     )

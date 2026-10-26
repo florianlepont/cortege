@@ -643,18 +643,12 @@ describe("buildSurveyExportHtml page counts (B.11)", () => {
     expect(pageCount).toBeLessThanOrEqual(target)
   })
 
-  // KNOWN MISS, reported to the orchestrator (plan 33-13): the v3.2 submitted fixture prints 5
-  // pages, the target of B.11 is 4. Page 2 holds the identity card (288) and the factor chart (214)
-  // and the stand heading with factor A (190) would make 692 against a capacity of 680.8; the
-  // remediation steps (merged-card sub-heading 24 to 20 = 4, factor A estimate 156 to its measured
-  // 151 = 5) reach 683, still 2.2 too many, so the factors start page 3 and the closing "no map" and
-  // "no history" notes spill onto a fifth page. It is an owner decision, not a test to loosen.
-  it("pins the page count of a v3.2 submitted survey at 5, one above its target of 4", () => {
-    expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBe(5)
-  })
-
-  it.failing("meets the B.11 target of 4 pages for a v3.2 submitted survey (known miss)", () => {
-    expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBeLessThanOrEqual(4)
+  // Plan 33-16 (owner decision 2026-10-26): PAGE_FILL_FACTOR 0.92 -> 0.94. Page 2 holds the identity
+  // card (288), the factor chart (214) and the stand heading with factor A (190), 692 against a
+  // capacity of 695.6, so the factors start on page 2 and the closing notes share the last page.
+  // The devices printed the same content in 689.8 of 740 units (33-14-MEASUREMENTS.md).
+  it("pins the page count of a v3.2 submitted survey at 4, the B.11 target", () => {
+    expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBe(4)
   })
 
   it("pins a v3.2 submitted survey with the fullest route at its own count", () => {
