@@ -3,7 +3,7 @@ phase: 33
 slug: pdf-export-exhaustive-and-simplified
 status: planned
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-10-23
 planned: 2026-10-24
 ---
@@ -122,4 +122,4 @@ Requirement map (from the research, kept for reference):
 - [ ] Feedback latency < 30 s (per-task jest runs are scoped; the two coverage commands of 33-13-T2 and the full gates take a few minutes)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-10-26 (owner review of the last build on the iPhone)
