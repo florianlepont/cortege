@@ -195,6 +195,66 @@ describe("useUncappedEntry", () => {
     })
   })
 
+  describe("bumpDmhCount", () => {
+    test("stores 1 on a group with no count and two bumps in one batch store 2", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 1 })
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_02", 1)
+        result.current.bumpDmhCount("dmh_02", 1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 1, dmh_02: 2 })
+    })
+
+    test("going down stops at 0 and 0 stays an entry", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1)
+        result.current.bumpDmhCount("dmh_01", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 0 })
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 0 })
+    })
+
+    test("a group never counted does not store a negative count", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_03", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_03: 0 })
+    })
+
+    test("counts are clamped to 999", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setDmhCount("dmh_01", 997)
+        result.current.bumpDmhCount("dmh_01", 5)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 999 })
+    })
+
+    test("returns the derived trees per hectare, null without a valid surface", async () => {
+      const result = await render()
+      let derived: number | null = 99
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_01", 1)
+      })
+      expect(derived).toBeNull()
+      await act(async () => {
+        result.current.setFSurface("2")
+        derived = result.current.bumpDmhCount("dmh_01", 2)
+      })
+      // 3 trees on 2 ha, capped at 2 per ha for the group: 1.5
+      expect(derived).toBe(1.5)
+    })
+  })
+
   describe("uncappedPayload", () => {
     test("gives only valid entries, in the package code order", async () => {
       const result = await render()

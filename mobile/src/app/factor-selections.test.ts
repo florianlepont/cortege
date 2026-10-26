@@ -5,6 +5,7 @@ import {
   readSelection,
   selectionLabel,
   selectionOptionsFor,
+  withSelectionToggled,
 } from "./factor-selections"
 
 const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
@@ -140,6 +141,45 @@ describe("factor-selections", () => {
     it("gives null for an unknown code", () => {
       expect(selectionLabel("I", "bogus")).toBeNull()
       expect(selectionLabel("J", "sea")).toBeNull()
+    })
+  })
+
+  describe("withSelectionToggled", () => {
+    it("ticks a group and returns the selection in option order", () => {
+      expect(withSelectionToggled("F", V3_2, ["dmh_12"], "dmh_01", true)).toEqual([
+        "dmh_01",
+        "dmh_12",
+      ])
+    })
+
+    it("unticks a present code", () => {
+      expect(withSelectionToggled("F", V3_2, ["dmh_01", "dmh_12"], "dmh_01", false)).toEqual([
+        "dmh_12",
+      ])
+    })
+
+    it("keeps the same list, in option order, when ticking a present code or unticking an absent one", () => {
+      expect(withSelectionToggled("F", V3_2, ["dmh_12", "dmh_01"], "dmh_01", true)).toEqual([
+        "dmh_01",
+        "dmh_12",
+      ])
+      expect(withSelectionToggled("F", V3_2, ["dmh_01"], "dmh_05", false)).toEqual(["dmh_01"])
+    })
+
+    it("treats a null selection as empty", () => {
+      expect(withSelectionToggled("F", V3_2, null, "dmh_05", true)).toEqual(["dmh_05"])
+      expect(withSelectionToggled("F", V3_2, null, "dmh_05", false)).toEqual([])
+    })
+
+    it("works with the v3.0 method and a null method", () => {
+      expect(withSelectionToggled("F", V3_0, ["dmh_15"], "dmh_02", true)).toEqual([
+        "dmh_02",
+        "dmh_15",
+      ])
+      expect(withSelectionToggled("F", null, ["dmh_15"], "dmh_02", true)).toEqual([
+        "dmh_02",
+        "dmh_15",
+      ])
     })
   })
 })

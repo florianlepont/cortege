@@ -36,6 +36,9 @@ export type UncappedPayload = {
   f_surface_ha?: number
 }
 
+/** The most trees a group row counts (a field survey never reaches it; it only bounds the taps). */
+const MAX_DMH_COUNT = 999
+
 const EMPTY_STATE: UncappedState = { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "" }
 
 /** Covers are stored to one decimal (spec section 7). */
@@ -123,6 +126,22 @@ export function useUncappedEntry() {
     [commit],
   )
 
+  /**
+   * Phase 32 (D-08, D-10): moves a group count by `delta` from the latest state (two quick taps in
+   * one batch both count), clamped to 0..999, so going down stops at 0 and never removes the entry.
+   * Returns the derived trees per hectare or null, like setDmhCount.
+   */
+  const bumpDmhCount = useCallback(
+    (code: DmhGroupCode, delta: number): number | null => {
+      const current = latest.current.dmhCounts[code] ?? 0
+      const count = Math.min(MAX_DMH_COUNT, Math.max(0, current + delta))
+      return deriveTreesPerHa(
+        commit({ ...latest.current, dmhCounts: { ...latest.current.dmhCounts, [code]: count } }),
+      )
+    },
+    [commit],
+  )
+
   /** Stores F's surface text; returns the derived trees per hectare (null without a valid one). */
   const setFSurface = useCallback(
     (text: string): number | null =>
@@ -176,6 +195,7 @@ export function useUncappedEntry() {
     fSurfaceText: state.fSurfaceText,
     setStratumCover,
     setDmhCount,
+    bumpDmhCount,
     setFSurface,
     loadUncapped,
     resetUncapped,

@@ -70,6 +70,27 @@ export function selectionOptionsFor(
 }
 
 /**
+ * The selection of a factor with one code ticked or unticked, in the option order of the survey's
+ * method (the order the chip list produces). A null selection is empty; ticking a present code or
+ * unticking an absent one gives the same list. Phase 32 (D-08): the group row ticks a group
+ * through this, so the stored list is the one the chips would have written.
+ */
+export function withSelectionToggled(
+  factor: SelectionFactor,
+  methodVersion: string | null | undefined,
+  selected: readonly string[] | null,
+  code: string,
+  on: boolean,
+): string[] {
+  const codes = new Set(selected ?? [])
+  if (on) codes.add(code)
+  else codes.delete(code)
+  return selectionOptionsFor(factor, methodVersion, [...codes])
+    .map((option) => option.value)
+    .filter((value) => codes.has(value))
+}
+
+/**
  * Label of a code, or null when the code is not in the catalogue. With a method version the
  * survey's own wording wins (a few codes are worded differently in v3.0 and v3.2); without one,
  * v3.2 is tried first, then v3.0.
