@@ -1,5 +1,5 @@
 import { fr } from "../../i18n"
-import { buildFactorChartSvg } from "./factor-chart-svg"
+import { buildFactorChartSvg, chartGroupLabels } from "./factor-chart-svg"
 import { escapeHtml, formatDateFr, formatDecimal, shortenText } from "./html"
 import { inseeFromParcelId } from "./identity"
 import { buildMapFigure, mapFigureCss } from "./map-figure"
@@ -64,7 +64,6 @@ export const SUMMARY_ZONES = Object.freeze({
   sources: Object.freeze([740, 24] as const),
 })
 
-type Entries = SurveyExportData["factorEntries"]
 
 function logoHtml(logoDataUri: string | null): string {
   if (logoDataUri === null || !PDF_LOGO_DATA_URI.test(logoDataUri)) return ""
@@ -141,9 +140,15 @@ function scoreCardHtml(data: SurveyExportData, palette: PdfPalette): string {
   return `<div class="summary-score-card"><div class="summary-card-eyebrow">${escapeHtml(t.scores.title)}</div><div class="summary-ring">${ringHtml(total, palette)}</div><div class="summary-ring-value">${numeralHtml(total)}</div>${band}${subscores}</div>`
 }
 
-/** Z2 right: the heading and the ten-bar chart, with no caption row. */
-function chartHtml(entries: Entries, palette: PdfPalette): string {
-  const svg = buildFactorChartSvg(entries, palette, CHART_SIZE)
+/**
+ * Z2 right: the heading and the ten-bar chart with its two group panels (D-26). The page is
+ * `paper`, so the panels are `panel`.
+ */
+function chartHtml(data: SurveyExportData, palette: PdfPalette): string {
+  const svg = buildFactorChartSvg(data.factorEntries, palette, CHART_SIZE, {
+    ...chartGroupLabels(data.scores),
+    fill: palette.panel,
+  })
   return `<div class="summary-chart"><div class="summary-heading">${escapeHtml(t.scores.chartHeading)}</div><div class="summary-chart-box">${svg}</div></div>`
 }
 
@@ -234,7 +239,7 @@ function sourcesZone(cachedAt: string | null, hasBasemap: boolean): string {
  * style has no running header and no page number; its body is 515 x 764 (UI-SPEC B.1).
  */
 export function buildSummaryBlocks(data: SurveyExportData, palette: PdfPalette): PdfBlock[] {
-  const scoreZone = `<div class="summary-zone summary-zone-score">${scoreCardHtml(data, palette)}${chartHtml(data.factorEntries, palette)}</div>`
+  const scoreZone = `<div class="summary-zone summary-zone-score">${scoreCardHtml(data, palette)}${chartHtml(data, palette)}</div>`
   const map = mapZone(data, palette)
   const evolution = evolutionZone(resolveTrend(data), palette)
   const html = `<div class="summary-page">${titleZoneHtml(data)}${scoreZone}${map.html}${evolution.html}${sourcesZone(evolution.cachedAt, map.hasBasemap)}</div>`

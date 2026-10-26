@@ -5,9 +5,11 @@ import { fr } from "../../i18n"
 import {
   CHART_MARGIN,
   buildFactorChartBlock,
-  buildFactorChartSvg,
+  buildFactorChartSvg as buildChart,
+  chartGroupLabels,
   factorChartCss,
 } from "./factor-chart-svg"
+import type { ChartGroups } from "./factor-chart-svg"
 import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
@@ -45,8 +47,22 @@ const palette = Object.fromEntries(PALETTE_KEYS.map((key) => [key, key])) as Pdf
 
 type Entries = SurveyExportData["factorEntries"]
 
+// A fixed groups argument for the tests that are not about the panels.
+const GROUPS: ChartGroups = { stand: "Stand", context: "Context", fill: "paper" }
+// D-26: the header band of the group panels sits above the 18 of value room.
+const HEADER = 16
+const TOP = HEADER + CHART_MARGIN.top
 const SIZE = { width: 515, height: 150 }
-const PLOT = SIZE.height - CHART_MARGIN.top - CHART_MARGIN.bottom
+const PLOT = SIZE.height - TOP - CHART_MARGIN.bottom
+
+function buildFactorChartSvg(
+  entries: Entries,
+  pal: PdfPalette,
+  size: { width: number; height: number },
+  groups: ChartGroups = GROUPS,
+): string {
+  return buildChart(entries, pal, size, groups)
+}
 
 function entriesOf(points: Partial<Record<FactorKey, number | null>>): Entries {
   return FACTOR_KEYS.map((key) => {
@@ -98,19 +114,24 @@ function bar(svg: string, factor: string): Bar {
   return found
 }
 
-const CAPTIONS = { stand: "Peuplement et gestion : 20 / 35", context: "Contexte : 12 / 15" }
-const CAPTION_SIZE = { width: 493, height: 160 }
-const CAPTION_PLOT = CAPTION_SIZE.height - CHART_MARGIN.top - 30
+const CHART_SIZE_COMPLETE = { width: 493, height: 160 }
+const CHART_SIZE = { width: 299, height: 156 }
 
-function captionTexts(svg: string): { x: number; y: number; text: string; tag: string }[] {
-  const found: { x: number; y: number; text: string; tag: string }[] = []
-  const pattern = /<text class="chart-caption" x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>/g
-  let match = pattern.exec(svg)
-  while (match) {
-    found.push({ x: Number(match[1]), y: Number(match[2]), text: match[3], tag: match[0] })
-    match = pattern.exec(svg)
-  }
-  return found
+type Panel = { group: string; x: number; y: number; width: number; height: number; tag: string }
+
+function panels(svg: string): Panel[] {
+  return [
+    ...svg.matchAll(
+      /<rect class="chart-group" data-group="(\w+)" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*>/g,
+    ),
+  ].map((m) => ({
+    group: m[1],
+    x: Number(m[2]),
+    y: Number(m[3]),
+    width: Number(m[4]),
+    height: Number(m[5]),
+    tag: m[0],
+  }))
 }
 
 function letterY(svg: string, factor: string): number {
@@ -140,9 +161,9 @@ describe("buildFactorChartSvg", () => {
   it("draws a 5 point bar as tall as the plot and a 0 point bar with no height", () => {
     const svg = buildFactorChartSvg(entriesOf({ A: 5, B: 0, C: 2.5 }), palette, SIZE)
     expect(bar(svg, "A").height).toBe(PLOT)
-    expect(bar(svg, "A").y).toBe(CHART_MARGIN.top)
+    expect(bar(svg, "A").y).toBe(TOP)
     expect(bar(svg, "B").height).toBe(0)
-    expect(bar(svg, "B").y).toBe(CHART_MARGIN.top + PLOT)
+    expect(bar(svg, "B").y).toBe(TOP + PLOT)
     expect(bar(svg, "C").height).toBe(PLOT / 2)
   })
 
@@ -150,7 +171,7 @@ describe("buildFactorChartSvg", () => {
     const svg = buildFactorChartSvg(entriesOf({ A: 1, B: 3, C: 5 }), palette, SIZE)
     for (const factor of ["A", "B", "C"]) {
       const b = bar(svg, factor)
-      expect(b.y + b.height).toBe(CHART_MARGIN.top + PLOT)
+      expect(b.y + b.height).toBe(TOP + PLOT)
     }
   })
 
@@ -251,72 +272,129 @@ describe("buildFactorChartSvg", () => {
     expect(bar(svg, "B").tag).toContain('stroke="inkFaint"')
   })
 
-  it("prints no caption without options and keeps the letters at 5 above the bottom", () => {
-    const svg = buildFactorChartSvg(allPoints(5), palette, { width: 299, height: 156 })
-    expect(svg).not.toContain("chart-caption")
-    expect(bar(svg, "A").height).toBe(156 - CHART_MARGIN.top - CHART_MARGIN.bottom)
-    expect(letterY(svg, "A")).toBe(156 - 5)
-    expect(buildFactorChartSvg(allPoints(3), palette, SIZE, {})).toBe(
-      buildFactorChartSvg(allPoints(3), palette, SIZE),
-    )
-  })
-
-  it("prints two captions in Jost-SemiBold 8 muted ink, one under each group", () => {
-    const svg = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, { captions: CAPTIONS })
-    const captions = captionTexts(svg)
-    expect(captions.map((caption) => caption.text)).toEqual([CAPTIONS.stand, CAPTIONS.context])
-    for (const caption of captions) {
-      expect(caption.y).toBe(CAPTION_SIZE.height - 3)
-      expect(caption.tag).toContain(`font-family="${PDF_FONT_FAMILIES.label}"`)
-      expect(caption.tag).toContain('font-size="8"')
-      expect(caption.tag).toContain('fill="inkMuted"')
-      expect(caption.tag).toContain('text-anchor="middle"')
+  it("draws two group panels, A to G and H to J, with the given fill and the line stroke", () => {
+    const svg = buildFactorChartSvg(allPoints(3), palette, SIZE)
+    const found = panels(svg)
+    expect(found.map((p) => p.group)).toEqual(["stand", "context"])
+    for (const p of found) {
+      expect(p.tag).toContain('rx="8"')
+      expect(p.tag).toContain('fill="paper"')
+      expect(p.tag).toContain('stroke="line"')
+      expect(p.tag).toContain('stroke-width="1"')
+      expect(p.y).toBe(0.5)
+      expect(p.height).toBe(SIZE.height - 1)
     }
-    const a = bar(svg, "A")
-    const g = bar(svg, "G")
-    const h = bar(svg, "H")
-    const j = bar(svg, "J")
-    expect(captions[0].x).toBeCloseTo((a.x + g.x + g.width) / 2, 0)
-    expect(captions[1].x).toBeCloseTo((h.x + j.x + j.width) / 2, 0)
   })
 
-  it("makes room for the captions: bottom margin 30 and the letters 13 under the plot", () => {
-    const svg = buildFactorChartSvg(allPoints(5), palette, CAPTION_SIZE, { captions: CAPTIONS })
-    expect(bar(svg, "A").height).toBe(CAPTION_PLOT)
-    expect(bar(svg, "A").y).toBe(CHART_MARGIN.top)
-    expect(letterY(svg, "A")).toBe(CHART_MARGIN.top + CAPTION_PLOT + 13)
-    const plain = buildFactorChartSvg(allPoints(5), palette, SIZE)
-    expect(letterY(plain, "A")).toBe(CHART_MARGIN.top + PLOT + 13)
+  it("starts the stand panel at 0.5, ends the context panel at the width minus 0.5, 18 between", () => {
+    for (const size of [
+      { width: 493, height: 160 },
+      { width: 299, height: 156 },
+    ]) {
+      const [stand, context] = panels(buildFactorChartSvg(allPoints(3), palette, size))
+      expect(stand.x).toBe(0.5)
+      expect(context.x + context.width).toBeCloseTo(size.width - 0.5, 1)
+      // Outer edges, the half unit of the stroke included.
+      const gap = context.x - 0.5 - (stand.x + stand.width + 0.5)
+      expect(gap).toBeCloseTo(18, 1)
+    }
   })
 
-  it("prints nothing for a group whose caption is null", () => {
-    const standOnly = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, {
-      captions: { stand: CAPTIONS.stand, context: null },
+  it("keeps each bar inside its panel and every grid line inside one panel", () => {
+    const svg = buildFactorChartSvg(allPoints(3), palette, CHART_SIZE)
+    const [stand, context] = panels(svg)
+    for (const factor of ["A", "B", "C", "D", "E", "F", "G"]) {
+      const b = bar(svg, factor)
+      expect(b.x).toBeGreaterThanOrEqual(stand.x)
+      expect(b.x + b.width).toBeLessThanOrEqual(stand.x + stand.width)
+    }
+    for (const factor of ["H", "I", "J"]) {
+      const b = bar(svg, factor)
+      expect(b.x).toBeGreaterThanOrEqual(context.x)
+      expect(b.x + b.width).toBeLessThanOrEqual(context.x + context.width)
+    }
+    const lines = [...svg.matchAll(/<line class="chart-grid" x1="([\d.]+)"[^>]* x2="([\d.]+)"/g)]
+    expect(lines).toHaveLength(12)
+    for (const [, x1, x2] of lines) {
+      const inside = [stand, context].some((p) => Number(x1) >= p.x && Number(x2) <= p.x + p.width)
+      expect(inside).toBe(true)
+      // Never in the gap between the panels.
+      const gapStart = stand.x + stand.width
+      expect(Number(x2) <= gapStart || Number(x1) >= context.x).toBe(true)
+    }
+  })
+
+  it("prints one label per panel, centred, in Jost-SemiBold 8 ink at baseline 11", () => {
+    const groups: ChartGroups = {
+      stand: "Peuplement et gestion : 20 / 35",
+      context: "Contexte : 12 / 15",
+      fill: "panel",
+    }
+    const svg = buildFactorChartSvg(allPoints(3), palette, CHART_SIZE, groups)
+    const labels = [
+      ...svg.matchAll(
+        /<text class="chart-group-label" x="([\d.]+)" y="(\d+)"[^>]*>([^<]*)<\/text>/g,
+      ),
+    ]
+    expect(labels.map((m) => m[3])).toEqual([groups.stand, groups.context])
+    const found = panels(svg)
+    labels.forEach((match, index) => {
+      expect(Number(match[2])).toBe(11)
+      // svgNumber rounds to one decimal, so the centre is within a tenth of the panel's.
+      expect(
+        Math.abs(Number(match[1]) - (found[index].x - 0.5 + (found[index].width + 1) / 2)),
+      ).toBeLessThanOrEqual(0.1)
+      expect(match[0]).toContain(`font-family="${PDF_FONT_FAMILIES.label}"`)
+      expect(match[0]).toContain('font-size="8"')
+      expect(match[0]).toContain('fill="ink"')
+      expect(match[0]).toContain('text-anchor="middle"')
     })
-    expect(captionTexts(standOnly).map((caption) => caption.text)).toEqual([CAPTIONS.stand])
-    const none = buildFactorChartSvg(allPoints(5), palette, CAPTION_SIZE, {
-      captions: { stand: null, context: null },
-    })
-    expect(none).not.toContain("chart-caption")
-    // The margin is still the caption one: the plot does not jump when a sub-score is missing.
-    expect(bar(none, "A").height).toBe(CAPTION_PLOT)
+    expect(svg).not.toContain("chart-caption")
   })
 
-  it("escapes a caption and holds no opacity", () => {
-    const svg = buildFactorChartSvg(allPoints(3), palette, CAPTION_SIZE, {
-      captions: { stand: '"><script>x</script>', context: CAPTIONS.context },
+  it("puts the plot top at 34 and the bars at 108 and 104 high", () => {
+    const complete = buildFactorChartSvg(allPoints(5), palette, CHART_SIZE_COMPLETE)
+    expect(bar(complete, "A").y).toBe(34)
+    expect(bar(complete, "A").height).toBe(108)
+    expect(letterY(complete, "A")).toBe(34 + 108 + 13)
+    const summary = buildFactorChartSvg(allPoints(5), palette, CHART_SIZE)
+    expect(bar(summary, "A").y).toBe(34)
+    expect(bar(summary, "A").height).toBe(104)
+    expect(letterY(summary, "A")).toBe(34 + 104 + 13)
+    for (const svg of [complete, summary]) {
+      const baselines = new Set(bars(svg).map((b) => b.y + b.height))
+      expect(baselines.size).toBe(1)
+    }
+  })
+
+  it("holds no opacity, no gradient and no external reference at either size", () => {
+    for (const size of [CHART_SIZE_COMPLETE, CHART_SIZE]) {
+      const svg = buildFactorChartSvg(entriesOf({ A: 5, B: 2, H: 3 }), palette, size)
+      expect(svg).not.toContain("opacity")
+      expect(svg).not.toContain("Gradient")
+      expect(svg).not.toContain("url(")
+      expect(svg).not.toContain("http")
+      expect(svg).not.toContain("—")
+    }
+  })
+
+  it("escapes a hostile label and a hostile fill", () => {
+    const svg = buildFactorChartSvg(allPoints(3), palette, CHART_SIZE_COMPLETE, {
+      stand: '"><script>x</script>',
+      context: "<b>Contexte</b>",
+      fill: '"><script>y</script>',
     })
     expect(svg).not.toContain("<script")
-    expect(svg).toContain("&quot;&gt;&lt;script&gt;")
-    expect(svg).not.toContain("opacity")
-    expect(svg).not.toContain("—")
+    expect(svg).not.toContain("<b>")
+    expect(svg).toContain("&quot;&gt;&lt;script&gt;x")
+    expect(svg).toContain('fill="&quot;&gt;&lt;script&gt;y')
   })
 
   it("follows the requested size", () => {
     const small = buildFactorChartSvg(allPoints(5), palette, { width: 300, height: 100 })
     expect(small).toContain('width="300"')
     expect(small).toContain('height="100"')
-    expect(bar(small, "A").height).toBe(100 - CHART_MARGIN.top - CHART_MARGIN.bottom)
+    expect(bar(small, "A").height).toBe(100 - TOP - CHART_MARGIN.bottom)
   })
 })
 
@@ -370,7 +448,7 @@ describe("buildFactorChartBlock", () => {
     expect(block.html).toContain('height="160"')
   })
 
-  it("captions the two sub-scores from the survey scores", () => {
+  it("labels the two panels from the survey scores, on the paper fill of the chart card", () => {
     const block = buildFactorChartBlock(
       {
         ...makeData(allPoints(3)),
@@ -380,11 +458,14 @@ describe("buildFactorChartBlock", () => {
     )
     expect(block.html).toContain(`>${t.scores.stand(20)}</text>`)
     expect(block.html).toContain(`>${t.scores.context(12)}</text>`)
+    expect(block.html.match(/class="chart-group" [^>]*fill="paper"/g)).toHaveLength(2)
+    expect(block.html).not.toContain("chart-caption")
   })
 
-  it("leaves a caption out when its sub-score is missing or not a number", () => {
+  it("prints the group name alone when a sub-score is missing", () => {
     const none = buildFactorChartBlock(makeData(allPoints(3)), palette)
-    expect(none.html).not.toContain("chart-caption")
+    expect(none.html).toContain(">Peuplement et gestion</text>")
+    expect(none.html).toContain(">Contexte</text>")
     const partial = buildFactorChartBlock(
       {
         ...makeData(allPoints(3)),
@@ -393,8 +474,39 @@ describe("buildFactorChartBlock", () => {
       palette,
     )
     expect(partial.html).not.toContain("NaN")
-    expect(partial.html).not.toContain(t.scores.stand(Number.NaN))
+    expect(partial.html).toContain(">Peuplement et gestion</text>")
     expect(partial.html).toContain(`>${t.scores.context(12)}</text>`)
+  })
+})
+
+describe("chartGroupLabels", () => {
+  it("prints the domain sub-scores out of 35 and 15", () => {
+    expect(
+      chartGroupLabels({ ibp_total: 34, ibp_peuplement_gestion: 24, ibp_contexte: 10 }),
+    ).toEqual({ stand: "Peuplement et gestion : 24 / 35", context: "Contexte : 10 / 15" })
+  })
+
+  it("never sums: a total that does not match the sub-scores is not used", () => {
+    const labels = chartGroupLabels({ ibp_total: 50, ibp_peuplement_gestion: 1, ibp_contexte: 2 })
+    expect(labels).toEqual({
+      stand: "Peuplement et gestion : 1 / 35",
+      context: "Contexte : 2 / 15",
+    })
+  })
+
+  it("gives the group name alone for a null, missing or NaN sub-score", () => {
+    expect(
+      chartGroupLabels({
+        ibp_total: 0,
+        ibp_peuplement_gestion: null,
+        ibp_contexte: Number.NaN,
+      } as never),
+    ).toEqual({ stand: "Peuplement et gestion", context: "Contexte" })
+    expect(chartGroupLabels({ ibp_total: 0 } as never)).toEqual({
+      stand: "Peuplement et gestion",
+      context: "Contexte",
+    })
+    expect(chartGroupLabels(null)).toEqual({ stand: "Peuplement et gestion", context: "Contexte" })
   })
 })
 

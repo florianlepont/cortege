@@ -8,6 +8,10 @@ import { surveyDetailFr } from "./survey-detail"
 // of the catalogue. Functions only interpolate: numbers arrive under count-like keys (`count`,
 // `total`) and drive a plural; every other argument is a string formatted by the caller.
 
+// Phase 33 (D-26): the two group names exist once; the chart prints them alone or followed by a score.
+const GROUP_STAND = "Peuplement et gestion"
+const GROUP_CONTEXT = "Contexte"
+
 const SCALE_B = "1 strate = 0 ; 2 strates = 1 ; 3 ou 4 strates = 2 ; 5 strates = 5."
 const SCALE_F =
   "Moins de 2 arbres/ha = 0 ; de 2 à moins de 3 = 1 ; de 3 à moins de 8 = 2 ; 8 arbres/ha et plus = 5 (au plus 2 arbres/ha par groupe)."
@@ -57,8 +61,9 @@ export const surveyExportFr = {
   scores: {
     title: "Score IBP",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
-    stand: (points: number) => `Peuplement et gestion : ${points} / ${IBP_MAX.stand}`,
-    context: (points: number) => `Contexte : ${points} / ${IBP_MAX.context}`,
+    groupNames: { stand: GROUP_STAND, context: GROUP_CONTEXT },
+    stand: (points: number) => `${GROUP_STAND} : ${points} / ${IBP_MAX.stand}`,
+    context: (points: number) => `${GROUP_CONTEXT} : ${points} / ${IBP_MAX.context}`,
     factorHeader: "Facteur",
     classHeader: "Classe",
     notFilled: "Non renseigné",

@@ -71,6 +71,10 @@ describe("fr.surveyExport", () => {
     expect(t.scores.total(30)).toBe("30 / 50")
     expect(t.scores.stand(20)).toContain("20 / 35")
     expect(t.scores.context(10)).toContain("10 / 15")
+    // D-26: the chart group labels, with and without a score, built from the same two names.
+    expect(t.scores.groupNames).toEqual({ stand: "Peuplement et gestion", context: "Contexte" })
+    expect(t.scores.stand(24)).toBe("Peuplement et gestion : 24 / 35")
+    expect(t.scores.context(10)).toBe("Contexte : 10 / 15")
   })
 
   it.each(["v3_2", "v3_0"] as const)("has a clean scale line for each factor (%s)", (key) => {

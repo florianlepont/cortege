@@ -361,12 +361,16 @@ describe("Z2 left, the forest card", () => {
 })
 
 describe("Z2 right, the factor chart", () => {
-  test("holds the heading and the 299 x 156 chart at (216, 0) with no caption", () => {
+  test("holds the heading and the 299 x 156 chart at (216, 0) with two group panels", () => {
     const html = htmlOf(typical)
     expect(html).toContain(`<div class="summary-heading">${t.scores.chartHeading}</div>`)
     expect(html).toContain('<svg class="chart-svg"')
     expect(html).toContain('width="299" height="156" viewBox="0 0 299 156"')
     expect(html).not.toContain("chart-caption")
+    // D-26: the page is paper, so the panels are `panel`; the labels carry the domain sub-scores.
+    expect(html.match(/class="chart-group" [^>]*fill="panel"/g)).toHaveLength(2)
+    expect(html).toContain(`>${t.scores.stand(typical.scores?.ibp_peuplement_gestion ?? 0)}</text>`)
+    expect(html).toContain(`>${t.scores.context(typical.scores?.ibp_contexte ?? 0)}</text>`)
     const css = summaryCss(palette)
     expect(css).toMatch(/\.summary-chart \{[^}]*left: 216px; top: 0; width: 299px/)
     expect(css).toMatch(/\.summary-chart-box \{[^}]*top: 20px; width: 299px; height: 156px/)
