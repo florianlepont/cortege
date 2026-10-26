@@ -295,6 +295,13 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     expect(contrastRatio(theme.onSurface.danger, card)).toBeGreaterThanOrEqual(4.5)
   })
 
+  test("dendromicrohabitat drawing ink on the glass card over the canvas (thin lines, 4.5:1)", () => {
+    // Phase 32 (UI-SPEC Color): the drawings take colors.textPrimary, no tile and no token.
+    const card = compositeOver(visual.glass.cardFill, colors.canvas)
+    const ratio = contrastRatio(colors.textPrimary, card)
+    expect(ratio).toBeGreaterThanOrEqual(4.5)
+  })
+
   test("ochre switch track of the doubt row on the glass card and on the warning fill (3:1)", () => {
     // Phase 27 (UI-SPEC Color): the "Douteux" switch is ON in ochre, over the glass card fill
     // and, where the row keeps its tint, over warningSoft. Non-text contrast, so 3:1.
