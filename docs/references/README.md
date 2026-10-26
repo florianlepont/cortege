@@ -72,6 +72,74 @@ per-survey choice. The factor-by-factor transcription used by the product lives 
 [`../technical/ibp-validation-matrix-v2.md`](../technical/ibp-validation-matrix-v2.md) (the
 pre-01.8 baseline is [`../technical/ibp-validation-matrix-v1.md`](../technical/ibp-validation-matrix-v1.md)).
 
+## Dendromicrohabitats: pocket guide and typology (Phase 32)
+
+The detailed guide of factor F (dendromicrohabitats, DMH) is written from the documents below. None
+of them is part of the repository.
+
+### Documents
+
+- Pocket guide, French edition (the reference edition): Bütler R., Lachat T., Krumm F., Kraus D.,
+  Larrieu L. (2024), "Guide de poche des dendromicrohabitats. Description et seuils de grandeur
+  pour leur inventaire dans les forêts tempérées et méditerranéennes", 2nd revised edition,
+  Birmensdorf, Swiss Federal Institute for Forest, Snow and Landscape Research WSL, 64 pp.:
+  <https://www.dora.lib4ri.ch/wsl/dload/wsl:37831/PDF/>
+  (retrieved 2026-10-23, SHA-256
+  `cc5fb0450b4dcf6c79b16e173fa7f28d5464035801b756b24950ba88e42a7e68`, 12,068,916 bytes, 64 pages).
+  The fingerprint and the retrieval date come from the research of Phase 32
+  (`32-RESEARCH.md`, "Sources and Licence"); no new download was made to write this record.
+  Owner confirmation (D-01), 2026-10-24: edition confirmed by the owner, no file supplied; the
+  2024 French edition read by the research is the reference. The 2020 first edition (47 types
+  instead of 52) is not used.
+- Pocket guide, English edition: "Field Guide to Tree-related Microhabitats", 2nd edition, 2024,
+  64 pp.: <https://www.dora.lib4ri.ch/wsl/dload/wsl:36965/PDF/>
+  (retrieved 2026-10-23, SHA-256
+  `b4335f8dc93b4218aabe8bee91ee6336d2dca87e85e745f7c1a1ad8e232aa946`, same source of the
+  fingerprint as above). Read to cross-check the French names; it is not the reference edition.
+- Typology: Larrieu L., Paillet Y., Winter S., Bütler R., Kraus D., Krumm F., Lachat T., Michel
+  A.K., Regnery B., Vandekerkhove K. (2018), "Tree related microhabitats in temperate and
+  Mediterranean European forests: A hierarchical typology for inventory standardization",
+  Ecological Indicators 84: 194-207, DOI `10.1016/j.ecolind.2017.08.051`. It is the source of the
+  fifteen-group typology.
+- Counting thresholds: the thresholds that the pocket guide shows (pages 3 and 12-13) are the ones
+  of IBP FR v3.2, recorded in the entry "IBP FR v3.2 (02/02/2026)" of the section above.
+
+Cite as:
+
+- Bütler R., Lachat T., Krumm F., Kraus D., Larrieu L., 2024 - *Guide de poche des
+  dendromicrohabitats. Description et seuils de grandeur pour leur inventaire dans les forêts
+  tempérées et méditerranéennes*. 2nd revised edition. WSL, Birmensdorf, 64 p.
+- Bütler R., Lachat T., Krumm F., Kraus D., Larrieu L., 2024 - *Field Guide to Tree-related
+  Microhabitats*. 2nd edition. WSL, Birmensdorf, 64 p.
+- Larrieu L., Paillet Y., Winter S., et al., 2018 - Tree related microhabitats in temperate and
+  Mediterranean European forests: a hierarchical typology for inventory standardization.
+  *Ecological Indicators* 84: 194-207.
+
+### Licence status (checked 2026-10-23)
+
+- Pocket guide (both editions): the imprint carries only "© WSL 2024". No reuse licence appears in
+  the PDF or on the publication page. The terms-of-use page of the publisher could not be read
+  (HTTP 500 and 503 when checked). It is therefore treated as all rights reserved.
+- Photos of the pocket guide (credits on page 64): Loïc Duchamp, Pierre Henrioux, Daniel Kraus,
+  Thibault Lachat, Laurent Larrieu, Thomas Reich and Rita Bütler (all others). Drawings: Lisa
+  Apfelbacher, Céline Emberger and Daniel Kraus. Their rights are not covered by any licence found.
+- Larrieu et al. (2018): an Elsevier publication. Crossref lists only the publisher's text-mining
+  user licence and no open licence.
+- IBP FR v3.2: copyright of CNPF and INRAE Dynafor, as stated in the section above. The IBP logo is
+  a registered trademark and is not used.
+
+### Reuse in the app
+
+- The texts of the in-app guide are the association's own wording, written from the facts (group
+  and type names, thresholds) and citing the documents above on the in-app sources page (D-02,
+  D-03).
+- No text, photo or drawing of these documents is reproduced.
+- The fifteen line drawings of the guide (one per IBP group) are original drawings made for the
+  association and owned by it (D-09 and D-11, 2026-10-24). They are stored as vector path data in
+  the app code, not as image files.
+- The PDFs are not part of the repository (`*.pdf` is ignored in this directory). Download them
+  from the links above if needed and check the SHA-256 values.
+
 ## Etats Sauvages graphic charter
 
 The charter PDF is an internal document of the association and is not published
