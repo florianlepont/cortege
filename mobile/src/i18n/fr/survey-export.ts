@@ -81,8 +81,6 @@ export const surveyExportFr = {
     provisional: ({ count }: { count: number }) =>
       `Score provisoire : ${count} ${count === 1 ? "facteur non renseigné" : "facteurs non renseignés"}`,
     chartHeading: CHART_TITLE,
-    // Removed by plan 33-19 task 4, once the bars (its only reader) are gone.
-    chartA11y: "Diagramme des points des dix facteurs, de A à J",
   },
   // Phase 33 (D-27, D-28): the plane and the rose after the CNPF survey sheet. The numbers of the
   // spoken labels arrive as strings formatted by the builder from the package's values.

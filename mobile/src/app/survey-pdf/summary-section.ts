@@ -1,8 +1,9 @@
 import { fr } from "../../i18n"
-import { buildFactorChartSvg, chartGroupLabels } from "./factor-chart-svg"
+import { planeInput } from "./factor-chart-svg"
 import { escapeHtml, formatDateFr, formatDecimal, shortenText } from "./html"
 import { inseeFromParcelId } from "./identity"
 import { buildMapFigure, mapFigureCss } from "./map-figure"
+import { buildPlaneSvg } from "./plane-svg"
 import { buildRingSvg } from "./ring-svg"
 import { scoreBands } from "./score-section"
 import type { ScoreBand } from "./score-section"
@@ -140,15 +141,16 @@ function scoreCardHtml(data: SurveyExportData, palette: PdfPalette): string {
 }
 
 /**
- * Z2 right: the heading and the ten-bar chart with its two group panels (D-26). The page is
- * `paper`, so the panels are `panel`.
+ * Z2 right (D-28): the plane only, under its title as the heading. The rose is too small for its ten
+ * names in 299 units, and the summary has no per-factor mark: the plane places the survey from the
+ * two sub-scores printed on the forest card. The page is `paper`, so the panel is `panel`.
  */
 function chartHtml(data: SurveyExportData, palette: PdfPalette): string {
-  const svg = buildFactorChartSvg(data.factorEntries, palette, CHART_SIZE, {
-    ...chartGroupLabels(data.scores),
+  const svg = buildPlaneSvg(planeInput(data), palette, CHART_SIZE, {
+    title: null,
     fill: palette.panel,
   })
-  return `<div class="summary-chart"><div class="summary-heading">${escapeHtml(t.scores.chartHeading)}</div><div class="summary-chart-box">${svg}</div></div>`
+  return `<div class="summary-chart"><div class="summary-heading">${escapeHtml(t.charts.planeTitle)}</div><div class="summary-chart-box">${svg}</div></div>`
 }
 
 /** A quiet panel (D-18, B.10): a sentence on a `panel` box, for a part that cannot be shown. */
@@ -280,6 +282,7 @@ export function summaryCss(palette: PdfPalette): string {
 .summary-subscores { ${abs} left: 0; top: 156px; width: ${CARD_WIDTH}px; ${hiddenLine(12)} text-align: center; font-family: ${font.body}; font-size: 8.5px; line-height: 12px; color: ${palette.onForestBody}; }
 .summary-chart { ${abs} left: ${CHART_X}px; top: 0; width: ${CHART_SIZE.width}px; height: ${CARD_HEIGHT}px; overflow: hidden; }
 .summary-chart-box { ${abs} left: 0; top: ${HEADING_HEIGHT}px; width: ${CHART_SIZE.width}px; height: ${CHART_SIZE.height}px; }
+.summary-chart-box svg { display: block; }
 .summary-heading { ${abs} left: 0; top: 0; width: ${CONTENT_WIDTH}px; ${hiddenLine(HEADING_HEIGHT)} font-family: ${font.heading}; font-size: 11px; line-height: ${HEADING_HEIGHT}px; color: ${palette.ink}; }
 .summary-map-box { ${abs} left: 0; top: ${HEADING_HEIGHT}px; width: ${CONTENT_WIDTH}px; height: ${MAP_BOX_HEIGHT}px; overflow: hidden; }
 .summary-legend { ${abs} left: 0; top: ${LEGEND_TOP}px; width: ${CONTENT_WIDTH}px; ${hiddenLine(LEGEND_HEIGHT)} font-family: ${font.body}; font-size: 8.5px; line-height: ${LEGEND_HEIGHT}px; color: ${palette.inkMuted}; }

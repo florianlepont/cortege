@@ -138,7 +138,7 @@ describe("buildSurveyExportHtml page order", () => {
       t.map.heading,
       t.identity.heading,
       t.method.heading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
       t.factors.contextGroup,
       t.trend.heading,
@@ -189,7 +189,7 @@ describe("buildSurveyExportHtml page order", () => {
       const second = pagesOf(buildSurveyExportHtml(data).html)[1]
       expect(second).toContain(t.identity.heading)
       expect(second).toContain(t.method.heading)
-      expect(second).toContain(t.scores.chartHeading)
+      expect(second).toContain(t.charts.heading)
     }
   })
 
@@ -256,7 +256,7 @@ describe("buildSurveyExportHtml conditions block (phase 27)", () => {
       t.identity.heading,
       t.method.heading,
       t.conditions.heading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
     ])
   })
@@ -497,7 +497,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
       t.method.heading,
       t.conditions.heading,
       rt.heading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
     ])
   })
@@ -510,7 +510,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
       t.identity.heading,
       t.method.heading,
       rt.heading,
-      t.scores.chartHeading,
+      t.charts.heading,
     ])
   })
 
