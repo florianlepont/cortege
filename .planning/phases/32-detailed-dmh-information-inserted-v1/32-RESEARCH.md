@@ -1,3 +1,5 @@
+> Superseded note (2026-10-26): the drawing sections below describe earlier designs (paper tile, then animation). The current design is in 32-CONTEXT.md D-11 and 32-04-PLAN.md: static SVG element data.
+
 # Phase 32: Detailed DMH Information (INSERTED, V1) - Research
 
 **Researched:** 2026-10-23
