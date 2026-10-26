@@ -1,8 +1,8 @@
 # Phase 32: Detailed DMH Information - Pattern Map
 
-**Mapped:** 2026-10-23 (drawings rows revised 2026-10-24: vector path data and a one-shot stroke animation replace bundled images and the paper tile)
-**Files analyzed:** 23 (new and modified, from UI-SPEC "Implementation notes", CONTEXT and RESEARCH)
-**Analogs found:** 22 / 23 (paths relative to `mobile/src/`, except `mobile/scripts/`)
+**Mapped:** 2026-10-23 (drawings rows revised 2026-10-24: vector data replaces bundled images and the paper tile; revised 2026-10-26, D-11 amended: the drawings are static, so the motion helper and the path geometry module are gone)
+**Files analyzed:** 21 (new and modified, from UI-SPEC "Implementation notes", CONTEXT and RESEARCH)
+**Analogs found:** 21 / 21 (paths relative to `mobile/src/`, except `mobile/scripts/`; the generated drawings module has only a role analog)
 
 ## File Classification
 
@@ -13,17 +13,15 @@
 | `app/dmh-guide/structure.ts` (forms to groups, types) | utility | transform | `app/factor-selections.ts` (`selectionOptionsFor`) | role |
 | `app/dmh-guide/order.ts` (`orderDmhRows`) | utility | transform (pure) | `app/parcel-history.ts` / `route-display.ts` (pure, tested) | role |
 | `app/dmh-guide/search.ts` | utility | transform | `app/search-text.ts` (`foldSearchText`, `normalizeSearchQuery`) | exact |
-| `app/dmh-guide/drawing-geometry.ts` (path parse, normalise, length; no import) | utility | transform (pure) | `map/wipe-geometry.ts` (pure, import-free), `app/trend-geometry.ts` (lengths for the dash reveal) | role |
-| `mobile/scripts/build-dmh-drawings.mjs` (SVG sources to TS module) | script | batch | `mobile/scripts/remove-white-bg.mjs` (ESM asset script) | role |
-| `app/dmh-guide/drawings.ts` (generated path data, 15 entries) | config | static | none for generated vector data (see No Analog) | none |
+| `mobile/scripts/build-dmh-drawings.mjs` (SVG sources to TS module, style check, elements copied as they are) | script | batch | `mobile/scripts/remove-white-bg.mjs` (ESM asset script) | role |
+| `app/dmh-guide/drawings.ts` (generated element data, 15 entries) | config | static | `app/contour-paths.ts` (SVG path strings rendered by react-native-svg; computed, not generated: see No Analog) | role |
 | `__checks__/dmh-drawings.test.ts` (drawings gate) | test | file-I/O | `__checks__/icons.test.ts` (fs read, line 177), `structure.test.ts` (fixtures) | role |
-| `app/dmh-guide/drawing-motion.ts` (`drawingTimeline`, worklet `strokeReveal`) | utility | transform (pure) | `map/wipe-geometry.ts`, `app/forest-motion.ts` (worklet helpers, tested) | role |
 | `hooks/useSurveyForm.ts` (+ `bumpDmhGroup`) | hook | CRUD (form state) | same file `setDmhCount` lines 510-518 | exact |
 | `screens/factor-detail/DmhGroupList.tsx`, `DmhGroupRow.tsx` | component | request-response | `screens/factor-detail/DmhCountFields.tsx` | role |
 | `screens/factor-detail/DmhCountFields.tsx` (modified: rows removed) | component | CRUD | itself | exact |
 | `screens/factor-detail/renderFactorField.tsx` (extract) | component | transform | `screens/FactorDetailScreen.tsx` lines 275-345 | exact |
 | `ui/DmhCounterStepper.tsx` | component | event-driven | `ui/FactorCounterInput.tsx` (hold-repeat engine) | exact |
-| `ui/DmhDrawing.tsx` | component | event-driven (one-shot motion) | `screens/survey-detail/TrendCurve.tsx` dash mode (`RunPath`, lines 40-125) and `ui/ScoreRing.tsx` | exact |
+| `ui/DmhDrawing.tsx` | component | static render | `ui/ContourLines.tsx` (Svg of path data in theme colours, its static frame) and `ContourLines.test.tsx` | role |
 | `screens/dmh-guide/*` (Screen, Catalogue, GroupPage, SourcesPage, styles) | component | request-response | `screens/FactorHelpSheet.tsx` + `screens/route-guide/RouteChooseScreen.tsx` | role |
 | `navigation/routes/DmhGuideRoute.tsx` | route | request-response | `navigation/routes/FactorHelpRoute.tsx`, `RouteGuideRoute.tsx` | exact |
 | `navigation/stacks/stack-options.ts` (+ `dmhGuideScreenOptions`) | config | static | `finishSheetScreenOptions` lines 188-196 | exact |
@@ -117,14 +115,14 @@ Validate `route.params?.group` against the known codes; fall back to the catalog
 ### `screens/dmh-guide/DmhGuideScreen.tsx` and siblings
 **Analog:** `screens/FactorHelpSheet.tsx` lines 20-50: one `ScrollView` with `contentInsetAdjustmentBehavior="never"`, the header row as first scroll item (finding: header outside the scroll view is drawn under text in the iOS form sheet), close button `AppPressable` + `Ionicons name="close-outline"` with `accessibilityLabel`. Styles via `createDetailStyles(theme)` pattern (`screens/factor-detail.styles`), so make a `dmh-guide.styles.ts` with `createDmhGuideStyles(theme)`. Local view state `catalogue | group | sources`, files under 400 lines each (`structure.test.ts`). Notice blocks: `AppNotice tone="info"`; cards: `AppCard variant="glass"`; grouped catalogue: `AppGroupedList` / `AppSectionHeader`.
 
-### `ui/DmhDrawing.tsx` (one-shot stroke drawing)
-**Analog:** `screens/survey-detail/TrendCurve.tsx`, dash mode. `RunPath` (lines 62-79) is the per-stroke child: `Animated.createAnimatedComponent(Path)`, `strokeDasharray={[length, length]}`, `useAnimatedProps(() => ({ strokeDashoffset: length * (1 - progress.value) }))`. The one-shot timing (lines 99-118): `useSharedValue(reduced ? 1 : 0)`, a `started` ref, `useScreenVisible()`, `withDelay(..., withTiming(1, { duration, easing: Easing.bezier(...), reduceMotion: ReduceMotion.System }))`; Reduce Motion sets 1 and schedules nothing. Tests: `TrendCurve.test.tsx` spies on `withTiming` and `withDelay` (lines 53-59) and asserts one timing, no replay and the reduced-motion first frame (lines 219-320). Differences for the drawing: one window per stroke (`drawingTimeline`), `strokeReveal` also returns `strokeOpacity` so a waiting stroke shows no round-cap dot, stroke `colors.textPrimary`, data from `drawingFor(code)`. No tile, no new token: the existing glass card is the background; add the ink pair to `visual-tokens.test.ts` beside the success and danger pair (line 291).
+### `ui/DmhDrawing.tsx` (static drawing)
+**Analog:** `ui/ContourLines.tsx` with `animated={false}`: an `Svg` with a `viewBox`, `Path` children stroked in a theme colour from `useBrandTheme()`, and its test `ContourLines.test.tsx` (react-test-renderer, the svg mock of `mobile/test/react-native-svg.mock.ts`, which also exports `Ellipse` and `Circle`). Differences for the drawing: nothing animated at all (D-11 amended 2026-10-26: no Reanimated, no motion hook, no Reduce Motion branch); one shape per data element (`Path`, `Ellipse` with the transform string `rotate(angle cx cy)` when rotated, `Circle`), stroke `colors.textPrimary`, data from `drawingFor(code)`; the wrapper `View` is the single accessible image. No tile, no new token: the existing glass card is the background; add the ink pair to `visual-tokens.test.ts` beside the success and danger pair (line 291).
 
-### `app/dmh-guide/drawing-geometry.ts` and `mobile/scripts/build-dmh-drawings.mjs`
-**Analog:** `map/wipe-geometry.ts` (pure, no import, header comment, colocated test) and `app/trend-geometry.ts` lines 57-66 (lengths computed in JS because react-native-svg has no `getTotalLength`). The geometry module has no import so the `.mjs` converter can load it through Node's type stripping (Node 22.18+ default; `--experimental-strip-types` before). The converter follows `mobile/scripts/remove-white-bg.mjs` (ESM, paths from `import.meta.url`); it is run by hand, not by CI; the gate checks its output.
+### `mobile/scripts/build-dmh-drawings.mjs`
+**Analog:** `mobile/scripts/remove-white-bg.mjs` (ESM, paths from `import.meta.url`). Plain JavaScript with no TypeScript import; it checks the approved style of the sources and copies path, ellipse and circle elements into the module as they are (react-native-svg 15.15.4 renders relative path commands, several subpaths per path and string `rotate(angle cx cy)` transforms itself, so nothing is normalised or measured). Run by hand, not by CI; the gate checks its output.
 
 ### `__checks__/dmh-drawings.test.ts`
-**Analog:** `__checks__/icons.test.ts` (fs reads, line 177) and the fixture style of `structure.test.ts`. Rules: 15 group codes, frame 800 x 600, widths from `DMH_DRAWING_STROKE_WIDTHS` (4, 5, 6, 9, 12), every path parses as one subpath, lengths fresh, 8 KiB of path data per drawing, 80 KiB module (`fs.statSync(file).size`), no colour in the module; plan 32-12 adds an alt sentence per drawing.
+**Analog:** `__checks__/icons.test.ts` (fs reads, line 177) and the fixture style of `structure.test.ts`. Rules: 15 group codes and no other key, widths inside `DMH_DRAWING_STROKE_RANGE` (4 to 12), every element renders (well-formed path data, positive radii), 12 KiB of data per drawing, 120 KiB module (`fs.statSync(file).size`), no colour in the module; plan 32-12 adds an alt sentence per drawing.
 
 ## Shared Patterns
 
@@ -139,7 +137,7 @@ Validate `route.params?.group` against the known codes; fall back to the catalog
 
 | File | Role | Reason |
 |---|---|---|
-| `app/dmh-guide/drawings.ts` | config | No generated vector data module exists. Shape in UI-SPEC S5 (`DMH_DRAWINGS` keyed by `DmhGroupCode`, strokes `{ d, width, length }`); written by the converter, never by hand. Keys must avoid `label`, `title`, `description` (the literal gate of `scripts/structure-report.js` reads them as user text). |
+| `app/dmh-guide/drawings.ts` | config | No generated vector data module exists (`app/contour-paths.ts` holds path strings but computes them). Shape in UI-SPEC S5 (`DMH_DRAWINGS` keyed by `DmhGroupCode`, elements `{ kind: "path", d, width }`, `{ kind: "ellipse", cx, cy, rx, ry, width, rotate? }`, `{ kind: "circle", cx, cy, r, width }`); written by the converter, never by hand. Keys must avoid `label`, `title`, `description` (the literal gate of `scripts/structure-report.js` reads them as user text). |
 
 ## Metadata
 

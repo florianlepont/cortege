@@ -37,7 +37,7 @@ While recording factor F, the observer reaches detailed identification informati
 - **D-10:** The +/- counter on the group row exists only when the recorded route counts F in full (the only case where `dmh_counts` is stored); in capped mode the tick stays. Going down to 0 leaves the group ticked. No stored data changes.
 
 ### Drawings as animated SVG (owner, 2026-10-24)
-- **D-11:** The 15 drawings (one per IBP group) are drawn by the assistant for the association, original work, no WSL material. Style approved by the owner from three pilots (line drawing, 800x600, round caps; stroke widths 4, 5, 6, 9 and 12, dots as zero-length strokes, rotated ellipses accepted by the converter). They ship as SVG path data in the app (react-native-svg, already installed) and are drawn stroke by stroke once when the group page opens; instant under Reduce Motion; no loop; stroke colour from the theme, so no paper tile. SVG sources: `drawings/` in this phase folder. A domain expert must check each drawing for identification accuracy before release (sign-off with the content spec, plan 32-09).
+- **D-11 (amended 2026-10-26):** The 15 drawings (one per IBP group) are drawn by the assistant for the association, original work, no WSL material. Style approved by the owner from three pilots (line drawing, 800x600, round caps; stroke widths between 4 and 12, dots as zero-length strokes, rotated ellipses accepted by the converter). They ship as SVG path data in the app (react-native-svg, already installed), shown STATIC: no animation of any kind (the owner tried a stroke-drawing preview and a looping preview and dropped both: "ca sert a rien"). Stroke colour from the theme, so no paper tile. SVG sources: `drawings/` in this phase folder. A domain expert must check each drawing for identification accuracy before release (sign-off with the content spec, plan 32-09).
 
 ### Claude's Discretion
 - Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone.
@@ -103,3 +103,6 @@ While recording factor F, the observer reaches detailed identification informati
 
 *Phase: 32-Detailed DMH Information*
 *Context gathered: 2026-10-23*
+
+
+*Note 2026-10-26: 32-RESEARCH.md and the 32-UI-SPEC.md revision history describe earlier drawing designs (paper tile, then animation); D-11 above and the current plans prevail. The 15 drawings were redrawn on 2026-10-26 from the online verification notes in `drawings/verification-groupes-*.md`.*
