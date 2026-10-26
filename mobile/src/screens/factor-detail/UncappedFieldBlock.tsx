@@ -12,6 +12,8 @@ export type UncappedEntryProps = {
   state: UncappedState
   setStratumCover: (code: BStratumCode, text: string) => void
   setDmhCount: (code: DmhGroupCode, count: number) => void
+  /** Phase 32: the first "+" of a row ticks the group and counts 1. */
+  bumpDmhGroup: (code: DmhGroupCode, delta: number) => void
   setFSurface: (text: string) => void
 }
 

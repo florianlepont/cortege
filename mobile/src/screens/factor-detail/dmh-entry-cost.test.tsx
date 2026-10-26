@@ -94,6 +94,7 @@ function Harness({ formRef }: { formRef: { current: Form | null } }) {
         state: form.uncapped,
         setStratumCover: form.setStratumCover,
         setDmhCount: form.setDmhCount,
+        bumpDmhGroup: form.bumpDmhGroup,
         setFSurface: form.setFSurface,
       }}
     />
