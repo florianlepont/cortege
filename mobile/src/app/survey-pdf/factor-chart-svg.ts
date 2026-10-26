@@ -41,6 +41,12 @@ const ROW_WIDTH = 493
 const ROW_HEIGHT = 160
 const SOURCE_HEIGHT = 12
 // Card padding, border, heading and margin around the row: 20 + 2 + 24 + 160 + 12 + 10 = 228.
+// Device result, plan 33-20 (2026-10-26, iPhone 18 Pro simulator iOS 27.0 / WebKit and API 36 emulator
+// / Skia, the real export): the card prints as estimated. The source line ends 12.2 pt (iOS) and 13.6 pt
+// (Android) above the card's estimated bottom on page 2 of the v3.2, typical and low-score documents
+// (536.8 and 535.4 pt against 549) and 10.6 and 12.3 pt above it for the worst case (700.4 and 698.7
+// against 711). Page counts equal the builder's on both engines, and probe P-6 (right edges of the
+// end-anchored texts against Chrome) agrees within 0.6 pt on both. Numbers: 33-14-MEASUREMENTS.md.
 const CARD_PADDING = 20 // 10 left and right, 10 top and bottom
 const CARD_BORDER = 2 // 1 left and right, 1 top and bottom (counted since plan 33-19, U-26)
 const CARD_HEADING = 24
