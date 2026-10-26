@@ -16,6 +16,7 @@ created: 2026-10-23
 > No question was put to the owner: D-01..D-18 answer everything that is not visual detail. Visual choices that are genuinely open are listed as U-xx at the end (each can be vetoed cheaply).
 > Revision 2026-10-23 (checker block on Dimensions 4 and 5, orchestrator rulings applied): new print sizes collapsed onto existing ones, every new spacing value moved to the 4-grid, the primary button renamed "Exporter le PDF". Each ruling is recorded below as an "Accepted deviation" line.
 > Evidence: three throwaway Chrome renders (cover, one complete body page with the chart, the map and the trend, the one-page summary) were made in the session scratchpad, outside the repo, with the real Sora and Jost files and the real logo, to check proportions and the 764-unit summary budget. They were made before the size collapse and the grid pass (title 26 then, numerals 44 and 28, facts padding 14, summary map 230); the differences are at most 4 units each and the zone budgets below were recomputed arithmetically. They approximate neither WebKit nor Skia; the engine-safety matrix in B.2 says what still needs the Wave 0 probe.
+> Amendment 2026-10-26 (owner review on the iPhone of build bece9af1, D-19 to D-26 of 33-CONTEXT.md, gap plans 33-17 and 33-18): the sheet loses "Annuler", gains a close cross and more room, and fits its content (A.7); the cover carries the parcel map in place of the six facts, its forest panel is 356 high, and the body map block is gone (B.4, B.8); the identity card prints the whole parcel list with a line-counting estimate, and the observation year only when it differs from the year of the date (B.6); both factor charts show the stand and context groups as solid panels with their sub-scores (B.5, B.10); the page counts drop (B.11). Each change is a dated "Amendment 2026-10-26" subsection under the section it changes; every number not named in an amendment stands.
 
 ---
 
@@ -210,6 +211,16 @@ All text from the typed catalogue, no U+2014, abbreviations limited to units, OK
 
 Accepted deviation (match to the finish sheet): the secondary button keeps the label "Annuler". It reuses `commonFr.actions.cancel` and is the same word, role and `GlassButton size="md"` as the finish sheet, so the two sheets read alike; the primary label alone carries the specific verb and noun ("Exporter le PDF").
 
+### Amendment 2026-10-26 (Copywriting, D-21, D-26)
+
+| Element | Copy |
+|---------|------|
+| Secondary action | Removed (D-21): no "Annuler" button. The sheet closes by a swipe down or a tap outside (iOS), the hardware back (Android) or the close cross. The accepted deviation above no longer applies |
+| Close cross, spoken label | "Fermer" (`fr.surveyExportChoice.closeA11y`, the same string as `fr.common.actions.close`), button role |
+| Chart group labels, both PDFs | "Peuplement et gestion : 24 / 35" and "Contexte : 10 / 15" (the existing `scores.stand` and `scores.context`); without a sub-score the group name alone, "Peuplement et gestion" or "Contexte" (new `scores.groupNames.stand` and `scores.groupNames.context`; the two scored strings are built from the same two names so each word exists once) |
+
+The key `fr.surveyExportChoice.cancel` is removed. The cover strings `cover.methodWithCas` and `cover.versionShort` go with the cover facts (B.4 amendment) once nothing reads them. No new string carries U+2014; "Fermer" and the group names need no abbreviation.
+
 New PDF strings (additions to `fr.surveyExport`; existing keys reused wherever possible):
 
 ```ts
@@ -311,6 +322,32 @@ Fixed copy rules for the documents: the commune row prints `77186 (département 
 
 `ExportChoiceSheet.tsx`, `export-choice.styles.ts`, `useExportChoice.ts` (selection state, draft fallback, confirm) each well under the 400-line cap; no user-facing literal outside `src/i18n`; every style key read (structure gate). `SurveyDetailScreen.tsx` has 24 lines of room: only the `onShare` target and the `exportRequest` forwarding go there, the rest in `useExportRequest.ts` (research Pattern 2).
 
+### A.7 Amendment 2026-10-26 (D-20, D-21, D-22)
+
+Replaces the detents of A.1, the layout of A.2, the "Annuler" rows of A.3 to A.5 and the button half of U-05. Everything else of A.1 to A.6 stands: the route, the return path with `exportRequest { mode, nonce }`, the draft rule, the two cards and their glyphs, the draft sentence in its polite live region, focus on the title at opening, the 4-grid.
+
+- Height (D-22). `exportChoiceScreenOptions` sets `sheetAllowedDetents: "fitToContents"` (react-native-screens 4.26.2 and `@react-navigation/native-stack` 7.19.2 support it on iOS 16 and later; the app targets iOS 16.4). The sheet is as tall as its content, clamped by iOS to its largest height. For the content to define that height the scroll view has no `flex: 1` (`flexGrow: 0`) and a `maxHeight` of the window height minus the top safe inset, so that at a large text size the content scrolls inside the tallest sheet. The 0.65 detent is gone. Android keeps the full-screen modal (detents do not apply there). Fallback, only if the simulator check of 33-18 shows a blank, cut or jumping sheet: a fixed pair `[f, 1]`, f the draft content height at the default text size plus 8, over 852 (the owner's iPhone 15 Pro), rounded up to two decimals (about 0.57 by the arithmetic below), one value for the draft and the submitted case.
+- Room (D-20). Horizontal padding 24 (was 20). Top padding 24 (was 16), plus the status bar inset on Android.
+- Layout, top to bottom (one `ScrollView`):
+
+```
+[ Quel PDF voulez-vous ?                                ( x ) ]  title row: title flex 1 (24/28, header role), 12 gap, close cross 44
+(16)
+[ (o) [documents-outline] Complet ... Environ N pages.        ]  RadioCard, selected by default
+(12)
+[ ( ) [document-text-outline] Résumé ... 1 page.              ]  RadioCard, dimmed on a draft
+(12, draft only)
+[ lock  Le résumé est réservé aux relevés terminés. ...        ]  13/18 textSecondary
+(24)
+[                      Exporter le PDF                         ]  GlassButton primary lg
+(24 + safe area bottom)
+```
+
+- Close cross (D-21), on both platforms: `AppPressable` 44 x 44, radius 22, background `colors.panelMuted`, Ionicons `close-outline` 20 in `semanticColors.textStrong` (the close button of the factor help sheet, `sheetClose` in `factor-detail.styles.ts`), role button, label "Fermer", testID `export-choice-close`. It calls the route's close, which goes back only when the sheet is focused. No secondary button.
+- Heights at the default text size on a 393 x 852 iPhone (arithmetic: 24 + 44 + 16 + two cards of about 98 + 12 + 24 + the 56 button + 24 + 34): about 430 pt for a submitted survey, about 478 pt for a draft, against 554 pt for the old 0.65 detent. 33-18 measures them on the simulator.
+- Accessibility order: title, Fermer, Complet, Résumé, draft sentence (when shown), Exporter le PDF. The title wraps beside the cross and never truncates. Dynamic Type: above the tallest sheet the content scrolls (the `maxHeight` bound).
+- States and interactions: "Tap Annuler, swipe down, back" (A.5) and the matching A.3 behaviour read "Tap the close cross, swipe down, tap outside (iOS) or back (Android): closes, exports nothing". The busy, error, stale nonce and not-found rows stand.
+
 ---
 
 ## B. Printed documents
@@ -376,6 +413,36 @@ Light lower part (panel bottom to the footer line):
 
 The cover costs no extra page because the score card leaves the body (research lever L5) and the other levers apply (map frame, merged identity card, commune row); verify with the page-count targets in B.11.
 
+#### Amendment 2026-10-26 (D-24, D-25): the cover carries the map
+
+Replaces the six identity facts, the panel height and the positions of the light part. Stands: the logo tile and logo, the eyebrow and subtitle, the title box size and its two type sizes, the date and score row styles, the band pill, the provisional line style, the inside of the two sub-score tiles, the contour art rule, the draft banner and watermark, "no extra page".
+
+Vertical chain, page units from the top of the page (multiples of 4, except the derived watermark top). A draft moves everything under the panel down by `DRAFT_BANNER_HEIGHT` 24, as before.
+
+| Element | Submitted | Draft | Was (submitted) |
+|---|---|---|---|
+| Forest panel | 0 to 356 | same | 0 to 380 |
+| Logo tile, eyebrow, subtitle | 40, 56, 76 | same | same |
+| Site title box, 340 x 84 | 148 to 232 | same | 156 to 240 |
+| Date, 16 | 240 to 256 | same | 252 to 268 |
+| Score row, 72 | 264 to 336 | same | 280 to 352 |
+| Provisional line (draft with missing factors), 13 | none | 336 to 349 | 352 to 365 |
+| Draft banner strip, 18 (`COVER_BANNER_TOP` = panel + 12) | none | 368 to 386 | 392 to 410 |
+| Two sub-score tiles, 112 | 376 to 488 | 400 to 512 | 408 to 520 |
+| Map zone heading "Localisation", 20 | 504 to 524 | 528 to 548 | new |
+| Map frame or quiet panel, 515 x 228 | 524 to 752 | 548 to 776 | new |
+| Legend line, 12 | 756 to 768 | 780 to 792 | new |
+| Footer line | 804 | 804 | 804 |
+| Draft watermark top (`COVER_WATERMARK_TOP`, same formula) | none | 543 | 555 |
+
+- The panel shrinks by 24 (380 to 356, 42 % of the page) and the tiles keep 112: the space comes from inside the panel (logo tile to title 28 to 20, title box to date and date to score 12 to 8; 20 of forest stay under the score row, 7 under the provisional line) and from the gaps (panel to tiles 28 to 20, tiles to map 16). The contour art keeps `xMaxYMax slice` on the shorter box; no ring may cross the date, the eyebrow or the subtitle (render check of 33-18).
+- Map zone at x 40, 515 wide, 264 high. Heading `map.heading` "Localisation", Sora-SemiBold 11 / 20 `ink` (the summary's zone heading). The shared `buildMapFigure` at `COVER_MAP_FRAME_SIZE` 515 x 228, in a box with `overflow: hidden`. Legend line, Jost-Regular 8 / 12 `inkMuted`, one line: `map.source` with a basemap, `map.outlineOnly` for the outline on the pale canvas. No parcel: a quiet panel (515 x 228, `panel`, 1 unit `line` border, radius 12, Jost-Regular 9 / 13 `inkMuted`, centred, the summary's panel) with `map.noParcel`; parcels with no geometry: the same panel with `map.noOutline`; no legend line under a quiet panel.
+- No parcel id is printed on the cover (D-23: the whole list is on page 2, never shortened). No year on the cover (D-25; the long date stays in the panel). The six facts are gone (D-24: the identity card holds them).
+- 36 units of paper stay under the legend line of a submitted cover, 12 on a draft.
+- `COVER_MAP_FRAME_SIZE` (new, next to `MAP_FRAME_SIZE` in `export-settings.ts`) is 515 x 228, the size of `SUMMARY_MAP_FRAME_SIZE`, so the overlay alignment measured at 515 x 228 on both engines (DC-33-03) applies; 33-18 re-measures it on the cover. The loader frames the complete PDF's snapshot at that size; the complete snapshot profile (1100 px, JPEG 0.8) is unchanged.
+- The CSS of the shared figure (`mapFigureCss`) is appended once at the end of `coverCss`; the figure keeps its scale and north panels at `fill-opacity: 0.85` (shipping since 25.1, as in the summary), so the cover's no-opacity test strips the figure first.
+- Phase 31: the map is drawn on the cover by `buildMapFigure`. Annotations and the route trace go into that figure's overlay (an additive argument of `buildMapFigure`, so they appear on the cover and on the summary); a list of remarkable elements is a new registry entry after `factors` (B.8 amendment). A larger annotated map in the body would be a new section with its own frame and a second snapshot in the loader, outside this phase.
+
 ### B.5 Graphics: ring, bars, trend, map frame
 
 All static SVG strings from pure builders, numbers through `svgNumber`, texts through `escapeHtml`.
@@ -385,11 +452,26 @@ All static SVG strings from pure builders, numbers through `svgNumber`, texts th
 - Trend curve (`buildTrendSvg` at width 515 in both documents; geometry untouched): a soft area under the curve in solid `accentSoft` (path = the segment path plus the two baseline points, drawn first, no opacity), the line in `accent` 3 wide round (existing), dashed links across method changes in `inkMuted`, past points r 4 with a `paper` fill and `accent` ring 2, the current point r 6 solid `accent`, totals above points (Sora-Medium 12, the current one Sora-SemiBold 13), years below (Jost-SemiBold 10 `inkMuted`). The curve height stays `TREND_HEIGHT` 128.
 - Map frame: complete PDF 515 x 250 (was 340, D-12), summary 515 x 228; both with radius 12, 1 unit `line` border, the overlay and the outline fallback drawn by the shared `map-figure.ts`. Heading 24, legend and source lines unchanged. The snapshot ratio changes, so overlay alignment is a device check (research pitfall 7).
 
+#### Amendment 2026-10-26 (D-26, D-24): grouped factor chart, map frames
+
+- Factor bars in both documents (D-26). The chart shows the two groups as solid panels carrying their sub-score, in the complete chart (493 x 160) and in the summary chart (299 x 156). The caption row under the letters is gone. The complete chart block stays 214 high and the summary zone Z2 stays 176: no estimate and no zone moves.
+  - Panels: one rounded rect per group, drawn first, behind its bars: from the first bar's x minus 4 to the last bar's right edge plus 4 (the stand panel starts at x 0, the context panel ends at the right edge, 18 between the two; the 26 gap between G and H stands), the full chart height, radius 8, a 1 unit `line` stroke, a solid fill: `paper` in the complete chart (its card is `panel`), `panel` in the summary (its page is `paper`). The bars keep at least 3:1 on both fills (`bandMid` 3.56 on paper and 3.28 on panel, pinned in `palette.test.ts`). A tinted fill was rejected: `bandMid` falls to 2.92 on `accentSoft` and 2.82 on `panelStrong`.
+  - Header band, 16 at the top of each panel: one label centred in the panel, Jost-SemiBold 8 `ink`, baseline 11: "Peuplement et gestion : 24 / 35" and "Contexte : 10 / 15"; with no sub-score, the group name alone (Copywriting amendment). The sub-scores printed are `data.scores` (the domain result), never a sum made by the builder.
+  - Plot: top at 34 (16 header plus the 18 value room of `CHART_MARGIN.top`), bottom 18 above the chart bottom (`CHART_MARGIN.bottom`, letters 13 under the plot, inside the panel). Plot height 108 in the complete chart (was 112 with the caption row) and 104 in the summary (was 120). Grid lines are drawn inside each panel only (4 in from its sides), so the gap between the panels stays clean. Values, letters, bar radius 4 and the missing-factor outline are unchanged.
+  - No opacity, no gradient, palette values only; labels and fill escaped.
+- Map frames (D-24). The complete PDF has no body map any more: its only map is on the cover, at `COVER_MAP_FRAME_SIZE` 515 x 228 (B.4 amendment). The summary keeps 515 x 228. `MAP_FRAME_SIZE` 515 x 250 is no longer read by the complete PDF; it stays exported with its value and measurement because phases 31 and 32 run beside this one.
+
 ### B.6 Identity block (merged, D-04, D-16)
 
 One card "Identification du relevé" (heading B.3) holding two tables: the identity rows, then a 1 unit `line` rule, the sub-heading "Critères de diagnostic" (11 / 24) and the method rows (the old identity-method card folded in; the estimate drops by about 30 units: card padding 20, margin 10, border). Row styling unchanged (caption column 150, 8.5 label `inkMuted`; value 9 / 13 `ink`; 3 + 3 padding, legacy calibration).
 
 Row order: Site; Parcelle(s) cadastrale(s) (ids in `nowrap` spans joined by ", ", so a line break only falls between ids; `Non renseignée` when none); Commune (`77186 (département 77)`); Année d'observation; Version du relevé; Date; Observateur (when present); Coordonnées (when present); Mode de relevé (only for a survey without a route, as today). The rows "Département" and the long commune label are gone (one row less, 19 units). The commune row is omitted when the first parcel id is not a valid 14-character cadastral id (nothing printed, as today).
+
+#### Amendment 2026-10-26 (D-23, D-25)
+
+- Parcels (D-23). The row prints every id, wrapped between ids (the `nowrap` spans joined by ", " stand), never shortened and never with "…". The estimate counts lines by ids, `ceil(count / 3)` lines of 13 plus the 6 of row padding: 3 ids per line is the narrowest count measured in the value column of the card (Chrome, 2026-10-26, harness of `33-RENDER-HARNESS.md`: ids of the form 77186000AB0001 fit 4 per line, ids with wide section letters such as 2A004000WM0001 fit 3; 30 ids printed 8 and 10 lines). The former character count (80 per line) under-estimated a long list: 6 lines for 30 ids. With 3 per line the estimate is never below the printed height; 1 to 3 ids stay one line, as before.
+- Year (D-25). "Année d'observation" prints only when the year is known and differs from the year of the survey date as printed (`new Date(dateIso).getFullYear()`, the same parse as `formatDateFr`), or when the date cannot be read. A year equal to the date's year, or no year at all, prints no row (19 units less). Row order otherwise unchanged. The cover prints no year (B.4 amendment).
+- The summary keeps its one-line meta line, shortened to 95 characters (D-23 is about the complete PDF).
 
 ### B.7 Factor cards, conditions, route, photos
 
@@ -401,9 +483,17 @@ Row order: Site; Parcelle(s) cadastrale(s) (ids in `nowrap` spans joined by ", "
 
 cover, identity (with method), conditions, route, factor-chart, factors, map, trend, photos. Map and trend share a page (map block about 322 units plus trend 331, which fits one 740 body at 0.92 fill: 653 of 681). The score card block is deleted (its content lives on the cover). A later phase appends one entry after `map`.
 
+#### Amendment 2026-10-26 (D-24)
+
+Order of the complete PDF: cover (with the map), identity (with method), conditions, route, factor-chart, factors, trend, photos. The `map` registry entry and its module `map-section.ts` are removed: nothing in the body draws the map, and the "no parcel" and "no outline" notes now live in the cover's quiet panel. The trend follows the factors as one atomic block and opens no page of its own. The registry stays the only extension seam: phase 31 appends its section after `factors` (before `trend`) and draws on the map through `buildMapFigure` (B.4 amendment).
+
 ### B.9 Estimates to retune in the same commit as the restyle
 
 `CHART_HEIGHT` 150 to 160 and the chart block height; the identity estimate (merged card, one row less, `nowrap` ids); `OBS_WIDTH` 313 to 312 (4-unit factor-card border); `MAP_FRAME_SIZE` 515 x 340 to 515 x 250 and the new `SUMMARY_MAP_FRAME_SIZE` 515 x 228; the cover and summary blocks are fixed-height (no estimate). Everything else (row 13, padding 6, 80 characters per line, 4.4 per character, factor card paddings) is deliberately unchanged (legacy calibration). After the restyle compare builder `pageCount` with `pdfinfo` and the last element's bottom with `pdftotext -bbox` on both platforms (the 25.1-17 method).
+
+#### Amendment 2026-10-26
+
+Estimates that change: the identity parcels row (counted by ids, B.6 amendment), the identity year row (19 less when omitted), and the body map block (322, or a 53 to 72 unit note) which leaves the body. Unchanged: `CHART_HEIGHT` 160 and the chart block 214 (the group header takes the room of the caption row), the cover block (fixed, 740), the summary block (fixed, 764), every factor card estimate, `PAGE_FILL_FACTOR` 0.94. `COMPLETE_BASE_PAGES` is re-derived from the builder's count of the typical survey without photos (4 by the planner's simulation of the builder on 2026-10-26: cover with the map; identity, chart, stand heading and factor A; factors B to G; context heading, H to J and the trend).
 
 ### B.10 One-page summary (submitted surveys only, D-07, D-08, D-09, D-18)
 
@@ -438,6 +528,10 @@ Fallbacks (the page layout never changes; each keeps its zone height):
 
 A draft never reaches this builder (disabled card, coerced in the hook, refused in the facade). If it did, the page prints without banner (the type of the summary has none): that is why the three guards exist.
 
+#### Amendment 2026-10-26 (D-26)
+
+Z2 right: the 299 x 156 chart draws the two group panels and their labels with the sub-scores (B.5 amendment), panel fill `panel` on the paper page, plot 104 high. The zones, their heights, the 764 total, the forest card with its sub-scores line, the map and evolution zones and every fallback row above stand; the page stays exactly one page.
+
 Accessibility of the print: all text stays selectable (no text drawn as paths except SVG `<text>` in the chart, which stays text); SVG graphics carry `role="img"` and `aria-label`; no information is colour only (band names, point values and the numeral are always printed). Layout stays legible at A4 and at phone preview size: the smallest printed size is 8 (existing).
 
 ### B.11 Page-count and weight targets (acceptance numbers, replaced by device counts after the layout is final)
@@ -452,6 +546,23 @@ Accessibility of the print: all text stays selectable (no text drawn as paths ex
 | Summary, any submitted survey | not applicable | exactly 1, in every fixture and fallback of B.10 |
 
 Complete: map and trend on one page for up to six history points; no block cut at a page bottom (atomic blocks); no photo-only page with fewer than two photos before the last. Summary file expected under 200 KB (no photos; the map JPEG, vector graphics, subset fonts, one logo object).
+
+#### Amendment 2026-10-26 (D-24): page counts with the map on the cover
+
+The targets stand ("not above"); the pins drop because the map leaves the body. New pins from the planner's simulation of the builder on 2026-10-26 (the 33-17 blocks, the body map removed), to be confirmed by the builder and by Chrome `pdfinfo` in 33-18 and by the print engines in 33-18. No pin may go up.
+
+| Case | Pin after 33-16 | New pin | Target |
+|---|---:|---:|---|
+| v3.2 submitted, no map, no history, no photo | 4 | 4 | not above 4 |
+| v3.2 submitted with the fullest route | 5 | 4 | none in B.11 |
+| v3.0 draft | 4 | 4 | not above 4 |
+| Typical: map, 3-point history, 6 photos | 6 | 5 | not above 6 |
+| Typical + conditions + full route | 7 | 6 | not above 7 |
+| Worst case, with and without the route | 10 | 9 | not above 10 |
+| 30 parcels, v3.2 submitted, no map (new fixture) | none | the builder's count | none |
+| Summary, any submitted survey | 1 | 1 | exactly 1 |
+
+"Map and trend on one page" is withdrawn (there is no body map). The rules that stand: no block cut at a page bottom, no photo-only page with fewer than two photos before the last, the first photo page after the trend. The "Environ N pages" base (`COMPLETE_BASE_PAGES`) goes from 5 to the builder's count of the typical survey without photos (4 by the simulation).
 
 ### B.12 Pre-existing finding to fix in the same pass
 
@@ -495,9 +606,24 @@ Complete: map and trend on one page for up to six history points; no block cut a
 | U-12 | Probe-gated items keep a solid fallback that changes no geometry | Research warning on WebKit gradients and opacity |
 | U-13 | Print scale exempt from the screen type rule; only four new sizes (64, 40, 24, 20), every other new role reuses an existing print size | Orchestrator ruling; hand-calibrated, device-measured print layout |
 
+### Amendment 2026-10-26 (decisions after the owner's review)
+
+| # | Decision | Reason |
+|---|----------|--------|
+| U-05 | Superseded for the buttons: one primary button, no "Annuler"; a close cross (A.7) | D-21 |
+| U-11 | Superseded: the cover shows the parcel map, not the six facts | D-24 |
+| U-14 | The forest panel shrinks from 380 to 356; the tiles keep 112 | Keeps a 228-high map (the size the owner validated on the summary) without shortening the tiles; the panel had the spare room (28 under the score row) |
+| U-15 | The cover map frame is 515 x 228, the summary's size, as its own constant `COVER_MAP_FRAME_SIZE` | The overlay at that frame is already aligned on both engines (DC-33-03); a constant per document lets them diverge later |
+| U-16 | Group panels: solid `paper` (complete) or `panel` (summary) with a 1 unit `line` border, one centred label with the sub-score | A tinted fill drops the ochre bar under 3:1; the border makes a white panel visible on the beige card |
+| U-17 | The close cross is shown on iOS too, not only in the Android modal | VoiceOver users get an explicit close; same pattern as the factor help sheet. Veto: hide it on iOS (swipe and tap outside remain) |
+| U-18 | The sheet uses `fitToContents`; the scroll view has `flexGrow: 0` and a `maxHeight` | The owner asked for a fitted height; the bound keeps large text scrollable |
+| U-19 | No parcel id on the cover; the legend line carries only the basemap source or the outline note | D-23 forbids a shortened list; the whole list is on page 2 |
+
 ## Open for owner
 
 None blocks planning. To confirm on the phone (each can be vetoed cheaply): (1) the header logo removal, U-01; (2) the cover with six facts and the amount of white below them, U-11; (3) the summary map and trend sizes, U-10; (4) the 0.65 detent and the card captions on the real phone; (5) the page count shown on "Complet" (an estimate that must match the real PDF within one page).
+
+Amendment 2026-10-26: items (1), (3) and (5) were validated by the owner (D-19); (2) and (4) are replaced by D-24 and D-22. To re-check on the phone after 33-17 and 33-18 (rows DV-33-06 and following of `docs/user-tests/device-checks.md`): the sheet's fitted height, its spacing and the close cross (and whether the cross should also show on iOS, U-17); the cover with the map and the shorter forest panel (U-14, U-15, U-19); the whole parcel list on page 2; the year rule; the grouped charts in both PDFs (U-16); the new page counts and "Environ N pages".
 
 ---
 
