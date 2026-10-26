@@ -35,6 +35,7 @@ import {
   defaultBasemapDeps,
   takeBasemapJpeg,
   type BasemapChoice,
+  type SnapshotProfile,
 } from "./map-snapshot"
 import {
   preparePhotosForExport,
@@ -88,6 +89,7 @@ export type AssembleDeps = {
     mapStyle: string
     frame: MapFrame
     kind: BasemapChoice["kind"]
+    profile?: SnapshotProfile
   }) => Promise<BasemapSnapshot | null>
   loadHistory: (parcelId: string) => Promise<CachedParcelHistory | null>
 }
@@ -277,12 +279,15 @@ function frameFor(bounds: LngLatBounds, size: FrameSize): MapFrame {
 async function loadBasemap(
   frame: MapFrame,
   online: boolean,
+  mode: ExportMode,
   deps: AssembleDeps,
 ): Promise<BasemapSnapshot | null> {
   return orFallback("basemap", null, async () => {
     const choice = await deps.decideBasemap({ lat: frame.centerLat, lng: frame.centerLng }, online)
     if (choice.kind === "none") return null
-    return deps.takeBasemap({ mapStyle: choice.mapStyle, frame, kind: choice.kind })
+    // Only the one-page summary gets the lighter basemap (plan 33-16); the complete PDF stays sharp.
+    const profile: SnapshotProfile = mode === "summary" ? "summary" : "complete"
+    return deps.takeBasemap({ mapStyle: choice.mapStyle, frame, kind: choice.kind, profile })
   })
 }
 
@@ -314,7 +319,7 @@ async function loadMapPiece(
   const coordinates = location ?? centreOf(bounds)
   if (!coordinates) return { coordinates: null, map: null }
   const size = frameSizeOf(mode)
-  const basemap = bounds ? await loadBasemap(frameFor(bounds, size), online, deps) : null
+  const basemap = bounds ? await loadBasemap(frameFor(bounds, size), online, mode, deps) : null
   return { coordinates, map: { polygons, basemap, frameSize: { ...size } } }
 }
 

@@ -167,7 +167,57 @@ What the weight is made of: the map JPEG is 192 KB (`summary`) and 220 KB (`summ
 
 1. **Photo setting (D-17), decided 2026-10-26: 640 / 0.6** (plan 33-16: `PHOTO_EXPORT_SETTINGS` is now `{ cap: 24, longEdgePx: 640, jpegQuality: 0.6 }`, the owner overrode the 25 % rule). Original text: by the rule of this plan the code goes back to 800 px / JPEG 0.65, because Android is only 18.4 % lighter at 640 / 0.6 (iOS 29.1 %). 640 / 0.6 shows no visible blocking, reduces the photo data by 32 to 37 %, and makes the typical iOS PDF 6.8 % lighter than the 33-01 baseline (800 / 0.65 is 15.2 % heavier). If the owner prefers the lighter file (D-03), keeping 640 / 0.6 is a one line change in `PHOTO_EXPORT_SETTINGS` and its test; the numbers above are the evidence.
 2. **A complete PDF not lighter than its reference (D-03).** At 800 / 0.65: typical +15.2 % (iOS) and +17.8 % (Android), worst +3.6 % (iOS); the layout alone costs +2 to +3 % in Chrome (the cover). The reference is the Chrome baseline of 33-01 and no pre-phase build was measured on a phone, so a like-for-like device delta is not known. Android text-only documents are about 160 to 180 KB heavier than the Chrome baseline because of Type 3 font embedding (engine, not layout).
-3. **Summary over 200 KB on both phone engines**: iOS 234.3 / 264.0 KB, Android 246.6 / 273.2 KB (typical / worst). The map snapshot is most of it. Options: lower `SNAPSHOT_JPEG_QUALITY` (0.8) and `SNAPSHOT_JPEG_WIDTH_PX` (1100) in `map-snapshot.ts` (a frame of 515 units prints at 154 ppi today), or accept about 250 KB for a town parcel and rewrite the B.11 target. Not changed here.
+3. **Summary over 200 KB on both phone engines, decided 2026-10-26: lighter basemap for the summary only, 900 px / JPEG 0.7** (plan 33-16, see the section at the end: iOS 161.1 / 178.5 KB, 198.7 KB with the cadastre style, under 200 KB; Android 209.0 / 227.0 KB, still over, left to the owner review). Original text: **Summary over 200 KB on both phone engines**: iOS 234.3 / 264.0 KB, Android 246.6 / 273.2 KB (typical / worst). The map snapshot is most of it. Options: lower `SNAPSHOT_JPEG_QUALITY` (0.8) and `SNAPSHOT_JPEG_WIDTH_PX` (1100) in `map-snapshot.ts` (a frame of 515 units prints at 154 ppi today), or accept about 250 KB for a town parcel and rewrite the B.11 target. Not changed here.
 4. **The v3.2 submitted fixture prints 5 pages, target 4, decided 2026-10-26: `PAGE_FILL_FACTOR` 0.94** (plan 33-16: the fixture now builds 4 pages, Chrome `pdfinfo` agrees, every other pinned count is unchanged; the `it.failing` test is a normal test expecting 4). Original text: the fixture prints 5 pages, target 4 (carried from 33-13). The devices confirm the estimate is not wrong about the engines: real page 2 content is 689.8 of 740 units with the heading and factor A, but the 0.92 fill factor leaves 680.8. Options with the measured numbers: accept 5 for a survey with no map and no history (the fifth page holds a 53 unit note); shrink page 2 by 11.2 estimated units (for example the chart estimate 214 to 200 together with the identity estimate 288 to 284 would give 674 and move factor A up; but the real chart block is 205.5, so a 200 estimate would under-estimate it by 5.5 units); or lift `PAGE_FILL_FACTOR` from 0.92 to 0.94 (capacity 695.6, page 2 then fits at 692). With real heights the document is 4 pages on both phone engines if the factors A are allowed on page 2. Any of these is a layout or estimate change to be pinned by tests; the `it.failing` test stays until the count really becomes 4.
 5. **Probe judgement calls (P-2, P-4, P-5 on Android).** Two Android probe pages exceed the 10 KB growth line (P-2 10.5 KB for two rings, P-5 15.7 KB for two new font subsets) and the literal P-4 probe stores the image as flate because of `object-fit: cover`. All three are explained above and no fallback was applied; the owner may overrule and ask for the path arc ring or square corners, which change no layout.
 6. **Not measured**: a real phone (the numbers are a simulator and an emulator on an Apple silicon Mac); the offline snapshot branch on iOS (one simulator cannot lose the network without the Mac); a phone-photo source set (herbier JPEGs were used); the owner's `Pixel_8` AVD (a clone was used, and deleted after the run).
+
+## Re-measurement of plan 33-16 (2026-10-26, owner decisions of the same day)
+
+Changes under test: photos 640 px / 0.6 (open item 1), `PAGE_FILL_FACTOR` 0.94 (item 4), summary basemap profile (item 3). Code of the branch after commit b732aa1b plus the `profile` option of `takeBasemapJpeg`.
+
+### Chrome: page counts (the harness of 33-RENDER-HARNESS.md on the final builders, root zoom 4/3 so 1 unit = 1 pt)
+
+11 cases, the 13 of plan 33-14 without its two duplicate photo-setting rows (Chrome repeats the same file) and with the v3.2 fixture also run with the fullest route. Photos are the 24 herbier JPEGs prepared at 640 px / 0.6 (`sips`), the map is the 1030 x 680 stand-in JPEG, so Chrome sizes are not phone sizes.
+
+| engine | case | builder pages | pdfinfo pages | pdfinfo size KB | lowest body text bottom, pt (largest page; body bottom 800) |
+|---|---|---:|---:|---:|---:|
+| chrome | complete-v32 (v3.2 submitted, no map, no history) | 4 | 4 | 166.9 | 732.6 |
+| chrome | complete-v32-route (same with the fullest route) | 5 | 5 | 174.1 | 707.5 |
+| chrome | complete-v30-draft | 4 | 4 | 166.4 | 724.3 |
+| chrome | complete-typical | 6 | 6 | 445.2 | 745.7 |
+| chrome | complete-typical-conditioned | 7 | 7 | 455.7 | 745.7 |
+| chrome | complete-worst | 10 | 10 | 1025.4 | 745.7 |
+| chrome | complete-worst-no-route | 10 | 10 | 1020.0 | 745.7 |
+| chrome | summary | 1 | 1 | 137.8 | 799.5 |
+| chrome | summary-worst | 1 | 1 | 141.7 | 799.5 |
+| chrome | summary-no-basemap | 1 | 1 | 67.7 | 787.5 |
+| chrome | summary-no-history | 1 | 1 | 132.6 | 787.5 |
+
+- Every builder count equals `pdfinfo`. The only count that moved against 33-14 is the v3.2 fixture, 5 to 4. v3.0 draft 4, typical 6, conditioned 7, worst 10 (with and without the route), summaries 1, v3.2 with the fullest route 5 are unchanged.
+- The lowest text of a complete page is 745.7 pt at most (the 33-14 value), 54 pt above the body bottom, so the 790 pt line (footer at 804) is not approached and no block is within 10 pt of the footer. A summary ends on its two source lines at 799.5 pt (787.5 without basemap or history), designed to sit at the body bottom, as in 33-14.
+- The page that now holds factor A under the factor chart (page 2 of complete-v32, looked at on a 80 dpi picture): the merged identity card with its "Critères de diagnostic" sub-block, the "Score par facteur" chart with its two subtotals, the heading "Facteurs liés au peuplement et à la gestion forestière" and the whole card of factor A (genera chips, class boxes, barème), ending at 732.6 pt with about 67 pt of empty body below. Nothing is split or clipped. Page 3 holds factors B to G and page 4 holds the context heading, H to J and the two "no map" / "no history" notes.
+- The 4 page v3.2 file was not re-printed on the iOS simulator or the Android emulator (no device run was needed for the page counts: the builder, the layout and the engines are the same as in 33-14, where page 2 content measured 689.8 of 740 units on both engines).
+
+### iOS simulator and Android emulator: summary weight by basemap profile
+
+Same fixtures and method as 33-14 (real `exportAndShareSurveyPdf`, real print through `printToFileAsync`, real MapLibre snapshots fetched on the device, real parcels of Fontainebleau from the IGN apicarto; recorder instead of share; `pdfinfo` for sizes; the in-app harness was throwaway and is not committed). iPhone 18 Pro simulator (iOS 27.0, the 33-14 Debug build, JS from Metro on 8081; no rebuild was needed, so the Xcode 27.1 ExpoModulesJSI workaround was not applied this time) and an API 36 emulator (`Pixel_8_c16`, a config-only AVD, because `Pixel_8` holds a release build of another signature; the 33-14 debug APK of this worktree, `debug_http_host` set to `localhost:8081`). Each profile resizes and compresses the same snapshot PNG; "real" is the real `takeBasemapJpeg({ profile: "summary" })` and gives byte-identical output to the 900 / 0.7 row on both engines. Cases: `typical` = one parcel (77186000AN0308), plain Plan IGN style, zoom 17; `fullest` = three parcels, the fullest summary fixture, plain style; `fullest + cadastre` = same three parcels, the composite style of `GET /v1/map-styles/map.json` (the style an offline pack writes, with the cadastre layer). The first row of each engine reproduces the 33-14 numbers (iOS 234.3 / 264.0, Android 246.6 / 273.2), so the two runs are comparable. Tagged 33-16.
+
+| engine | profile (width / quality) | typical PDF KB (JPEG KB) | fullest PDF KB (JPEG KB) | fullest + cadastre PDF KB (JPEG KB) |
+|---|---|---:|---:|---:|
+| ios | 1100 / 0.8 (complete profile, the baseline) | 234.1 (187.1) | 264.0 (215.1) | 287.7 (238.8) |
+| ios | **900 / 0.7 (chosen, summary profile)** | **161.1 (114.1)** | **178.5 (129.5)** | **198.7 (149.8)** |
+| ios | 800 / 0.7 | 144.2 (97.1) | 157.3 (108.4) | 174.5 (125.6) |
+| ios | 900 / 0.65 | 148.8 (101.8) | 164.5 (115.6) | 183.5 (134.6) |
+| android | 1100 / 0.8 (complete profile, the baseline) | 246.7 (94.7) | 273.3 (115.3) | 292.4 (134.4) |
+| android | **900 / 0.7 (chosen, summary profile)** | **209.0 (57.1)** | **227.0 (69.1)** | **241.6 (83.7)** |
+| android | 800 / 0.7 | 200.5 (48.5) | 216.7 (58.7) | 229.3 (71.4) |
+| android | 900 / 0.65 | 203.7 (51.8) | 220.9 (62.9) | 235.1 (77.2) |
+
+All 30 PDFs are 1 page; the map is one `jpeg` object in each (`pdfimages -list`), the logo and its mask the only other raster.
+
+- Legibility and alignment (200 dpi crops of the map zone of the fullest + cadastre PDF, 1100 / 0.8 against 900 / 0.7 against 800 / 0.7 on iOS and 1100 / 0.8 against 900 / 0.7 on Android): at 900 / 0.7 the parcel outline lies on the building footprints and cadastre lines exactly as at 1100 / 0.8, the cadastre lines, building hatches, street names and the parcel numbers stay legible, and the outline strokes stay sharp (they are a vector overlay). 800 / 0.7 is slightly softer on the small parcel numbers and on the building hatches, still legible; it was not chosen because it does not bring Android under 200 KB either. No ringing or blocking is visible at 900 / 0.7.
+- Verdict: iOS is under 200 KB in all three cases at 900 / 0.7 (161.1, 178.5 and 198.7 KB, the last by 1.3 KB). Android is not: 209.0, 227.0 and 241.6 KB. About 152 KB of an Android summary is not the basemap (fonts embedded as Type 3 subsets, 148.5 KB with no basemap at all in 33-14), so even the lightest candidate leaves the typical survey at 200.5 KB (800 / 0.7). By the rule of plan 33-16 the sharpest acceptable candidate, 900 / 0.7, is kept and the Android sizes are an open item for the owner review (33-15).
+- Photos: the 640 px / 0.6 setting is the one measured in 33-14 (worst case iOS 1035.2 KB, Android 947.9 KB, 24 of 24 photos present, no visible blocking), the photo code path is unchanged by this plan, so the photo weights were not re-run on the devices; the Chrome worst case with the 640 / 0.6 files is 1025.4 KB (against 1439.7 KB at 800 / 0.65 in the 33-14 Chrome row).
+- Not measured: a real phone; the offline snapshot branch on iOS; the complete-profile basemap is unchanged (1100 / 0.8) and was not re-measured as a PDF; phone-photo sources.
+

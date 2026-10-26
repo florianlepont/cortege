@@ -351,6 +351,28 @@ describe("assembleSurveyExportData", () => {
       )
     })
 
+    test("only a summary asks for the lighter basemap profile (plan 33-16)", async () => {
+      const summaryDeps = fakeDeps({ decideBasemap: jest.fn(async () => OFFLINE_CHOICE) })
+      await assembleSurveyExportData(input({ mode: "summary" }), summaryDeps)
+      expect(summaryDeps.takeBasemap).toHaveBeenCalledWith(
+        expect.objectContaining({ profile: "summary" }),
+      )
+
+      const completeDeps = fakeDeps({ decideBasemap: jest.fn(async () => OFFLINE_CHOICE) })
+      await assembleSurveyExportData(input({ mode: "complete" }), completeDeps)
+      expect(completeDeps.takeBasemap).toHaveBeenCalledWith(
+        expect.objectContaining({ profile: "complete" }),
+      )
+    })
+
+    test("a summary asked of a draft keeps the sharp profile of the complete export it becomes", async () => {
+      const deps = fakeDeps({ decideBasemap: jest.fn(async () => OFFLINE_CHOICE) })
+      await assembleSurveyExportData(input({ mode: "summary", isDraft: true }), deps)
+      expect(deps.takeBasemap).toHaveBeenCalledWith(
+        expect.objectContaining({ profile: "complete" }),
+      )
+    })
+
     test("a summary asked of a draft becomes a complete export, reads the photos and logs it once", async () => {
       const deps = withPhotos()
       const debug = jest.spyOn(console, "debug").mockImplementation(() => undefined)
