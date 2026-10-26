@@ -25,7 +25,7 @@ import {
   parseGenusListValue,
   serializeGenusListValue,
 } from "../app/factor-a-genus-list"
-import { readSelection } from "../app/factor-selections"
+import { readSelection, withSelectionToggled } from "../app/factor-selections"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
@@ -195,6 +195,7 @@ export function useSurveyForm() {
     fSurfaceText,
     setStratumCover: storeStratumCover,
     setDmhCount: storeDmhCount,
+    bumpDmhCount: storeBumpDmhCount,
     setFSurface: storeFSurface,
     loadUncapped,
     resetUncapped,
@@ -517,6 +518,25 @@ export function useSurveyForm() {
     writeTreesPerHa(storeDmhCount(code, count))
   }
 
+  /**
+   * Phase 32 (D-08, D-10): the first "+" of a group row ticks the group and counts it in one call;
+   * a later "+" or "-" moves the count. A negative delta never unticks (0 stays ticked) and no
+   * count goes below 0 or above 999. Nothing new is stored: the ticks and the counts are the
+   * `dmh_groups` and `dmh_counts` the chips and the counter block wrote before, and the density
+   * is still the package's, derived by the store.
+   */
+  const bumpDmhGroup = (code: DmhGroupCode, delta: number): void => {
+    const derived = storeBumpDmhCount(code, delta)
+    setFactorF((prev) => ({
+      ...prev,
+      dmh_groups:
+        delta > 0
+          ? withSelectionToggled("F", ibpMethodVersion, prev.dmh_groups, code, true)
+          : prev.dmh_groups,
+      ...(derived !== null ? { trees_per_ha: String(derived) } : {}),
+    }))
+  }
+
   /** F's own surface (prefilled from the route's surface décrite by the F page, editable). */
   const setFSurface = (text: string): void => {
     writeTreesPerHa(storeFSurface(text))
@@ -785,6 +805,7 @@ export function useSurveyForm() {
     uncapped,
     setStratumCover,
     setDmhCount,
+    bumpDmhGroup,
     setFSurface,
     formErrors,
     draftInput,

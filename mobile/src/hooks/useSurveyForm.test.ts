@@ -51,6 +51,13 @@ jest.mock("../app/number-utils", () => ({
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
+import { withSelectionToggled } from "../app/factor-selections"
+import {
+  DMH_ENTRY_SCENARIOS,
+  DMH_ENTRY_SURFACE_HA,
+  OLD_FLOW_F_PAYLOAD,
+  type DmhEntryScenarioId,
+} from "../screens/factor-detail/dmh-entry-scenarios"
 import { useSurveyForm } from "./useSurveyForm"
 
 const { fields, rules } = fr.validation
@@ -1072,6 +1079,113 @@ describe("useSurveyForm", () => {
   // ─── resetSurveyForm ──────────────────────────────────────────────────────
 
   // ─── Doubt flag and note per factor (phase 27, D-12, D-23) ──────────────────
+
+  describe("bumpDmhGroup (phase 32, D-08 and D-10)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("the first + on an unticked group ticks it in option order and counts 1", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].selection?.onChange(["dmh_12"])
+      })
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 2,
+        dmh_groups: ["dmh_05", "dmh_12"],
+        dmh_counts: { dmh_05: 1 },
+        surface_ha: 1,
+      })
+    })
+
+    test("going down to 0 leaves the group ticked and never goes below 0", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(factorF(result).dmh_groups).toEqual(["dmh_05"])
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(factorF(result).dmh_groups).toEqual(["dmh_05"])
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+    })
+
+    test("a negative delta on an unticked group does not tick it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(result.current.factorSections.F[0].selection?.selected ?? []).toEqual([])
+    })
+
+    test("without a valid surface the tick and the count are stored, the density is left alone", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+        result.current.bumpDmhGroup("dmh_02", 1)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("4")
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual(["dmh_02"])
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_02: 1 })
+    })
+
+    describe("writes the old flow's payload", () => {
+      test.each<DmhEntryScenarioId>(["S1", "S2"])("scenario %s", async (id) => {
+        const old = await renderForm()
+        await act(async () => {
+          old.current.setFSurface(DMH_ENTRY_SURFACE_HA)
+        })
+        for (const { code, trees } of DMH_ENTRY_SCENARIOS[id].groups) {
+          // Old actions: tick the chip (next selection in option order), then count by the counter.
+          await act(async () => {
+            const field = old.current.factorSections.F[0]
+            field.selection?.onChange(
+              withSelectionToggled("F", old.current.ibpMethodVersion, field.selection.selected, code, true),
+            )
+          })
+          for (let tree = 1; tree <= trees; tree += 1) {
+            await act(async () => {
+              old.current.setDmhCount(code, tree)
+            })
+          }
+        }
+
+        const next = await renderForm()
+        await act(async () => {
+          next.current.setFSurface(DMH_ENTRY_SURFACE_HA)
+        })
+        for (const { code, trees } of DMH_ENTRY_SCENARIOS[id].groups) {
+          for (let tree = 0; tree < trees; tree += 1) {
+            await act(async () => {
+              next.current.bumpDmhGroup(code, 1)
+            })
+          }
+        }
+
+        expect(factorF(next)).toEqual(factorF(old))
+        expect(factorF(next)).toEqual(OLD_FLOW_F_PAYLOAD[id])
+      })
+    })
+  })
 
   describe("factor annotations (D-23)", () => {
     const useRealRules = () => {
