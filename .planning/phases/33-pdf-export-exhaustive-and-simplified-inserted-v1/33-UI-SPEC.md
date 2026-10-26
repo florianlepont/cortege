@@ -17,6 +17,7 @@ created: 2026-10-23
 > Revision 2026-10-23 (checker block on Dimensions 4 and 5, orchestrator rulings applied): new print sizes collapsed onto existing ones, every new spacing value moved to the 4-grid, the primary button renamed "Exporter le PDF". Each ruling is recorded below as an "Accepted deviation" line.
 > Evidence: three throwaway Chrome renders (cover, one complete body page with the chart, the map and the trend, the one-page summary) were made in the session scratchpad, outside the repo, with the real Sora and Jost files and the real logo, to check proportions and the 764-unit summary budget. They were made before the size collapse and the grid pass (title 26 then, numerals 44 and 28, facts padding 14, summary map 230); the differences are at most 4 units each and the zone budgets below were recomputed arithmetically. They approximate neither WebKit nor Skia; the engine-safety matrix in B.2 says what still needs the Wave 0 probe.
 > Amendment 2026-10-26 (owner review on the iPhone of build bece9af1, D-19 to D-26 of 33-CONTEXT.md, gap plans 33-17 and 33-18): the sheet loses "Annuler", gains a close cross and more room, and fits its content (A.7); the cover carries the parcel map in place of the six facts, its forest panel is 356 high, and the body map block is gone (B.4, B.8); the identity card prints the whole parcel list with a line-counting estimate, and the observation year only when it differs from the year of the date (B.6); both factor charts show the stand and context groups as solid panels with their sub-scores (B.5, B.10); the page counts drop (B.11). Each change is a dated "Amendment 2026-10-26" subsection under the section it changes; every number not named in an amendment stands.
+> Amendment 2026-10-26 (charts) (owner's second iPhone review of build 4f0e319a, D-27 to D-29 of 33-CONTEXT.md, gap plans 33-19 and 33-20): the factor chart of the complete PDF becomes two CNPF-like charts side by side, the plane "IBP contexte face à l'IBP peuplement et gestion" and the ten-axis rose, with a source line; the summary's score row shows the plane only (D-28 amends D-08 and D-26). New subsections titled "Amendment 2026-10-26 (charts)" under Copywriting, Typography, Color, B.2, B.5, B.9, B.10 and B.11, and decisions U-20 to U-28. Geometry checked by a planner mock printed by Chrome with the real Sora and Jost files (scratchpad, never committed); the numbers below are the ones that mock measured. Every number not named in these subsections stands.
 
 ---
 
@@ -132,6 +133,12 @@ Mapping of the collapsed values: cover subtitle 10 to 9; band pill 10 to 9; cove
 
 Rules: Sora-Light is used for numerals only. No size below 8 is added (the existing 7.5 scale line stays). No text is set in `inkFaint` (2.45:1 on paper, decoration only); one existing violation is noted in B.12.
 
+#### Amendment 2026-10-26 (charts): Typography of the plane and the rose
+
+No new size, no new family. Inside the two chart SVGs: Jost-Regular 8 for the tick values, the band names, the level names, the ring values and the ten factor names; Jost-SemiBold 8 for the chart titles of the complete PDF and the two axis titles (the D-26 group label role). Outside them: the card heading is the section title 13 / 24, the summary's Z2 heading the existing Sora-SemiBold 11 / 20, the source line the Note tier Jost-Regular 8 / 12. Lines inside the SVG are 10 apart (factor names, two lines at most) and 9 apart (band names); these are SVG baselines, not CSS line boxes, so no estimate reads them.
+
+Smallest printed size: 8 units. Justification: 8 is the floor of the existing print scale (the Note tier, the D-26 group labels the owner read on the iPhone and validated with the build, D-27); plan 33-14 measured that one design unit prints as one point on both engines (P-5 and every text box within 0.5 unit of Chrome), so the chart labels print at 8 pt, the usual floor for annotations of a printed chart. Nothing in the charts is smaller than 8 and no text sits on a band tone (B Color amendment).
+
 ---
 
 ## Color
@@ -187,6 +194,33 @@ Contrast, computed with the WCAG formula used by `app/contrast.ts` (to be pinned
 
 Rules that follow from the numbers: band tones are never used for text on a light surface (mid is 3.56); the band name is always printed in `ink` next to an 8-unit dot; moss `#89A33A` is never a ring, bar or text on a light surface (charter 13.4: the PDF high tone is `#728A2D`); small text never sits on a contour line (the cover keeps the date left of the rings and gives the band pill a solid `forest` backing); the logo never sits directly on forest (it is a black disc: it goes on a `paper` tile).
 
+#### Amendment 2026-10-26 (charts): six keys for the plane and the rose
+
+Five tints of the three band tones give the plane its five stand bands in the CNPF order (red, orange, yellow, light green, dark green becomes: strong terracotta, soft terracotta, ochre, soft green, strong green), and one brown ink names the context factors on the rose. All six are derived in `palette.ts` from tokens with `mixWithWhite` (`app/visual-tokens.ts`) or taken from the light theme; no literal. `palette.test.ts` adds them to its `KEYS` array (36 keys) and pins the figures below with `contrastRatio` (`app/contrast.ts`). Values computed on 2026-10-26 with the repository's own `mixWithWhite` and `contrastRatio`.
+
+| Key | Value (derived from) | Where it is used |
+|-----|----------------------|------------------|
+| `zoneLow` | `mixWithWhite(bandLow, 0.4)` = `#E19B85` | Plane: the first stand band ("faible") |
+| `zoneLowSoft` | `mixWithWhite(bandLow, 0.65)` = `#EEC5B8` | Plane: "assez faible"; rose: the zone from ring 0 to ring 2 |
+| `zoneMid` | `mixWithWhite(bandMid, 0.7)` = `#F0D4BC` | Plane: "moyenne" (also the soft tint of a mid-tone rose ring, none with today's rings) |
+| `zoneHighSoft` | `mixWithWhite(bandHigh, 0.65)` = `#CED6B6` | Plane: "assez forte"; rose: the zone from ring 2 to ring 5 |
+| `zoneHigh` | `mixWithWhite(bandHigh, 0.4)` = `#AAB981` | Plane: the last stand band ("forte") |
+| `contextInk` | light theme `onSurface.warning` = `#7A4A0A` (the same value as `warning`, a second key for its own role) | Rose: the names of the context factors H, I, J (brown, as on the CNPF sheet) |
+
+The stand factor names of the rose are in `accent` (forest `#334E2B`, the green ink); no key is added for them.
+
+| Pair | Ratio | Required | Pinned in `palette.test.ts` |
+|------|------:|---------:|------|
+| `accent` (plane marker, rose polygon and dots) on `zoneLow` / `zoneLowSoft` / `zoneMid` / `zoneHighSoft` / `zoneHigh` | 4.07 / 5.88 / 6.55 / 6.14 / 4.40 | 3 (graphic) | yes, each at least 4 |
+| `ink` (dashed level lines, rose ring values) on the five zones, same order | 6.02 / 8.68 / 9.68 / 9.07 / 6.50 | 4.5 (text) | yes, each at least 6 |
+| `accent` (stand factor names) on `paper` / `panel` | 9.27 / 8.56 | 4.5 | yes |
+| `contextInk` (context factor names) on `paper` / `panel` | 7.47 / 6.90 | 4.5 | yes |
+| `inkMuted` (tick values) and `ink` (titles, band and level names) on `paper` / `panel` | 6.72 / 6.21 and 13.69 / 12.64 | 4.5 | existing |
+| The five zones against `paper`, same order (fills) | 2.28 / 1.58 / 1.41 / 1.51 / 2.11 | none: the band edges are also carried by the tick values at the cuts and the printed band names | no |
+| Rose ring strokes against their zone (`bandLow` on `zoneLowSoft`, `bandHigh` on `zoneHighSoft`) | 2.64 / 2.58 | none: the ring values 0, 2, 5 are printed on the scale axis | no |
+
+Rules: text on a zone tint is `ink` only (the rose's ring values); every other chart text sits on `paper` (complete) or `panel` (summary); no band tone is used for text; the strong tint is darker than the soft one of the same tone (relative luminance, pinned); the five zone fills are distinct strings.
+
 ---
 
 ## Copywriting Contract
@@ -220,6 +254,25 @@ Accepted deviation (match to the finish sheet): the secondary button keeps the l
 | Chart group labels, both PDFs | "Peuplement et gestion : 24 / 35" and "Contexte : 10 / 15" (the existing `scores.stand` and `scores.context`); without a sub-score the group name alone, "Peuplement et gestion" or "Contexte" (new `scores.groupNames.stand` and `scores.groupNames.context`; the two scored strings are built from the same two names so each word exists once) |
 
 The key `fr.surveyExportChoice.cancel` is removed. The cover strings `cover.methodWithCas` and `cover.versionShort` go with the cover facts (B.4 amendment) once nothing reads them. No new string carries U+2014; "Fermer" and the group names need no abbreviation.
+
+### Amendment 2026-10-26 (charts): Copywriting, D-27, D-28
+
+New sub-object `fr.surveyExport.charts` in `i18n/fr/survey-export.ts` (the plane title is a module constant, like the D-26 group names, so the text exists once):
+
+| Key | Copy | Where |
+|-----|------|-------|
+| `charts.heading` | "Lecture du score IBP" | Section title of the chart card, complete PDF (replaces "Score par facteur" there) |
+| `charts.planeTitle` | "IBP contexte face à l'IBP peuplement et gestion" | Header band of the plane, complete PDF; the Z2 right heading of the summary |
+| `charts.source` | "Graphiques d'après la fiche de relevé IBP du Centre national de la propriété forestière et de l'unité de recherche Dynafor." | One line under the two charts, complete PDF only |
+| `charts.joinList({ items })` | "a", "a et b", "a, b et c" | French list for the spoken labels (cut points, ring values, factor values) |
+| `charts.planeA11y({ stand, standMax, standBand, context, contextMax, contextBand, standCuts, contextCuts })` | "IBP contexte face à l'IBP peuplement et gestion. Le relevé se place à 20 sur 35 en peuplement et gestion, niveau moyenne, et à 12 sur 15 en contexte, niveau forte. Bandes du peuplement et gestion coupées à 7, 14, 21 et 28 sur 35 ; niveaux du contexte coupés à 5 et 10 sur 15." | `aria-label` of the plane (both documents) |
+| `charts.planeA11yEmpty({ standCuts, contextCuts, standMax, contextMax })` | "IBP contexte face à l'IBP peuplement et gestion. Score non renseigné : le relevé n'est pas placé. Bandes du peuplement et gestion coupées à … ; niveaux du contexte coupés à …" | `aria-label` when a sub-score is missing |
+| `charts.roseA11y({ rings, items })` | "Score par facteur, anneaux à 0, 2 et 5 points : Essences autochtones 3, Structure verticale 2, …, Milieux rocheux non renseigné." | `aria-label` of the rose |
+| `charts.roseItem({ title, value })` | "Essences autochtones 3" | One item of the rose label; a missing value is "non renseigné" (`scores.notFilled` in lower case) |
+
+Reused: `scores.chartHeading` "Score par facteur" (the rose's header band), `scores.stand(n)` / `scores.context(n)` and `scores.groupNames` (the two axis titles, through `chartGroupLabels`), `fr.labels.factorTitles` (the ten names around the rose, never new labels), `fr.surveyDetail.bands.stand` and `.context` (band and level names). Removed once nothing reads it: `scores.chartA11y` (the bars' label).
+
+Every number in the spoken labels is passed in as a string formatted by the builder from the package's values (`IBP_MAX`, the cut-off constants, the ring scores), never written in the catalogue. Abbreviations: only "IBP" (allowlisted). "vs" of the CNPF title is written "face à"; the acronyms CNPF and INRAE are not printed (U-25): the source line names the Centre national de la propriété forestière in full and the research unit Dynafor. No U+2014.
 
 New PDF strings (additions to `fr.surveyExport`; existing keys reused wherever possible):
 
@@ -387,6 +440,17 @@ Draft: the 18-unit banner (legacy strip, see Spacing exceptions) and the waterma
 
 Wave 0 design probe (throwaway page pair, never committed, run through the real `printToFileAsync` on the iOS simulator and the Android emulator, then `pdfinfo`, `pdffonts`, `pdfimages -list`, `pdftoppm`): P-1 gradient fills (panel, bar tops); P-2 SVG ring with and without `rotate`; P-3 contour art with `slice` at a 595 x 380 box; P-4 rounded clip of a JPEG at radius 12; P-5 negative letter-spacing on Sora-Light 64. Pass criterion: same geometry as Chrome within 1 unit, vector (no raster block in `pdfimages -list` except the logo and the photos), file growth under 10 KB. Anything that fails keeps its fallback; none of the fallbacks changes the layout.
 
+#### Amendment 2026-10-26 (charts): engine safety of the plane and the rose
+
+| Effect | Where | Status |
+|--------|-------|--------|
+| Solid `rect` and `circle` fills, stacked filled circles, `line` with `stroke-dasharray`, one `path` holding several sub-paths, round joins and caps, `text` with `text-anchor="middle"` | zones, rose discs and rings, level lines and guides, the broken polygon, ticks and centred labels | Safe (shipping: the ring, the trend's dashed links, the contour art's multi-ring path, the chart labels) |
+| `text` with `text-anchor="end"` | y ticks and level names, the x axis title, the rose labels on the left half | New. Probe item P-6 in plan 33-20 on both engines: the right edges of these texts agree with Chrome within 1 unit (`pdftotext -bbox`). If an engine fails, 33-20 stops and reports it to the orchestrator (the fix, start-anchored texts placed from measured widths, is a builder change outside a measuring plan) |
+| SVG fill `pattern` (the CNPF sheet's hatching and dots for the context levels) | none | Not used. A fill pattern is unproven on both print engines (it may be stored as a raster tile, against the vector rule); the three context levels are two dashed `ink` lines with the level names in the gutter (U-20). Hatching drawn as explicit lines was considered and rejected: it competes with the marker on an 82-unit plot |
+| Turned text, `transform`, transparency of any kind, ramps of colour, `filter` | none | Not used in either chart (grep gate of plan 33-19); the y axis title is printed level at the top of the axis, as on the CNPF sheet |
+
+So the only new engine item is P-6; nothing else needs a probe.
+
 ### B.3 Page chrome and title hierarchy (complete PDF, pages 2 to N)
 
 - Hierarchy (sizes from the final print scale): cover title 24 (page 1) > section title 13 with a 4-unit accent bar and `accent` colour > card title 11 > body 9 and labels 8.5 > notes 8.
@@ -461,6 +525,62 @@ All static SVG strings from pure builders, numbers through `svgNumber`, texts th
   - No opacity, no gradient, palette values only; labels and fill escaped.
 - Map frames (D-24). The complete PDF has no body map any more: its only map is on the cover, at `COVER_MAP_FRAME_SIZE` 515 x 228 (B.4 amendment). The summary keeps 515 x 228. `MAP_FRAME_SIZE` 515 x 250 is no longer read by the complete PDF; it stays exported with its value and measurement because phases 31 and 32 run beside this one.
 
+#### Amendment 2026-10-26 (charts, D-27, D-28): the plane and the rose replace the bars
+
+Supersedes the factor bars bullet above and its D-26 amendment in both documents: no bar chart is printed any more. The D-26 groups are now carried by the plane's two axes (stand /35, context /15, with the D-26 strings "Peuplement et gestion : N / 35" and "Contexte : N / 15" as axis titles) and by the ink of the rose's names (stand green, context brown). Our own static SVG drawings after the CNPF survey sheet; the sheet's image and logo are never embedded or copied. Pure builders: `survey-pdf/plane-svg.ts` and `survey-pdf/rose-svg.ts` draw only what they are given (zones with their names and tones, ring scores with their tones, points, titles, spoken label); every cut point, maximum, band, group and ring score is computed upstream from `@cortege/ibp-domain` exports (`STAND_BAND_CUT_OFFS`, `CONTEXT_BAND_CUT_OFFS`, new; `IBP_MAX`, `standBand`, `contextBand`, `bandTone`, `ALLOWED_SCORES_BY_FACTOR`, `STAND_FACTOR_KEYS`, `CONTEXT_FACTOR_KEYS`, `FACTOR_KEYS`). Numbers through `svgNumber`, texts and colours through `escapeHtml`, colours from `PdfPalette` only.
+
+The chart card of the complete PDF (`factor-chart-svg.ts`, registry id `factor-chart` unchanged):
+
+| Element | Value |
+|---------|-------|
+| Card | unchanged: padding 10, border 1 `line`, radius 12, `panel`, margin 10 below |
+| Heading | `charts.heading`, the section title (13 / 24, B.3) |
+| Chart row | 493 x 160, position relative: the plane at x 0 (272 x 160), the rose at x 284 (209 x 160), 12 between them |
+| Source line | 12 high, Jost-Regular 8 / 12 `inkMuted`, one line, hidden overflow, `charts.source` (measured 364 of 493 in Chrome) |
+| Block height | 228 = padding 20 + border 2 + heading 24 + charts 160 + source line 12 + margin 10 (B.9 amendment) |
+
+The plane (`buildPlaneSvg`, size-parametric; the complete PDF calls it at 272 x 160 with a title, the summary at 299 x 156 without one):
+
+| Element | Complete, 272 x 160 | Summary, 299 x 156 | Rule |
+|---------|--------------------|--------------------|------|
+| Panel | rect at 0.5, 0.5, 271 x 159, radius 8, 1 unit `line` stroke, fill `paper` | 298 x 155, fill `panel` | as the D-26 panels (U-16) |
+| Header band | 16; `charts.planeTitle` centred, baseline 11, Jost-SemiBold 8 `ink` (measured 171 wide) | none | only when a title is given |
+| y axis title | x 8, baseline 28 | x 8, baseline 12 | header + 12; "Contexte : 12 / 15", Jost-SemiBold 8 `ink`, start |
+| Plot box | x 46 to 260, y 34 to 116 (214 x 82) | x 46 to 287, y 18 to 112 (241 x 94) | left 46, right width - 12, top header + 18, bottom height - 44 |
+| Stand bands | five rects from x(from) to x(to), the full plot height | same | one per zone, cut at the package's cut-offs, fill rule below |
+| Context levels | two lines at y(5) and y(10), `ink` 1, dash 3 3, across the plot | same | one per inner level bound |
+| Axes | left and bottom lines, `inkMuted` 1 | same | |
+| x tick values | 0, 7, 14, 21, 28, 35 centred under each cut, baseline 126 | baseline 122 | bottom + 10, Jost-Regular 8 `inkMuted` |
+| Band names | centred in each band, baselines 136 and 145 | 132 and 141 | bottom + 20 and + 29, Jost-Regular 8 `ink`, split at 9 characters ("assez" / "faible", "assez" / "forte") |
+| x axis title | right edge 260, baseline 156 | right edge 287, baseline 152 | height - 4, end; "Peuplement et gestion : 20 / 35", Jost-SemiBold 8 `ink` |
+| y tick values | 0, 5, 10, 15, right edge 42, baseline y + 3 | same | Jost-Regular 8 `inkMuted`, end |
+| Level names | "faible", "moyenne", "forte", right edge 42, at the middle of each level, baseline + 3 | same | Jost-Regular 8 `ink`, end |
+| Survey marker | disc r 5 `accent`, 1.5 `paper` ring, at (stand, context) clamped to the plot | same | drawn last; only when both sub-scores are finite |
+| Guides | dashed `accent` 1, dash 2 2, from the marker to the left axis and down to the bottom axis | same | with the marker only |
+
+Stand band fill rule: the tone is `bandTone` of the band (low, low, mid, high, high); the first and the last band take the strong tint of their tone (`zoneLow`, `zoneHigh`), the other low and high bands the soft tint (`zoneLowSoft`, `zoneHighSoft`), a mid band `zoneMid`. Draw order: panel, header, bands, level lines, axes, tick values, band and level names, axis titles, guides, marker. Without a finite stand or context sub-score: no marker and no guides, the axis titles fall back to the group names alone (D-26 strings), the spoken label is `charts.planeA11yEmpty`. Spoken label: `role="img"`, `aria-label` `charts.planeA11y` (position, band names from `scoreBands`, cut points).
+
+The rose (`buildRoseSvg`, complete PDF only, 209 x 160):
+
+| Element | Value |
+|---------|-------|
+| Panel and header | as the plane: radius 8, `line` stroke, fill `paper`, header 16 with `scores.chartHeading` "Score par facteur" centred, Jost-SemiBold 8 `ink` |
+| Centre | cx = width / 2 + 3 (107.5), cy = header + 71 (87) |
+| Radial scale | linear in points from the lowest ring score at r 10 (the hub) to the highest at r 46: the rings 0, 2, 5 sit at 10, 24.4 and 46 |
+| Axes | ten, one per factor of `FACTOR_KEYS`, clockwise from 12 o'clock at 360 / 10 x (index + 0.5) degrees: A at 18, B 54, C 90, D 126, E 162, F 198, G 234, H 270, I 306, J 342 (A and J flank the top, as on the CNPF sheet) |
+| Rings | one circle per ring score (the scores every factor may take: 0, 2 and 5, from `ALLOWED_SCORES_BY_FACTOR`), no fill, stroke 1.5 in the tone of that score (`toneColor(factorTone(score))`, the colour of a factor card border: 0 and 2 terracotta, 5 green) |
+| Zones | filled discs drawn from the outermost ring inwards, each in the soft tint of its ring's tone (`zoneHighSoft` up to ring 5, `zoneLowSoft` up to ring 2; `zoneMid` for a mid tone), then the hub disc (ring 0) in the panel fill |
+| Spokes | from the hub to r 46: `paper` 0.75 for a filled factor; `inkMuted` 1, dash 2 2, for a missing factor |
+| Scale | a line at 12 o'clock from the hub to r 46, `inkMuted` 0.75; each ring score printed at (cx + 2.5, cy - r - 2.5), Jost-Regular 8 `ink` |
+| Polygon | the points of the ten factors, clamped to the ring range; `accent` 2, round joins and caps, no fill; one closed path when all ten are filled, else one segment per pair of neighbouring filled factors (J and A are neighbours), so a missing factor breaks the line on both sides |
+| Vertices | disc r 2.5 `accent` per filled factor |
+| Factor names | the app's titles (`fr.labels.factorTitles`), Jost-Regular 8, split at 12 characters into at most two balanced lines ("Essences" / "autochtones", "Milieux ouverts" / "florifères", "Dendromicrohabitats" stays one line); anchor point at r 55 on the factor's axis; `text-anchor` start when the axis's sine is above 0.2, end below -0.2, else middle; vertical: an axis whose cosine is above 0.8 (A, J) puts its last baseline 2 above the anchor, below -0.8 (E, F) its first baseline 6.5 under it, the others centre the lines on the anchor (first baseline anchor + 3 - 5 x (lines - 1)); line step 10; ink `accent` for A to G (`STAND_FACTOR_KEYS`), `contextInk` for H to J (`CONTEXT_FACTOR_KEYS`) |
+| Spoken label | `role="img"`, `aria-label` `charts.roseA11y` (ring scores and the ten values, "non renseigné" for a missing one) |
+
+Draw order of the rose: panel, header, zones, hub, spokes, rings, scale line and values, polygon, vertices, names. Measured in the planner's Chrome mock (2026-10-26, the real fonts, 1 unit = 1 pt): every factor name inside x 12 to 197 of the 209-unit panel and y 14 to 158.5 of 160 (font boxes), the top names clear of the header band.
+
+No factor letter and no value is printed around the rose (U-22); the factor cards that follow print both. No bar and no bar value remain in either document; "Score par facteur" now titles the rose only.
+
 ### B.6 Identity block (merged, D-04, D-16)
 
 One card "Identification du relevé" (heading B.3) holding two tables: the identity rows, then a 1 unit `line` rule, the sub-heading "Critères de diagnostic" (11 / 24) and the method rows (the old identity-method card folded in; the estimate drops by about 30 units: card padding 20, margin 10, border). Row styling unchanged (caption column 150, 8.5 label `inkMuted`; value 9 / 13 `ink`; 3 + 3 padding, legacy calibration).
@@ -494,6 +614,23 @@ Order of the complete PDF: cover (with the map), identity (with method), conditi
 #### Amendment 2026-10-26
 
 Estimates that change: the identity parcels row (counted by ids, B.6 amendment), the identity year row (19 less when omitted), and the body map block (322, or a 53 to 72 unit note) which leaves the body. Unchanged: `CHART_HEIGHT` 160 and the chart block 214 (the group header takes the room of the caption row), the cover block (fixed, 740), the summary block (fixed, 764), every factor card estimate, `PAGE_FILL_FACTOR` 0.94. `COMPLETE_BASE_PAGES` is re-derived from the builder's count of the typical survey without photos (4 by the planner's simulation of the builder on 2026-10-26: cover with the map; identity, chart, stand heading and factor A; factors B to G; context heading, H to J and the trend).
+
+#### Amendment 2026-10-26 (charts)
+
+The chart block grows from 214 to 228: `CHART_HEIGHT` stays 160 (the two charts), the source line adds 12, and the card's 2-unit border is now counted (plan 33-17 found the same missing border in the identity estimate; the printed chart card was 216 against an estimate of 214). 228 = 20 + 2 + 24 + 160 + 12 + 10, a multiple of 4. The estimate equals the printed card exactly (1 + 10 + 24 + 160 + 12 + 10 + 1, plus the 10 margin).
+
+Vertical chain of page 2 (the planner's simulation of the builder with the 33-18 blocks, 2026-10-26; capacity 740 x 0.94 = 695.6, 716 x 0.94 = 673.0 on a draft):
+
+| Case | Page 2 blocks | Sum, was (214) | Now (228) | Capacity |
+|------|---------------|---------------:|----------:|---------:|
+| v3.2 submitted, typical, low score | identity 271, chart, stand heading 34, factor A 156 | 675 | 689 | 695.6 |
+| v3.0 draft | identity 233, chart, stand heading 34, factor A 142 | 623 | 637 | 673.0 |
+| v3.2 with the fullest route, worst case | identity 252, route 181, chart | 647 | 661 | 695.6 |
+| worst case without the route | identity 271, chart | 485 | 499 | 695.6 |
+| 30 parcels (both id widths) | identity 388, chart | 602 | 616 | 695.6 |
+| typical with note and route (page 3) | chart, stand heading 34, factor A 156, B 107, C 117 | 628 | 642 | 695.6 |
+
+The binding case is page 2 of the v3.2 and typical surveys: 6.6 units of slack. The simulation moves the typical survey to 6 pages at a chart block of 236 (factor A leaves page 2 and the trend leaves page 4), and the v3.2 with route and the worst case at 270; at 228 every pin holds. Real print: 33-14 measured page 2's real content 2 units under its estimate, so page 2 ends near 60 + 689 = 749 pt, under the 790 rule. Nothing else moves: the cover, the summary block (fixed 764 with Z2 176), the factor cards, `PAGE_FILL_FACTOR` 0.94, `COMPLETE_BASE_PAGES` 4.
 
 ### B.10 One-page summary (submitted surveys only, D-07, D-08, D-09, D-18)
 
@@ -532,6 +669,17 @@ A draft never reaches this builder (disabled card, coerced in the hook, refused 
 
 Z2 right: the 299 x 156 chart draws the two group panels and their labels with the sub-scores (B.5 amendment), panel fill `panel` on the paper page, plot 104 high. The zones, their heights, the 764 total, the forest card with its sub-scores line, the map and evolution zones and every fallback row above stand; the page stays exactly one page.
 
+#### Amendment 2026-10-26 (charts, D-28)
+
+Z2 right shows the plane only (the rose is too small for its ten names in 299 units, D-28); this amends D-08's "ten-factor chart" on the summary and supersedes the D-26 panels above.
+
+| Part of Z2 right (x 216, 299 wide, 176 high) | Value |
+|------|------|
+| Heading | `charts.planeTitle` "IBP contexte face à l'IBP peuplement et gestion", the existing `summary-heading` (Sora-SemiBold 11 / 20 `ink`, one line, hidden overflow); measured 264.5 of 299 in Chrome |
+| Chart | `buildPlaneSvg` at 299 x 156 under the heading (top 20), no header band, panel fill `panel` on the paper page (B.5 amendment, summary column) |
+
+Unchanged: Z1 to Z5, their heights and offsets, the 764 total and the 8 spare, the forest card (ring, numeral, band line, sub-scores line), every fallback of the table above. Fallback rows that change: "Missing factor in a submitted survey" now reads: the plane places the survey from its two sub-scores as printed on the forest card; the summary has no per-factor mark. A survey without a finite stand or context sub-score: the plane prints without a marker and the axis titles show the group names alone. The page stays exactly one page.
+
 Accessibility of the print: all text stays selectable (no text drawn as paths except SVG `<text>` in the chart, which stays text); SVG graphics carry `role="img"` and `aria-label`; no information is colour only (band names, point values and the numeral are always printed). Layout stays legible at A4 and at phone preview size: the smallest printed size is 8 (existing).
 
 ### B.11 Page-count and weight targets (acceptance numbers, replaced by device counts after the layout is final)
@@ -563,6 +711,10 @@ The targets stand ("not above"); the pins drop because the map leaves the body. 
 | Summary, any submitted survey | 1 | 1 | exactly 1 |
 
 "Map and trend on one page" is withdrawn (there is no body map). The rules that stand: no block cut at a page bottom, no photo-only page with fewer than two photos before the last, the first photo page after the trend. The "Environ N pages" base (`COMPLETE_BASE_PAGES`) goes from 5 to the builder's count of the typical survey without photos (4 by the simulation).
+
+#### Amendment 2026-10-26 (charts): no pin moves
+
+With the chart block at 228 (B.9 amendment) the planner's simulation of the builder (2026-10-26) gives every pin of 33-18 unchanged: v3.2 4, v3.2 with the fullest route 4, v3.0 draft 4, typical 5, typical with note and route 6, worst case 9 with and without the route, 30 parcels 4 (both id widths), summaries 1; `COMPLETE_BASE_PAGES` stays 4. One new fixture is pinned at the builder's count: the low-score survey (v3.2 submitted, every factor at 0 or 2, sub-scores 6 / 35 and 2 / 15), 4 pages by the simulation. No pin may go up; a count above its pin stops the plan (stop rule of 33-19) and is put to the orchestrator with the block heights, never silently raised.
 
 ### B.12 Pre-existing finding to fix in the same pass
 
@@ -619,11 +771,27 @@ The targets stand ("not above"); the pins drop because the map leaves the body. 
 | U-18 | The sheet uses `fitToContents`; the scroll view has `flexGrow: 0` and a `maxHeight` | The owner asked for a fitted height; the bound keeps large text scrollable |
 | U-19 | No parcel id on the cover; the legend line carries only the basemap source or the outline note | D-23 forbids a shortened list; the whole list is on page 2 |
 
+### Amendment 2026-10-26 (charts): decisions for D-27 and D-28
+
+| # | Decision | Reason |
+|---|----------|--------|
+| U-20 | The plane's five stand bands are solid tints of the three band tones (strong at both ends, soft beside them, ochre in the middle); the three context levels are two dashed `ink` lines with the level names in the gutter. No hatching, no dots, no fill pattern | Solid only (B.2); a fill pattern is unproven on both engines and may be stored as a raster tile; the CNPF order red, orange, yellow, light green, dark green is kept by the tint strength; tints keep the marker at 4:1 or more |
+| U-21 | The rose's rings are the scores every factor may take (0, 2, 5, from the package), coloured by the app's factor tone (`factorTone`, the colour of the factor card borders: 0 and 2 terracotta, 5 green); its zones are the soft tints of the same tones; the polygon is a line with dots, not a filled shape | One colour meaning per score across the document; a filled polygon would hide the zones (no transparency is allowed). A score of 1 (possible for A to F) sits between the rings 0 and 2 |
+| U-22 | Around the rose: the app's factor titles only, split on two lines at 12 characters; no factor letter, no value | The CNPF rose carries names only; the factor cards that follow print the letter and the value; the spoken label lists every value |
+| U-23 | The axis titles carry the sub-scores (the D-26 strings); the tick values carry no percentage (the CNPF sheet prints "7 (20 %)") | One number per tick stays legible at 8 in a 43-unit band; the sub-score is the reading the owner wants |
+| U-24 | Card heading "Lecture du score IBP"; plane title "IBP contexte face à l'IBP peuplement et gestion"; rose title "Score par facteur" (existing) | "vs" is an abbreviation outside the allowlist; the plane title also heads the summary's score row, which no longer shows a factor chart |
+| U-25 | The source line names the Centre national de la propriété forestière in full and "l'unité de recherche Dynafor", without the acronyms CNPF and INRAE | The abbreviation gate allows only units, OK, PDF, GPS, IBP and "ex."; writing INRAE out ("Institut national de recherche pour l'agriculture, l'alimentation et l'environnement") makes the line wrap (+12 units, chart block 240), which moves the typical survey to 6 pages (limit 234). Veto: register CNPF and INRAE as written-out terms and accept a two-line source by shortening something else on page 2 |
+| U-26 | The chart block counts the card's border (228, not 226) | The 33-17 lesson on the identity card: an estimate never under the print |
+| U-27 | A missing factor on the rose: dashed spoke, no dot, the polygon broken on both sides; a missing sub-score on the plane: no marker, group names alone | Never draw a value the survey does not have (a 0 would be a false reading) |
+| U-28 | The summary's Z2 heading becomes the plane title; the forest card, the zones and the page budget are untouched | D-28; the score row keeps its two parts and its height |
+
 ## Open for owner
 
 None blocks planning. To confirm on the phone (each can be vetoed cheaply): (1) the header logo removal, U-01; (2) the cover with six facts and the amount of white below them, U-11; (3) the summary map and trend sizes, U-10; (4) the 0.65 detent and the card captions on the real phone; (5) the page count shown on "Complet" (an estimate that must match the real PDF within one page).
 
 Amendment 2026-10-26: items (1), (3) and (5) were validated by the owner (D-19); (2) and (4) are replaced by D-24 and D-22. To re-check on the phone after 33-17 and 33-18 (rows DV-33-06 and following of `docs/user-tests/device-checks.md`): the sheet's fitted height, its spacing and the close cross (and whether the cross should also show on iOS, U-17); the cover with the map and the shorter forest panel (U-14, U-15, U-19); the whole parcel list on page 2; the year rule; the grouped charts in both PDFs (U-16); the new page counts and "Environ N pages".
+
+Amendment 2026-10-26 (charts): the owner validated the second build (D-27) and re-checks only the chart pages after 33-19 and 33-20 (D-29, rows DV-33-12 and following): the plane and the rose on page 2 of the complete PDF (U-20 to U-23, U-27), the plane on the summary (U-28), the legibility of the 8-unit labels on paper, the five band tints, the headings and the source line wording (U-24, U-25). Two choices are put to the owner with a default: the rings 0, 2 and 5 of D-27 (the CNPF sheet also marks 1, a score factors A to F can take; default: 0, 2, 5 as the owner wrote, a 1 sits between the rings), and the source line without the acronyms (default U-25). DV-33-10 (the grouped bars) is superseded by the charts.
 
 ---
 
