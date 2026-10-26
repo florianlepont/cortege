@@ -107,6 +107,23 @@ export const exportFixtureV32Submitted: SurveyExportData = {
   layout: LAYOUT,
 }
 
+/**
+ * Phase 33 (D-23): the submitted v3.2 survey on 30 parcels, with no map, no history and no photo.
+ * It makes the identity card print a long parcel list (30 ids, "77186000AB0001" to
+ * "77186000AB0030") so the line-counting estimate and the whole list can be checked.
+ */
+export const exportFixtureManyParcels: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  surveyId: "survey-many-parcels",
+  parcelIds: Array.from(
+    { length: 30 },
+    (_, index) => `77186000AB${String(index + 1).padStart(4, "0")}`,
+  ),
+  map: null,
+  history: null,
+  photos: { items: [], total: 0, unavailable: 0 },
+}
+
 /** A draft of a legacy untagged (v3.0) survey, two factors still to fill, no cached data. */
 export const exportFixtureV30Draft: SurveyExportData = {
   mode: "complete",

@@ -7,6 +7,7 @@ import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import {
   WORST_ROUTE,
+  exportFixtureManyParcels,
   exportFixtureSummary,
   exportFixtureSummaryWorst,
   exportFixtureTypical,
@@ -23,6 +24,7 @@ import { buildCoverBlocks } from "./cover-section"
 import { buildFactorChartBlock } from "./factor-chart-svg"
 import { buildFactorBlocks } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
+import { buildIdentityBlocks } from "./identity"
 import { PAGE_FILL_FACTOR } from "./paginate"
 import { buildRouteBlock } from "./route-section"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
@@ -690,6 +692,7 @@ describe("buildSurveyExportHtml whole blocks and photo pages (B.11)", () => {
     ["the typical survey", exportFixtureTypical],
     ["the typical survey with conditions and route", exportFixtureTypicalConditioned],
     ["the worst case sheet", exportFixtureWorstCase],
+    ["a survey on 30 parcels", exportFixtureManyParcels],
   ])("prints every block of the complete mode whole, on exactly one page: %s", (_label, data) => {
     const pages = pagesOf(buildSurveyExportHtml(data).html)
     const blocks = sectionsFor("complete").flatMap((section) => section.build(data, palette))
@@ -697,6 +700,12 @@ describe("buildSurveyExportHtml whole blocks and photo pages (B.11)", () => {
     for (const block of blocks) {
       expect(pages.filter((page) => page.includes(block.html))).toHaveLength(1)
     }
+  })
+
+  it("lists the 30 ids of the many-parcels fixture in the identity block, shortened nowhere", () => {
+    const identity = buildIdentityBlocks(exportFixtureManyParcels, palette)[0].html
+    for (const id of exportFixtureManyParcels.parcelIds) expect(identity).toContain(id)
+    expect(identity).not.toContain("…")
   })
 
   function withPhotos(count: number): SurveyExportData {

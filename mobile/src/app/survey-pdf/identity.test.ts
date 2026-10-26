@@ -60,7 +60,8 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: ["77186000AB0123", "77186000AB0124"],
-    observationYear: 2026,
+    // D-25: the year differs from the year of the date, so the year row prints in the base case.
+    observationYear: 2025,
     versionNumber: 2,
     dateIso: "2026-10-10T08:00:00Z",
     isDraft: false,
@@ -234,10 +235,57 @@ describe("identity block", () => {
     expect(valid.height - malformed.height).toBe(19)
   })
 
-  it("prints Non renseigné for a missing year, version number or date", () => {
-    const { identity } = build({ observationYear: null, versionNumber: null, dateIso: "nope" })
+  it("prints Non renseigné for a missing version number or date", () => {
+    const { identity } = build({ versionNumber: null, dateIso: "nope" })
     const unknown = identity.html.split(t.identity.unknown).length - 1
-    expect(unknown).toBe(3)
+    expect(unknown).toBe(2)
+  })
+
+  describe("the observation year row (D-25)", () => {
+    const yearRow = (data: Partial<SurveyExportData>) =>
+      build(data).identity.html.includes(escapeHtml(t.identity.observationYear))
+
+    it("prints no row when the year is the year of the date, and is 19 units shorter", () => {
+      const same = build({ observationYear: 2026 }).identity
+      const other = build({ observationYear: 2025 }).identity
+      expect(yearRow({ observationYear: 2026 })).toBe(false)
+      expect(same.height).toBe(other.height - 19)
+    })
+
+    it("prints the row with the year when it differs from the date's", () => {
+      const { identity } = build({ observationYear: 2024 })
+      expect(identity.html).toContain(
+        `<th class="identity-caption">${escapeHtml(t.identity.observationYear)}</th><td class="identity-value">2024</td>`,
+      )
+    })
+
+    it("prints no row for a null year", () => {
+      expect(yearRow({ observationYear: null })).toBe(false)
+    })
+
+    it("prints the row when the date cannot be read but the year is known", () => {
+      const { identity } = build({ observationYear: 2024, dateIso: "nope" })
+      expect(identity.html).toContain(escapeHtml(t.identity.observationYear))
+      expect(identity.html).toContain(">2024</td>")
+    })
+
+    it("keeps the other rows and their order when the year row is left out", () => {
+      const html = build({ observationYear: 2026 }).identity.html
+      const identityPart = html.slice(0, html.indexOf('<div class="identity-rule">'))
+      const captions = [
+        ...identityPart.matchAll(/<th class="identity-caption">([^<]*)<\/th>/g),
+      ].map((match) => match[1])
+      expect(captions).toEqual([
+        t.identity.site,
+        t.identity.parcels,
+        t.identity.commune,
+        t.identity.versionNumber,
+        t.identity.date,
+        t.identity.observer,
+        t.identity.coordinates,
+        t.identity.surveyMode,
+      ])
+    })
   })
 
   it("omits the observer and coordinates lines when null", () => {
@@ -286,24 +334,53 @@ describe("identity block", () => {
     // Valid parcel id (Commune row), a route (no Mode de relevé row): site, parcels, commune,
     // year, version, date, observer, coordinates = 8 identity rows; v3.2 cas 1 = 2 method rows.
     const { identity } = build({ route: ROUTE, parcelIds: ["77186000AB0123"] })
-    expect(identity.height).toBe(20 + 24 + 8 * oneLineRow + 1 + 24 + 2 * oneLineRow + 10)
+    // Padding 20, border 2 (measured in Chrome 2026-10-26: the card prints taller than its rows).
+    expect(identity.height).toBe(20 + 2 + 24 + 8 * oneLineRow + 1 + 24 + 2 * oneLineRow + 10)
   })
 
-  it("is 29 units shorter than the two cards it replaces (UI-SPEC B.6)", () => {
+  it("is 29 units shorter than the two cards it replaces, less its own 2 unit border (UI-SPEC B.6)", () => {
     const oneLineRow = 6 + 13
     const { identity } = build({ route: ROUTE, parcelIds: ["77186000AB0123"] })
     const oldIdentityCard = 20 + 24 + 8 * oneLineRow + 10
     const oldMethodCard = 20 + 24 + 2 * oneLineRow + 10
-    expect(oldIdentityCard + oldMethodCard - identity.height).toBe(29)
+    expect(oldIdentityCard + oldMethodCard - identity.height).toBe(29 - 2)
   })
 
-  it("counts the joined text of the parcel ids for the estimate", () => {
-    // 5 ids of 14 characters joined by ", " are 78 characters: one line. 6 ids are 94: two lines.
+  describe("the parcels row (D-23)", () => {
     const ids = (count: number) =>
-      Array.from({ length: count }, (_, i) => `77186000AB${String(i).padStart(4, "0")}`)
-    const five = build({ parcelIds: ids(5) }).identity.height
-    const six = build({ parcelIds: ids(6) }).identity.height
-    expect(six - five).toBe(13)
+      Array.from({ length: count }, (_, i) => `77186000AB${String(i + 1).padStart(4, "0")}`)
+    const heightOf = (count: number) => build({ parcelIds: ids(count) }).identity.height
+    const oneId = heightOf(1)
+
+    it("counts one line for 1, 2 or 3 ids, two for 4 and ten for 30", () => {
+      expect(heightOf(2)).toBe(oneId)
+      expect(heightOf(3)).toBe(oneId)
+      // A row is 6 of padding and 13 per line: 19 for one line, 32 for two, 136 for ten.
+      expect(heightOf(4) - oneId).toBe(32 - 19)
+      expect(heightOf(30) - oneId).toBe(136 - 19)
+    })
+
+    it("prints every one of 30 ids in its own nowrap span and shortens nothing", () => {
+      const list = ids(30)
+      const { identity } = build({ parcelIds: list })
+      for (const id of list) {
+        expect(identity.html).toContain(`<span class="identity-nowrap">${id}</span>`)
+      }
+      expect(identity.html.split('class="identity-nowrap"').length - 1).toBe(30)
+      expect(identity.html).not.toContain("…")
+      expect(identity.html).not.toContain("...")
+    })
+
+    it("escapes an id inside a long list", () => {
+      const list = [...ids(29), "<i>x</i>"]
+      const { identity } = build({ parcelIds: list })
+      expect(identity.html).not.toContain("<i>")
+      expect(identity.html).toContain('<span class="identity-nowrap">&lt;i&gt;x&lt;/i&gt;</span>')
+    })
+
+    it("keeps a text row for no parcel at one line", () => {
+      expect(build({ parcelIds: [] }).identity.height).toBeLessThanOrEqual(oneId)
+    })
   })
 
   it("grows with long parcel lists", () => {
