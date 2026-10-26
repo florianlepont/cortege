@@ -2,7 +2,7 @@ import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type SurveyRoute } from "@cortege/ibp
 
 import { fr } from "../../i18n"
 import { escapeHtml } from "./html"
-import { buildIdentityBlocks, identityCss, inseeFromParcelId, methodShortText } from "./identity"
+import { buildIdentityBlocks, identityCss, inseeFromParcelId } from "./identity"
 import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportMethodContext, PdfPalette, SurveyExportData } from "./types"
@@ -387,27 +387,6 @@ describe("identity block", () => {
     const short = build({ parcelIds: ["77186000AB0123"] }).identity.height
     const many = Array.from({ length: 20 }, (_, i) => `77186000AB${String(i).padStart(4, "0")}`)
     expect(build({ parcelIds: many }).identity.height).toBeGreaterThan(short)
-  })
-})
-
-describe("methodShortText", () => {
-  it("reads v3.2 with its cas", () => {
-    expect(methodShortText({ ...V32, ibpCas: 2 })).toBe("v3.2, cas 2")
-    expect(methodShortText({ ...V32, ibpCas: 4 })).toBe("v3.2, cas 4")
-  })
-
-  it("reads v3.2 alone without a usable cas", () => {
-    expect(methodShortText({ ...V32, ibpCas: null })).toBe("v3.2")
-    expect(methodShortText({ ...V32, ibpCas: 7 as unknown as number })).toBe("v3.2")
-  })
-
-  it("reads v3.0 for a v3.0 or an untagged survey", () => {
-    expect(methodShortText(V30)).toBe("v3.0")
-    expect(methodShortText({ ...V30, version: null })).toBe("v3.0")
-  })
-
-  it("reads the unknown text for an unsupported tag", () => {
-    expect(methodShortText({ ...V30, version: "cnpf_future" })).toBe(t.identity.unknown)
   })
 })
 

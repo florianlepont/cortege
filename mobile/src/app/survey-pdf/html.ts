@@ -43,7 +43,6 @@ export function svgNumber(value: number): string {
 }
 
 const ELLIPSIS = "…"
-const LIST_SEPARATOR = ", "
 
 /**
  * Shortens `text` to at most `max` characters for a fixed box (no CSS ellipsis: the builder shortens,
@@ -57,23 +56,4 @@ export function shortenText(text: string, max: number): string {
   const space = text.lastIndexOf(" ", max - 1)
   const cut = space >= max / 2 ? text.slice(0, space) : text.slice(0, max - 1)
   return `${cut.trimEnd()}${ELLIPSIS}`
-}
-
-/**
- * Joins whole `items` with ", " and ends with ", …" when some do not fit in `max` characters. When
- * even the first item and the mark do not fit, the first item is shortened with `shortenText`. An
- * empty list gives "". It never escapes: callers escape the result.
- */
-export function shortenList(items: readonly string[], max: number): string {
-  if (items.length === 0) return ""
-  const all = items.join(LIST_SEPARATOR)
-  if (all.length <= max) return all
-  const mark = `${LIST_SEPARATOR}${ELLIPSIS}`
-  let kept = ""
-  for (let count = 1; count <= items.length; count += 1) {
-    const candidate = items.slice(0, count).join(LIST_SEPARATOR)
-    if (candidate.length + mark.length > max) break
-    kept = candidate
-  }
-  return kept === "" ? shortenText(items[0], max) : `${kept}${mark}`
 }

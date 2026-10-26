@@ -3,7 +3,6 @@ import {
   formatCoordinate,
   formatDateFr,
   formatDecimal,
-  shortenList,
   shortenText,
   svgNumber,
 } from "./html"
@@ -112,34 +111,5 @@ describe("shortenText", () => {
 
   it("does not escape", () => {
     expect(shortenText("a&b<c>d", 4)).toBe("a&b\u2026")
-  })
-})
-
-describe("shortenList", () => {
-  const IDS = ["77186000AB0001", "77186000AB0002", "77186000AB0003"]
-
-  it("gives an empty text for an empty list", () => {
-    expect(shortenList([], 10)).toBe("")
-  })
-
-  it("joins every item when they fit", () => {
-    expect(shortenList(IDS, 46)).toBe(IDS.join(", "))
-    expect(shortenList(["only"], 4)).toBe("only")
-  })
-
-  it("keeps whole items and ends with a comma and an ellipsis", () => {
-    const out = shortenList(IDS, 34)
-    expect(out).toBe("77186000AB0001, 77186000AB0002, \u2026")
-    expect(out).toHaveLength(33)
-  })
-
-  it("keeps fewer items when the mark does not fit after more", () => {
-    const out = shortenList(IDS, 32)
-    expect(out).toBe("77186000AB0001, \u2026")
-    expect(out.length).toBeLessThanOrEqual(32)
-  })
-
-  it("shortens the first item when even it and the mark do not fit", () => {
-    expect(shortenList(IDS, 10)).toBe("77186000A\u2026")
   })
 })

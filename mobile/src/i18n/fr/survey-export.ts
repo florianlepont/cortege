@@ -37,7 +37,6 @@ export const surveyExportFr = {
     observationYear: "Année d'observation",
     versionNumber: "Version du relevé",
     date: "Date",
-    method: "Méthode IBP",
     unknown: "Non renseigné",
     observer: "Observateur",
     coordinates: "Coordonnées",
@@ -237,8 +236,6 @@ export const surveyExportFr = {
     subscoreA11y: ({ heading, points, max }: { heading: string; points: string; max: string }) =>
       `${heading} : ${points} sur ${max}`,
     outOf: ({ max }: { max: string }) => `/ ${max}`,
-    methodWithCas: ({ version, cas }: { version: string; cas: string }) => `${version}, cas ${cas}`,
-    versionShort: { v3_2: "v3.2", v3_0: "v3.0" },
   },
   // Phase 33 (D-07, D-08, D-11): the words of the one-page summary. It never prints
   // `trend.unavailable`, which is an app instruction (D-18).

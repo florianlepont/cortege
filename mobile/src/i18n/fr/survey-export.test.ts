@@ -103,9 +103,6 @@ describe("fr.surveyExport", () => {
       "Contexte : 12 sur 15",
     )
     expect(t.cover.outOf({ max: "50" })).toBe("/ 50")
-    expect(t.cover.methodWithCas({ version: "v3.2", cas: "2" })).toBe("v3.2, cas 2")
-    expect(t.cover.versionShort.v3_2).toBe("v3.2")
-    expect(t.cover.versionShort.v3_0).toBe("v3.0")
     expect(t.summary.eyebrow).toBe("Résumé du relevé IBP")
     expect(t.summary.mapHeading).toBe("Parcelle")
     expect(t.summary.metaLine({ commune: "77186", parcels: "77186000AB0123", version: "2" })).toBe(

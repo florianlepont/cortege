@@ -225,24 +225,6 @@ function methodRows(method: ExportMethodContext): Row[] {
   return rows
 }
 
-/**
- * The method in a few words for the cover: "v3.2, cas 2", "v3.2", "v3.0" (also an untagged
- * survey) or the unknown text for an unsupported tag. The version rules stay the package's.
- */
-export function methodShortText(method: ExportMethodContext): string {
-  const resolved = resolveMethodVersion(method.version)
-  if (resolved === IBP_METHOD_V3_2) {
-    const version = t.cover.versionShort.v3_2
-    const cas = method.ibpCas
-    if (cas === 1 || cas === 2 || cas === 3 || cas === 4) {
-      return t.cover.methodWithCas({ version, cas: String(cas) })
-    }
-    return version
-  }
-  if (resolved === IBP_METHOD_V3_0) return t.cover.versionShort.v3_0
-  return t.identity.unknown
-}
-
 /** The merged identity block: identity rows, then the method rows (cas for v3.2, region and stage for v3.0). */
 export function buildIdentityBlocks(data: SurveyExportData, _palette: PdfPalette): PdfBlock[] {
   return [identityBlock(data)]
