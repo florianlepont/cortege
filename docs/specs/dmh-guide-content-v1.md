@@ -347,7 +347,7 @@ Règles que suit chaque fiche :
 
 **Mots-clés** : bois mort, branche morte, cime morte, houppier, couronne, charpentiere, moignon, vestige, chandelle
 
-**Définition** : Du bois mort encore attaché à l'arbre vivant, dans le houppier : grosses branches mortes, cime entièrement morte, ou reste éclaté d'une grosse branche cassée. Ce bois sèche et chauffe au soleil, et abrite d'autres espèces que le bois mort tombé au sol.
+**Définition** : C'est du bois mort encore attaché à l'arbre vivant, dans le houppier : grosses branches mortes, cime entièrement morte, ou reste éclaté d'une grosse branche cassée. Ce bois sèche et chauffe au soleil, et abrite d'autres espèces que le bois mort tombé au sol.
 
 **Ce qui compte pour l'IBP (méthode 3.2)** : Comptent des branches mortes de plus de 20 cm de diamètre et de plus de 50 cm de long, ou de plus de 3 cm de diamètre si plus de 20 % du houppier est mort ; une cime morte de plus de 20 cm de diamètre à la base ; le reste d'une grosse branche cassée, de plus de 20 cm de diamètre et de plus de 50 cm de long (fiche de l'IBP, pages 3 et 12).
 
@@ -372,7 +372,7 @@ Règles que suit chaque fiche :
 
 **Mots-clés** : balai de sorciere, brogne, gourmand, rameaux, pousses, touffe, rejets, bourgeons dormants
 
-**Définition** : Un amas dense de jeunes pousses qui sortent d'un même point : soit un balai de sorcière, boule de rameaux serrés sur une branche, soit une brogne, touffe de gourmands sur le tronc. Ces pousses naissent de bourgeons dormants de l'arbre.
+**Définition** : C'est un amas dense de jeunes pousses qui sortent d'un même point : soit un balai de sorcière, boule de rameaux serrés sur une branche, soit une brogne, touffe de gourmands sur le tronc. Ces pousses naissent de bourgeons dormants de l'arbre.
 
 **Ce qui compte pour l'IBP (méthode 3.2)** : Comptent un balai de sorcière de plus de 50 cm, ou une brogne de plus de 5 gourmands (fiche de l'IBP, pages 3 et 13).
 
@@ -390,3 +390,481 @@ Règles que suit chaque fiche :
 **Types décrits, non comptés** : aucun
 
 **Texte du dessin** : Une touffe de pousses fines sur un tronc, et une grosse boule de rameaux enchevêtrés au bout d'une branche.
+
+### `dmh_09` 9. Loupes et chancres
+
+**Mots-clés** : loupe, chancre, bosse, excroissance, tumeur, broussin, bourrelet, boule de bois, galle
+
+**Définition** : C'est une excroissance du tronc en forme de boule de bois plus ou moins compacte. La loupe est un renflement arrondi, à l'écorce rugueuse, dont le bois reste sain ; le chancre est une plaie malade, où le bois est pourri et l'écorce ouverte.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : La loupe ou le chancre doit dépasser 20 cm de diamètre (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : La loupe se voit de profil comme une bosse arrondie sur le tronc, que l'écorce continue de recouvrir. Le chancre est une plaie irrégulière, souvent enfoncée, avec des bourrelets en cercles autour d'un centre sombre ou pourri, une écorce ouverte ou craquelée et parfois du bois visible. Mesurez la plus grande largeur de l'excroissance.
+
+**Confusions fréquentes** :
+
+- Une touffe de pousses serrées sur le tronc est une brogne : elle va dans le groupe 8.
+- Un creux est un trou, une loupe est une bosse : un creux dans le tronc va dans le groupe 2 ou 4.
+- Les galles sont de petites déformations des feuilles, des rameaux ou des bourgeons : ce ne sont pas des loupes et elles ne comptent pas pour l'IBP.
+- Une loupe et un chancre comptent tous deux ici : inutile de les distinguer pour le comptage, ils vont dans le groupe 9.
+
+**Types comptés** : Loupe ; Chancre
+
+**Types décrits, non comptés** : Galles
+
+**Texte du dessin** : Un renflement arrondi sur le profil d'un tronc, et une plaie à bourrelets emboîtés avec un centre hachuré.
+
+### `dmh_10` 10. Champignons pérennes
+
+**Mots-clés** : champignon, polypore, amadouvier, sabot, console, perenne, champignon dur, ligneux, tubes
+
+**Définition** : C'est la fructification d'un champignon du bois qui vit plusieurs années : un polypore en console ou en sabot, dur comme du bois. Il grossit chaque année et ajoute une couche de tubes sous lui.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Un polypore pérenne compte à partir de 5 cm de diamètre (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : Cherchez une console ou un sabot dur sur le tronc, dont le dessus porte des bourrelets en arcs et dont le dessous est percé de petits pores. On ne l'écrase pas à la main. Il reste en place toute l'année, et sur la tranche d'un vieux champignon on voit plusieurs couches de tubes superposées.
+
+**Confusions fréquentes** :
+
+- Un champignon mou ou élastique, avec une seule couche de tubes, est éphémère : il va dans le groupe 11.
+- Un champignon charnu à lamelles est éphémère, même s'il est gros : il va dans le groupe 11.
+- Une croûte noire et dure en pustule ou en demi-sphère n'est pas un polypore : elle ne compte pas pour l'IBP.
+- Un champignon posé sur une plage de bois nu compte ici, et l'arbre compte aussi dans le groupe 5 ou 6 : un arbre compte une fois par groupe.
+
+**Types comptés** : Polypore pérenne
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Un tronc portant trois champignons durs en console, aux bourrelets en arcs concentriques.
+
+### `dmh_11` 11. Champignons éphémères
+
+**Mots-clés** : champignon, polypore annuel, agaricale, lamelles, chapeau, ephemere, mou, charnu, myxomycete, croute
+
+**Définition** : Ce sont des fructifications de champignons du bois qui ne poussent qu'une année et restent au moins quelques semaines : petits polypores souples en console, ou gros champignons charnus à lamelles qui poussent sur le bois.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Un polypore annuel ou un champignon charnu à lamelles compte s'il dépasse 5 cm de diamètre, ou s'il y en a plus de 10 ensemble (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : Cherchez des consoles minces ou des chapeaux fixés directement sur l'écorce ou sur le bois nu, sur le tronc ou une branche d'un arbre vivant. Un polypore annuel est souple ou coriace, jamais dur comme du bois, avec une seule couche de tubes. Un champignon à lamelles est épais et charnu, et se décompose vite.
+
+**Confusions fréquentes** :
+
+- Un polypore dur, ligneux, qui dure des années est un champignon pérenne : il va dans le groupe 10.
+- Un champignon qui pousse sur le sol n'est pas un dendromicrohabitat : il ne compte pas.
+- Les croûtes de champignons, les petites pustules noires et dures et les masses gélatineuses de myxomycètes sont décrites par le guide de poche, mais ne comptent pas pour l'IBP.
+- Les mousses et les lichens sur l'écorce vont dans le groupe 12.
+
+**Types comptés** : Polypore annuel ; Agaricale charnue
+
+**Types décrits, non comptés** : Champignons corticoïdes ; Pyrénomycète ; Myxomycète
+
+**Texte du dessin** : Une souche avec trois petites consoles superposées d'un côté et un champignon à chapeau de l'autre.
+
+### `dmh_12` 12. Plantes et lichens épiphytiques ou parasites
+
+**Mots-clés** : mousse, lichen, lierre, liane, clematite, fougere, gui, epiphyte, plante, parasite, bryophyte
+
+**Définition** : Ce sont des mousses, des lichens, des plantes grimpantes, des fougères et du gui qui utilisent l'arbre surtout comme support. Le gui puise un peu de la sève de l'arbre ; mousses et lichens s'en servent seulement comme appui.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Comptent des mousses, des lichens ou du lierre et des lianes sur plus de 20 % du tronc, pour au moins l'un de ces types ; des fougères de plus de 5 frondes ; du gui avec 10 boules de plus de 20 cm de diamètre (fiche de l'IBP, pages 3 et 13).
+
+**Méthode 3.0** : Comptent des mousses, des lichens ou du lierre et des lianes sur plus de 20 % du tronc, ou du gui avec 10 boules de plus de 20 cm de diamètre. Les fougères ne comptent pas dans la version 3.0 (fiche de l'IBP version 3.0).
+
+**Comment le reconnaître** : Les mousses forment un tapis vert, les lichens des lobes plats ou de petits buissons gris-vert collés à l'écorce. Le lierre ou la clématite monte le long du tronc. Les fougères poussent directement sur le tronc ou à l'insertion d'une branche. Le gui est une touffe ronde et verte, bien visible dans le houppier.
+
+**Confusions fréquentes** :
+
+- Le gui ressemble à un balai de sorcière, qui est une touffe de rameaux de l'arbre lui-même : le balai va dans le groupe 8.
+- Une pellicule verte ou sale, sans relief, n'est pas de la mousse : elle ne compte pas.
+- Les champignons, même sur un lichen, ne comptent pas ici : ils vont dans le groupe 10 ou 11.
+- Une herbe ou un arbuste qui pousse au pied de l'arbre ne compte pas ; le lierre ou la liane qui monte sur le tronc compte, même enracinée dans le sol.
+
+**Écart avec le guide de poche** : Le guide de poche retient plus de 10 % du tronc pour les mousses, les lichens (sur plus de 1 cm d'épaisseur) et le lierre, et une seule boule de gui de plus de 20 cm, l'IBP retient plus de 20 % du tronc pour au moins l'un de ces types et 10 boules de gui de plus de 20 cm.
+
+**Types comptés** : Bryophyte (mousse et hépatique) ; Lichen foliacé ou fruticuleux ; Lierre ou liane ; Fougère ; Gui
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Un tronc avec mousse, lierre grimpant, lichens, fougère, et une touffe de gui sur une branche.
+
+### `dmh_13` 13. Nids
+
+**Mots-clés** : nid, oiseau, rapace, ecureuil, branchages, aire, vertebre, rongeur, fourche
+
+**Définition** : C'est un gros nid d'oiseau ou de rongeur, fait de branchages et posé dans une fourche ou contre le tronc. Les loges de pic ne sont pas des nids ici : elles ont leur propre groupe.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Seul un gros nid de vertébré compte, de plus de 50 cm de diamètre (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : Cherchez, souvent en regardant d'en dessous, une plate-forme ou une boule de branchages entrecroisés dans une fourche, contre le tronc ou dans le houppier. Un nid a un creux sur le dessus, et ses brindilles partent dans tous les sens. Pour compter, il doit dépasser 50 cm, donc être bien plus large que la branche qui le porte.
+
+**Confusions fréquentes** :
+
+- Une loge de pic ou une cavité occupée par un oiseau va dans le groupe 1 ou 2 : elle ne compte pas ici.
+- Un balai de sorcière ou une boule de gui, vus d'en bas, ressemblent à un nid : le balai va dans le groupe 8, le gui dans le groupe 12.
+- Un peu de terre prise dans une fourche est un microsol, pas un nid : elle va dans le groupe 14.
+- Un nid d'insectes, comme celui des chenilles processionnaires, est décrit par le guide de poche mais ne compte pas pour l'IBP.
+
+**Écart avec le guide de poche** : Le guide de poche retient les nids de vertébré de plus de 10 cm de diamètre, l'IBP retient seulement les gros nids de plus de 50 cm de diamètre.
+
+**Types comptés** : Nid de vertébré
+
+**Types décrits, non comptés** : Nid d'invertébré
+
+**Texte du dessin** : Un gros nid de branchages avec deux œufs, posé au sommet d'un tronc qui s'évase.
+
+### `dmh_14` 14. Microsols
+
+**Mots-clés** : microsol, terre, humus, fourche, houppier, couronne, racines, mousse, sol aerien
+
+**Définition** : Un microsol est une petite couche de sol jeune qui se forme sur l'arbre lui-même, à partir de brindilles, de feuilles, d'écorce et de mousses décomposées. On le trouve surtout dans le houppier, dans une fourche ou sur une zone plate d'une grosse branche, et des racines fines de l'arbre y pénètrent souvent.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : Seul le microsol du houppier compte, à toute hauteur dans l'arbre (fiche de l'IBP, pages 3 et 13).
+
+**Comment le reconnaître** : Cherchez une terre sombre et friable, comme du terreau de jardin, installée dans une fourche, au creux d'une grosse branche ou sur une zone plate du houppier. Elle porte souvent de la mousse ou de petites plantes, et des racines fines y descendent. On la trouve surtout sur de vieux arbres.
+
+**Confusions fréquentes** :
+
+- Du bois pourri au fond d'une cavité est du terreau : il va dans le groupe 2.
+- Des feuilles qui s'accumulent sans former d'humus, sur du bois abîmé ou une souche, ne sont pas un microsol ; dans une fourche, c'est une cuvette à eau (groupe 4) ou une cavité à terreau si le bois est altéré (groupe 2).
+- Un nid est fait de branchages posés, pas de terre : il va dans le groupe 13.
+- Les plantes qui poussent dans ce sol se comptent à part, dans le groupe 12.
+
+**Écart avec le guide de poche** : Le guide de poche retient trois sortes de microsols (sur l'écorce du tronc, entre les écorces et dans le houppier), l'IBP retient seulement celui du houppier.
+
+**Types comptés** : Microsol du houppier
+
+**Types décrits, non comptés** : Microsol d'écorce ; Microsol d'entre-écorce
+
+**Texte du dessin** : Une grosse fourche de deux branches avec, dans l'angle, un tas de terre sombre portant un peu de mousse.
+
+### `dmh_15` 15. Coulées de sève et de résine
+
+**Mots-clés** : seve, resine, coulee, ecoulement, suintement, blessure, conifere, exsudat, gomme
+
+**Définition** : Une coulée est un écoulement de sève (sur les feuillus, liquide et sombre) ou de résine (sur les conifères, épaisse, collante, jaune ou blanchâtre) qui part d'une blessure ou d'une fente et descend le long de l'écorce.
+
+**Ce qui compte pour l'IBP (méthode 3.2)** : La coulée doit mesurer plus de 20 cm de long : sève active, ou résine fraîche ou ancienne (fiche de l'IBP, pages 4 et 13).
+
+**Méthode 3.0** : Seule compte une coulée de sève active de plus de 20 cm de long (fiche de l'IBP version 3.0).
+
+**Comment le reconnaître** : Une traînée mouillée et brillante part d'une blessure, d'une fente ou d'un moignon de branche et descend le long de l'écorce. La résine forme une masse épaisse, jaune, ambrée ou blanchâtre, qui durcit à l'air, sur un conifère. Mesurez la coulée sur toute sa longueur.
+
+**Confusions fréquentes** :
+
+- Une trace de pluie ou d'algues ne part pas d'une blessure : elle ne compte pas.
+- Une coulée de sève sèche et ancienne n'est plus une coulée active : elle ne compte pas.
+- Un bois mis à nu sans écoulement va dans le groupe 5 ou 6, selon que seule l'écorce manque ou que le bois est cassé.
+- Une coulée de moins de 20 cm ne compte pas, même si elle est active.
+
+**Écart avec le guide de poche** : Le guide de poche retient une coulée de plus de 10 cm de long, l'IBP retient plus de 20 cm.
+
+**Types comptés** : Coulée de sève ; Coulée de résine
+
+**Types décrits, non comptés** : aucun
+
+**Texte du dessin** : Une longue coulée de sève sous une blessure, et une coulée de résine épaisse sur une écorce de conifère.
+
+### Points à faire vérifier par l'expert
+
+Ces points ne vont pas dans l'application. Ils listent ce que les documents G et I ne permettent pas
+de trancher seuls ou ce que le brouillon a déduit ; l'expert les lit avec les fiches.
+
+- `dmh_01` : une entrée ronde de 7 à 10 cm ne correspond à aucune des tailles nommées (moins de 4 cm,
+  de 4 à 7 cm, plus de 10 cm), ni dans I ni dans G. À confirmer : compte-t-elle ?
+- `dmh_02`, `dmh_03`, `dmh_07`, `dmh_08`, `dmh_12`, `dmh_15` : quelques éléments de reconnaissance ou
+  de confusion viennent de la connaissance générale et non de G ni de I (tas de terre ou de feuilles
+  au pied, poche de pourriture, arbre sans feuilles en hiver, gui aux tiges fourchues et aux feuilles
+  épaisses, pellicule verte sans relief, couleur de la sève et de la résine, galeries en peigne).
+  Chaque phrase concernée est à relire.
+- `dmh_06` : I p. 12 donne pour la fente à l'insertion d'une fourche la seule longueur (plus de
+  30 cm), alors que I p. 3 donne trois critères pour la fente. La fiche applique les trois critères à
+  la fente et ne dit rien de la fourche : à confirmer. La ligne « Méthode 3.0 » suppose que la cime
+  brisée et la fente sont les mêmes qu'en version 3.2, car le comparatif des versions ne signale que
+  le bris de charpentière (ligne F-3) ; la fiche de la version 3.0 n'est plus en ligne.
+- `dmh_06` et `dmh_14` : l'écart signalé n'est pas un seuil mais un type décrit en plus par le guide de
+  poche (entailles de castor ; deux sortes de microsols). Il apparaît pourtant dans le bloc « Le seuil
+  de l'IBP, pas celui du guide de poche » : l'expert dit s'il garde ce bloc pour ces deux groupes.
+- `dmh_09` : le guide de poche compte aussi le chancre qui couvre une grande partie du tronc (G p. 44).
+  La recherche ne signalait aucun écart pour ce groupe ; il n'y a donc pas de ligne « Écart avec le
+  guide de poche » dans la fiche, mais la différence figure dans la table de la section 5. À décider :
+  l'ajouter (dix groupes avec un écart au lieu de neuf).
+- `dmh_11` : l'IBP dit « nombre > 10 » (I p. 3 et 13) et le guide de poche « groupe de plus de 10 »
+  (G p. 46 et 47). La fiche écrit « plus de 10 ensemble » : à préciser (sur l'arbre ou en groupe).
+  Le dessin montre une souche coupée alors que l'IBP compte des arbres vivants : à regarder.
+- `dmh_12` : la ligne « Méthode 3.0 » suppose que la règle du gui est la même qu'en version 3.2 (le
+  comparatif F-1 ne signale que les fougères et la précision « au moins l'un de ces types ») et que
+  le seuil de 20 % s'applique de la même façon.
+- Compte de types : I dit s'appuyer sur 41 types (I p. 7) alors que le guide de poche en compte 43 dans
+  les groupes de l'IBP. L'écart de deux types est lu comme deux regroupements (cavités ouvertes vers le
+  haut, fente causée par la foudre) : à confirmer.
+- Galles (type 31) : affichées sur la fiche du groupe 9 sous « Décrits, mais non comptés » par défaut ;
+  le dépôt d'argile ou de limon (type 50) n'est affiché nulle part. À confirmer.
+- Dessins : les groupes 4 et 8 ont des traits qui touchent le bord du cadre ; dans le groupe 14, les
+  racines fines ne sont pas dessinées (quelques traits de feuilles seulement) ; dans le groupe 1, les
+  trois loges ne sont pas alignées en flûte. À regarder avec la section 9.
+
+## 7. Ordre des groupes dans la liste
+
+Règle (contrat d'interface, section S1.2), appliquée une seule fois, à l'arrivée sur la page du
+facteur F, jamais pendant que l'observateur touche la liste : les sections qui contiennent un groupe
+coché ou compté passent en premier ; dans une section, les groupes cochés ou comptés passent en
+premier ; le reste suit l'ordre de base ci-dessous. L'ordre de stockage des groupes dans le relevé
+ne change jamais, quel que soit l'ordre affiché.
+
+Ordre de base : ordre IBP (1 à 15)
+
+Ordre validé :
+
+Question O-32-12 : le propriétaire a retenu le 2026-10-23 le levier « groupes fréquents ou déjà
+cochés en premier ». La partie « déjà cochés » ne demande aucune source. La partie « fréquents » en
+demande une, et il n'en existe pas de fiable : le guide de poche donne un mot de fréquence par type,
+différent entre forêt naturelle et forêt exploitée, et dit lui-même que les fréquences locales
+peuvent être différentes (G p. 7). Trois options :
+
+- **(a)** Cochés ou comptés d'abord, puis l'ordre IBP. C'est le défaut proposé : aucune source de
+  fréquence fiable, aucune règle inventée. La ligne « Ordre validé » reprend alors l'ordre IBP, de 1 à 15.
+- **(b)** Cochés ou comptés d'abord, puis un ordre de fréquence fixe, que le propriétaire ou l'expert
+  écrit dans la ligne « Ordre validé » avec sa source. L'ordre s'applique à l'intérieur de chaque
+  section de forme ; il ne demande aucun changement de code au-delà de cette liste.
+- **(c)** Selon les relevés précédents de l'observateur : cela demande de relire les relevés passés,
+  ce que cette phase ne construit pas. Noté comme idée reportée, sauf si le propriétaire demande de
+  replanifier la phase.
+
+## 8. Textes de l'interface
+
+Chaque phrase de l'interface avec sa future clé. Les valeurs entre accolades sont insérées par le
+code. Aucun sigle, aucun tiret cadratin. Ces textes restent des brouillons tant que la section 12 est
+vide.
+
+### 8.1. Liste du facteur F (`fr.factorDetail`)
+
+Titres de la liste, gardés tels qu'ils sont (clés existantes) :
+
+- `companionLabels.dmh_groups` (mode plafonné) : « Groupes de dendromicrohabitats observés (facultatif) »
+- `countingMode.dmhTitle` (mode déplafonné) : « Arbres par groupe de dendromicrohabitats »
+- `countingMode.dmhHelper` (mode déplafonné) : « Pour le score, l'app garde au plus 2 arbres par
+  hectare et par groupe. »
+
+Nouveaux textes (`dmhList`) :
+
+- `entry.title` : « Guide des dendromicrohabitats »
+- `entry.caption` : « Reconnaître chaque groupe, sans réseau. »
+- `forms.cavities` : « Cavités »
+- `forms.wounds` : « Blessures et bois apparent »
+- `forms.crown_deadwood` : « Bois mort dans le houppier »
+- `forms.growths` : « Excroissances »
+- `forms.fruiting_bodies` : « Champignons et myxomycètes »
+- `forms.epiphytic` : « Plantes, nids et microsols »
+- `forms.exudates` : « Exsudats »
+- `badge({ ticked, total })` : « {ticked} sur {total} »
+- `sectionA11y({ form, ticked, total })` : « {form}, {ticked} groupes sur {total} cochés » (« 1 groupe sur
+  {total} coché » quand un seul est coché)
+- `summaryNone` : « Aucun groupe coché. »
+- `summaryCapped({ groups })` : « 1 groupe coché » ou « {groups} groupes cochés »
+- `summaryFull({ groups, trees })` : « 3 groupes, 14 arbres » (« 1 groupe » et « 1 arbre » au singulier)
+- `treesCaption` : « Arbres »
+- `lockedUntick` : « Ramenez le nombre à 0 pour décocher ce groupe. »
+- `a11y.info({ label })` : « En savoir plus sur {label} »
+- `a11y.infoHint` : « Ouvre le guide à ce groupe »
+- `a11y.tickHint` : « Double-tapez pour cocher ou décocher »
+- `a11y.tickLockedHint` : « Ramenez d'abord le nombre à 0 pour décocher »
+- `a11y.withCount({ label, trees })` : « {label}, {trees} arbres » (« 1 arbre » au singulier)
+- `a11y.add({ label })` : « Compter un arbre dans {label} »
+- `a11y.addHint` : « Coche le groupe et compte 1 »
+- `stepper.label({ label })` : « Nombre d'arbres, {label} »
+- `stepper.value({ trees })` : « {trees} arbres » (« 1 arbre » au singulier)
+- `stepper.increment` : « Ajouter un arbre »
+- `stepper.decrement` : « Retirer un arbre »
+- `stepper.editHint` : « Double-tapez pour saisir le nombre »
+
+### 8.2. Feuille du guide (`fr.dmhGuide`)
+
+Feuille et catalogue :
+
+- `sheet.title` : « Dendromicrohabitats »
+- `sheet.back` : « Tous les groupes »
+- `sheet.backA11y` : « Retour à tous les groupes »
+- `sheet.close` : « Fermer le guide »
+- `sheet.lead` : « Un dendromicrohabitat est un petit milieu de vie porté par un arbre : une cavité,
+  une écorce décollée, un champignon, un nid. L'IBP en compte quinze groupes, à partir d'un seuil de
+  taille. »
+- `sheet.rowHint` : « Ouvre la fiche du groupe »
+- `sheet.sourcesLink` : « Sources et licence »
+- `sheet.groupAnnounce({ label })` : « Groupe {label} »
+- `sheet.catalogueAnnounce` : « Tous les groupes »
+
+Recherche :
+
+- `search.label` : « Rechercher un groupe »
+- `search.placeholder` : « Rechercher : pic, lierre, gui »
+- `search.clear` : « Effacer la recherche »
+- `search.found({ count })` : « 1 groupe trouvé » ou « {count} groupes trouvés »
+- `search.emptyTitle` : « Aucun groupe trouvé »
+- `search.emptyBody` : « Essayez un mot courant : pic, lierre, gui, champignon, nid. »
+- `search.emptyAction` : « Voir les 15 groupes »
+
+Page d'un groupe (les fiches de la section 6 donnent le contenu de chaque groupe ; le titre est le
+libellé du groupe, jamais retapé) :
+
+- `group.form({ form })` : « Forme : {form} » (nom officiel de la section 4)
+- `group.definitionTitle` : « De quoi s'agit-il ? »
+- `group.ibpTitle` : « Ce qui compte pour l'IBP »
+- `group.methodNote.v30` : « Texte pour la méthode IBP version 3.0 »
+- `group.methodNote.v32` : « Texte pour la méthode IBP version 3.2 »
+- `group.recogniseTitle` : « Comment le reconnaître »
+- `group.confusionsTitle` : « Confusions fréquentes »
+- `group.typesTitle` : « Types décrits par le guide de poche »
+- `group.typesCounted` : « Comptés par l'IBP »
+- `group.typesNotCounted` : « Décrits, mais non comptés par l'IBP »
+- `group.typeCountedA11y({ name })` : « {name}. Compté par l'IBP »
+- `group.typeNotCountedA11y({ name })` : « {name}. Non compté par l'IBP »
+- `group.differenceTitle` : « Le seuil de l'IBP, pas celui du guide de poche »
+- `group.differenceLead` : « Pour l'IBP, suivez toujours le seuil de l'IBP. »
+- `group.footer` : « Description : guide de poche des dendromicrohabitats, 2024. Seuils : IBP version 3.2. »
+
+Page « Sources et licence » :
+
+- `sources.title` : « Sources et licence »
+- `sources.lead` : « Les textes de ce guide sont écrits par l'association Etats Sauvages à partir des
+  documents ci-dessous. Aucun texte ni aucune image de ces documents n'est reproduit. »
+- `sources.authors` : « Auteurs » ; `sources.publisher` : « Éditeur » ; `sources.year` : « Année » ;
+  `sources.usedFor` : « Utilisé pour »
+- Premier document : titre « Guide de poche des dendromicrohabitats, deuxième édition » ; auteurs
+  « Bütler, Lachat, Krumm, Kraus et Larrieu » ; éditeur « Institut fédéral de recherches sur la forêt,
+  la neige et le paysage, Birmensdorf » ; année « 2024 » ; utilisé pour « la description des types de
+  chaque groupe »
+- Deuxième document : titre « Tree related microhabitats in temperate and Mediterranean European
+  forests: a hierarchical typology for inventory standardization » ; auteurs « Larrieu, Paillet,
+  Winter, Bütler, Kraus, Krumm, Lachat, Michel, Regnery et Vandekerkhove » ; éditeur « revue Ecological
+  Indicators, volume 84 » ; année « 2018 » ; utilisé pour « la typologie en quinze groupes »
+- Troisième document : titre « Indice de Biodiversité Potentielle pour les forêts de France
+  métropolitaine, version 3.2 » ; auteurs « Gonin, Larrieu, Marty, Baiges, Corezzola, Miozzo et
+  Palero » ; éditeur « Centre national de la propriété forestière et unité Dynafor de l'Institut
+  national de recherche pour l'agriculture, l'alimentation et l'environnement » ; année « 2026 » ;
+  utilisé pour « les seuils de comptage »
+- `sources.precedence` : « Pour le relevé, les seuils de l'IBP version 3.2 font foi. Le guide de poche
+  sert à reconnaître les éléments. »
+- `sources.drawings` : « Dessins originaux de l'association Etats Sauvages. » (une seule phrase pour
+  les quinze dessins, aucune mention d'auteur par dessin)
+- `sources.offline` : « Tout le guide est dans l'application. Il fonctionne sans réseau. »
+- `sources.consulted` : « Documents consultés le 23 octobre 2026. »
+- Variante de licence si l'Institut fédéral accorde une autorisation écrite : pas de texte tant que
+  cette autorisation n'existe pas (O-32-9).
+
+## 9. Dessins originaux
+
+Décisions D-06, D-09 et D-11 (propriétaire, 2026-10-24, modifiée le 2026-10-26). Il y a quinze
+dessins au trait originaux, un par groupe de l'IBP, dessinés par l'assistant pour l'association et
+qui lui appartiennent. Aucune image du guide de poche ni d'un autre document n'est reproduite.
+
+Style approuvé sur trois essais (groupes 1, 10 et 13) le 2026-10-24 : un cadre de 800 sur 600, des
+traits sombres sans remplissage, des épaisseurs de 4 à 12 (6 pour les lignes principales, plus fines
+pour les détails, plus épaisses pour les points), des bouts arrondis, aucune couleur, aucun texte.
+Les quinze dessins ont été refaits le 2026-10-26 après la vérification en ligne dont les notes sont
+gardées à côté des sources.
+
+Fabrication. Les sources sont dans `.planning/phases/32-detailed-dmh-information-inserted-v1/drawings/`,
+un fichier vectoriel par groupe. Dans l'application ce sont des dessins vectoriels et non des
+fichiers d'image : le module `mobile/src/app/dmh-guide/drawings.ts` est généré par
+`mobile/scripts/build-dmh-drawings.mjs` à partir des sources. Chaque dessin est tracé dans l'encre
+du texte du thème, directement sur la carte, et il est montré complet et fixe : aucune animation
+(décision du propriétaire du 2026-10-26, après essai d'un dessin progressif et d'un dessin en
+boucle). Budget : au plus 12 ko de données par dessin et 120 ko pour tout le module, vérifiés par
+`mobile/src/__checks__/dmh-drawings.test.ts`. Le lecteur d'écran lit le « Texte du dessin » de la
+fiche du groupe (section 6).
+
+Registre des dessins. La colonne « Relu (exactitude) » reste vide : l'expert la remplit au plan
+32-09, après avoir regardé chaque dessin avec le libellé de son groupe et sa phrase.
+
+<!-- prettier-ignore-start -->
+
+| Fichier | Groupe | Ce que montre le dessin | Relu (exactitude) |
+| --- | --- | --- | --- |
+| `dmh_01-loges-de-pic.svg` | 1. Loges de pic | Un tronc avec une grande loge ovale et deux petites loges rondes plus bas |  |
+| `dmh_02-cavites-a-terreau.svg` | 2. Cavités à terreau | Un pied de tronc vu de l'extérieur, puis en coupe, avec la voûte et le terreau au fond |  |
+| `dmh_03-orifices-et-galeries-d-insectes.svg` | 3. Orifices et galeries d'insectes | Des trous ronds et une plaque d'écorce tombée qui montre des galeries |  |
+| `dmh_04-concavites.svg` | 4. Concavités | Une cuvette dans une fourche et un tronc au pied ouvert en arche |  |
+| `dmh_05-aubier-apparent.svg` | 5. Aubier apparent | Une plage de bois nu sur un tronc et une plaque d'écorce décollée sur le côté |  |
+| `dmh_06-aubier-et-bois-de-coeur-apparents.svg` | 6. Aubier et bois de cœur apparents | Une cassure déchiquetée sur le côté d'un tronc et une longue fente en zigzag |  |
+| `dmh_07-bois-mort-dans-le-houppier.svg` | 7. Bois mort dans le houppier | Un houppier vivant à gauche, de grosses branches mortes et une pointe morte à droite |  |
+| `dmh_08-agglomerations-de-gourmands-ou-de-rameaux.svg` | 8. Agglomérations de gourmands ou de rameaux | Une touffe de pousses sur un tronc et une boule de rameaux au bout d'une branche |  |
+| `dmh_09-loupes-et-chancres.svg` | 9. Loupes et chancres | Une bosse arrondie vue de profil et une plaie à bourrelets emboîtés |  |
+| `dmh_10-champignons-perennes.svg` | 10. Champignons pérennes | Trois champignons durs en console sur un tronc, aux bourrelets concentriques |  |
+| `dmh_11-champignons-ephemeres.svg` | 11. Champignons éphémères | Une souche avec trois petites consoles d'un côté et un champignon à chapeau de l'autre |  |
+| `dmh_12-plantes-et-lichens-epiphytiques-ou-parasites.svg` | 12. Plantes et lichens épiphytiques ou parasites | Mousse, lierre, lichens, fougère et une touffe de gui sur un tronc |  |
+| `dmh_13-nids.svg` | 13. Nids | Un gros nid de branchages avec deux œufs au sommet d'un tronc qui s'évase |  |
+| `dmh_14-microsols.svg` | 14. Microsols | Une fourche de deux grosses branches avec un tas de terre et de la mousse dans l'angle |  |
+| `dmh_15-coulees-de-seve-et-de-resine.svg` | 15. Coulées de sève et de résine | Une coulée de sève longue sous une blessure et une coulée de résine épaisse sur un conifère |  |
+
+<!-- prettier-ignore-end -->
+
+Corriger un dessin : modifier son fichier source dans le dossier ci-dessus (même cadre, mêmes
+épaisseurs de 4 à 12, seuls un trait, une ellipse et un cercle, bouts arrondis, aucun remplissage),
+lancer `node mobile/scripts/build-dmh-drawings.mjs .planning/phases/32-detailed-dmh-information-inserted-v1/drawings`,
+passer Prettier sur `mobile/src/app/dmh-guide/drawings.ts`, lancer la barrière
+`npm --workspace mobile run test:unit -- src/__checks__/dmh-drawings.test.ts`, puis mettre à jour le
+« Texte du dessin » de la fiche si ce que le dessin montre a changé.
+
+Question O-32-6 : résolue. L'assistant dessine, l'expert relit l'exactitude de chaque dessin (plan
+32-09), les quinze sont livrés et montrés fixes.
+
+## 10. Décisions du propriétaire
+
+Chaque ligne a un défaut conseillé. Les cellules « Décision validée » sont remplies au plan 32-09 ;
+elles sont vides dans ce brouillon.
+
+<!-- prettier-ignore-start -->
+
+| Id | Question | Défaut conseillé | Décision validée | Effet si différent |
+| --- | --- | --- | --- | --- |
+| O-32-1 | Taille des boutons du compteur sur le terrain avec des gants | 48 points maintenant (une seule constante) ; essai de 48 contre 56 sur le scénario S2 du chronométrage, on garde le meilleur | | Seule la constante de taille du compteur change |
+| O-32-2 | Noms des formes sur la liste du facteur F | Noms courts sur la liste, noms officiels du guide de poche sur la page du groupe (section 4) | | Les titres de section de la liste deviennent les noms officiels |
+| O-32-3 | Un groupe compté peut-il être décoché | Non : verrouillé tant que le nombre n'est pas revenu à 0, avec une ligne d'explication | | Décocher garde le compte et la ligne, comme avant la phase |
+| O-32-4 | Sections ouvertes à l'arrivée sur la page | Toutes ouvertes si rien n'est coché ; sinon seules les sections qui ont un groupe coché ou compté | | Une autre règle d'ouverture, sans effet sur les données |
+| O-32-5 | Recherche sur la liste du facteur F elle-même | Non : recherche dans le catalogue du guide seulement ; à revoir si le chronométrage montre que le défilement domine | | Un champ de recherche s'ajoute en tête de liste |
+| O-32-6 | Dessins originaux : qui dessine, quel style | Résolu : l'assistant dessine les quinze dessins pour l'association (style approuvé sur trois essais le 2026-10-24), l'expert relit chacun pour l'exactitude au plan 32-09 (section 9), ils sont livrés fixes (2026-10-26) | | Un dessin à corriger passe par sa source et le script de la section 9 |
+| O-32-7 | Montrer les seuils du guide de poche à côté de ceux de l'IBP (bloc d'écart) | Oui, avec un libellé, seulement où ils diffèrent, la valeur de l'IBP en premier | | Le bloc d'écart disparaît des pages |
+| O-32-8 | Raccourci « cocher ce groupe » depuis la page d'un groupe | Non : guide en lecture seule | | Un bouton s'ajoute : deuxième chemin d'écriture sur le relevé, à tester |
+| O-32-9 | Texte de la page « Sources et licence » | Texte propre actuel (section 8) ; remplacé par le texte exigé par l'Institut fédéral si une autorisation écrite est obtenue | | La variante de licence est écrite et activée |
+| O-32-10 | Relecture de chaque texte de fiche (définition, reconnaissance, confusions, seuils) par le propriétaire et un expert | Point bloquant de ce document avant tout écran (section 12) | | Aucun écran ne se construit avant cette relecture |
+| O-32-11 | Ligne de résumé sur la page F (« 3 groupes, 14 arbres ») | Oui : affichage dérivé seulement, rien n'est stocké | | La ligne est retirée |
+| O-32-12 | Ordre « groupes fréquents d'abord » dans la liste | Option (a) de la section 7 : cochés ou comptés d'abord, puis ordre IBP, faute de source de fréquence fiable | | Option (b) : un ordre écrit dans « Ordre validé » ; option (c) : idée reportée |
+| P-01 | Édition du guide de poche sur laquelle repose la table | Édition française de 2024, empreinte donnée en tête de ce document (plan 32-02) | | Une autre édition change les numéros de type : la section 5 est à refaire |
+| P-02 | Expert qui relit les fiches et les dessins | Nom et date obligatoires dans la section 12 | | Pas de validation sans expert |
+| P-03 | Règle de réussite du chronométrage de la saisie | Scénario S2 : temps médian au moins 25 % plus bas et moins de touches ; scénarios S1 et S3 : médianes au plus 10 % plus hautes (voir `docs/user-tests/dmh-entry-timing.md`) | | Un autre seuil de réussite, écrit dans ce document de test |
+| P-04 | Leviers de vitesse gardés après le chronométrage de départ | Les trois : (a) compteur sur la ligne, (b) groupes par forme, (c) cochés d'abord | | Un levier retiré, sans effet sur les données enregistrées |
+
+<!-- prettier-ignore-end -->
+
+## 11. Exigences proposées
+
+Cinq exigences, avec la formulation de la recherche de la phase. Le plan d'ensemble les ajoute à
+`.planning/REQUIREMENTS.md` à la fin de la phase : ce plan ne touche pas ce fichier.
+
+- `REQ-DOC-dmh-sources` : les sources, auteurs, état de licence, date de consultation et empreinte de
+  chaque document dont le guide s'inspire sont notés dans `docs/references/README.md` ; le croisement
+  entre la typologie de l'IBP et celle du guide de poche est écrit dans cette spécification et
+  validé par écrit par le propriétaire avant tout écran.
+- `REQ-C-dmh-guide` : depuis la page du facteur F, l'observateur ouvre, sans réseau, une fiche par
+  groupe (ce qui compte pour l'IBP, comment le reconnaître, confusions fréquentes, types du guide de
+  poche) et un catalogue des quinze groupes avec recherche ; les sources sont montrées sur les pages.
+- `REQ-C-dmh-illustrations` : chaque groupe montre, sans réseau, son dessin original de l'association,
+  fixe, relu pour l'exactitude par un expert ; un groupe sans dessin n'affiche rien.
+- `REQ-C-dmh-fast-entry` : saisir le facteur F avec beaucoup de groupes demande moins de touches et
+  moins de temps qu'avant ; les données enregistrées (`dmh_groups`, `dmh_counts`, `trees_per_ha`) et
+  tous les scores restent identiques (cas de parité inchangés).
+- `REQ-FT-dmh-speed` : le gain de vitesse est chronométré sur un vrai relevé, avant et après, selon le
+  protocole de la phase, et le résultat est consigné (peut être clos aux essais de terrain).
+
+## 12. Validation
+
+Validé par le propriétaire le :
+
+Relu par (expert) :
+
+Réponse du propriétaire :
+
+Aucun texte du catalogue et aucun écran n'est écrit à partir de cette spécification avant que ces
+trois lignes soient remplies, que le statut en tête de document passe à « validée » et que chaque cellule
+« Décision validée » de la section 10 et chaque cellule « Relu (exactitude) » de la section 9 soit
+remplie.
