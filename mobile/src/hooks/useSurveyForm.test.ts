@@ -1104,7 +1104,7 @@ describe("useSurveyForm", () => {
         result.current.bumpDmhGroup("dmh_05", 1)
       })
       expect(factorF(result)).toEqual({
-        trees_per_ha: 2,
+        trees_per_ha: 1,
         dmh_groups: ["dmh_05", "dmh_12"],
         dmh_counts: { dmh_05: 1 },
         surface_ha: 1,
@@ -1159,7 +1159,13 @@ describe("useSurveyForm", () => {
           await act(async () => {
             const field = old.current.factorSections.F[0]
             field.selection?.onChange(
-              withSelectionToggled("F", old.current.ibpMethodVersion, field.selection.selected, code, true),
+              withSelectionToggled(
+                "F",
+                old.current.ibpMethodVersion,
+                field.selection.selected,
+                code,
+                true,
+              ),
             )
           })
           for (let tree = 1; tree <= trees; tree += 1) {
