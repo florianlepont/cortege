@@ -345,6 +345,7 @@ function useAppController() {
     setFactorNote: surveyForm.setFactorNote,
     setStratumCover: surveyForm.setStratumCover,
     setDmhCount: surveyForm.setDmhCount,
+    bumpDmhGroup: surveyForm.bumpDmhGroup,
     setFSurface: surveyForm.setFSurface,
   })
 

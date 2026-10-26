@@ -65,6 +65,8 @@ export type SurveyFormActions = {
   /** Phase 30: each derives its scored value with the package helpers and writes it (U-O10). */
   setStratumCover: SurveyForm["setStratumCover"]
   setDmhCount: SurveyForm["setDmhCount"]
+  /** Phase 32 (D-08, D-10): first "+" of a dendromicrohabitat row ticks and counts; never unticks. */
+  bumpDmhGroup: SurveyForm["bumpDmhGroup"]
   setFSurface: SurveyForm["setFSurface"]
 }
 
