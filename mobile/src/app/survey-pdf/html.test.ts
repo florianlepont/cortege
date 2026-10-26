@@ -4,6 +4,7 @@ import {
   formatDateFr,
   formatDecimal,
   shortenText,
+  splitLabel,
   svgNumber,
 } from "./html"
 
@@ -111,5 +112,39 @@ describe("shortenText", () => {
 
   it("does not escape", () => {
     expect(shortenText("a&b<c>d", 4)).toBe("a&b\u2026")
+  })
+})
+
+describe("splitLabel", () => {
+  it("keeps a label that fits, or holds no space, on one line", () => {
+    expect(splitLabel("moyenne", 9)).toEqual(["moyenne"])
+    expect(splitLabel("faible", 9)).toEqual(["faible"])
+    expect(splitLabel("Dendromicrohabitats", 12)).toEqual(["Dendromicrohabitats"])
+    expect(splitLabel("assez faible", 12)).toEqual(["assez faible"])
+  })
+
+  it("cuts at the space that makes the longer line shortest", () => {
+    expect(splitLabel("assez faible", 9)).toEqual(["assez", "faible"])
+    expect(splitLabel("assez forte", 9)).toEqual(["assez", "forte"])
+    expect(splitLabel("Essences autochtones", 12)).toEqual(["Essences", "autochtones"])
+    expect(splitLabel("Bois morts sur pied", 12)).toEqual(["Bois morts", "sur pied"])
+    expect(splitLabel("Bois morts au sol", 12)).toEqual(["Bois morts", "au sol"])
+    expect(splitLabel("Très gros bois vivants", 12)).toEqual(["Très gros", "bois vivants"])
+    expect(splitLabel("Milieux ouverts florifères", 12)).toEqual(["Milieux ouverts", "florifères"])
+    expect(splitLabel("Continuité boisée", 12)).toEqual(["Continuité", "boisée"])
+    expect(splitLabel("Milieux rocheux", 12)).toEqual(["Milieux", "rocheux"])
+    expect(splitLabel("Structure verticale", 12)).toEqual(["Structure", "verticale"])
+    expect(splitLabel("Milieux aquatiques", 12)).toEqual(["Milieux", "aquatiques"])
+  })
+
+  it("takes the first space on a tie, never makes a third line and never shortens", () => {
+    expect(splitLabel("aa bb cc dd", 3)).toEqual(["aa bb", "cc dd"])
+    expect(splitLabel("a b c d e f g", 2)).toHaveLength(2)
+    const long = "un texte très long qui dépasse largement la boîte"
+    expect(splitLabel(long, 5).join(" ")).toBe(long)
+  })
+
+  it("does not escape", () => {
+    expect(splitLabel("a <b> & c", 3)).toEqual(["a <b>", "& c"])
   })
 })

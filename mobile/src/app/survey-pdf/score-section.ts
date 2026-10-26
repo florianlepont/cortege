@@ -68,6 +68,21 @@ export function toneColor(tone: ScoreTone, palette: PdfPalette): string {
   }
 }
 
+/**
+ * The fill of a chart zone for a tone (phase 33, D-27): the strong tint (the ends of the plane's
+ * stand axis) or the soft one, a mid tone having a single tint. Palette keys only.
+ */
+export function zoneTint(tone: ScoreTone, strong: boolean, palette: PdfPalette): string {
+  switch (tone) {
+    case "low":
+      return strong ? palette.zoneLow : palette.zoneLowSoft
+    case "mid":
+      return palette.zoneMid
+    default:
+      return strong ? palette.zoneHigh : palette.zoneHighSoft
+  }
+}
+
 /** One score with its CNPF band: points (null when not a number), maximum, band name and tone. */
 export type ScoreBand = {
   points: number | null

@@ -57,3 +57,18 @@ export function shortenText(text: string, max: number): string {
   const cut = space >= max / 2 ? text.slice(0, space) : text.slice(0, max - 1)
   return `${cut.trimEnd()}${ELLIPSIS}`
 }
+
+/**
+ * Splits a label into one or two lines for a fixed chart box: one line when it fits in `maxChars`
+ * or holds no space, else two lines cut at the space that makes the longer line shortest (the first
+ * such space on a tie). It never shortens and never escapes: callers escape each line.
+ */
+export function splitLabel(text: string, maxChars: number): string[] {
+  if (text.length <= maxChars || !text.includes(" ")) return [text]
+  let best = { at: -1, longest: Number.POSITIVE_INFINITY }
+  for (let at = text.indexOf(" "); at !== -1; at = text.indexOf(" ", at + 1)) {
+    const longest = Math.max(at, text.length - at - 1)
+    if (longest < best.longest) best = { at, longest }
+  }
+  return [text.slice(0, best.at), text.slice(best.at + 1)]
+}

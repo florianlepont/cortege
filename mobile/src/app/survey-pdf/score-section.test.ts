@@ -19,10 +19,17 @@ import {
   scoreBands,
   standZones,
   toneColor,
+  zoneTint,
 } from "./score-section"
 import type { PdfPalette, SurveyExportData } from "./types"
 
 const PALETTE_KEYS = [
+  "zoneLow",
+  "zoneLowSoft",
+  "zoneMid",
+  "zoneHighSoft",
+  "zoneHigh",
+  "contextInk",
   "ink",
   "inkMuted",
   "inkFaint",
@@ -221,5 +228,16 @@ describe("roseRingScores (phase 33, D-27)", () => {
 
   it("is 0, 2, 5 today, so a package change is seen", () => {
     expect(roseRingScores()).toEqual([0, 2, 5])
+  })
+})
+
+describe("zoneTint (phase 33, D-27)", () => {
+  it("gives the strong or the soft tint of a low and a high tone, one tint for mid", () => {
+    expect(zoneTint("low", true, palette)).toBe("zoneLow")
+    expect(zoneTint("low", false, palette)).toBe("zoneLowSoft")
+    expect(zoneTint("mid", true, palette)).toBe("zoneMid")
+    expect(zoneTint("mid", false, palette)).toBe("zoneMid")
+    expect(zoneTint("high", true, palette)).toBe("zoneHigh")
+    expect(zoneTint("high", false, palette)).toBe("zoneHighSoft")
   })
 })
