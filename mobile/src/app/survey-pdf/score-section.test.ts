@@ -1,7 +1,25 @@
-import { FACTOR_KEYS, bandTone, contextBand, standBand, totalBand } from "@cortege/ibp-domain"
+import {
+  ALLOWED_SCORES_BY_FACTOR,
+  CONTEXT_BAND_CUT_OFFS,
+  FACTOR_KEYS,
+  IBP_MAX,
+  STAND_BAND_CUT_OFFS,
+  bandTone,
+  contextBand,
+  standBand,
+  totalBand,
+} from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
-import { countMissingFactors, filledPoints, scoreBands, toneColor } from "./score-section"
+import {
+  contextLevels,
+  countMissingFactors,
+  filledPoints,
+  roseRingScores,
+  scoreBands,
+  standZones,
+  toneColor,
+} from "./score-section"
 import type { PdfPalette, SurveyExportData } from "./types"
 
 const PALETTE_KEYS = [
@@ -147,5 +165,61 @@ describe("scoreBands", () => {
     expect(bands.total.tone).toBeNull()
     expect(bands.stand.points).toBe(25)
     expect(bands.context.bandName).toBeNull()
+  })
+})
+
+describe("standZones (phase 33, D-28)", () => {
+  it("cuts the stand axis at the package's cut-offs, 0 to the stand maximum", () => {
+    const zones = standZones()
+    expect(zones).toHaveLength(STAND_BAND_CUT_OFFS.length + 1)
+    expect(zones.map((zone) => zone.from)).toEqual([0, ...STAND_BAND_CUT_OFFS])
+    expect(zones.map((zone) => zone.to)).toEqual([...STAND_BAND_CUT_OFFS, IBP_MAX.stand])
+  })
+
+  it("names the zones and gives their tones", () => {
+    expect(standZones().map((zone) => zone.name)).toEqual([
+      "faible",
+      "assez faible",
+      "moyenne",
+      "assez forte",
+      "forte",
+    ])
+    expect(standZones().map((zone) => zone.tone)).toEqual(["low", "low", "mid", "high", "high"])
+  })
+
+  it("agrees with standBand inside every zone", () => {
+    for (const zone of standZones()) {
+      expect(fr.surveyDetail.bands.stand[standBand(zone.from)]).toBe(zone.name)
+      expect(bandTone(standBand(zone.to - 1))).toBe(zone.tone)
+    }
+  })
+})
+
+describe("contextLevels (phase 33, D-28)", () => {
+  it("cuts the context axis at the package's cut-offs, 0 to the context maximum", () => {
+    const levels = contextLevels()
+    expect(levels.map((level) => level.from)).toEqual([0, ...CONTEXT_BAND_CUT_OFFS])
+    expect(levels.map((level) => level.to)).toEqual([...CONTEXT_BAND_CUT_OFFS, IBP_MAX.context])
+  })
+
+  it("names the levels and gives their tones", () => {
+    expect(contextLevels().map((level) => level.name)).toEqual(["faible", "moyenne", "forte"])
+    expect(contextLevels().map((level) => level.tone)).toEqual(["low", "mid", "high"])
+    for (const level of contextLevels()) {
+      expect(fr.surveyDetail.bands.context[contextBand(level.from)]).toBe(level.name)
+    }
+  })
+})
+
+describe("roseRingScores (phase 33, D-27)", () => {
+  it("is the scores every factor allows, ascending", () => {
+    const expected = [0, 1, 2, 5].filter((score) =>
+      FACTOR_KEYS.every((key) => ALLOWED_SCORES_BY_FACTOR[key].includes(score as 0)),
+    )
+    expect(roseRingScores()).toEqual(expected)
+  })
+
+  it("is 0, 2, 5 today, so a package change is seen", () => {
+    expect(roseRingScores()).toEqual([0, 2, 5])
   })
 })

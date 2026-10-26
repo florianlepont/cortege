@@ -1,12 +1,15 @@
 import {
+  ALLOWED_SCORES_BY_FACTOR,
+  CONTEXT_BAND_CUT_OFFS,
   FACTOR_KEYS,
   IBP_MAX,
+  STAND_BAND_CUT_OFFS,
   bandTone,
   contextBand,
   standBand,
   totalBand,
 } from "@cortege/ibp-domain"
-import type { ScoreTone } from "@cortege/ibp-domain"
+import type { ContextBand, ScoreTone, StandBand } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import type {
@@ -21,7 +24,10 @@ import type { PdfPalette, SurveyExportData } from "./types"
 // and these helpers stay the one source of bands for the cover, the summary, the factor cards and
 // the factor chart. Pure: the bands and their tones come from the domain, the band names from the
 // catalogue the survey detail screen uses (`fr.surveyDetail.bands`); there is no threshold in this
-// file.
+// file. Phase 33 (D-28) adds the zones of the plane and the ring scores of the rose to the same
+// one source: the cut points are the package's own constants (`STAND_BAND_CUT_OFFS`,
+// `CONTEXT_BAND_CUT_OFFS`) and the ring scores are the scores every factor may take, so the charts
+// can never draw a cut the band functions do not apply.
 
 const bandNames = fr.surveyDetail.bands
 
@@ -109,4 +115,38 @@ export function scoreBands(scores: DisplayedScores | null): {
       return { name: bandNames.context[band], tone: bandTone(band) }
     }),
   }
+}
+
+/** One zone of a chart axis: its bounds, the band name and the band tone. */
+export type ChartZone = { from: number; to: number; name: string; tone: ScoreTone }
+
+function zonesOf<Band extends StandBand | ContextBand>(
+  cutOffs: readonly number[],
+  max: number,
+  bandAt: (score: number) => Band,
+  names: Readonly<Record<Band, string>>,
+): ChartZone[] {
+  const bounds = [0, ...cutOffs, max]
+  return bounds.slice(0, -1).map((from, index) => {
+    const band = bandAt(from)
+    return { from, to: bounds[index + 1], name: names[band], tone: bandTone(band) }
+  })
+}
+
+/** The five stand and management zones of the plane (/35), cut where `standBand` cuts. */
+export function standZones(): ChartZone[] {
+  return zonesOf(STAND_BAND_CUT_OFFS, IBP_MAX.stand, standBand, bandNames.stand)
+}
+
+/** The three context levels of the plane (/15), cut where `contextBand` cuts. */
+export function contextLevels(): ChartZone[] {
+  return zonesOf(CONTEXT_BAND_CUT_OFFS, IBP_MAX.context, contextBand, bandNames.context)
+}
+
+/** The scores every factor A to J may take, ascending: the rings of the rose (0, 2, 5 today). */
+export function roseRingScores(): number[] {
+  const [first, ...others] = FACTOR_KEYS.map((key) => ALLOWED_SCORES_BY_FACTOR[key])
+  return first
+    .filter((score) => others.every((scores) => scores.includes(score)))
+    .sort((a, b) => a - b)
 }

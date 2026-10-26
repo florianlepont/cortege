@@ -1,4 +1,12 @@
-import { IBP_MAX, bandTone, contextBand, standBand, totalBand } from "./bands"
+import {
+  CONTEXT_BAND_CUT_OFFS,
+  IBP_MAX,
+  STAND_BAND_CUT_OFFS,
+  bandTone,
+  contextBand,
+  standBand,
+  totalBand,
+} from "./bands"
 
 describe("IBP_MAX", () => {
   it("is 35 + 15 = 50 (GS-1)", () => {
@@ -60,5 +68,26 @@ describe("bandTone", () => {
     expect(bandTone("moyenne")).toBe("mid")
     expect(bandTone("assez_forte")).toBe("high")
     expect(bandTone("forte")).toBe("high")
+  })
+})
+
+describe("band cut-off constants (phase 33, D-28)", () => {
+  it("pins the CNPF chart ticks", () => {
+    expect(STAND_BAND_CUT_OFFS).toEqual([7, 14, 21, 28])
+    expect(CONTEXT_BAND_CUT_OFFS).toEqual([5, 10])
+  })
+
+  it("is the boundary of the band functions: a cut starts a new band, the point below does not", () => {
+    for (const cut of STAND_BAND_CUT_OFFS) {
+      expect(standBand(cut)).not.toBe(standBand(cut - 1))
+    }
+    for (const cut of CONTEXT_BAND_CUT_OFFS) {
+      expect(contextBand(cut)).not.toBe(contextBand(cut - 1))
+    }
+  })
+
+  it("stays inside the maxima", () => {
+    expect(Math.max(...STAND_BAND_CUT_OFFS)).toBeLessThan(IBP_MAX.stand)
+    expect(Math.max(...CONTEXT_BAND_CUT_OFFS)).toBeLessThan(IBP_MAX.context)
   })
 })

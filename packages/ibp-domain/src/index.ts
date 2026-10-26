@@ -75,7 +75,15 @@ export {
   scoreTypeCount,
 } from "./rules/scales"
 
-export { IBP_MAX, bandTone, contextBand, standBand, totalBand } from "./bands"
+export {
+  CONTEXT_BAND_CUT_OFFS,
+  IBP_MAX,
+  STAND_BAND_CUT_OFFS,
+  bandTone,
+  contextBand,
+  standBand,
+  totalBand,
+} from "./bands"
 export type { ContextBand, ScoreTone, StandBand, TotalBand } from "./bands"
 
 export { computeRetainedScores, computeTotals, evaluateIbp } from "./evaluate"
