@@ -374,7 +374,7 @@ describe("buildFactorChartSvg", () => {
       expect(svg).not.toContain("Gradient")
       expect(svg).not.toContain("url(")
       expect(svg).not.toContain("http")
-      expect(svg).not.toContain("—")
+      expect(svg).not.toContain("\u2014")
     }
   })
 
