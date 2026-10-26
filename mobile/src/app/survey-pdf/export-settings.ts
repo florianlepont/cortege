@@ -41,18 +41,18 @@ export function pdfLayoutFor(platform: "ios" | "android"): PdfLayout {
 }
 
 /**
- * Photos in the PDF (phase 33, D-17): cap 24 and 6 per page, JPEG 800 px at 0.65. Plan 33-14 measured
- * the lighter trial (640 px at 0.6) against it on the same 24 sources on 2026-10-24 (iOS simulator, Android
- * emulator, `pdfinfo` of the whole worst-case PDF): iOS 1460.6 KB at 800 / 0.65 against 1035.2 KB at
- * 640 / 0.6 (-29.1 %), Android 1161.2 KB against 947.9 KB (-18.4 %). The rule of the plan keeps the trial
- * only when both platforms gain at least 25 %, so the settings of 25.1-07 stay (they were 2.8 to 3.0 MB on
- * iOS and 1.7 to 1.8 MB on Android for 24 phone photos, 24 of 24 present, about 282 ppi). The lighter
- * encoding shows no visible blocking and is an owner option (see the open items of 33-14-MEASUREMENTS.md).
+ * Photos in the PDF (phase 33, D-17): cap 24 and 6 per page, JPEG 640 px at 0.6. Plan 33-14 measured
+ * this setting against the 25.1-07 one (800 px at 0.65) on the same 24 sources on 2026-10-24 (iOS
+ * simulator, Android emulator, `pdfinfo` of the whole worst-case PDF): iOS 1460.6 KB at 800 / 0.65
+ * against 1035.2 KB at 640 / 0.6 (-29.1 %), Android 1161.2 KB against 947.9 KB (-18.4 %); the photo
+ * data alone is 32 to 37 % smaller and shows no visible blocking at 120 and 240 dpi. The rule of the
+ * plan (keep the lighter setting only when both platforms gain 25 %) would have kept 800 / 0.65; the
+ * owner decided on 2026-10-26 that the lighter file wins and overrode that rule (plan 33-16).
  */
 export const PHOTO_EXPORT_SETTINGS: PhotoExportSettings = {
   cap: 24,
-  longEdgePx: 800,
-  jpegQuality: 0.65,
+  longEdgePx: 640,
+  jpegQuality: 0.6,
 }
 
 /**
