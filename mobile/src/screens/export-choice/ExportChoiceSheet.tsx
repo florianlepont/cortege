@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ScrollView, View } from "react-native"
+import { ScrollView, View, useWindowDimensions } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { ExportMode } from "../../app/survey-pdf-export"
@@ -45,7 +45,11 @@ export function ExportChoiceSheet({
 }: ExportChoiceSheetProps) {
   const theme = useBrandTheme()
   const insets = useSafeAreaInsets()
-  const styles = useMemo(() => createExportChoiceStyles(theme, insets), [theme, insets])
+  const { height: windowHeight } = useWindowDimensions()
+  const styles = useMemo(
+    () => createExportChoiceStyles(theme, insets, windowHeight),
+    [theme, insets, windowHeight],
+  )
 
   return (
     <ScrollView

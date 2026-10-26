@@ -19,10 +19,16 @@ type Insets = { top: number; bottom: number }
  * the sides and above the title row (D-20), 16 between the title row and the picker, 12 between the
  * two cards and above the draft sentence, 24 above the one button. Colours only through the theme.
  */
-export function createExportChoiceStyles(theme: BrandTheme, insets: Insets) {
+export function createExportChoiceStyles(theme: BrandTheme, insets: Insets, windowHeight: number) {
   return StyleSheet.create({
+    // D-22: the sheet is fitted to its content on iOS, so the scroll view must not stretch (a
+    // `flex: 1` child collapses in a sheet positioned with no bottom edge). The content gives the
+    // sheet its height; at a large text size it scrolls inside the tallest sheet instead of running
+    // past its bottom (the bound may exceed the sheet's real top by a few units: only bottom
+    // padding can hide).
     sheet: {
-      flex: 1,
+      flexGrow: 0,
+      maxHeight: windowHeight - insets.top,
       backgroundColor: theme.semanticColors.backgroundCanvas,
     },
     content: {

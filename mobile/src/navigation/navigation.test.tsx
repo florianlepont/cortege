@@ -898,7 +898,8 @@ describe("stack options and listeners", () => {
     const ios = exportChoiceScreenOptions(defaultTheme)
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
-    expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+    // D-22: fitted to its content, never the 0.65 detent (the finish sheet keeps its own).
+    expect(ios.sheetAllowedDetents).toBe("fitToContents")
   })
 
   test("the chooser Choisir le parcours is a modal on Android and a form sheet on iOS, with its own header", async () => {

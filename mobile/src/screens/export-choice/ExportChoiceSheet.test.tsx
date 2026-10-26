@@ -10,12 +10,14 @@ jest.mock("react-native", () => {
   return {
     View: mockComponent("View"),
     ScrollView: mockComponent("ScrollView"),
+    useWindowDimensions: () => ({ width: 393, height: 852, scale: 3, fontScale: 1 }),
     Platform: { OS: "ios", select: (o: Record<string, unknown>) => o.ios ?? o.default },
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {} },
   }
 })
+const mockInsets = { top: 0, right: 0, bottom: 0, left: 0 }
 jest.mock("react-native-safe-area-context", () => ({
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  useSafeAreaInsets: () => mockInsets,
 }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
 jest.mock("../../ui/AppPressable", () => ({ AppPressable: "AppPressable" }))
@@ -131,6 +133,25 @@ describe("ExportChoiceSheet", () => {
       "draft",
       "export-choice-confirm",
     ])
+  })
+
+  test("the scroll view is fitted to its content: no flex, flexGrow 0, bounded by the window", () => {
+    const { tree } = render()
+    const style = byType(tree, "ScrollView")[0].props.style as Record<string, unknown>
+    expect(style).not.toHaveProperty("flex")
+    expect(style.flexGrow).toBe(0)
+    expect(style.maxHeight).toBe(852)
+  })
+
+  test("the bound leaves the top inset out", () => {
+    mockInsets.top = 59
+    try {
+      const { tree } = render()
+      const style = byType(tree, "ScrollView")[0].props.style as Record<string, unknown>
+      expect(style.maxHeight).toBe(793)
+    } finally {
+      mockInsets.top = 0
+    }
   })
 
   test("the content has 24 of room on the sides and above the title", () => {
