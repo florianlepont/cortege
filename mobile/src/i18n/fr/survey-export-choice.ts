@@ -4,7 +4,9 @@ import { commonFr } from "./common"
 // "Partager" button. The member picks the complete PDF or the one-page summary. "PDF" is an allowed
 // abbreviation. The card captions carry the page count (UI-SPEC U-03); the stand-alone draft
 // sentence explains the disabled summary card (U-04). The page count of the complete PDF is only
-// approximate: the estimate comes from the block heights, not from a render.
+// approximate: the estimate comes from the block heights, not from a render. The sheet has no
+// "Annuler" button (D-21): it closes by a swipe down or a tap outside on iOS, by the hardware back
+// on Android, and by the close cross on both platforms (UI-SPEC U-17), spoken `closeA11y`.
 export const surveyExportChoiceFr = {
   title: "Quel PDF voulez-vous ?",
   groupA11y: "Type de PDF",
@@ -27,5 +29,5 @@ export const surveyExportChoiceFr = {
     complete: ({ name }: { name: string }) => `Exporter le PDF complet du relevé ${name}.`,
     summary: ({ name }: { name: string }) => `Exporter le PDF résumé du relevé ${name}.`,
   },
-  cancel: commonFr.actions.cancel,
+  closeA11y: commonFr.actions.close,
 } as const

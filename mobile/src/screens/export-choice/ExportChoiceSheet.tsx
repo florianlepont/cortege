@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { ExportMode } from "../../app/survey-pdf-export"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { createExportChoiceStyles } from "./export-choice.styles"
@@ -19,15 +20,19 @@ type ExportChoiceSheetProps = {
   completePages: number
   onSelect: (next: ExportMode) => void
   onConfirm: () => void
-  onCancel: () => void
+  onClose: () => void
 }
 
 /**
  * Phase 33, D-05, D-09 and D-14: the export choice. The content of the `surveyExportChoice` route,
  * presented by the stack as a native form sheet on iOS and as a modal on Android. One scroll view
- * holds everything, the buttons included, as in the finish sheet. The selection comes from
+ * holds everything, the button included, as in the finish sheet. The selection comes from
  * `useExportChoice`; this component only draws it. It never exports and never opens the share
  * sheet: "Exporter le PDF" hands the chosen mode to the caller.
+ *
+ * D-20: 24 of room on the sides and above the title. D-21: no secondary "Annuler" button; a small
+ * close cross beside the title closes the sheet on both platforms (the Android modal has no swipe;
+ * on iOS it serves VoiceOver, U-17). Closing never exports.
  */
 export function ExportChoiceSheet({
   siteName,
@@ -36,7 +41,7 @@ export function ExportChoiceSheet({
   completePages,
   onSelect,
   onConfirm,
-  onCancel,
+  onClose,
 }: ExportChoiceSheetProps) {
   const theme = useBrandTheme()
   const insets = useSafeAreaInsets()
@@ -48,9 +53,20 @@ export function ExportChoiceSheet({
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="never"
     >
-      <Text style={styles.title} accessibilityRole="header">
-        {t.title}
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.title} accessibilityRole="header">
+          {t.title}
+        </Text>
+        <AppPressable
+          style={styles.close}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t.closeA11y}
+          testID="export-choice-close"
+        >
+          <Ionicons name="close-outline" size={20} color={theme.semanticColors.textStrong} />
+        </AppPressable>
+      </View>
       <View style={styles.picker}>
         <ExportModePicker
           mode={mode}
@@ -86,13 +102,6 @@ export function ExportChoiceSheet({
           }
           onPress={onConfirm}
           testID="export-choice-confirm"
-        />
-        <GlassButton
-          variant="secondary"
-          size="md"
-          label={t.cancel}
-          onPress={onCancel}
-          testID="export-choice-cancel"
         />
       </View>
     </ScrollView>

@@ -71,7 +71,7 @@ export const ExportChoiceRoute = memo(function ExportChoiceRoute({
       completePages={completePages}
       onSelect={choice.select}
       onConfirm={choice.confirm}
-      onCancel={handleClose}
+      onClose={handleClose}
     />
   )
 })

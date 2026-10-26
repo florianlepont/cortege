@@ -95,7 +95,7 @@ const sheet = () =>
     completePages: number
     onSelect: (mode: string) => void
     onConfirm: () => void
-    onCancel: () => void
+    onClose: () => void
   }
 
 describe("ExportChoiceRoute", () => {
@@ -152,12 +152,12 @@ describe("ExportChoiceRoute", () => {
     expect(navigation.goBack).not.toHaveBeenCalled()
   })
 
-  test("cancel goes back only when the sheet is focused", () => {
+  test("the close cross goes back only when the sheet is focused", () => {
     mount()
-    act(() => sheet().onCancel())
+    act(() => sheet().onClose())
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
     navigation.isFocused.mockReturnValue(false)
-    act(() => sheet().onCancel())
+    act(() => sheet().onClose())
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
     expect(navigation.popTo).not.toHaveBeenCalled()
   })

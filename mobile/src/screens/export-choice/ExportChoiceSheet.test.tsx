@@ -18,6 +18,7 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
+jest.mock("../../ui/AppPressable", () => ({ AppPressable: "AppPressable" }))
 jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
 jest.mock("../../ui/RadioCard", () => ({ RadioCard: "RadioCard" }))
 
@@ -49,7 +50,7 @@ function render(overrides: Partial<Props> = {}) {
     completePages: 6,
     onSelect: jest.fn(),
     onConfirm: jest.fn(),
-    onCancel: jest.fn(),
+    onClose: jest.fn(),
     ...overrides,
   }
   let tree!: renderer.ReactTestRenderer
@@ -67,7 +68,7 @@ const texts = (tree: renderer.ReactTestRenderer) =>
   byType(tree, "Text").map((node) => node.props.children)
 
 describe("ExportChoiceSheet", () => {
-  test("a submitted survey: title, group, two cards, two buttons, no draft sentence", () => {
+  test("a submitted survey: title, group, two cards, one button, no draft sentence", () => {
     const { tree } = render()
     const header = byType(tree, "Text").find((node) => node.props.accessibilityRole === "header")
     expect(header?.props.children).toBe("Quel PDF voulez-vous ?")
@@ -79,11 +80,66 @@ describe("ExportChoiceSheet", () => {
       "lock-closed-outline",
     )
     const confirm = byTestId(tree, "export-choice-confirm")
-    const cancel = byTestId(tree, "export-choice-cancel")
     expect(confirm.props.label).toBe("Exporter le PDF")
     expect(confirm.props.variant).toBe("primary")
-    expect(cancel.props.label).toBe("Annuler")
-    expect(cancel.props.variant).toBe("secondary")
+    expect(byType(tree, "GlassButton")).toHaveLength(1)
+    expect(texts(tree)).not.toContain("Annuler")
+  })
+
+  test("a close cross: a button spoken Fermer with a close-outline glyph of 20", () => {
+    const { tree } = render()
+    const close = byTestId(tree, "export-choice-close")
+    expect(close.props.accessibilityRole).toBe("button")
+    expect(close.props.accessibilityLabel).toBe("Fermer")
+    const glyph = close.findAll((node) => (node.type as unknown) === Ionicons)[0]
+    expect(glyph.props.name).toBe("close-outline")
+    expect(glyph.props.size).toBe(20)
+  })
+
+  test("the title and the cross share one row, the title first", () => {
+    const { tree } = render()
+    const close = byTestId(tree, "export-choice-close")
+    const row = close.parent
+    expect(row).toBeDefined()
+    const kids = row!.children.map((child) =>
+      typeof child === "string" ? child : (child as renderer.ReactTestInstance).props,
+    )
+    expect(kids).toHaveLength(2)
+    expect((kids[0] as { accessibilityRole?: string }).accessibilityRole).toBe("header")
+    expect((kids[1] as { testID?: string }).testID).toBe("export-choice-close")
+  })
+
+  test("tree order: title, cross, two cards, draft sentence, confirm", () => {
+    const { tree } = render({ isDraft: true })
+    const order = tree.root
+      .findAll(
+        (node) =>
+          typeof node.type === "string" &&
+          (node.props.accessibilityRole === "header" ||
+            node.props.testID === "export-choice-close" ||
+            node.props.testID === "export-option-complete" ||
+            node.props.testID === "export-option-summary" ||
+            node.props.children === fr.surveyExportChoice.summaryDraft ||
+            node.props.testID === "export-choice-confirm"),
+      )
+      .map((node) => node.props.testID ?? node.props.accessibilityRole ?? "draft")
+    expect(order).toEqual([
+      "header",
+      "export-choice-close",
+      "export-option-complete",
+      "export-option-summary",
+      "draft",
+      "export-choice-confirm",
+    ])
+  })
+
+  test("the content has 24 of room on the sides and above the title", () => {
+    const { tree } = render()
+    const scroll = byType(tree, "ScrollView")[0]
+    expect(scroll.props.contentContainerStyle).toMatchObject({
+      paddingHorizontal: 24,
+      paddingTop: 24,
+    })
   })
 
   test("the complete card is preselected and carries the page count", () => {
@@ -163,11 +219,13 @@ describe("ExportChoiceSheet", () => {
     ).toBe("Exporter le PDF résumé du relevé Bois.")
   })
 
-  test("the buttons call their handlers", () => {
+  test("the confirm button and the cross call their handlers", () => {
     const { tree, props } = render()
     byTestId(tree, "export-choice-confirm").props.onPress()
-    byTestId(tree, "export-choice-cancel").props.onPress()
     expect(props.onConfirm).toHaveBeenCalledTimes(1)
-    expect(props.onCancel).toHaveBeenCalledTimes(1)
+    expect(props.onClose).not.toHaveBeenCalled()
+    byTestId(tree, "export-choice-close").props.onPress()
+    expect(props.onClose).toHaveBeenCalledTimes(1)
+    expect(props.onConfirm).toHaveBeenCalledTimes(1)
   })
 })

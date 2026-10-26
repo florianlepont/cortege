@@ -40,7 +40,9 @@ describe("fr.surveyExportChoice", () => {
     expect(t.confirmA11y.summary({ name: "Bois" })).toBe("Exporter le PDF résumé du relevé Bois.")
   })
 
-  test("words defined once are shared", () => {
-    expect(t.cancel).toBe(fr.common.actions.cancel)
+  test("the close cross is spoken Fermer, shared with the common word, and there is no cancel", () => {
+    expect(t.closeA11y).toBe(fr.common.actions.close)
+    expect(t.closeA11y).toBe("Fermer")
+    expect(Object.keys(t)).not.toContain("cancel")
   })
 })
