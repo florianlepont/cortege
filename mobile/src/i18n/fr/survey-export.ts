@@ -12,6 +12,11 @@ import { surveyDetailFr } from "./survey-detail"
 const GROUP_STAND = "Peuplement et gestion"
 const GROUP_CONTEXT = "Contexte"
 
+// Phase 33 (D-27, U-24): the plane title heads the plane of the complete PDF and the score row of
+// the summary; "Score par facteur" titles the rose (and was the bars' heading).
+const PLANE_TITLE = "IBP contexte face à l'IBP peuplement et gestion"
+const CHART_TITLE = "Score par facteur"
+
 const SCALE_B = "1 strate = 0 ; 2 strates = 1 ; 3 ou 4 strates = 2 ; 5 strates = 5."
 const SCALE_F =
   "Moins de 2 arbres/ha = 0 ; de 2 à moins de 3 = 1 ; de 3 à moins de 8 = 2 ; 8 arbres/ha et plus = 5 (au plus 2 arbres/ha par groupe)."
@@ -75,8 +80,55 @@ export const surveyExportFr = {
     band: ({ band }: { band: string }) => `Niveau : ${band}`,
     provisional: ({ count }: { count: number }) =>
       `Score provisoire : ${count} ${count === 1 ? "facteur non renseigné" : "facteurs non renseignés"}`,
-    chartHeading: "Score par facteur",
-    chartA11y: "Diagramme des points des dix facteurs, de A à J",
+    chartHeading: CHART_TITLE,
+  },
+  // Phase 33 (D-27, D-28): the plane and the rose after the CNPF survey sheet. The numbers of the
+  // spoken labels arrive as strings formatted by the builder from the package's values.
+  charts: {
+    heading: "Lecture du score IBP",
+    planeTitle: PLANE_TITLE,
+    source:
+      "Graphiques d'après la fiche de relevé IBP du Centre national de la propriété forestière et de l'unité de recherche Dynafor.",
+    // A French list: "a", "a et b", "a, b et c".
+    joinList: ({ items }: { items: readonly string[] }) =>
+      items.length <= 1
+        ? (items[0] ?? "")
+        : `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`,
+    planeA11y: ({
+      stand,
+      standMax,
+      standBand,
+      context,
+      contextMax,
+      contextBand,
+      standCuts,
+      contextCuts,
+    }: {
+      stand: string
+      standMax: string
+      standBand: string
+      context: string
+      contextMax: string
+      contextBand: string
+      standCuts: string
+      contextCuts: string
+    }) =>
+      `${PLANE_TITLE}. Le relevé se place à ${stand} sur ${standMax} en peuplement et gestion, niveau ${standBand}, et à ${context} sur ${contextMax} en contexte, niveau ${contextBand}. Bandes du peuplement et gestion coupées à ${standCuts} sur ${standMax} ; niveaux du contexte coupés à ${contextCuts} sur ${contextMax}.`,
+    planeA11yEmpty: ({
+      standCuts,
+      standMax,
+      contextCuts,
+      contextMax,
+    }: {
+      standCuts: string
+      standMax: string
+      contextCuts: string
+      contextMax: string
+    }) =>
+      `${PLANE_TITLE}. Score non renseigné : le relevé n'est pas placé. Bandes du peuplement et gestion coupées à ${standCuts} sur ${standMax} ; niveaux du contexte coupés à ${contextCuts} sur ${contextMax}.`,
+    roseA11y: ({ rings, items }: { rings: string; items: string }) =>
+      `${CHART_TITLE}, anneaux à ${rings} points : ${items}.`,
+    roseItem: ({ title, value }: { title: string; value: string }) => `${title} ${value}`,
   },
   factors: {
     standGroup: "Facteurs liés au peuplement et à la gestion forestière",

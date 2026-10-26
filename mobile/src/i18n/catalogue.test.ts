@@ -43,6 +43,7 @@ const LIST_ARGUMENTS: Record<string, unknown> = {
     { letter: "B", points: null },
   ],
   "conditions.weather.parts.line": ["Nuageux", "14 °C"],
+  "surveyExport.charts.joinList": { items: ["a", "b", "c"] },
   "parcelHistory.page.trend.a11y": [
     { year: 2023, total: 21 },
     { year: null, total: 27 },

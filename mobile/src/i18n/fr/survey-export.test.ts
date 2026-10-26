@@ -116,6 +116,49 @@ describe("fr.surveyExport", () => {
     )
   })
 
+  it("words the charts (phase 33, D-27)", () => {
+    expect(t.charts.heading).toBe("Lecture du score IBP")
+    expect(t.charts.planeTitle).toBe("IBP contexte face à l'IBP peuplement et gestion")
+    expect(t.charts.source).toBe(
+      "Graphiques d'après la fiche de relevé IBP du Centre national de la propriété forestière et de l'unité de recherche Dynafor.",
+    )
+    expect(t.scores.chartHeading).toBe("Score par facteur")
+    expect(t.charts.joinList({ items: [] })).toBe("")
+    expect(t.charts.joinList({ items: ["a"] })).toBe("a")
+    expect(t.charts.joinList({ items: ["a", "b"] })).toBe("a et b")
+    expect(t.charts.joinList({ items: ["a", "b", "c"] })).toBe("a, b et c")
+    expect(
+      t.charts.planeA11y({
+        stand: "20",
+        standMax: "35",
+        standBand: "moyenne",
+        context: "12",
+        contextMax: "15",
+        contextBand: "forte",
+        standCuts: "7, 14, 21 et 28",
+        contextCuts: "5 et 10",
+      }),
+    ).toBe(
+      "IBP contexte face à l'IBP peuplement et gestion. Le relevé se place à 20 sur 35 en peuplement et gestion, niveau moyenne, et à 12 sur 15 en contexte, niveau forte. Bandes du peuplement et gestion coupées à 7, 14, 21 et 28 sur 35 ; niveaux du contexte coupés à 5 et 10 sur 15.",
+    )
+    expect(
+      t.charts.planeA11yEmpty({
+        standCuts: "7, 14, 21 et 28",
+        standMax: "35",
+        contextCuts: "5 et 10",
+        contextMax: "15",
+      }),
+    ).toBe(
+      "IBP contexte face à l'IBP peuplement et gestion. Score non renseigné : le relevé n'est pas placé. Bandes du peuplement et gestion coupées à 7, 14, 21 et 28 sur 35 ; niveaux du contexte coupés à 5 et 10 sur 15.",
+    )
+    expect(t.charts.roseA11y({ rings: "0, 2 et 5", items: "A 3 et B 2" })).toBe(
+      "Score par facteur, anneaux à 0, 2 et 5 points : A 3 et B 2.",
+    )
+    expect(t.charts.roseItem({ title: "Essences autochtones", value: "3" })).toBe(
+      "Essences autochtones 3",
+    )
+  })
+
   it("names the summary file with its own ASCII suffix", () => {
     expect(t.file.summarySuffix).toBe("resume")
   })

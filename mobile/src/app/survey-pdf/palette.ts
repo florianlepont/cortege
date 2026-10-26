@@ -19,6 +19,13 @@ const INK_FAINT_TINT = 0.45
 const CHART_GRID_TINT = 0.75
 const MAP_CANVAS_TINT = 0.7
 
+// Phase 33, D-27: the CNPF order of the plane (red, orange, yellow, light green, dark green) kept
+// as strong and soft tints of the three band tones, so that the survey marker keeps 4:1 on every
+// band and no text sits on a band tone (UI-SPEC Color amendment (charts)).
+const ZONE_STRONG_TINT = 0.4
+const ZONE_SOFT_TINT = 0.65
+const ZONE_MID_TINT = 0.7
+
 /** The only colours the PDF builders use, built once from the light theme and the token files. */
 export function buildPdfPalette(): PdfPalette {
   const theme = buildTheme("light")
@@ -61,5 +68,11 @@ export function buildPdfPalette(): PdfPalette {
       brandColors.forest,
     ),
     contourMoss: visual.forest.contourMoss,
+    zoneLow: mixWithWhite(visual.score.low, ZONE_STRONG_TINT),
+    zoneLowSoft: mixWithWhite(visual.score.low, ZONE_SOFT_TINT),
+    zoneMid: mixWithWhite(visual.score.mid, ZONE_MID_TINT),
+    zoneHighSoft: mixWithWhite(visual.score.high, ZONE_SOFT_TINT),
+    zoneHigh: mixWithWhite(visual.score.high, ZONE_STRONG_TINT),
+    contextInk: onSurface.warning,
   }
 }

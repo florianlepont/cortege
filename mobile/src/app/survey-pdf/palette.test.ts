@@ -3,9 +3,9 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "dark" }))
 
 import { brandColors, brandMapTokens } from "../brand-tokens"
-import { compositeOver, contrastRatio } from "../contrast"
+import { compositeOver, contrastRatio, relativeLuminance } from "../contrast"
 import { buildTheme } from "../theme"
-import { contourDrift, forestStops, withAlpha } from "../visual-tokens"
+import { contourDrift, forestStops, mixWithWhite, withAlpha } from "../visual-tokens"
 import { buildPdfPalette } from "./palette"
 import type { PdfPalette } from "./types"
 
@@ -40,6 +40,12 @@ const KEYS: Array<keyof PdfPalette> = [
   "onForestBody",
   "contourSage",
   "contourMoss",
+  "zoneLow",
+  "zoneLowSoft",
+  "zoneMid",
+  "zoneHighSoft",
+  "zoneHigh",
+  "contextInk",
 ]
 
 const light = buildTheme("light")
@@ -155,5 +161,54 @@ describe("buildPdfPalette", () => {
       expect(contrastRatio(band, palette.paper)).toBeGreaterThanOrEqual(3)
       expect(contrastRatio(band, palette.panel)).toBeGreaterThanOrEqual(3)
     }
+  })
+
+  test("has 36 keys: the 30 of today plus the six of the charts (phase 33, D-27)", () => {
+    expect(Object.keys(palette)).toHaveLength(36)
+  })
+
+  test("the plane tints are strong and soft mixes of the band tones, contextInk the warning ink", () => {
+    expect(palette.zoneLow).toBe(mixWithWhite(light.visual.score.low, 0.4))
+    expect(palette.zoneLowSoft).toBe(mixWithWhite(light.visual.score.low, 0.65))
+    expect(palette.zoneMid).toBe(mixWithWhite(light.visual.score.mid, 0.7))
+    expect(palette.zoneHighSoft).toBe(mixWithWhite(light.visual.score.high, 0.65))
+    expect(palette.zoneHigh).toBe(mixWithWhite(light.visual.score.high, 0.4))
+    expect(palette.contextInk).toBe(light.onSurface.warning)
+  })
+
+  test("the strong tint of a tone is darker than its soft tint, and the five zones are distinct", () => {
+    expect(relativeLuminance(palette.zoneLow)).toBeLessThan(relativeLuminance(palette.zoneLowSoft))
+    expect(relativeLuminance(palette.zoneHigh)).toBeLessThan(
+      relativeLuminance(palette.zoneHighSoft),
+    )
+    const zones = [
+      palette.zoneLow,
+      palette.zoneLowSoft,
+      palette.zoneMid,
+      palette.zoneHighSoft,
+      palette.zoneHigh,
+    ]
+    expect(new Set(zones).size).toBe(5)
+  })
+
+  test("the marker keeps 4:1 and the ink 6:1 on every zone (4.07 to 6.55, 6.02 to 9.68)", () => {
+    const zones = [
+      palette.zoneLow,
+      palette.zoneLowSoft,
+      palette.zoneMid,
+      palette.zoneHighSoft,
+      palette.zoneHigh,
+    ]
+    for (const zone of zones) {
+      expect(contrastRatio(palette.accent, zone)).toBeGreaterThanOrEqual(4)
+      expect(contrastRatio(palette.ink, zone)).toBeGreaterThanOrEqual(6)
+    }
+  })
+
+  test("the rose names are readable on paper and panel (accent 9.27 and 8.56, contextInk 7.47 and 6.90)", () => {
+    expect(contrastRatio(palette.accent, palette.paper)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.accent, palette.panel)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.contextInk, palette.paper)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.contextInk, palette.panel)).toBeGreaterThanOrEqual(4.5)
   })
 })

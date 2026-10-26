@@ -105,6 +105,20 @@ export type PdfPalette = {
   contourSage: string
   /** The one moss ring of the contour art. */
   contourMoss: string
+  // Phase 33 (D-27, UI-SPEC Color amendment (charts)): the plane's five stand bands and the rose's
+  // zones are tints of the three band tones; the rose names the context factors in brown.
+  /** Plane: the first stand band ("faible"), the strong tint of the low tone. */
+  zoneLow: string
+  /** Plane: "assez faible"; rose: the zone up to the middle ring. Soft tint of the low tone. */
+  zoneLowSoft: string
+  /** Plane: "moyenne"; the tint of a mid-tone ring zone. */
+  zoneMid: string
+  /** Plane: "assez forte"; rose: the zone up to the outer ring. Soft tint of the high tone. */
+  zoneHighSoft: string
+  /** Plane: the last stand band ("forte"), the strong tint of the high tone. */
+  zoneHigh: string
+  /** The names of the context factors H, I, J around the rose (brown ink). */
+  contextInk: string
 }
 
 /** A packable piece of a page; height is in A4 design units (595 x 842 at 72 dpi). */
