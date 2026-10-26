@@ -194,7 +194,7 @@ describe("buildFactorChartBlock", () => {
   it("is the registry's factor-chart block, 228 units high", () => {
     expect(block.id).toBe("factor-chart")
     expect(block.height).toBe(228)
-    expect(block.html).not.toContain("—")
+    expect(block.html).not.toContain(String.fromCharCode(0x2014))
   })
 
   it("holds the heading, the plane then the rose in one row, then the source line", () => {
