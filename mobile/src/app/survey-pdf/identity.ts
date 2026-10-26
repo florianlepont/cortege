@@ -7,23 +7,34 @@ import {
 
 import { fr } from "../../i18n"
 import { escapeHtml, formatCoordinate, formatDateFr } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportMethodContext, PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
-// The identity and method blocks that open the sheet (phase 25.1, D-03, D-04): what the CNPF sheet
-// header carries and the app knows. Pure: values come from `SurveyExportData` and the catalogue,
+// The identity block that opens the sheet (phase 25.1, D-03, D-04; phase 33, D-01, UI-SPEC B.6): what
+// the CNPF sheet header carries and the app knows, with the method rows folded in as a second part
+// of the same card. Pure: values come from `SurveyExportData` and the catalogue,
 // every text goes through `escapeHtml`, and an unknown value reads "Non renseigné", never a dash.
+// Phase 33, 2026-10-26: the parcels row prints every id and counts its lines by ids (D-23); the
+// observation year row prints only when it differs from the year of the date (D-25).
 
 const t = fr.surveyExport
 
-type Row = { caption: string; valueHtml: string; chars: number }
+// `lines` is set when the line count is known without counting characters (the parcels row).
+type Row = { caption: string; valueHtml: string; chars: number; lines?: number }
 
 // Height estimate, in design units of the 595 x 842 page (plan 25.1-07). The caption column is
 // fixed, the value column wraps; slightly generous on purpose (a block too short spills over its
 // page, one too tall only costs white space).
 const CARD_PADDING = 20 // 10 top and 10 bottom
+const CARD_BORDER = 2 // 1 top and 1 bottom: measured in Chrome 2026-10-26, the card prints 1.5 to 1.75 taller than the rows alone
 const CARD_HEADING = 24
 const CARD_MARGIN = 10
+// UI-SPEC B.6: the method rows sit in the same card under a 1 unit rule and an 11 / 24 sub-heading.
+// The padding, margin and heading of the old method card (20 + 10 + 24 = 54) are saved, minus these
+// two (1 + 24 = 25): the merged card is 29 units shorter than the two cards it replaces.
+const RULE_HEIGHT = 1
+const SUBHEADING_HEIGHT = 24
 const ROW_PADDING = 6 // 3 top and 3 bottom
 const ROW_LINE_HEIGHT = 13
 // 515 content - 20 padding - 150 caption column leaves 345 px at 9 px Jost, about 3.7 pt per
@@ -31,6 +42,12 @@ const ROW_LINE_HEIGHT = 13
 // fills 292 pt of it). 62 made every v3.2 cas row and the 64 character site name count as two
 // lines, which pushed the factor chart off page 1 of an ordinary survey.
 const VALUE_CHARS_PER_LINE = 80
+// D-23: the parcels row counts lines by ids, not by characters. Measured by the planner in Chrome on
+// 2026-10-26 (harness of 33-RENDER-HARNESS.md, value column of the card): ids such as
+// 77186000AB0001 fit 4 per line, ids with wide section letters such as 2A004000WM0001 fit 3; 30 ids
+// printed 8 and 10 lines, where the former 80-character rule estimated 6, under the print. 3 is the
+// narrowest count, so the estimate never falls below the printed height.
+const PARCEL_IDS_PER_LINE = 3
 
 export type Insee = { commune: string; department: string }
 
@@ -45,7 +62,12 @@ export function inseeFromParcelId(id: string): Insee | null {
   const commune = match[1]
   return {
     commune,
-    department: commune.startsWith("97") ? commune.slice(0, 3) : commune.slice(0, 2),
+    // Overseas departments 971 to 976 and the 98x collectivities have three characters (the regex
+    // keeps Corsica's 2A and 2B at two).
+    department:
+      commune.startsWith("97") || commune.startsWith("98")
+        ? commune.slice(0, 3)
+        : commune.slice(0, 2),
   }
 }
 
@@ -66,39 +88,79 @@ function rowHtml(row: Row): string {
 }
 
 function rowHeight(row: Row): number {
-  const lines = Math.max(1, Math.ceil(row.chars / VALUE_CHARS_PER_LINE))
+  const lines = row.lines ?? Math.max(1, Math.ceil(row.chars / VALUE_CHARS_PER_LINE))
   return ROW_PADDING + lines * ROW_LINE_HEIGHT
 }
 
-function cardBlock(id: string, heading: string, rows: Row[]): PdfBlock {
+function tableHtml(rows: Row[]): string {
+  return `<table class="identity-table">${rows.map(rowHtml).join("")}</table>`
+}
+
+function rowsHeight(rows: Row[]): number {
+  return rows.reduce((sum, row) => sum + rowHeight(row), 0)
+}
+
+function identityBlock(data: SurveyExportData): PdfBlock {
+  const identity = identityRows(data)
+  const method = methodRows(data.method)
   const html = `<section class="identity-card">
-<h2 class="identity-heading">${escapeHtml(heading)}</h2>
-<table class="identity-table">${rows.map(rowHtml).join("")}</table>
+<h2 class="identity-heading">${escapeHtml(t.identity.heading)}</h2>
+${tableHtml(identity)}
+<div class="identity-rule"></div>
+<h3 class="identity-subheading">${escapeHtml(t.method.heading)}</h3>
+${tableHtml(method)}
 </section>`
   const height =
-    CARD_PADDING + CARD_HEADING + rows.reduce((sum, row) => sum + rowHeight(row), 0) + CARD_MARGIN
-  return { id, html, height }
+    CARD_PADDING +
+    CARD_BORDER +
+    CARD_HEADING +
+    rowsHeight(identity) +
+    RULE_HEIGHT +
+    SUBHEADING_HEIGHT +
+    rowsHeight(method) +
+    CARD_MARGIN
+  return { id: "identity", html, height }
+}
+
+// Each id is escaped, then wrapped so that a line break only falls between two ids (B.6). Every id
+// is printed, never shortened (D-23); the height estimate counts lines by ids.
+function parcelsRow(parcelIds: string[]): Row {
+  if (parcelIds.length === 0) return textRow(t.identity.parcels, t.identity.noParcel)
+  return {
+    caption: t.identity.parcels,
+    valueHtml: parcelIds
+      .map((id) => `<span class="identity-nowrap">${escapeHtml(id)}</span>`)
+      .join(", "),
+    chars: parcelIds.join(", ").length,
+    lines: Math.max(1, Math.ceil(parcelIds.length / PARCEL_IDS_PER_LINE)),
+  }
+}
+
+// The year of the survey date as `formatDateFr` prints it (same parse, local time), or null when
+// the date cannot be read.
+function printedDateYear(dateIso: string): number | null {
+  const date = new Date(dateIso)
+  return Number.isNaN(date.getTime()) ? null : date.getFullYear()
 }
 
 function identityRows(data: SurveyExportData): Row[] {
   const unknown = t.identity.unknown
-  const rows: Row[] = [
-    textRow(t.identity.site, data.siteName),
-    textRow(
-      t.identity.parcels,
-      data.parcelIds.length > 0 ? data.parcelIds.join(", ") : t.identity.noParcel,
-    ),
-  ]
+  const rows: Row[] = [textRow(t.identity.site, data.siteName), parcelsRow(data.parcelIds)]
   const insee = data.parcelIds.length > 0 ? inseeFromParcelId(data.parcelIds[0]) : null
   if (insee) {
-    rows.push(textRow(t.identity.commune, insee.commune))
-    rows.push(textRow(t.identity.department, insee.department))
+    rows.push(
+      textRow(
+        t.identity.commune,
+        t.identity.communeValue({ code: insee.commune, department: insee.department }),
+      ),
+    )
+  }
+  // D-25: the observation year adds something only when it differs from the year of the printed
+  // date (or the date cannot be read); a null year prints no row.
+  if (data.observationYear !== null && data.observationYear !== printedDateYear(data.dateIso)) {
+    rows.push(textRow(t.identity.observationYear, String(data.observationYear)))
   }
   rows.push(
-    textRow(
-      t.identity.observationYear,
-      data.observationYear === null ? unknown : String(data.observationYear),
-    ),
     textRow(
       t.identity.versionNumber,
       data.versionNumber === null ? unknown : String(data.versionNumber),
@@ -163,20 +225,20 @@ function methodRows(method: ExportMethodContext): Row[] {
   return rows
 }
 
-/** The identity block, then the method context block (cas for v3.2, region and stage for v3.0). */
+/** The merged identity block: identity rows, then the method rows (cas for v3.2, region and stage for v3.0). */
 export function buildIdentityBlocks(data: SurveyExportData, _palette: PdfPalette): PdfBlock[] {
-  return [
-    cardBlock("identity", t.identity.heading, identityRows(data)),
-    cardBlock("identity-method", t.method.heading, methodRows(data.method)),
-  ]
+  return [identityBlock(data)]
 }
 
 /** CSS of the identity blocks; every class is prefixed `identity-`, every colour is a palette value. */
 export function identityCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
-.identity-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
-.identity-heading { margin: 0; height: ${CARD_HEADING}px; font-family: ${font.heading}; font-size: 11px; line-height: ${CARD_HEADING}px; color: ${palette.ink}; }
+.identity-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; }
+${sectionTitleCss(".identity-heading", palette)}
+.identity-subheading { margin: 0; height: ${SUBHEADING_HEIGHT}px; font-family: ${font.heading}; font-size: 11px; line-height: ${SUBHEADING_HEIGHT}px; color: ${palette.ink}; }
+.identity-rule { height: 0; border-top: ${RULE_HEIGHT}px solid ${palette.line}; }
+.identity-nowrap { white-space: nowrap; }
 .identity-table { width: 100%; border-collapse: collapse; }
 .identity-row { vertical-align: top; }
 .identity-caption { width: 150px; padding: 3px 8px 3px 0; text-align: left; font-family: ${font.label}; font-size: 8.5px; line-height: ${ROW_LINE_HEIGHT}px; font-weight: normal; color: ${palette.inkMuted}; }

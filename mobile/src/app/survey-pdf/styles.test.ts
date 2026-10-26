@@ -2,16 +2,23 @@ import { fr } from "../../i18n"
 import { EXPORT_FONT_FILES } from "./assets"
 import { PDF_LAYOUT_SCALE, PDF_PAGE, PDF_PAGE_BLOCK_HEIGHT, pdfLayoutFor } from "./export-settings"
 import {
+  COVER_BANNER_TOP,
+  COVER_PANEL_HEIGHT,
+  COVER_WATERMARK_TOP,
   DRAFT_BANNER_HEIGHT,
   PAGE_FOOTER_HEIGHT,
   PAGE_HEADER_HEIGHT,
   PAGE_MARGIN_X,
   PDF_CLASS,
   PDF_CSP,
+  PDF_LOGO_DATA_URI,
+  SUMMARY_BODY_HEIGHT,
+  SUMMARY_BODY_TOP,
   buildBaseCss,
   cspMetaTag,
   fontFaceCss,
   fontWarmupHtml,
+  sectionTitleCss,
 } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette } from "./types"
@@ -188,6 +195,99 @@ describe("buildBaseCss", () => {
 
   test("is the same for the same inputs", () => {
     expect(buildBaseCss(palette, pdfLayoutFor("ios"))).toBe(ios)
+  })
+})
+
+describe("page kind geometry", () => {
+  const ios = buildBaseCss(palette, pdfLayoutFor("ios"))
+
+  test("pins the measures of the cover and the summary (UI-SPEC B.1, B.4, B.10)", () => {
+    expect(COVER_PANEL_HEIGHT).toBe(356)
+    expect(COVER_BANNER_TOP).toBe(368)
+    expect(COVER_WATERMARK_TOP).toBe(543)
+    expect(SUMMARY_BODY_TOP).toBe(36)
+    expect(SUMMARY_BODY_HEIGHT).toBe(764)
+    expect(SUMMARY_BODY_TOP + SUMMARY_BODY_HEIGHT + PAGE_FOOTER_HEIGHT).toBe(PDF_PAGE_BLOCK_HEIGHT)
+  })
+
+  test("the cover body covers the whole page, also on a draft", () => {
+    expect(ios).toMatch(
+      /\.page-cover \.page-body, \.page-draft\.page-cover \.page-body \{[^}]*left: 0; top: 0; width: 595px; height: 840px;/,
+    )
+  })
+
+  test("the summary body starts at 36 and is 764 high, also on a draft", () => {
+    expect(ios).toMatch(
+      /\.page-summary \.page-body, \.page-draft\.page-summary \.page-body \{[^}]*top: 36px; height: 764px;/,
+    )
+  })
+
+  test("both page kinds are written after the draft body rule so they win over it", () => {
+    const draft = ios.indexOf(".page-draft .page-body {")
+    expect(draft).toBeGreaterThan(0)
+    expect(ios.indexOf(".page-cover .page-body")).toBeGreaterThan(draft)
+    expect(ios.indexOf(".page-summary .page-body")).toBeGreaterThan(draft)
+  })
+
+  test("the cover moves the draft banner under the panel and the watermark into the light part", () => {
+    expect(ios).toMatch(/\.page-cover \.page-draft-banner \{[^}]*top: 368px;/)
+    expect(ios).toMatch(/\.page-cover \.page-watermark \{[^}]*top: 543px;/)
+    expect(ios.indexOf(".page-cover .page-watermark")).toBeGreaterThan(
+      ios.indexOf(".page-watermark {"),
+    )
+  })
+
+  test("the running header no longer styles a logo", () => {
+    expect(ios).not.toContain("page-logo")
+    expect(PDF_CLASS).not.toHaveProperty("logo")
+  })
+})
+
+describe("sectionTitleCss", () => {
+  const css = sectionTitleCss(".x-heading", palette)
+
+  test("is one rule for the given selector", () => {
+    expect(css.startsWith(".x-heading { ")).toBe(true)
+    expect(css.match(/\{/g)).toHaveLength(1)
+  })
+
+  test("draws the 24 unit line box with the 4 unit accent bar (UI-SPEC B.3)", () => {
+    for (const declaration of [
+      "margin: 0",
+      "height: 24px",
+      "box-sizing: border-box",
+      "font-size: 13px",
+      "line-height: 24px",
+      "border-left: 4px solid accent",
+      "padding-left: 8px",
+      "color: accent",
+    ]) {
+      expect(css).toContain(`${declaration};`)
+    }
+    expect(css).toContain(`font-family: "${PDF_FONT_FAMILIES.heading}", `)
+  })
+
+  test("uses palette values only", () => {
+    expect(css).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(/)
+  })
+})
+
+describe("PDF_LOGO_DATA_URI", () => {
+  test("accepts a base64 PNG or JPEG data URI", () => {
+    expect(PDF_LOGO_DATA_URI.test("data:image/png;base64,iVBORw0KGgo=")).toBe(true)
+    expect(PDF_LOGO_DATA_URI.test("data:image/jpeg;base64,/9j/4AAQ")).toBe(true)
+  })
+
+  test("rejects a remote address, a broken attribute and any other type", () => {
+    for (const value of [
+      "https://example.invalid/logo.png",
+      'data:image/png;base64,AAAA" onerror="x',
+      "data:text/html;base64,AAAA",
+      "data:image/svg+xml;base64,AAAA",
+      "",
+    ]) {
+      expect(PDF_LOGO_DATA_URI.test(value)).toBe(false)
+    }
   })
 })
 

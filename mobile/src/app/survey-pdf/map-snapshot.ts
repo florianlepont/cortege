@@ -19,8 +19,27 @@ import type { MapFrame } from "./map-projection"
 // style: 12 s, because a cold first snapshot took 8 s on the iOS simulator (spike of plan 25.1-07).
 export const SNAPSHOT_TIMEOUT_MS = 8000
 export const SNAPSHOT_TIMEOUT_ONLINE_MS = 12000
+// The complete PDF keeps the sharp basemap (1100 px wide at JPEG 0.8, about 154 ppi for a 515 unit frame).
 export const SNAPSHOT_JPEG_WIDTH_PX = 1100
 export const SNAPSHOT_JPEG_QUALITY = 0.8
+// The one-page summary has a 200 KB target (UI-SPEC B.11) and its basemap was 192 to 220 KB of 234 to
+// 264 KB on iOS (plan 33-14). Plan 33-16 (owner decision 2026-10-26) lightens only this basemap; the
+// values were measured on the iOS simulator and the Android emulator, see 33-14-MEASUREMENTS.md.
+export const SNAPSHOT_SUMMARY_WIDTH_PX = 900
+export const SNAPSHOT_SUMMARY_JPEG_QUALITY = 0.7
+
+/** Which PDF the basemap is for: the complete one (sharp) or the one-page summary (lighter). */
+export type SnapshotProfile = "complete" | "summary"
+
+/** The JPEG width and quality of a profile; anything but "summary" gets the complete profile. */
+export function snapshotJpegSettings(profile: SnapshotProfile | undefined): {
+  widthPx: number
+  quality: number
+} {
+  return profile === "summary"
+    ? { widthPx: SNAPSHOT_SUMMARY_WIDTH_PX, quality: SNAPSHOT_SUMMARY_JPEG_QUALITY }
+    : { widthPx: SNAPSHOT_JPEG_WIDTH_PX, quality: SNAPSHOT_JPEG_QUALITY }
+}
 
 export type BasemapChoice =
   | { kind: "offline"; mapStyle: string }
@@ -144,6 +163,8 @@ export async function takeBasemapJpeg(
     /** The kind of the basemap choice, which sets the default timeout (offline when omitted). */
     kind?: BasemapChoice["kind"]
     timeoutMs?: number
+    /** "summary" gives the lighter JPEG of the one-page summary; "complete" or omitted the sharp one. */
+    profile?: SnapshotProfile
   },
   deps: SnapshotDeps = { StaticMapImageManager, ImageManipulator },
 ): Promise<{ dataUri: string; frame: MapFrame } | null> {
@@ -177,12 +198,13 @@ export async function takeBasemapJpeg(
       return null
     }
     // The PNG is at device pixel ratio (up to 3x): resize to the print size and compress.
+    const { widthPx, quality } = snapshotJpegSettings(input.profile)
     const image = await deps.ImageManipulator.manipulate(file)
-      .resize({ width: SNAPSHOT_JPEG_WIDTH_PX })
+      .resize({ width: widthPx })
       .renderAsync()
     const saved = await image.saveAsync({
       format: SaveFormat.JPEG,
-      compress: SNAPSHOT_JPEG_QUALITY,
+      compress: quality,
       base64: true,
     })
     if (!saved.base64) {

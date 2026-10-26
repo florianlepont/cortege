@@ -11,6 +11,7 @@ function nameOf(overrides: Partial<Parameters<typeof buildExportFileName>[0]> = 
     observationYear: 2026,
     dateIso: "2026-09-26T10:00:00.000Z",
     isDraft: false,
+    mode: "complete",
     ...overrides,
   })
 }
@@ -31,6 +32,18 @@ describe("buildExportFileName", () => {
     expect(nameOf({ isDraft: true })).toBe(
       `Cortege-IBP-Bois-de-la-Colline-2026-${t.draftSuffix}.pdf`,
     )
+  })
+
+  it("names the summary with its own suffix and never the draft one", () => {
+    expect(nameOf({ mode: "summary" })).toBe("Cortege-IBP-Bois-de-la-Colline-2026-resume.pdf")
+    expect(nameOf({ mode: "summary", isDraft: true })).toBe(
+      "Cortege-IBP-Bois-de-la-Colline-2026-resume.pdf",
+    )
+    expect(nameOf({ mode: "summary", isDraft: true })).not.toContain(t.draftSuffix)
+    expect(nameOf({ mode: "summary", observationYear: null, dateIso: "not-a-date" })).toBe(
+      "Cortege-IBP-Bois-de-la-Colline-resume.pdf",
+    )
+    expect(nameOf({ mode: "complete" })).toBe("Cortege-IBP-Bois-de-la-Colline-2026.pdf")
   })
 
   it("takes the year of the survey date when the observation year is missing", () => {
@@ -107,10 +120,14 @@ describe("buildExportFileName", () => {
 
   it("matches the safe pattern for every combination", () => {
     for (const siteName of ["Bois", "Forêt de l'Étang / Nord", "", "x".repeat(200), "../../x"]) {
-      for (const isDraft of [true, false]) {
-        for (const observationYear of [2026, null]) {
-          for (const dateIso of ["2026-01-01T00:00:00Z", "garbage"]) {
-            expect(nameOf({ siteName, isDraft, observationYear, dateIso })).toMatch(SAFE_NAME)
+      for (const mode of ["complete", "summary"] as const) {
+        for (const isDraft of [true, false]) {
+          for (const observationYear of [2026, null]) {
+            for (const dateIso of ["2026-01-01T00:00:00Z", "garbage"]) {
+              expect(nameOf({ siteName, mode, isDraft, observationYear, dateIso })).toMatch(
+                SAFE_NAME,
+              )
+            }
           }
         }
       }

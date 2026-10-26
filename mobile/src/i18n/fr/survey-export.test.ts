@@ -71,6 +71,10 @@ describe("fr.surveyExport", () => {
     expect(t.scores.total(30)).toBe("30 / 50")
     expect(t.scores.stand(20)).toContain("20 / 35")
     expect(t.scores.context(10)).toContain("10 / 15")
+    // D-26: the chart group labels, with and without a score, built from the same two names.
+    expect(t.scores.groupNames).toEqual({ stand: "Peuplement et gestion", context: "Contexte" })
+    expect(t.scores.stand(24)).toBe("Peuplement et gestion : 24 / 35")
+    expect(t.scores.context(10)).toBe("Contexte : 10 / 15")
   })
 
   it.each(["v3_2", "v3_0"] as const)("has a clean scale line for each factor (%s)", (key) => {
@@ -88,6 +92,75 @@ describe("fr.surveyExport", () => {
     expect(t.file.prefix).toBe("Cortege-IBP")
     expect(t.file.draftSuffix).toBe("brouillon")
     expect(t.file.fallbackSite).toBe("releve")
+  })
+
+  it("words the commune row, the cover and the summary (phase 33)", () => {
+    expect(t.identity.communeValue({ code: "77186", department: "77" })).toBe(
+      "77186 (département 77)",
+    )
+    expect(t.cover.scoreA11y({ points: "32", max: "50" })).toBe("Score IBP : 32 sur 50")
+    expect(t.cover.subscoreA11y({ heading: "Contexte", points: "12", max: "15" })).toBe(
+      "Contexte : 12 sur 15",
+    )
+    expect(t.cover.outOf({ max: "50" })).toBe("/ 50")
+    expect(t.summary.eyebrow).toBe("Résumé du relevé IBP")
+    expect(t.summary.mapHeading).toBe("Parcelle")
+    expect(t.summary.metaLine({ commune: "77186", parcels: "77186000AB0123", version: "2" })).toBe(
+      "Commune 77186, parcelle 77186000AB0123, version 2",
+    )
+    expect(t.summary.subscores({ stand: "20", context: "12" })).toBe(
+      "20 / 35 peuplement, 12 / 15 contexte",
+    )
+    expect(t.summary.trendUnavailable).toBe(
+      "Évolution de la parcelle non disponible sur cet appareil.",
+    )
+  })
+
+  it("words the charts (phase 33, D-27)", () => {
+    expect(t.charts.heading).toBe("Lecture du score IBP")
+    expect(t.charts.planeTitle).toBe("IBP contexte face à l'IBP peuplement et gestion")
+    expect(t.charts.source).toBe(
+      "Graphiques d'après la fiche de relevé IBP du Centre national de la propriété forestière et de l'unité de recherche Dynafor.",
+    )
+    expect(t.scores.chartHeading).toBe("Score par facteur")
+    expect(t.charts.joinList({ items: [] })).toBe("")
+    expect(t.charts.joinList({ items: ["a"] })).toBe("a")
+    expect(t.charts.joinList({ items: ["a", "b"] })).toBe("a et b")
+    expect(t.charts.joinList({ items: ["a", "b", "c"] })).toBe("a, b et c")
+    expect(
+      t.charts.planeA11y({
+        stand: "20",
+        standMax: "35",
+        standBand: "moyenne",
+        context: "12",
+        contextMax: "15",
+        contextBand: "forte",
+        standCuts: "7, 14, 21 et 28",
+        contextCuts: "5 et 10",
+      }),
+    ).toBe(
+      "IBP contexte face à l'IBP peuplement et gestion. Le relevé se place à 20 sur 35 en peuplement et gestion, niveau moyenne, et à 12 sur 15 en contexte, niveau forte. Bandes du peuplement et gestion coupées à 7, 14, 21 et 28 sur 35 ; niveaux du contexte coupés à 5 et 10 sur 15.",
+    )
+    expect(
+      t.charts.planeA11yEmpty({
+        standCuts: "7, 14, 21 et 28",
+        standMax: "35",
+        contextCuts: "5 et 10",
+        contextMax: "15",
+      }),
+    ).toBe(
+      "IBP contexte face à l'IBP peuplement et gestion. Score non renseigné : le relevé n'est pas placé. Bandes du peuplement et gestion coupées à 7, 14, 21 et 28 sur 35 ; niveaux du contexte coupés à 5 et 10 sur 15.",
+    )
+    expect(t.charts.roseA11y({ rings: "0, 2 et 5", items: "A 3 et B 2" })).toBe(
+      "Score par facteur, anneaux à 0, 2 et 5 points : A 3 et B 2.",
+    )
+    expect(t.charts.roseItem({ title: "Essences autochtones", value: "3" })).toBe(
+      "Essences autochtones 3",
+    )
+  })
+
+  it("names the summary file with its own ASCII suffix", () => {
+    expect(t.file.summarySuffix).toBe("resume")
   })
 
   it("has the draft marks", () => {

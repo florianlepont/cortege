@@ -532,6 +532,7 @@ function makeNavigation() {
     navigate: jest.fn(),
     goBack: jest.fn(),
     popTo: jest.fn(),
+    setParams: jest.fn(),
     setOptions: jest.fn(),
     reset: jest.fn(),
     canGoBack: jest.fn(() => true),
@@ -1248,6 +1249,40 @@ describe("SurveyDetailRoute", () => {
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcelsPage")
     expect(props("surveyDetail").onOpenParcels).toBeUndefined()
+  })
+
+  test("phase 33: Partager opens the export choice sheet, and the chosen request is handed over then cleared (D-05, D-14)", async () => {
+    const fixture = withSelection(makeFixture())
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").exportRequest).toBeUndefined()
+
+    await act(async () => {
+      callback("surveyDetail", "onOpenExportChoice")("survey-9")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyExportChoice", {
+      surveyId: "survey-9",
+    })
+
+    await act(async () => {
+      callback("surveyDetail", "onExportRequestHandled")()
+    })
+    expect(navigation.setParams).toHaveBeenLastCalledWith({ exportRequest: undefined })
+
+    const exportRequest = { mode: "summary", nonce: 7 }
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute
+          navigation={navigation as never}
+          route={{ params: { exportRequest } } as never}
+        />
+      </Providers>,
+    )
+    expect(props("surveyDetail").exportRequest).toBe(exportRequest)
   })
 
   test("the next-factor button stays on the page when the survey cannot be loaded", async () => {

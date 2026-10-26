@@ -1,4 +1,12 @@
-import { escapeHtml, formatCoordinate, formatDateFr, formatDecimal, svgNumber } from "./html"
+import {
+  escapeHtml,
+  formatCoordinate,
+  formatDateFr,
+  formatDecimal,
+  shortenText,
+  splitLabel,
+  svgNumber,
+} from "./html"
 
 describe("escapeHtml", () => {
   it("neutralises markup and quotes, and keeps one &amp; per ampersand", () => {
@@ -69,5 +77,74 @@ describe("svgNumber", () => {
   it("gives 0 for a value that is not finite", () => {
     expect(svgNumber(Number.NaN)).toBe("0")
     expect(svgNumber(Number.NEGATIVE_INFINITY)).toBe("0")
+  })
+})
+
+describe("shortenText", () => {
+  it("returns a text that fits unchanged", () => {
+    expect(shortenText("abc", 5)).toBe("abc")
+    expect(shortenText("abcde", 5)).toBe("abcde")
+  })
+
+  it("cuts inside the word, with one ellipsis, within the box", () => {
+    const out = shortenText("abcdefghijklmnop", 8)
+    expect(out).toBe("abcdefg\u2026")
+    expect(out).toHaveLength(8)
+  })
+
+  it("cuts at the last space when it lies in the second half", () => {
+    const out = shortenText("une belle foret ancienne", 16)
+    expect(out).toBe("une belle foret\u2026")
+    expect(out.length).toBeLessThanOrEqual(16)
+  })
+
+  it("cuts at a space that is the first character past the kept text", () => {
+    expect(shortenText("abcdefg hijklmn", 8)).toBe("abcdefg\u2026")
+  })
+
+  it("ignores a space in the first half and cuts inside the word", () => {
+    expect(shortenText("ab cdefghijklmnop", 10)).toBe("ab cdefgh\u2026")
+  })
+
+  it("gives an empty text for an empty box", () => {
+    expect(shortenText("abc", 0)).toBe("")
+  })
+
+  it("does not escape", () => {
+    expect(shortenText("a&b<c>d", 4)).toBe("a&b\u2026")
+  })
+})
+
+describe("splitLabel", () => {
+  it("keeps a label that fits, or holds no space, on one line", () => {
+    expect(splitLabel("moyenne", 9)).toEqual(["moyenne"])
+    expect(splitLabel("faible", 9)).toEqual(["faible"])
+    expect(splitLabel("Dendromicrohabitats", 12)).toEqual(["Dendromicrohabitats"])
+    expect(splitLabel("assez faible", 12)).toEqual(["assez faible"])
+  })
+
+  it("cuts at the space that makes the longer line shortest", () => {
+    expect(splitLabel("assez faible", 9)).toEqual(["assez", "faible"])
+    expect(splitLabel("assez forte", 9)).toEqual(["assez", "forte"])
+    expect(splitLabel("Essences autochtones", 12)).toEqual(["Essences", "autochtones"])
+    expect(splitLabel("Bois morts sur pied", 12)).toEqual(["Bois morts", "sur pied"])
+    expect(splitLabel("Bois morts au sol", 12)).toEqual(["Bois morts", "au sol"])
+    expect(splitLabel("Très gros bois vivants", 12)).toEqual(["Très gros", "bois vivants"])
+    expect(splitLabel("Milieux ouverts florifères", 12)).toEqual(["Milieux ouverts", "florifères"])
+    expect(splitLabel("Continuité boisée", 12)).toEqual(["Continuité", "boisée"])
+    expect(splitLabel("Milieux rocheux", 12)).toEqual(["Milieux", "rocheux"])
+    expect(splitLabel("Structure verticale", 12)).toEqual(["Structure", "verticale"])
+    expect(splitLabel("Milieux aquatiques", 12)).toEqual(["Milieux", "aquatiques"])
+  })
+
+  it("takes the first space on a tie, never makes a third line and never shortens", () => {
+    expect(splitLabel("aa bb cc dd", 3)).toEqual(["aa bb", "cc dd"])
+    expect(splitLabel("a b c d e f g", 2)).toHaveLength(2)
+    const long = "un texte très long qui dépasse largement la boîte"
+    expect(splitLabel(long, 5).join(" ")).toBe(long)
+  })
+
+  it("does not escape", () => {
+    expect(splitLabel("a <b> & c", 3)).toEqual(["a <b>", "& c"])
   })
 })

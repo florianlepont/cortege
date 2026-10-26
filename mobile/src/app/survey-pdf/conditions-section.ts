@@ -9,6 +9,7 @@ import {
   showsProviderAttribution,
 } from "../weather"
 import { escapeHtml } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -103,8 +104,8 @@ export function buildConditionsBlock(
 export function conditionsSectionCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
-.conditions-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
-.conditions-heading { margin: 0; height: ${CARD_HEADING}px; font-family: ${font.heading}; font-size: 11px; line-height: ${CARD_HEADING}px; color: ${palette.ink}; }
+.conditions-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; }
+${sectionTitleCss(".conditions-heading", palette)}
 .conditions-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .conditions-row { vertical-align: top; }
 .conditions-caption { width: 150px; padding: 3px 8px 3px 0; text-align: left; font-family: ${font.label}; font-size: 8.5px; line-height: ${LINE_HEIGHT}px; font-weight: normal; color: ${palette.inkMuted}; }

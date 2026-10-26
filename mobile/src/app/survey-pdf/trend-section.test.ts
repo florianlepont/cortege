@@ -1,11 +1,19 @@
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { buildEntriesFromOwn, buildParcelHistory } from "../parcel-history"
 import type { ParcelHistoryModel } from "../parcel-history"
-import { TREND_HEIGHT, TREND_YEAR_BASELINE, buildTrend } from "../trend-geometry"
+import { TREND_HEIGHT, TREND_PLOT_BOTTOM, TREND_YEAR_BASELINE, buildTrend } from "../trend-geometry"
 import { fr } from "../../i18n"
 import { factorResults, ownItem, V30, V32 } from "../../../test/parcel-history-fixtures"
 import { escapeHtml, formatDateFr } from "./html"
-import { TREND_PRINT_WIDTH, buildTrendBlock, buildTrendSvg, trendSectionCss } from "./trend-section"
+import {
+  TREND_PRINT_WIDTH,
+  buildTrendBlock,
+  buildTrendSvg,
+  resolveTrend,
+  trendSectionCss,
+  trendSummaryParts,
+} from "./trend-section"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
@@ -101,17 +109,107 @@ describe("buildTrendSvg", () => {
     expect(svg).toMatch(/class="trend-point"[^>]*r="4"/)
   })
 
+  it("draws the past points open (paper fill, accent ring 2) and the current one solid and larger", () => {
+    const svg = buildTrendSvg(modelOf(items, "c"), palette)
+    const past = svg.match(/<circle class="trend-point"[^>]*>/g) ?? []
+    expect(past).toHaveLength(2)
+    for (const circle of past) {
+      expect(circle).toContain('r="4"')
+      expect(circle).toContain('fill="paper"')
+      expect(circle).toContain('stroke="accent"')
+      expect(circle).toContain('stroke-width="2"')
+    }
+    const current = svg.match(/<circle class="trend-point-current"[^>]*>/g) ?? []
+    expect(current).toHaveLength(1)
+    expect(current[0]).toContain('r="6"')
+    expect(current[0]).toContain('fill="accent"')
+    expect(current[0]).not.toContain("stroke")
+  })
+
+  it("draws a solid soft area under a segment, closed down to the plot bottom, before the line", () => {
+    const model = modelOf(items, "c")
+    const geometry = buildTrend(model.drawn, TREND_PRINT_WIDTH)
+    const svg = buildTrendSvg(model, palette)
+    const areas = svg.match(/<path class="trend-area"[^>]*>/g) ?? []
+    expect(areas).toHaveLength(1)
+    const segment = oneDecimal(geometry.segments[0].d)
+    const first = geometry.points[0]
+    const last = geometry.points[geometry.points.length - 1]
+    const base = TREND_PLOT_BOTTOM
+    const round = (value: number): number => Math.round(value * 10) / 10
+    expect(areas[0]).toContain(
+      `d="${segment} L ${round(last.x)} ${base} L ${round(first.x)} ${base} Z"`,
+    )
+    expect(areas[0]).toContain('fill="accentSoft"')
+    expect(areas[0]).toContain('stroke="none"')
+    expect(svg.indexOf("trend-area")).toBeLessThan(svg.indexOf("trend-segment"))
+    expect(svg.indexOf("trend-area")).toBeLessThan(svg.indexOf("<circle"))
+  })
+
+  it("draws one area per segment when a method change cuts the line", () => {
+    const mixed = [
+      ownItem("a", { ibp_method_version: V30, observation_year: 2018, scores: scored(18) }),
+      ownItem("b", { ibp_method_version: V30, observation_year: 2020, scores: scored(22) }),
+      ownItem("c", { ibp_method_version: V32, observation_year: 2022, scores: scored(30) }),
+      ownItem("d", { ibp_method_version: V32, observation_year: 2024, scores: scored(36) }),
+    ]
+    const model = modelOf(mixed, "d")
+    const geometry = buildTrend(model.drawn, TREND_PRINT_WIDTH)
+    const svg = buildTrendSvg(model, palette)
+    expect(countOf(svg, /class="trend-area"/g)).toBe(2)
+    const areas = svg.match(/<path class="trend-area"[^>]*>/g) ?? []
+    areas.forEach((area, index) => {
+      expect(area).toContain(`d="${oneDecimal(geometry.segments[index].d)} L `)
+      expect(area).toMatch(/Z"/)
+    })
+    // The dashed link has no area.
+    expect(countOf(svg, /class="trend-link"/g)).toBe(1)
+  })
+
+  it("prints the totals in Sora-Medium 12 and the current one in Sora-SemiBold 13", () => {
+    const svg = buildTrendSvg(modelOf(items, "c"), palette)
+    const past = svg.match(/<text class="trend-value"[^>]*>/g) ?? []
+    expect(past).toHaveLength(2)
+    for (const text of past) {
+      expect(text).toContain(`font-family="${PDF_FONT_FAMILIES.strong}"`)
+      expect(text).toContain('font-size="12"')
+      expect(text).toContain('fill="ink"')
+    }
+    const current =
+      svg.match(/<text class="trend-value trend-value-current"[^>]*>34<\/text>/g) ?? []
+    expect(current).toHaveLength(1)
+    expect(current[0]).toContain(`font-family="${PDF_FONT_FAMILIES.heading}"`)
+    expect(current[0]).toContain('font-size="13"')
+  })
+
+  it("prints the years in Jost-SemiBold 10 muted ink", () => {
+    const svg = buildTrendSvg(modelOf(items, "c"), palette)
+    const years = svg.match(/<text class="trend-year"[^>]*>/g) ?? []
+    expect(years).toHaveLength(3)
+    for (const text of years) {
+      expect(text).toContain(`font-family="${PDF_FONT_FAMILIES.label}"`)
+      expect(text).toContain('font-size="10"')
+      expect(text).toContain('fill="inkMuted"')
+    }
+  })
+
+  it("holds no opacity and no Sora-Light numeral", () => {
+    const svg = buildTrendSvg(modelOf(items, "c"), palette)
+    expect(svg).not.toContain("opacity")
+    expect(svg).not.toContain(PDF_FONT_FAMILIES.numeral)
+  })
+
   it("prints each year below and each total above its point", () => {
     const model = modelOf(items, "c")
     const geometry = buildTrend(model.drawn, TREND_PRINT_WIDTH)
     const svg = buildTrendSvg(model, palette)
     expect(countOf(svg, /class="trend-year"/g)).toBe(3)
-    expect(countOf(svg, /class="trend-value"/g)).toBe(3)
+    expect(countOf(svg, /class="trend-value[ "]/g)).toBe(3)
     for (const year of ["2020", "2022", "2024"]) expect(svg).toContain(`>${year}</text>`)
     for (const total of ["20", "28", "34"]) expect(svg).toContain(`>${total}</text>`)
     expect(svg).toContain(`y="${TREND_YEAR_BASELINE}"`)
     expect(geometry.points).toHaveLength(3)
-    expect(svg).toContain(`font-family="${PDF_FONT_FAMILIES.numeral}"`)
+    expect(svg).toContain(`font-family="${PDF_FONT_FAMILIES.strong}"`)
     expect(svg).toContain(`font-family="${PDF_FONT_FAMILIES.label}"`)
   })
 
@@ -146,6 +244,7 @@ describe("buildTrendSvg", () => {
     const svg = buildTrendSvg(modelOf([ownItem("a", { scores: scored(25) })], "a"), palette)
     expect(countOf(svg, /<circle\b/g)).toBe(1)
     expect(svg).not.toContain("<path")
+    expect(svg).not.toContain("trend-area")
     expect(svg).toContain("trend-point-current")
   })
 
@@ -205,6 +304,7 @@ type Items = ReturnType<typeof ownItem>[]
 
 function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "c",
     siteName: "Forêt de test",
     parcelIds: ["940750000AB0352"],
@@ -450,6 +550,105 @@ describe("buildTrendBlock with a history", () => {
   })
 })
 
+describe("resolveTrend", () => {
+  it("says there is no parcel before anything else", () => {
+    expect(resolveTrend(makeData({ parcelIds: [], history: null }))).toEqual({ kind: "noParcel" })
+    expect(resolveTrend(withHistory(history3, { parcelIds: [] }))).toEqual({ kind: "noParcel" })
+  })
+
+  it("says the history is unavailable when none is cached", () => {
+    expect(resolveTrend(makeData({ history: null }))).toEqual({ kind: "unavailable" })
+  })
+
+  it("says first for an empty cache or a lone current survey", () => {
+    expect(resolveTrend(withHistory([]))).toEqual({ kind: "first" })
+    expect(resolveTrend(withHistory([ownItem("c")]))).toEqual({ kind: "first" })
+  })
+
+  it("is ready with the model, the current survey found and the long cache date", () => {
+    const state = resolveTrend(withHistory(history3))
+    if (state.kind !== "ready") throw new Error(`expected ready, got ${state.kind}`)
+    expect(state.hasCurrent).toBe(true)
+    expect(state.cachedAt).toBe(formatDateFr(FETCHED_AT, ""))
+    expect(state.model.isFirst).toBe(false)
+    expect(state.model.drawn.map((point) => point.surveyId)).toEqual(["a", "b", "c"])
+  })
+
+  it("tells a cache that lacks the current survey, and still reads the past", () => {
+    const state = resolveTrend(withHistory(history3, { surveyId: "draft-1", isDraft: true }))
+    if (state.kind !== "ready") throw new Error(`expected ready, got ${state.kind}`)
+    expect(state.hasCurrent).toBe(false)
+    expect(state.model.drawn).toHaveLength(3)
+  })
+
+  it("gives a null cache date when the fetch date is unreadable", () => {
+    const data = withHistory(history3)
+    const state = resolveTrend({ ...data, history: { fetchedAt: "not a date", items: history3 } })
+    if (state.kind !== "ready") throw new Error(`expected ready, got ${state.kind}`)
+    expect(state.cachedAt).toBeNull()
+  })
+})
+
+describe("trendSummaryParts", () => {
+  it("is null when there is no trend to word", () => {
+    expect(trendSummaryParts({ kind: "none" })).toBeNull()
+  })
+
+  it("words a change like the screen", () => {
+    const state = resolveTrend(withHistory(history3))
+    if (state.kind !== "ready") throw new Error(`expected ready, got ${state.kind}`)
+    expect(trendSummaryParts(state.model.trend)).toEqual([
+      pt.trend.titleStrong(12),
+      pt.trend.titleAccent(2020),
+    ])
+  })
+
+  it("words a change of method, with and without its year", () => {
+    expect(
+      trendSummaryParts({ kind: "newMethod", method: "v3.2", year: 2024, mixed: true }),
+    ).toEqual([pt.trend.newMethodStrong("v3.2"), pt.trend.newMethodAccent(2024)])
+    expect(trendSummaryParts({ kind: "newMethod", method: null, year: null, mixed: true })).toEqual(
+      [pt.trend.newMethodUnknown, ""],
+    )
+  })
+})
+
+// The block as it printed before the restyle (33-07): same texts, same heights, only the svg moved.
+// A mixed-method history with a per-factor table, the cache line and the mixed-methods sentence.
+const MIXED_ITEMS: Items = [
+  ownItem("a", {
+    ibp_method_version: V30,
+    observation_year: 2018,
+    scores: scored(18),
+  }),
+  ownItem("b", {
+    ibp_method_version: V32,
+    observation_year: 2020,
+    scores: scored(22),
+  }),
+  ownItem("c", {
+    ibp_method_version: V32,
+    observation_year: 2024,
+    scores: scored(30),
+  }),
+]
+const GOLDEN_HTML_WITHOUT_SVG =
+  '<section class="trend-card">\n<h2 class="trend-heading">Évolution de la parcelle</h2>\n<p class="trend-summary"><span class="trend-summary-strong">+8 points</span><span class="trend-summary-accent"> depuis 2020</span></p>\n<p class="trend-note">Méthodes v3.0 et v3.2 : totaux non strictement comparables.</p>\n<div class="trend-curve"><SVG/></div>\n<div class="trend-deltas"><h3 class="trend-delta-title">Évolution par facteur depuis 2020</h3>\n<p class="trend-delta-total">Total : +8 (30 contre 22)</p>\n<div class="trend-delta-grid"><div class="trend-delta-column"><div class="trend-delta-row" data-factor="A"><span class="trend-delta-letter">A</span><span class="trend-delta-points">3 / 5</span><span class="trend-delta-value" style="color: inkMuted">=</span></div><div class="trend-delta-row" data-factor="B"><span class="trend-delta-letter">B</span><span class="trend-delta-points">5 / 5</span><span class="trend-delta-value" style="color: inkMuted">=</span></div><div class="trend-delta-row" data-factor="C"><span class="trend-delta-letter">C</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="D"><span class="trend-delta-letter">D</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="E"><span class="trend-delta-letter">E</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div></div><div class="trend-delta-column"><div class="trend-delta-row" data-factor="F"><span class="trend-delta-letter">F</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="G"><span class="trend-delta-letter">G</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="H"><span class="trend-delta-letter">H</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="I"><span class="trend-delta-letter">I</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div><div class="trend-delta-row" data-factor="J"><span class="trend-delta-letter">J</span><span class="trend-delta-points">Non renseigné</span><span class="trend-delta-value" style="color: inkMuted">n.d.</span></div></div></div></div>\n<p class="trend-cached">Historique enregistré sur l&#39;appareil le 9 octobre 2026.</p>\n</section>'
+
+describe("buildTrendBlock before and after the restyle", () => {
+  it("prints the same texts and the same heights, only the svg differs", () => {
+    const block = buildTrendBlock(withHistory(MIXED_ITEMS), palette)
+    expect(block.html.replace(/<svg[\s\S]*?<\/svg>/g, "<SVG/>")).toBe(GOLDEN_HTML_WITHOUT_SVG)
+    expect(block.height).toBe(350)
+  })
+
+  it("keeps the note blocks unchanged", () => {
+    expect(buildTrendBlock(makeData({ parcelIds: [] }), palette).height).toBe(53)
+    expect(buildTrendBlock(makeData({ history: null }), palette).height).toBe(66)
+    expect(buildTrendBlock(withHistory([]), palette).height).toBe(53)
+  })
+})
+
 describe("trendSectionCss", () => {
   const css = trendSectionCss(palette)
 
@@ -459,6 +658,10 @@ describe("trendSectionCss", () => {
     for (const name of classes) expect(name.startsWith(".trend-")).toBe(true)
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/)
     expect(css).toContain("ink")
+  })
+
+  it("gives the heading the section title rule", () => {
+    expect(css).toContain(sectionTitleCss(".trend-heading", palette))
   })
 
   it("avoids what iOS print does not draw: column-count and 1 px filled divs", () => {

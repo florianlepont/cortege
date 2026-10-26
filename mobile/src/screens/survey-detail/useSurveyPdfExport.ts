@@ -1,6 +1,10 @@
 import { useRef, useState } from "react"
 import { Alert } from "react-native"
-import { exportAndShareSurveyPdf, type SurveyExportInput } from "../../app/survey-pdf-export"
+import {
+  exportAndShareSurveyPdf,
+  type ExportMode,
+  type SurveyExportInput,
+} from "../../app/survey-pdf-export"
 import { fr, logStatusDetail } from "../../i18n"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailData } from "./useSurveyDetailData"
@@ -43,8 +47,14 @@ function finiteLocation(
  * Maps the summary's data to the export input. A submitted survey is fixed on the server, so its
  * detail wins; a draft's local payload holds the latest edits (the same rule as the scoring
  * context). The year and the version number are server-assigned, so the detail wins for both.
+ * The second guard of D-09 (the sheet card is the first, the loader the third): a survey that can
+ * still be edited is a draft, and a draft is never printed as a summary, so a requested summary
+ * becomes the complete PDF.
  */
-export function buildSurveyExportInput(args: SurveyPdfExportArgs): SurveyExportInput {
+export function buildSurveyExportInput(
+  args: SurveyPdfExportArgs,
+  requested: ExportMode,
+): SurveyExportInput {
   const { detail, localDraftMeta, canEditSurvey } = args
   const [region, stage] = canEditSurvey
     ? [
@@ -55,7 +65,12 @@ export function buildSurveyExportInput(args: SurveyPdfExportArgs): SurveyExportI
         detail?.region_version ?? localDraftMeta?.region_version,
         detail?.vegetation_stage ?? localDraftMeta?.vegetation_stage,
       ]
+  const mode: ExportMode = canEditSurvey && requested === "summary" ? "complete" : requested
+  if (mode !== requested) {
+    logStatusDetail("surveyDetail.exportModeCoerced", { surveyId: args.surveyId })
+  }
   return {
+    mode,
     surveyId: args.surveyId,
     siteName: args.activeSiteName,
     parcelIds: args.parcelIds,
@@ -80,22 +95,22 @@ export function buildSurveyExportInput(args: SurveyPdfExportArgs): SurveyExportI
 }
 
 /**
- * The share action of the summary: runs the PDF export once at a time (a second tap while it runs
- * does nothing, so Android never sees two share sheets) and tells the member when it cannot share
- * or fails.
+ * The share action of the summary: the export choice sheet picks the mode (phase 33) and this hook
+ * runs the PDF export in it, once at a time (a second call while it runs does nothing, so Android
+ * never sees two share sheets), and tells the member when it cannot share or fails.
  */
 export function useSurveyPdfExport(args: SurveyPdfExportArgs): {
   exporting: boolean
-  share: () => Promise<void>
+  share: (mode: ExportMode) => Promise<void>
 } {
   const [exporting, setExporting] = useState(false)
   const running = useRef(false)
-  const share = useLatestCallback(async (): Promise<void> => {
+  const share = useLatestCallback(async (mode: ExportMode): Promise<void> => {
     if (running.current) return
     running.current = true
     setExporting(true)
     try {
-      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args))
+      const { shared } = await exportAndShareSurveyPdf(buildSurveyExportInput(args, mode))
       if (!shared) Alert.alert(menuText.share, actionsText.exportShareUnavailable)
     } catch (error) {
       logStatusDetail("surveyDetail.exportPdf", error)

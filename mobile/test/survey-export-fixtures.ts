@@ -5,6 +5,7 @@ import {
   type FactorKey,
   type SurveyRoute,
 } from "@cortege/ibp-domain"
+import { COVER_MAP_FRAME_SIZE, SUMMARY_MAP_FRAME_SIZE } from "../src/app/survey-pdf/export-settings"
 import type { SurveyExportData } from "../src/app/survey-pdf/types"
 import { ownItem } from "./parcel-history-fixtures"
 
@@ -48,12 +49,18 @@ const POINTS: Record<FactorKey, number> = {
   J: 1,
 }
 
-/** One entry per factor A to J; a key in `missing` carries the "Not filled" sentinel. */
-function entriesOf(missing: readonly FactorKey[] = []): Entries {
+/**
+ * One entry per factor A to J; a key in `missing` carries the "Not filled" sentinel. `points`
+ * defaults to the standard fixture points; a fixture may pass its own map (the low-score survey).
+ */
+function entriesOf(
+  missing: readonly FactorKey[] = [],
+  points: Record<FactorKey, number> = POINTS,
+): Entries {
   return FACTOR_KEYS.map((key) =>
     missing.includes(key)
       ? [key, { selected_class: NOT_FILLED_CLASS, warnings: [], score_points: null }]
-      : [key, { selected_class: `S${POINTS[key]}`, warnings: [], score_points: POINTS[key] }],
+      : [key, { selected_class: `S${points[key]}`, warnings: [], score_points: points[key] }],
   )
 }
 
@@ -76,6 +83,7 @@ const SCORES = { ibp_total: 32, ibp_peuplement_gestion: 20, ibp_contexte: 12 }
 
 /** A submitted v3.2 survey, cas 1, with every factor filled and nothing optional. */
 export const exportFixtureV32Submitted: SurveyExportData = {
+  mode: "complete",
   surveyId: "survey-v32",
   siteName: "Bois de la Colline",
   parcelIds: ["77186000AB0123"],
@@ -105,8 +113,26 @@ export const exportFixtureV32Submitted: SurveyExportData = {
   layout: LAYOUT,
 }
 
+/**
+ * Phase 33 (D-23): the submitted v3.2 survey on 30 parcels, with no map, no history and no photo.
+ * It makes the identity card print a long parcel list (30 ids, "77186000AB0001" to
+ * "77186000AB0030") so the line-counting estimate and the whole list can be checked.
+ */
+export const exportFixtureManyParcels: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  surveyId: "survey-many-parcels",
+  parcelIds: Array.from(
+    { length: 30 },
+    (_, index) => `77186000AB${String(index + 1).padStart(4, "0")}`,
+  ),
+  map: null,
+  history: null,
+  photos: { items: [], total: 0, unavailable: 0 },
+}
+
 /** A draft of a legacy untagged (v3.0) survey, two factors still to fill, no cached data. */
 export const exportFixtureV30Draft: SurveyExportData = {
+  mode: "complete",
   surveyId: "survey-v30",
   siteName: "Foret de l'Etang",
   parcelIds: [],
@@ -234,9 +260,10 @@ export const exportFixtureWorstCase: SurveyExportData = {
     polygons: WORST_POLYGONS,
     basemap: {
       dataUri: `data:image/jpeg;base64,${PLACEHOLDER_BASE64}`,
-      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, width: 515, height: 340 },
+      // Phase 33, D-24: the real frame of the complete PDF (its map is on the cover), like every other complete fixture.
+      frame: { centerLng: 2.702, centerLat: 48.401, zoom: 16, ...COVER_MAP_FRAME_SIZE },
     },
-    frameSize: { width: 515, height: 340 },
+    frameSize: { ...COVER_MAP_FRAME_SIZE },
   },
   history: {
     fetchedAt: "2026-10-09T12:00:00.000Z",
@@ -254,4 +281,166 @@ export const exportFixtureWorstCase: SurveyExportData = {
       }),
     ),
   },
+}
+
+// ---- Phase 33: typical and summary fixtures (page counts, one-page tests) -------------------------
+
+type HistoryItems = NonNullable<SurveyExportData["history"]>["items"]
+
+/** Six-point history shape of the worst case; `from` keeps the last points of it, `ownId` ends it. */
+function historyOf(from: number, ownId: string): HistoryItems {
+  const years = [2019, 2020, 2021, 2023, 2024, 2026]
+  return years
+    .map((year, index) =>
+      ownItem(index === years.length - 1 ? ownId : `history-${year}`, {
+        observation_year: year,
+        version_number: index + 1,
+        ibp_method_version: index < 2 ? null : IBP_METHOD_V3_2,
+        scores: {
+          ibp_peuplement_gestion: 14 + index * 3,
+          ibp_contexte: 8 + index,
+          ibp_total: 22 + index * 4,
+        },
+        submitted_at: `${year}-06-01T10:00:00.000Z`,
+      }),
+    )
+    .slice(from)
+}
+
+function photosOf(count: number): SurveyExportData["photos"] {
+  return {
+    items: Array.from({ length: count }, (_, index) => ({
+      id: `photo-${index + 1}`,
+      dataUri: `data:image/jpeg;base64,${PLACEHOLDER_BASE64}`,
+      width: index % 2 === 0 ? 800 : 600,
+      height: index % 2 === 0 ? 600 : 800,
+    })),
+    total: count,
+    unavailable: 0,
+  }
+}
+
+/** A snapshot placeholder framed on the given centre at the given frame size. */
+function basemapOf(
+  size: { width: number; height: number },
+  centre: { lng: number; lat: number },
+): NonNullable<NonNullable<SurveyExportData["map"]>["basemap"]> {
+  return {
+    dataUri: `data:image/jpeg;base64,${PLACEHOLDER_BASE64}`,
+    frame: { centerLng: centre.lng, centerLat: centre.lat, zoom: 16, ...size },
+  }
+}
+
+/**
+ * The typical complete export (research section 5): one parcel on a basemap of the real frame
+ * size, three history points ending on this survey, six photos, no route.
+ */
+export const exportFixtureTypical: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  parcelIds: [WORST_POLYGONS[0].parcelId],
+  photos: photosOf(6),
+  map: {
+    polygons: [WORST_POLYGONS[0]],
+    basemap: basemapOf(COVER_MAP_FRAME_SIZE, { lng: 2.701, lat: 48.4005 }),
+    frameSize: { ...COVER_MAP_FRAME_SIZE },
+  },
+  history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(3, "survey-v32") },
+}
+
+/** The typical export with a conditions note and the fullest route (the long "Conditions" page). */
+export const exportFixtureTypicalConditioned: SurveyExportData = {
+  ...exportFixtureTypical,
+  conditions: { note: "Sol humide près du ruisseau.", weather: null },
+  route: WORST_ROUTE,
+}
+
+/** The typical survey as a one-page summary: no photo, a map frame of the summary size. */
+export const exportFixtureSummary: SurveyExportData = {
+  ...exportFixtureTypical,
+  mode: "summary",
+  photos: { items: [], total: 0, unavailable: 0 },
+  map: {
+    polygons: [WORST_POLYGONS[0]],
+    basemap: basemapOf(SUMMARY_MAP_FRAME_SIZE, { lng: 2.701, lat: 48.4005 }),
+    frameSize: { ...SUMMARY_MAP_FRAME_SIZE },
+  },
+}
+
+/** The fullest summary: the 64 character site name, three parcels, six history points. */
+export const exportFixtureSummaryWorst: SurveyExportData = {
+  ...exportFixtureSummary,
+  surveyId: "survey-summary-worst",
+  siteName: exportFixtureWorstCase.siteName,
+  parcelIds: WORST_POLYGONS.map((polygon) => polygon.parcelId),
+  map: {
+    polygons: WORST_POLYGONS,
+    basemap: basemapOf(SUMMARY_MAP_FRAME_SIZE, { lng: 2.702, lat: 48.401 }),
+    frameSize: { ...SUMMARY_MAP_FRAME_SIZE },
+  },
+  history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(0, "survey-summary-worst") },
+}
+
+// ---- Phase 33 (plan 19): the low-score survey, the marker in the lowest band of the plane --------
+
+const LOW_POINTS: Record<FactorKey, number> = {
+  A: 0,
+  B: 2,
+  C: 0,
+  D: 0,
+  E: 2,
+  F: 0,
+  G: 2,
+  H: 0,
+  I: 2,
+  J: 0,
+}
+
+/**
+ * The submitted v3.2 survey with every factor at 0 or 2: total 8, stand and management 6 of 35,
+ * context 2 of 15, so the plane's marker sits in the "faible" band and level, and the rose's
+ * polygon hugs the hub.
+ */
+export const exportFixtureLowScore: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  surveyId: "survey-low-score",
+  scores: { ibp_total: 8, ibp_peuplement_gestion: 6, ibp_contexte: 2 },
+  factorEntries: entriesOf([], LOW_POINTS),
+}
+
+/** The low-score survey as a one-page summary: no photo, the map frame of the summary size. */
+export const exportFixtureSummaryLowScore: SurveyExportData = {
+  ...exportFixtureLowScore,
+  mode: "summary",
+  parcelIds: exportFixtureSummary.parcelIds,
+  photos: { items: [], total: 0, unavailable: 0 },
+  map: exportFixtureSummary.map,
+  history: { fetchedAt: "2026-10-09T12:00:00.000Z", items: historyOf(3, "survey-low-score") },
+}
+
+export type SummaryVariantKind =
+  | "noBasemap"
+  | "noGeometry"
+  | "noParcel"
+  | "noHistory"
+  | "firstSurvey"
+  | "staleCache"
+
+/** The summary fixture with one fallback of the page: what is missing is replaced by its note. */
+export function summaryVariant(kind: SummaryVariantKind): SurveyExportData {
+  const base = exportFixtureSummary
+  const fetchedAt = "2026-10-09T12:00:00.000Z"
+  switch (kind) {
+    case "noBasemap":
+      return { ...base, map: base.map ? { ...base.map, basemap: null } : null }
+    case "noGeometry":
+      return { ...base, map: null }
+    case "noParcel":
+      return { ...base, parcelIds: [], map: null }
+    case "noHistory":
+      return { ...base, history: null }
+    case "firstSurvey":
+      return { ...base, history: { fetchedAt, items: historyOf(5, base.surveyId) } }
+    case "staleCache":
+      return { ...base, history: { fetchedAt, items: historyOf(2, "survey-other").slice(0, 3) } }
+  }
 }
