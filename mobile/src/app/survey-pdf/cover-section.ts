@@ -1,15 +1,9 @@
 import { fr } from "../../i18n"
 import { CONTOUR_VIEWBOX, buildContourPaths } from "../contour-paths"
 import { contourDrift } from "../visual-tokens"
-import {
-  escapeHtml,
-  formatDateFr,
-  formatDecimal,
-  shortenList,
-  shortenText,
-  svgNumber,
-} from "./html"
-import { inseeFromParcelId, methodShortText } from "./identity"
+import { COVER_MAP_FRAME_SIZE } from "./export-settings"
+import { escapeHtml, formatDateFr, formatDecimal, svgNumber } from "./html"
+import { buildMapFigure, mapFigureCss } from "./map-figure"
 import { buildRingSvg } from "./ring-svg"
 import { countMissingFactors, scoreBands, toneColor } from "./score-section"
 import type { ScoreBand } from "./score-section"
@@ -17,13 +11,15 @@ import { COVER_PANEL_HEIGHT, DRAFT_BANNER_HEIGHT, PDF_LOGO_DATA_URI } from "./st
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
-// The cover of the complete PDF (phase 33, D-11, D-02, UI-SPEC B.4): one fixed block on its own
-// page. The top 380 units are a solid forest panel (the app's static contour lines, the logo on a
+// The cover of the complete PDF (phase 33, D-11, D-02, D-24, UI-SPEC B.4): one fixed block on its
+// own page. The top 356 units are a solid forest panel (the app's static contour lines, the logo on a
 // paper tile, the brand, the site name, the date and the total score with its band); the light part
-// holds the two sub-score tiles and six identity facts. The score card's content lives here (research
+// holds the two sub-score tiles and the parcel map with its legend (the identity facts are on page 2,
+// and the cover prints no parcel id and no year). The score card's content lives here (research
 // lever L5), so the cover costs no extra page and nothing the score card printed is lost (D-01).
 // Every position is in page units on the 4-grid, set absolutely: no flex gap, no CSS columns, no
-// opacity, gradient, shadow or filter (UI-SPEC B.2). Pure: colours from `PdfPalette`, fonts from
+// opacity, gradient, shadow or filter (UI-SPEC B.2), except the translucent scale and north panels
+// of the shared map figure, which ship since 25.1. Pure: colours from `PdfPalette`, fonts from
 // `PDF_FONT_FAMILIES`, texts from `fr.surveyExport`, every survey text goes through `escapeHtml`.
 
 const t = fr.surveyExport
@@ -40,38 +36,34 @@ const LOGO_TILE = 88
 const LOGO_SIZE = 72
 const LOGO_TILE_RADIUS = 24
 const BRAND_X = 144
-const TITLE_TOP = 156
+const TITLE_TOP = 148
 const TITLE_WIDTH = 340
 const TITLE_HEIGHT = 84
 /** A site name this long or longer takes the smaller title (20 / 24 instead of 24 / 28). */
 const TITLE_LONG_FROM = 49
-const DATE_TOP = 252
-const SCORE_TOP = 280
+const DATE_TOP = 240
+const SCORE_TOP = 264
 const SCORE_HEIGHT = 72
 const PROVISIONAL_TOP = SCORE_TOP + SCORE_HEIGHT
 const PILL_GAP = 16
 const PILL_HEIGHT = 24
 
 // Light part, from the panel bottom (y values are those of a submitted survey).
-const TILES_TOP = 408
+const TILES_TOP = 376
 const TILE_HEIGHT = 112
 const TILE_GAP = 16
 const TILE_WIDTH = (CONTENT_WIDTH - TILE_GAP) / 2
 const RING_SIZE = 64
 const RING_STROKE = 8
-const FACTS_TOP = 548
-const FACT_COLUMN_GAP = 24
-const FACT_WIDTH = (CONTENT_WIDTH - FACT_COLUMN_GAP) / 2
-// 1 hairline + 8 padding + 12 caption + 20 value + 16 padding.
-const FACT_STEP = 57
 
-/**
- * The most characters of a fact value: about 7 units per Sora-Medium 12 character in a 245-unit
- * cell. The builder shortens (no CSS ellipsis); the full list of parcels is on page 2.
- */
-export const COVER_FACT_MAX_CHARS = 34
-
-type Fact = { caption: string; value: string }
+// The parcel map zone (D-24): heading, the shared figure in its frame, a one line legend.
+const MAP_TOP = 504
+const MAP_HEADING_HEIGHT = 20
+const MAP_BOX_HEIGHT = COVER_MAP_FRAME_SIZE.height
+const MAP_LEGEND_GAP = 4
+const MAP_LEGEND_HEIGHT = 12
+const MAP_ZONE_HEIGHT = MAP_HEADING_HEIGHT + MAP_BOX_HEIGHT + MAP_LEGEND_GAP + MAP_LEGEND_HEIGHT
+const MAP_LEGEND_TOP = MAP_HEADING_HEIGHT + MAP_BOX_HEIGHT + MAP_LEGEND_GAP
 
 function titleHtml(siteName: string): string {
   const long = siteName.length >= TITLE_LONG_FROM
@@ -141,64 +133,33 @@ function tileHtml(heading: string, band: ScoreBand, left: number, palette: PdfPa
   return `<div ${box}><div class="cover-tile-ring">${ring}</div><div class="cover-tile-heading">${escapeHtml(heading)}</div><div class="cover-tile-value"><span class="cover-tile-numeral">${escapeHtml(points)}</span><span class="cover-tile-outof">${escapeHtml(t.cover.outOf({ max: String(band.max) }))}</span></div>${bandLine}</div>`
 }
 
-function communeText(parcelIds: string[]): string {
-  const insee = parcelIds.length > 0 ? inseeFromParcelId(parcelIds[0]) : null
-  if (!insee) return t.identity.unknown
-  return t.identity.communeValue({ code: insee.commune, department: insee.department })
+/** A quiet panel for a map that cannot be drawn: a sentence on a `panel` box, no legend line. */
+function quietHtml(text: string): string {
+  return `<div class="cover-quiet">${escapeHtml(text)}</div>`
 }
 
-/** The headline facts in reading order; a blank observer drops its cell and the next ones move up. */
-function factsOf(data: SurveyExportData): Fact[] {
-  const unknown = t.identity.unknown
-  const facts: Fact[] = [
-    { caption: t.identity.commune, value: communeText(data.parcelIds) },
-    {
-      caption: t.identity.parcels,
-      value:
-        data.parcelIds.length === 0
-          ? t.identity.noParcel
-          : shortenList(data.parcelIds, COVER_FACT_MAX_CHARS),
-    },
-    {
-      caption: t.identity.observationYear,
-      value: data.observationYear === null ? unknown : String(data.observationYear),
-    },
-    {
-      caption: t.identity.versionNumber,
-      value: data.versionNumber === null ? unknown : String(data.versionNumber),
-    },
-  ]
-  const observer = data.observerName?.trim()
-  if (observer) {
-    facts.push({
-      caption: t.identity.observer,
-      value: shortenText(observer, COVER_FACT_MAX_CHARS),
-    })
-  }
-  facts.push({ caption: t.identity.method, value: methodShortText(data.method) })
-  return facts
-}
-
-function factsHtml(data: SurveyExportData): string {
-  const cells = factsOf(data).map((fact, index) => {
-    const left = (index % 2) * (FACT_WIDTH + FACT_COLUMN_GAP)
-    const top = Math.floor(index / 2) * FACT_STEP
-    return `<div class="cover-fact" style="left: ${svgNumber(left)}px; top: ${top}px"><div class="cover-fact-caption">${escapeHtml(fact.caption)}</div><div class="cover-fact-value">${escapeHtml(fact.value)}</div></div>`
-  })
-  return cells.join("")
+/** The parcel map zone: the figure and its legend, or a quiet panel (no parcel, no geometry). */
+function mapZoneHtml(data: SurveyExportData, palette: PdfPalette, top: number): string {
+  const open = `<div class="cover-map" style="top: ${top}px">`
+  const heading = `<div class="cover-map-heading">${escapeHtml(t.map.heading)}</div>`
+  if (data.parcelIds.length === 0) return `${open}${heading}${quietHtml(t.map.noParcel)}</div>`
+  const figure = buildMapFigure(data.map, palette)
+  if (figure.kind === "noGeometry") return `${open}${heading}${quietHtml(t.map.noOutline)}</div>`
+  const legend = figure.hasBasemap ? t.map.source : t.map.outlineOnly
+  return `${open}${heading}<div class="cover-map-box">${figure.html}</div><div class="cover-map-legend">${escapeHtml(legend)}</div></div>`
 }
 
 /**
- * The cover block. A draft moves the whole light part down by the banner height (planner
- * resolution of a 2-unit overlap in UI-SPEC B.4: the banner strip of a draft cover ends at y 410,
- * the tiles start at 408), as the plain pages do.
+ * The cover block. A draft moves the whole light part down by the banner height: the banner strip
+ * of a draft cover is 368 to 386, the tiles start at 400 and the map zone ends at 792, above the
+ * footer line at 804.
  */
 export function buildCoverBlocks(data: SurveyExportData, palette: PdfPalette): PdfBlock[] {
   const shift = data.isDraft ? DRAFT_BANNER_HEIGHT : 0
   const bands = scoreBands(data.scores)
   const tiles = `<div class="cover-tiles" style="top: ${TILES_TOP + shift}px">${tileHtml(t.scores.standHeading, bands.stand, 0, palette)}${tileHtml(t.scores.contextHeading, bands.context, TILE_WIDTH + TILE_GAP, palette)}</div>`
-  const facts = `<div class="cover-facts" style="top: ${FACTS_TOP + shift}px">${factsHtml(data)}</div>`
-  const html = `<div class="cover-page">${panelHtml(data, palette)}${tiles}${facts}</div>`
+  const map = mapZoneHtml(data, palette, MAP_TOP + shift)
+  const html = `<div class="cover-page">${panelHtml(data, palette)}${tiles}${map}</div>`
   return [{ id: "cover", pageStyle: "cover", height: COVER_BLOCK_HEIGHT, html }]
 }
 
@@ -234,9 +195,10 @@ export function coverCss(palette: PdfPalette): string {
 .cover-tile-empty { ${abs} left: 96px; top: 32px; height: 32px; font-family: ${font.body}; font-size: 12px; line-height: 32px; white-space: nowrap; color: ${palette.inkMuted}; }
 .cover-tile-band { ${abs} left: 96px; top: 72px; height: 16px; font-family: ${font.body}; font-size: 9px; line-height: 16px; white-space: nowrap; color: ${palette.ink}; }
 .cover-tile-dot { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 4px; }
-.cover-facts { ${abs} left: ${CONTENT_X}px; width: ${CONTENT_WIDTH}px; height: ${3 * FACT_STEP}px; }
-.cover-fact { ${abs} box-sizing: border-box; width: ${FACT_WIDTH}px; height: ${FACT_STEP}px; padding: 8px 0 16px; border-top: 1px solid ${palette.line}; }
-.cover-fact-caption { height: 12px; font-family: ${font.label}; font-size: 8.5px; line-height: 12px; white-space: nowrap; color: ${palette.inkMuted}; }
-.cover-fact-value { height: 20px; overflow: hidden; font-family: ${font.strong}; font-size: 12px; line-height: 20px; white-space: nowrap; color: ${palette.ink}; }
-`
+.cover-map { ${abs} left: ${CONTENT_X}px; width: ${CONTENT_WIDTH}px; height: ${MAP_ZONE_HEIGHT}px; }
+.cover-map-heading { ${abs} left: 0; top: 0; width: ${CONTENT_WIDTH}px; height: ${MAP_HEADING_HEIGHT}px; overflow: hidden; white-space: nowrap; font-family: ${font.heading}; font-size: 11px; line-height: ${MAP_HEADING_HEIGHT}px; color: ${palette.ink}; }
+.cover-map-box { ${abs} left: 0; top: ${MAP_HEADING_HEIGHT}px; width: ${CONTENT_WIDTH}px; height: ${MAP_BOX_HEIGHT}px; overflow: hidden; }
+.cover-map-legend { ${abs} left: 0; top: ${MAP_LEGEND_TOP}px; width: ${CONTENT_WIDTH}px; height: ${MAP_LEGEND_HEIGHT}px; overflow: hidden; white-space: nowrap; font-family: ${font.body}; font-size: 8px; line-height: ${MAP_LEGEND_HEIGHT}px; color: ${palette.inkMuted}; }
+.cover-quiet { ${abs} left: 0; top: ${MAP_HEADING_HEIGHT}px; box-sizing: border-box; width: ${CONTENT_WIDTH}px; height: ${MAP_BOX_HEIGHT}px; overflow: hidden; padding: 0 24px; display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid ${palette.line}; border-radius: 12px; background: ${palette.panel}; font-family: ${font.body}; font-size: 9px; line-height: 13px; color: ${palette.inkMuted}; }
+${mapFigureCss(palette)}`
 }

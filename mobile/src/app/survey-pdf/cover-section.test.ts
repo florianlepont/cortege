@@ -1,16 +1,18 @@
-import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
-
 import {
+  exportFixtureTypical,
   exportFixtureV30Draft,
   exportFixtureV32Submitted,
+  exportFixtureWorstCase,
 } from "../../../test/survey-export-fixtures"
 import { fr } from "../../i18n"
 import { CONTOUR_VIEWBOX, buildContourPaths } from "../contour-paths"
-import { COVER_FACT_MAX_CHARS, buildCoverBlocks, coverCss } from "./cover-section"
+import { buildCoverBlocks, coverCss } from "./cover-section"
+import { COVER_MAP_FRAME_SIZE } from "./export-settings"
 import { escapeHtml, formatDateFr } from "./html"
+import { buildMapFigure, mapFigureCss } from "./map-figure"
 import { paginateBlocks } from "./paginate"
 import type { PageChrome } from "./paginate"
-import { COVER_PANEL_HEIGHT, PDF_CLASS } from "./styles"
+import { COVER_BANNER_TOP, COVER_PANEL_HEIGHT, COVER_WATERMARK_TOP, PDF_CLASS } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
@@ -77,10 +79,6 @@ describe("the block", () => {
     expect(blocks[0].pageStyle).toBe("cover")
     expect(blocks[0].height).toBe(740)
   })
-
-  test("COVER_FACT_MAX_CHARS is 34", () => {
-    expect(COVER_FACT_MAX_CHARS).toBe(34)
-  })
 })
 
 describe("the forest panel", () => {
@@ -142,9 +140,9 @@ describe("the forest panel", () => {
       `<div class="cover-date">${formatDateFr(submitted.dateIso, t.identity.unknown)}</div>`,
     )
     expect(coverCss(palette)).toMatch(
-      /\.cover-title \{[^}]*left: 40px; top: 156px; width: 340px; height: 84px; overflow: hidden/,
+      /\.cover-title \{[^}]*left: 40px; top: 148px; width: 340px; height: 84px; overflow: hidden/,
     )
-    expect(coverCss(palette)).toMatch(/\.cover-date \{[^}]*left: 40px; top: 252px/)
+    expect(coverCss(palette)).toMatch(/\.cover-date \{[^}]*left: 40px; top: 240px/)
   })
 
   test("a bad date prints the unknown text", () => {
@@ -182,7 +180,7 @@ describe("the forest panel", () => {
     expect(html).toContain(
       `<div class="cover-provisional">${t.scores.provisional({ count: 2 })}</div>`,
     )
-    expect(coverCss(palette)).toMatch(/\.cover-provisional \{[^}]*top: 352px/)
+    expect(coverCss(palette)).toMatch(/\.cover-provisional \{[^}]*top: 336px/)
   })
 
   test("a submitted survey, or a draft with every factor filled, prints no provisional line", () => {
@@ -203,14 +201,15 @@ describe("the forest panel", () => {
     expect(html).not.toContain("<b>")
     expect(html).not.toContain("<script")
     expect(html).not.toContain("<img src=x")
-    expect(html).toContain("&lt;script&gt;")
+    // The observer is on page 2 only: the cover prints no identity fact any more.
+    expect(html).not.toContain("alert(1)</script>")
   })
 })
 
 describe("the sub-score tiles", () => {
-  test("two tiles at 408 on a submitted survey and 432 on a draft", () => {
-    expect(htmlOf(submitted)).toContain('<div class="cover-tiles" style="top: 408px">')
-    expect(htmlOf(draft)).toContain('<div class="cover-tiles" style="top: 432px">')
+  test("two tiles at 376 on a submitted survey and 400 on a draft", () => {
+    expect(htmlOf(submitted)).toContain('<div class="cover-tiles" style="top: 376px">')
+    expect(htmlOf(draft)).toContain('<div class="cover-tiles" style="top: 400px">')
     expect((htmlOf(submitted).match(/class="cover-tile"/g) ?? []).length).toBe(2)
   })
 
@@ -266,112 +265,117 @@ describe("the sub-score tiles", () => {
   })
 })
 
-describe("the identity facts", () => {
-  function facts(
-    html: string,
-  ): Array<{ caption: string; value: string; left: string; top: string }> {
-    const re =
-      /<div class="cover-fact" style="left: ([\d.]+)px; top: (\d+)px"><div class="cover-fact-caption">(.*?)<\/div><div class="cover-fact-value">(.*?)<\/div><\/div>/g
-    return Array.from(html.matchAll(re), (m) => ({
-      left: m[1],
-      top: m[2],
-      caption: m[3],
-      value: m[4],
-    }))
-  }
-
-  test("starts at 548 on a submitted survey and 572 on a draft", () => {
-    expect(htmlOf(submitted)).toContain('<div class="cover-facts" style="top: 548px">')
-    expect(htmlOf(draft)).toContain('<div class="cover-facts" style="top: 572px">')
+describe("the parcel map zone (D-24)", () => {
+  // The typical fixture has one parcel on a basemap; the worst case has three.
+  const mapped = withData({
+    parcelIds: exportFixtureTypical.parcelIds,
+    map: exportFixtureTypical.map,
   })
 
-  test("six cells in two columns, rows 57 apart, in reading order", () => {
-    const cells = facts(htmlOf(submitted))
-    expect(cells.map((c) => c.caption)).toEqual([
-      t.identity.commune,
-      t.identity.parcels,
-      escapeHtml(t.identity.observationYear),
-      t.identity.versionNumber,
-      t.identity.observer,
-      t.identity.method,
-    ])
-    expect(cells.map((c) => [c.left, c.top])).toEqual([
-      ["0", "0"],
-      ["269.5", "0"],
-      ["0", "57"],
-      ["269.5", "57"],
-      ["0", "114"],
-      ["269.5", "114"],
-    ])
-    expect(cells.map((c) => c.value)).toEqual([
-      "77186 (département 77)",
-      "77186000AB0123",
-      "2026",
-      "2",
-      "Camille Martin",
-      "v3.2, cas 1",
-    ])
+  test("sits at 504 on a submitted survey and 528 on a draft, 264 high, ending above the footer", () => {
+    expect(htmlOf(mapped)).toContain('<div class="cover-map" style="top: 504px">')
+    expect(htmlOf({ ...mapped, isDraft: true })).toContain(
+      '<div class="cover-map" style="top: 528px">',
+    )
+    expect(coverCss(palette)).toMatch(/\.cover-map \{[^}]*left: 40px; width: 515px; height: 264px/)
+    expect(504 + 264).toBe(768)
+    expect(528 + 264).toBe(792)
+    expect(528 + 264).toBeLessThan(804)
   })
 
-  test("the cell box is 245.5 wide with a hairline, 8 / 16 padding and a nowrap 20 value", () => {
+  test("the box is the cover frame, 228 high, 20 under the zone top, with hidden overflow", () => {
+    expect(COVER_MAP_FRAME_SIZE).toEqual({ width: 515, height: 228 })
+    expect(coverCss(palette)).toMatch(
+      /\.cover-map-box \{[^}]*left: 0; top: 20px; width: 515px; height: 228px; overflow: hidden/,
+    )
+    expect(coverCss(palette)).toMatch(
+      /\.cover-map-legend \{[^}]*top: 252px; width: 515px; height: 12px; overflow: hidden; white-space: nowrap;[^}]*font-size: 8px; line-height: 12px; color: inkMuted/,
+    )
+    expect(coverCss(palette)).toMatch(
+      /\.cover-map-heading \{[^}]*top: 0; width: 515px; height: 20px; overflow: hidden; white-space: nowrap; font-family: Sora-SemiBold; font-size: 11px; line-height: 20px; color: ink/,
+    )
+  })
+
+  test("with a basemap: the heading, the shared figure in the box and the source line", () => {
+    const html = htmlOf(mapped)
+    const figure = buildMapFigure(mapped.map, palette)
+    expect(figure.kind).toBe("figure")
+    if (figure.kind !== "figure") return
+    expect(figure.hasBasemap).toBe(true)
+    expect(html).toContain(`<div class="cover-map-heading">${t.map.heading}</div>`)
+    expect(html).toContain(`<div class="cover-map-box">${figure.html}</div>`)
+    expect(html).toContain(`<div class="cover-map-legend">${escapeHtml(t.map.source)}</div>`)
+    expect((html.match(/class="map-frame"/g) ?? []).length).toBe(1)
+    expect(html).not.toContain("cover-quiet")
+  })
+
+  test("with the outline only: the figure on the pale canvas and the outline-only legend", () => {
+    const outline = withData({
+      parcelIds: exportFixtureTypical.parcelIds,
+      map: exportFixtureTypical.map && { ...exportFixtureTypical.map, basemap: null },
+    })
+    const html = htmlOf(outline)
+    expect(html).toContain('class="map-canvas"')
+    expect(html).not.toContain("map-image")
+    expect(html).toContain(`<div class="cover-map-legend">${t.map.outlineOnly}</div>`)
+    expect(html).not.toContain(escapeHtml(t.map.source))
+  })
+
+  test("a basemap that is not a base64 JPEG data URI gives the outline (T-33-44)", () => {
+    for (const dataUri of ["http://example.com/m.jpg", 'data:image/jpeg;base64,AAAA"onerror="x']) {
+      const base = exportFixtureTypical.map
+      const html = htmlOf(
+        withData({
+          parcelIds: exportFixtureTypical.parcelIds,
+          map: base && base.basemap ? { ...base, basemap: { ...base.basemap, dataUri } } : base,
+        }),
+      )
+      expect(html).toContain('class="map-canvas"')
+      expect(html).not.toContain("map-image")
+      expect(html).not.toContain("http:")
+      expect(html).not.toContain("onerror")
+      expect(html).toContain(t.map.outlineOnly)
+    }
+  })
+
+  test("no parcel: a quiet panel with the no-parcel sentence and no legend", () => {
+    const html = htmlOf(withData({ parcelIds: [], map: null }))
+    expect(html).toContain(`<div class="cover-quiet">${t.map.noParcel}</div>`)
+    expect(html).toContain(`<div class="cover-map-heading">${t.map.heading}</div>`)
+    expect(html).not.toContain("cover-map-legend")
+    expect(html).not.toContain("cover-map-box")
+    expect(html).not.toContain("map-frame")
+  })
+
+  test("parcels without geometry: a quiet panel with the no-outline sentence and no legend", () => {
+    const html = htmlOf(withData({ parcelIds: ["77186000AB0123"], map: null }))
+    expect(html).toContain(`<div class="cover-quiet">${t.map.noOutline}</div>`)
+    expect(html).not.toContain("cover-map-legend")
+    expect(html).not.toContain("map-frame")
+  })
+
+  test("the quiet panel is 515 x 228 on panel with a line border, radius 12 and 9 / 13 muted text", () => {
+    expect(coverCss(palette)).toMatch(
+      /\.cover-quiet \{[^}]*top: 20px;[^}]*width: 515px; height: 228px;[^}]*padding: 0 24px;[^}]*border: 1px solid line; border-radius: 12px; background: panel;[^}]*font-size: 9px; line-height: 13px; color: inkMuted/,
+    )
+  })
+
+  test("prints no parcel id and no observation year caption anywhere on the cover", () => {
+    const html = htmlOf(exportFixtureWorstCase)
+    expect(exportFixtureWorstCase.parcelIds).toHaveLength(3)
+    for (const id of exportFixtureWorstCase.parcelIds) expect(html).not.toContain(id)
+    expect(html).not.toContain(t.identity.observationYear)
+    expect(html).not.toContain(t.identity.parcels)
+    expect(html).not.toContain("cover-fact")
+    expect(html).not.toContain("…")
+    // The long date stays in the forest panel.
+    expect(html).toContain(formatDateFr(exportFixtureWorstCase.dateIso, t.identity.unknown))
+  })
+
+  test("the figure CSS closes the cover CSS, once", () => {
     const css = coverCss(palette)
-    expect(css).toMatch(
-      /\.cover-fact \{[^}]*width: 245\.5px; height: 57px; padding: 8px 0 16px; border-top: 1px solid line/,
-    )
-    expect(css).toMatch(/\.cover-fact-caption \{[^}]*font-size: 8\.5px; line-height: 12px/)
-    expect(css).toMatch(
-      /\.cover-fact-value \{[^}]*height: 20px; overflow: hidden; font-family: Sora-Medium; font-size: 12px; line-height: 20px; white-space: nowrap/,
-    )
-  })
-
-  test("unknown values print Non renseigné and a missing observer drops its cell", () => {
-    const cells = facts(
-      htmlOf(
-        withData({
-          parcelIds: [],
-          observationYear: null,
-          versionNumber: null,
-          observerName: "   ",
-          method: { ...submitted.method, version: IBP_METHOD_V3_0, ibpCas: null },
-        }),
-      ),
-    )
-    expect(cells.map((c) => c.value)).toEqual([
-      t.identity.unknown,
-      t.identity.noParcel,
-      t.identity.unknown,
-      t.identity.unknown,
-      "v3.0",
-    ])
-    expect(cells[4].caption).toBe(t.identity.method)
-    expect([cells[4].left, cells[4].top]).toEqual(["0", "114"])
-  })
-
-  test("a malformed parcel id prints the unknown commune", () => {
-    const cells = facts(htmlOf(withData({ parcelIds: ["short"] })))
-    expect(cells[0].value).toBe(t.identity.unknown)
-    expect(cells[1].value).toBe("short")
-  })
-
-  test("the parcel list and a long observer are shortened with an ellipsis", () => {
-    const cells = facts(
-      htmlOf(
-        withData({
-          parcelIds: ["77186000AB0123", "77186000AB0124", "77186000AB0125"],
-          observerName: "Jean-Baptiste de la Tour d'Auvergne-Lauraguais",
-        }),
-      ),
-    )
-    expect(cells[1].value).toBe("77186000AB0123, 77186000AB0124, …")
-    expect(cells[1].value.length).toBeLessThanOrEqual(COVER_FACT_MAX_CHARS)
-    expect(cells[4].value.endsWith("…")).toBe(true)
-    expect(cells[4].value.length).toBeLessThanOrEqual(COVER_FACT_MAX_CHARS)
-  })
-
-  test("the method cell reads the version and cas", () => {
-    const v32 = facts(htmlOf(withData({ method: { ...submitted.method, ibpCas: 3 } })))
-    expect(v32[5].value).toBe("v3.2, cas 3")
-    expect(submitted.method.version).toBe(IBP_METHOD_V3_2)
+    expect(css.endsWith(`${mapFigureCss(palette)}`)).toBe(true)
+    expect(css.split(mapFigureCss(palette)).length - 1).toBe(1)
   })
 })
 
@@ -394,12 +398,10 @@ describe("the page", () => {
     expect(html).toContain(`<div class="${PDF_CLASS.watermark}">`)
     expect(html).toContain(t.page.number({ index: "1", total: 1 }))
     expect(html).toContain("cover-title cover-title-long")
-    expect(html).toContain("77186000AB0123, 77186000AB0124, …")
-    // Five cells: Méthode IBP moved up into the fifth place (left column, third row).
-    expect(html).toContain(
-      `style="left: 0px; top: 114px"><div class="cover-fact-caption">${t.identity.method}`,
-    )
-    expect(html).not.toContain(t.identity.observer)
+    // The draft cover moves the tiles and the map zone down by the banner height.
+    expect(html).toContain('<div class="cover-tiles" style="top: 400px">')
+    expect(html).toContain('<div class="cover-map" style="top: 528px">')
+    expect(html).not.toContain("77186000AB0123")
   })
 
   test("a cover without scores paginates to one page too", () => {
@@ -412,24 +414,44 @@ describe("the page", () => {
     expect(html).not.toContain(PDF_CLASS.banner + '">')
   })
 
-  test("the light part ends above the footer line on a draft", () => {
-    // Facts start at 572 on a draft; three rows of 57 end at 743, the footer line is at 804.
-    expect(572 + 3 * 57).toBeLessThan(804)
+  test("the draft banner and watermark keep their place on the shorter panel (T-33-45)", () => {
+    expect(COVER_BANNER_TOP).toBe(368)
+    expect(COVER_WATERMARK_TOP).toBe(543)
+    // The banner strip is 18 high: 368 to 386, above the tiles at 400.
+    expect(COVER_BANNER_TOP + 18).toBeLessThan(400)
+  })
+
+  test("the light part ends above the footer line on a draft and on a submitted survey", () => {
+    // The map zone is 264 high: 504 to 768 submitted, 528 to 792 draft, the footer line is at 804.
+    expect(528 + 264).toBeLessThan(804)
   })
 })
 
 describe("the print contract", () => {
   const forbidden = /opacity|gradient|shadow|filter|#[0-9a-fA-F]{3,8}\b|rgba?\(|http/i
 
+  // The shared map figure ships its translucent scale and north panels since phase 25.1: the cover's
+  // own HTML and CSS are checked with the figure removed.
+  function ownHtml(data: SurveyExportData): string {
+    const figure = buildMapFigure(data.map, palette)
+    return figure.kind === "figure" ? htmlOf(data).replace(figure.html, "") : htmlOf(data)
+  }
+
   test("the CSS and the HTML hold no opacity, gradient, shadow, filter, hex literal or http", () => {
-    expect(coverCss(palette)).not.toMatch(forbidden)
-    expect(htmlOf(submitted)).not.toMatch(forbidden)
-    expect(htmlOf(draft)).not.toMatch(forbidden)
-    expect(htmlOf(withData({ scores: null }))).not.toMatch(forbidden)
+    const own = coverCss(palette).replace(mapFigureCss(palette), "")
+    expect(own).not.toMatch(forbidden)
+    expect(ownHtml(submitted)).not.toMatch(forbidden)
+    expect(ownHtml(draft)).not.toMatch(forbidden)
+    expect(ownHtml(withData({ scores: null }))).not.toMatch(forbidden)
+    for (const data of [exportFixtureTypical, exportFixtureWorstCase]) {
+      expect(ownHtml(data)).not.toMatch(forbidden)
+    }
+    // The figure it replaced must have been there: the check above is not vacuous.
+    expect(htmlOf(exportFixtureTypical)).toContain("map-frame")
   })
 
   test("the CSS uses only palette values and the charter fonts, with the cover- prefix", () => {
-    const css = coverCss(palette)
+    const css = coverCss(palette).replace(mapFigureCss(palette), "")
     const families = new Set(Array.from(css.matchAll(/font-family: ([\w-]+);/g), (m) => m[1]))
     const charter = new Set<string>(Object.values(PDF_FONT_FAMILIES))
     for (const family of families) expect(charter.has(family)).toBe(true)

@@ -70,15 +70,16 @@ const WATERMARK_TOP = (PDF_PAGE_BLOCK_HEIGHT - WATERMARK_SIZE) / 2
 
 // Phase 33 page kinds (UI-SPEC B.1, B.4, B.10).
 
-/** Height of the forest panel at the top of the cover (B.4). */
-export const COVER_PANEL_HEIGHT = 380
+/** Height of the forest panel at the top of the cover (B.4; 380 before the parcel map, D-24, plan 33-18). */
+export const COVER_PANEL_HEIGHT = 356
 
 /** The draft banner of the cover sits directly under the forest panel, 12 units below it. */
 export const COVER_BANNER_TOP = COVER_PANEL_HEIGHT + 12
 
 /**
  * The draft watermark of the cover is centred in the light part under the panel: the watermark
- * colour would be invisible over forest. (380 + (840 - 380) / 2) - 110 / 2 = 555.
+ * colour would be invisible over forest. (356 + (840 - 356) / 2) - 110 / 2 = 543. The banner sits at
+ * 356 + 12 = 368.
  */
 export const COVER_WATERMARK_TOP =
   COVER_PANEL_HEIGHT + (PDF_PAGE_BLOCK_HEIGHT - COVER_PANEL_HEIGHT) / 2 - WATERMARK_SIZE / 2

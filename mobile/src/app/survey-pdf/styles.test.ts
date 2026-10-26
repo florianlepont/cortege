@@ -202,9 +202,9 @@ describe("page kind geometry", () => {
   const ios = buildBaseCss(palette, pdfLayoutFor("ios"))
 
   test("pins the measures of the cover and the summary (UI-SPEC B.1, B.4, B.10)", () => {
-    expect(COVER_PANEL_HEIGHT).toBe(380)
-    expect(COVER_BANNER_TOP).toBe(392)
-    expect(COVER_WATERMARK_TOP).toBe(555)
+    expect(COVER_PANEL_HEIGHT).toBe(356)
+    expect(COVER_BANNER_TOP).toBe(368)
+    expect(COVER_WATERMARK_TOP).toBe(543)
     expect(SUMMARY_BODY_TOP).toBe(36)
     expect(SUMMARY_BODY_HEIGHT).toBe(764)
     expect(SUMMARY_BODY_TOP + SUMMARY_BODY_HEIGHT + PAGE_FOOTER_HEIGHT).toBe(PDF_PAGE_BLOCK_HEIGHT)
@@ -230,8 +230,8 @@ describe("page kind geometry", () => {
   })
 
   test("the cover moves the draft banner under the panel and the watermark into the light part", () => {
-    expect(ios).toMatch(/\.page-cover \.page-draft-banner \{[^}]*top: 392px;/)
-    expect(ios).toMatch(/\.page-cover \.page-watermark \{[^}]*top: 555px;/)
+    expect(ios).toMatch(/\.page-cover \.page-draft-banner \{[^}]*top: 368px;/)
+    expect(ios).toMatch(/\.page-cover \.page-watermark \{[^}]*top: 543px;/)
     expect(ios.indexOf(".page-cover .page-watermark")).toBeGreaterThan(
       ios.indexOf(".page-watermark {"),
     )

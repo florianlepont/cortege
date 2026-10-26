@@ -56,13 +56,24 @@ export const PHOTO_EXPORT_SETTINGS: PhotoExportSettings = {
 }
 
 /**
- * Frame of the map snapshot and of its SVG overlay of the complete PDF (phase 33, D-12): 250 high
- * so that the map and the trend share a page. The 340 high frame was aligned on both platforms on
- * 2026-10-10. Re-measured by plan 33-14 on 2026-10-24 with three real cadastre parcels of Fontainebleau
- * over a snapshot that draws the cadastre layer: the outline lies on the cadastre lines and the building
- * edges with no visible offset (under 2 units at 200 dpi) on the iOS simulator and on the Android emulator.
+ * Former frame of the map block in the body of the complete PDF (phase 33, D-12): 250 high so that the
+ * map and the trend shared a page. Since plan 33-18 (D-24, 2026-10-26) the complete PDF no longer reads
+ * it: its map is on the cover at `COVER_MAP_FRAME_SIZE`. Value and measurement are kept and the constant
+ * stays exported, because phases 31 and 32 run beside phase 33 and may plan against it. The 340 high frame
+ * was aligned on both platforms on 2026-10-10; plan 33-14 re-measured this one on 2026-10-24 with three
+ * real cadastre parcels of Fontainebleau over a snapshot that draws the cadastre layer: the outline lies
+ * on the cadastre lines and the building edges with no visible offset (under 2 units at 200 dpi) on the
+ * iOS simulator and on the Android emulator.
  */
 export const MAP_FRAME_SIZE = { width: 515, height: 250 } as const
+
+/**
+ * Frame of the map snapshot and of its SVG overlay on the cover of the complete PDF (phase 33, D-24, plan
+ * 33-18): the parcel map left the body for page 1. It has the size of `SUMMARY_MAP_FRAME_SIZE`, so the
+ * overlay alignment that plan 33-14 measured at 515 x 228 on both engines (DC-33-03) applies; plan 33-18
+ * re-measured it on the cover (Task 4).
+ */
+export const COVER_MAP_FRAME_SIZE = { width: 515, height: 228 } as const
 
 /**
  * Frame of the map snapshot of the one-page summary (phase 33, UI-SPEC B.10 zone Z3). Overlay alignment

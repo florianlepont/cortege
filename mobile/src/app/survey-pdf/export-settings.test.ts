@@ -1,5 +1,6 @@
 import {
   GEOMETRY_FETCH_TIMEOUT_MS,
+  COVER_MAP_FRAME_SIZE,
   MAP_FRAME_SIZE,
   PDF_FONT_WARMUP,
   PDF_LAYOUT_SCALE,
@@ -48,5 +49,10 @@ describe("export settings (measured in plan 25.1-07, approved 2026-10-10)", () =
     expect(SUMMARY_MAP_FRAME_SIZE).toEqual({ width: 515, height: 228 })
     expect(SUMMARY_MAP_FRAME_SIZE.width).toBe(MAP_FRAME_SIZE.width)
     expect(SUMMARY_MAP_FRAME_SIZE.height).toBeLessThan(MAP_FRAME_SIZE.height)
+  })
+
+  test("the cover of the complete PDF has the summary's 515 x 228 map frame (D-24, plan 33-18)", () => {
+    expect(COVER_MAP_FRAME_SIZE).toEqual({ width: 515, height: 228 })
+    expect(COVER_MAP_FRAME_SIZE).toEqual(SUMMARY_MAP_FRAME_SIZE)
   })
 })
