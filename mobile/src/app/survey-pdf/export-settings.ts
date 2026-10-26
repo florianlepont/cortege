@@ -26,6 +26,8 @@ export const PDF_PAGE = { width: 595, height: 842 } as const
 //   summary: 1 page for the typical, the fullest, the no basemap and the no history cases.
 // The last body text of a page ends at 746.5 pt at most (body bottom 800); the summary ends on its source lines
 // at 798 to 800. Measurements: 33-14-MEASUREMENTS.md; device checks RC-05 and DC-33-01.
+// Plan 33-18 (2026-10-26, D-24: the parcel map moved to the cover): the same two engines print v3.2 4, v3.0
+// draft 4, typical 5, worst case 9 and the summary 1 pages, equal to the builder and to Chrome on every case.
 export const PDF_PAGE_BLOCK_HEIGHT = 840
 
 /**
@@ -70,8 +72,13 @@ export const MAP_FRAME_SIZE = { width: 515, height: 250 } as const
 /**
  * Frame of the map snapshot and of its SVG overlay on the cover of the complete PDF (phase 33, D-24, plan
  * 33-18): the parcel map left the body for page 1. It has the size of `SUMMARY_MAP_FRAME_SIZE`, so the
- * overlay alignment that plan 33-14 measured at 515 x 228 on both engines (DC-33-03) applies; plan 33-18
- * re-measured it on the cover (Task 4).
+ * overlay alignment that plan 33-14 measured at 515 x 228 on both engines (DC-33-03) applies. Plan 33-18
+ * re-measured it on the cover on 2026-10-26: real snapshots (1100 px, JPEG 0.8) of three cadastre parcels of
+ * Fontainebleau over the composite style that draws the cadastre layer, printed through the real
+ * `exportAndShareSurveyPdf` on the iPhone 18 Pro simulator (iOS 27.0, WebKit) and an API 36 emulator (Skia):
+ * at 200 dpi the outlines lie on the cadastre lines and the building edges with no visible offset (under
+ * 2 units) on both engines, and the legend line under the map ends at 767.9 pt (iOS) and 766.1 pt (Android)
+ * against a budget of 768. See 33-14-MEASUREMENTS.md.
  */
 export const COVER_MAP_FRAME_SIZE = { width: 515, height: 228 } as const
 
