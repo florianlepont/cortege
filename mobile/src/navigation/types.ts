@@ -8,6 +8,7 @@ import type {
   SearchPlaceKind,
   UncappableFactor,
 } from "@cortege/ibp-domain"
+import type { ExportMode } from "../app/survey-pdf-export"
 import type { FactorKey } from "../app/types"
 import type { RouteDetailsValue } from "../screens/route-guide/RouteDetailsCard"
 import type { WeatherPoint } from "../storage/weather"
@@ -43,11 +44,18 @@ export type RoutePick = {
   details?: RouteDetailsValue
 }
 
+/**
+ * Phase 33, D-14: the PDF the member chose in the export sheet, handed back to the summary screen
+ * (the sheet never exports). The `nonce` is new at each confirm, so the summary applies a request
+ * once and the same choice made twice is applied twice.
+ */
+export type SurveyExportRequest = { mode: ExportMode; nonce: number }
+
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
   communitySurvey: { surveyId: string }
   communityHistory: { surveyId: string }
-  surveyDetail: undefined
+  surveyDetail: { exportRequest?: SurveyExportRequest } | undefined
   // `section` opens the page scrolled to its weather section (summary card, D-15).
   surveyContext: { section?: "conditions" } | undefined
   // D-32: the parcels of the survey (map, list, offline map), opened from the summary's map card.
@@ -63,6 +71,8 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyDmhGuide: { group?: DmhGroupCode } | undefined
   // Phase 29, D-04: the submission step (a native form sheet: who can see the survey, then finish).
   surveyFinish: { surveyId: string }
+  // Phase 33, D-14: the export choice sheet (a native form sheet: complete or summary PDF).
+  surveyExportChoice: { surveyId: string }
   surveyParcels: {
     surveyId: string
     mode: "wizard" | "edit"
@@ -197,6 +207,7 @@ export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "sur
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
 export type DmhGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
+export type ExportChoiceRouteProps = StackRouteProps<SurveysStackParamList, "surveyExportChoice">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">
 export type RouteGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyRouteGuide">
 export type RouteChooseRouteProps = StackRouteProps<SurveysStackParamList, "surveyRouteChoose">

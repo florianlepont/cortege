@@ -1,6 +1,9 @@
 import { fr } from "../../i18n"
+import type { ExportMode } from "./types"
 
-// The name of the shared PDF (phase 25.1, D-11): `Cortege-IBP-<site>[-<year>][-brouillon].pdf`.
+// The name of the shared PDF (phase 25.1, D-11; phase 33, D-13):
+// `Cortege-IBP-<site>[-<year>][-resume|-brouillon].pdf`. The summary has its own suffix, so the two
+// PDFs of one survey never replace each other, and it is never a draft (D-09).
 // The site name is user text, so it is reduced to ASCII letters and digits joined by single dashes:
 // no separator, no dot and no accent can reach the file system. Pure.
 
@@ -56,11 +59,13 @@ export function buildExportFileName(input: {
   observationYear: number | null
   dateIso: string
   isDraft: boolean
+  mode: ExportMode
 }): string {
   const site = capSlug(slugOf(input.siteName)) || t.fallbackSite
   const parts = [t.prefix, site]
   const year = yearOf(input.observationYear, input.dateIso)
   if (year !== null) parts.push(year)
-  if (input.isDraft) parts.push(t.draftSuffix)
+  if (input.mode === "summary") parts.push(t.summarySuffix)
+  else if (input.isDraft) parts.push(t.draftSuffix)
   return `${parts.join("-")}.pdf`
 }

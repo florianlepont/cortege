@@ -30,6 +30,7 @@ import { settingsFr } from "./settings"
 import { statusFr } from "./status"
 import { surveyDetailFr } from "./survey-detail"
 import { surveyExportFr } from "./survey-export"
+import { surveyExportChoiceFr } from "./survey-export-choice"
 import { surveyFinishFr } from "./survey-finish"
 import { surveyFormFr } from "./survey-form"
 import { surveyListFr } from "./survey-list"
@@ -51,6 +52,7 @@ export const fr = {
   surveyList: surveyListFr,
   surveyDetail: surveyDetailFr,
   surveyExport: surveyExportFr,
+  surveyExportChoice: surveyExportChoiceFr,
   surveyFinish: surveyFinishFr,
   surveyForm: surveyFormFr,
   dmhGuide: dmhGuideFr,

@@ -6,6 +6,7 @@ import {
   conditionsBlockHeight,
   conditionsSectionCss,
 } from "./conditions-section"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
@@ -55,6 +56,7 @@ const WEATHER: SurveyWeather = {
 
 function makeData(conditions: SurveyExportData["conditions"]): SurveyExportData {
   return {
+    mode: "complete",
     surveyId: "survey-1",
     siteName: "Forêt de test",
     parcelIds: [],
@@ -304,10 +306,16 @@ describe("conditionsSectionCss", () => {
   it("copies the identity card rules from the palette and the print fonts", () => {
     expect(css).toContain(`border: 1px solid ${palette.line}`)
     expect(css).toContain(`background: ${palette.panel}`)
-    expect(css).toContain(`font-family: ${PDF_FONT_FAMILIES.heading}`)
+    expect(css).toContain(`font-family: ${PDF_FONT_FAMILIES.label}`)
+    expect(css).toContain(`font-family: ${PDF_FONT_FAMILIES.body}`)
     expect(css).toContain(`color: ${palette.inkMuted}`)
     expect(css).toContain(`color: ${palette.ink}`)
     expect(css).toContain("width: 150px")
+  })
+
+  it("draws the new section title (13 / 24, accent bar) and the radius 12 card (D-02)", () => {
+    expect(css).toContain(sectionTitleCss(".conditions-heading", palette))
+    expect(css).toMatch(/\.conditions-card \{[^}]*border-radius: 12px/)
   })
 
   it("uses no colour literal, no CSS column and no filled hairline", () => {

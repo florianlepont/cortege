@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
 status: complete
-stopped_at: "Phase 32 planned (16 plans, verified); awaiting the owner for the WSL edition check and the drawings"
-last_updated: "2026-10-23T20:00:00.000Z"
-last_activity: 2026-10-23
-last_activity_desc: Phase 30 closed after the owner checks on the iPhone; PRs 299, 307, 308 and 309 merged
+stopped_at: "Phase 33 complete (20/20 plans): both PDF versions validated by the owner on the iPhone 2026-10-26; nothing pushed or merged"
+last_updated: "2026-10-26T17:00:00.000Z"
+last_activity: 2026-10-26
+last_activity_desc: Phase 33 closed after the owner validated the third iPhone build; PR not opened yet
 progress:
   total_phases: 39
   completed_phases: 22
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 Phase: 30 (Route Choice Assistant (INSERTED, V1)) — COMPLETE
 Plan: 24 of 25 (30-25, the recorded tester session, is deferred to the field tests)
 Status: Phase 30 closed 2026-10-23; criterion 4 and REQ-FT-route-test wait for the field tests
-Last activity: 2026-10-23 — owner device checks on the iPhone, wording approved, PR 309 merged
+Last activity: 2026-10-26 — Phase 33 (PDF Export, Exhaustive and Simplified) complete: 20 plans (15 planned, 5 gap plans from the owner's decisions and iPhone reviews), both versions validated on the iPhone. Branch claude/intelligent-agnesi-22f0a3 not pushed.
 
 Progress: [█████████░] 30/39 phases complete
 

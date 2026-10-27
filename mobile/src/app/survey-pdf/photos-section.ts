@@ -1,5 +1,6 @@
 import { fr } from "../../i18n"
 import { escapeHtml } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { ExportPhoto, PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -15,6 +16,12 @@ const t = fr.surveyExport.photos
 export const PHOTOS_PER_PAGE = 6
 /** One photo cell in design units: two cells and the gap fill the 515 wide content. */
 export const PHOTO_CELL = { width: 255, height: 200 } as const
+
+/**
+ * Corner radius of a photo frame, in design units. Probe item P-4 (rounded clip of a JPEG): set to
+ * 0 if plan 33-14 rejects the rounded clip on a device.
+ */
+export const PHOTO_FRAME_RADIUS = 8
 
 const COLUMNS = 2
 const COLUMN_GAP = 5
@@ -105,12 +112,12 @@ export function photosSectionCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
 .photos-card { display: block; margin: 0 0 ${CARD_MARGIN}px; }
-.photos-heading { margin: 0; height: ${HEADING_HEIGHT}px; font-family: ${font.heading}; font-size: 11px; line-height: ${HEADING_HEIGHT}px; color: ${palette.ink}; }
+${sectionTitleCss(".photos-heading", palette)}
 .photos-note { margin: 0; padding: 3px 0; font-family: ${font.body}; font-size: 9px; line-height: ${NOTE_LINE_HEIGHT}px; color: ${palette.alert}; }
 .photos-row { display: flex; height: ${PHOTO_CELL.height + CAPTION_HEIGHT}px; margin: 0 0 ${ROW_GAP}px; }
 .photos-cell { width: ${PHOTO_CELL.width}px; margin-right: ${COLUMN_GAP}px; }
 .photos-cell:last-child { margin-right: 0; }
-.photos-frame { position: relative; width: ${PHOTO_CELL.width}px; height: ${PHOTO_CELL.height}px; overflow: hidden; background: ${palette.panel}; }
+.photos-frame { position: relative; width: ${PHOTO_CELL.width}px; height: ${PHOTO_CELL.height}px; border-radius: ${PHOTO_FRAME_RADIUS}px; overflow: hidden; background: ${palette.panel}; }
 .photos-image { position: absolute; display: block; }
 .photos-caption { margin: 0; height: ${CAPTION_HEIGHT}px; font-family: ${font.body}; font-size: 8.5px; line-height: ${CAPTION_HEIGHT}px; color: ${palette.inkMuted}; }
 `

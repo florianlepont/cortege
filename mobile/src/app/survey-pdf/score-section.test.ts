@@ -1,19 +1,35 @@
-import { FACTOR_KEYS, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import {
+  ALLOWED_SCORES_BY_FACTOR,
+  CONTEXT_BAND_CUT_OFFS,
+  FACTOR_KEYS,
+  IBP_MAX,
+  STAND_BAND_CUT_OFFS,
+  bandTone,
+  contextBand,
+  standBand,
+  totalBand,
+} from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import {
+  contextLevels,
   countMissingFactors,
   filledPoints,
-  buildScoreSummaryBlock,
-  scoreSectionCss,
+  roseRingScores,
+  scoreBands,
+  standZones,
   toneColor,
+  zoneTint,
 } from "./score-section"
-import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfPalette, SurveyExportData } from "./types"
 
-const t = fr.surveyExport
-
 const PALETTE_KEYS = [
+  "zoneLow",
+  "zoneLowSoft",
+  "zoneMid",
+  "zoneHighSoft",
+  "zoneHigh",
+  "contextInk",
   "ink",
   "inkMuted",
   "inkFaint",
@@ -58,39 +74,6 @@ function entriesMissing(missing: string[]): Entries {
   )
 }
 
-function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
-  return {
-    surveyId: "survey-1",
-    siteName: "Forêt de test",
-    parcelIds: [],
-    observationYear: 2026,
-    versionNumber: 1,
-    dateIso: "2026-10-10T08:00:00Z",
-    isDraft: false,
-    observerName: null,
-    method: {
-      version: IBP_METHOD_V3_2,
-      ibpCas: 1,
-      ibpCas3Scale: false,
-      regionVersion: null,
-      vegetationStage: null,
-    },
-    scores: { ibp_total: 34, ibp_peuplement_gestion: 25, ibp_contexte: 9 },
-    factorEntries: fullEntries(),
-    generatedAtIso: "2026-10-10T09:00:00Z",
-    coordinates: null,
-    rawFactors: {},
-    conditions: { note: null, weather: null },
-    route: null,
-    photos: { items: [], total: 0, unavailable: 0 },
-    map: null,
-    history: null,
-    assets: { fonts: [], logoDataUri: null },
-    layout: { platform: "ios", layoutScale: 1.2487 },
-    ...overrides,
-  }
-}
-
 describe("countMissingFactors", () => {
   it("counts nothing for ten filled factors", () => {
     expect(countMissingFactors(fullEntries())).toBe(0)
@@ -129,131 +112,132 @@ describe("toneColor", () => {
   })
 })
 
-describe("buildScoreSummaryBlock", () => {
-  it("prints the three scores out of their maximum", () => {
-    const block = buildScoreSummaryBlock(makeData(), palette)
-    expect(block.id).toBe("score-summary")
-    expect(block.height).toBeGreaterThan(0)
-    expect(block.html).toContain(t.scores.title)
-    expect(block.html).toContain("34 / 50")
-    expect(block.html).toContain("25 / 35")
-    expect(block.html).toContain("9 / 15")
-    expect(block.html).toContain(t.scores.totalHeading)
-    expect(block.html).toContain(t.scores.standHeading)
-    expect(block.html).toContain(t.scores.contextHeading)
+describe("scoreBands", () => {
+  it("gives each score its maximum, band name and tone from the domain", () => {
+    const bands = scoreBands({ ibp_total: 32, ibp_peuplement_gestion: 20, ibp_contexte: 12 })
+    expect(bands.total).toEqual({
+      points: 32,
+      max: 50,
+      bandName: fr.surveyDetail.bands.stand[totalBand(32)],
+      tone: bandTone(totalBand(32)),
+    })
+    expect(bands.stand).toEqual({
+      points: 20,
+      max: 35,
+      bandName: fr.surveyDetail.bands.stand[standBand(20)],
+      tone: bandTone(standBand(20)),
+    })
+    expect(bands.context).toEqual({
+      points: 12,
+      max: 15,
+      bandName: fr.surveyDetail.bands.context[contextBand(12)],
+      tone: bandTone(contextBand(12)),
+    })
   })
 
-  it("names the bands from the domain and colours them from the tones", () => {
-    // totalBand(34) = assez_forte (high), standBand(25) = assez_forte (high),
-    // contextBand(9) = moyenne (mid)
-    const block = buildScoreSummaryBlock(makeData(), palette)
-    expect(block.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.stand.assez_forte }))
-    expect(block.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.context.moyenne }))
-    expect(block.html).toContain("bandHigh")
-    expect(block.html).toContain("bandMid")
-    expect(block.html).not.toContain("bandLow")
+  it("names the bands of the sheet (a mid and a high score)", () => {
+    // totalBand(34) and standBand(25) are assez_forte (high), contextBand(9) is moyenne (mid)
+    const bands = scoreBands({ ibp_total: 34, ibp_peuplement_gestion: 25, ibp_contexte: 9 })
+    expect(bands.total.bandName).toBe(fr.surveyDetail.bands.stand.assez_forte)
+    expect(bands.total.tone).toBe("high")
+    expect(bands.stand.tone).toBe("high")
+    expect(bands.context.bandName).toBe(fr.surveyDetail.bands.context.moyenne)
+    expect(bands.context.tone).toBe("mid")
   })
 
-  it("follows the band edges of the domain on the total", () => {
-    const low = buildScoreSummaryBlock(
-      makeData({ scores: { ibp_total: 9, ibp_peuplement_gestion: 6, ibp_contexte: 3 } }),
-      palette,
-    )
-    expect(low.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.stand.faible }))
-    expect(low.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.context.faible }))
-    expect(low.html).toContain("bandLow")
-    expect(low.html).not.toContain("bandHigh")
-    const top = buildScoreSummaryBlock(
-      makeData({ scores: { ibp_total: 50, ibp_peuplement_gestion: 35, ibp_contexte: 15 } }),
-      palette,
-    )
-    expect(top.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.stand.forte }))
-    expect(top.html).toContain(t.scores.band({ band: fr.surveyDetail.bands.context.forte }))
+  it("follows the band edges at the bottom and the top", () => {
+    const low = scoreBands({ ibp_total: 9, ibp_peuplement_gestion: 6, ibp_contexte: 3 })
+    expect([low.total.tone, low.stand.tone, low.context.tone]).toEqual(["low", "low", "low"])
+    const top = scoreBands({ ibp_total: 50, ibp_peuplement_gestion: 35, ibp_contexte: 15 })
+    expect([top.total.tone, top.stand.tone, top.context.tone]).toEqual(["high", "high", "high"])
+    expect(top.total.bandName).toBe(fr.surveyDetail.bands.stand.forte)
   })
 
-  it("prints the not-filled text and no band when the scores are null", () => {
-    const block = buildScoreSummaryBlock(makeData({ scores: null }), palette)
-    expect(block.html).toContain(t.scores.notFilled)
-    expect(block.html).not.toContain("Niveau")
-    expect(block.html).not.toContain(" / 50")
-    expect(block.html).not.toContain("bandLow")
-    expect(block.html).not.toContain("bandMid")
-    expect(block.html).not.toContain("bandHigh")
+  it("gives null points, band name and tone for no scores, keeping the maxima", () => {
+    const none = { points: null, bandName: null, tone: null }
+    expect(scoreBands(null)).toEqual({
+      total: { ...none, max: 50 },
+      stand: { ...none, max: 35 },
+      context: { ...none, max: 15 },
+    })
   })
 
-  it("does not band a score that is not a number", () => {
-    const block = buildScoreSummaryBlock(
-      makeData({
-        scores: { ibp_total: Number.NaN, ibp_peuplement_gestion: 25, ibp_contexte: 9 },
-      }),
-      palette,
-    )
-    expect(block.html).not.toContain("NaN")
-    expect(block.html).toContain(t.scores.notFilled)
-  })
-
-  it("prints the provisional line for a draft with missing factors", () => {
-    const block = buildScoreSummaryBlock(
-      makeData({ isDraft: true, factorEntries: entriesMissing(["A", "B", "J"]) }),
-      palette,
-    )
-    expect(block.html).toContain(t.scores.provisional({ count: 3 }))
-  })
-
-  it("uses the singular for one missing factor", () => {
-    const block = buildScoreSummaryBlock(
-      makeData({ isDraft: true, factorEntries: entriesMissing(["E"]) }),
-      palette,
-    )
-    expect(block.html).toContain(t.scores.provisional({ count: 1 }))
-  })
-
-  it("prints no provisional line for a submitted survey or a complete draft", () => {
-    const submitted = buildScoreSummaryBlock(
-      makeData({ isDraft: false, factorEntries: entriesMissing(["A"]) }),
-      palette,
-    )
-    expect(submitted.html).not.toContain("provisoire")
-    const complete = buildScoreSummaryBlock(makeData({ isDraft: true }), palette)
-    expect(complete.html).not.toContain("provisoire")
-  })
-
-  it("makes the block taller when the provisional line is there", () => {
-    const plain = buildScoreSummaryBlock(makeData({ isDraft: true }), palette)
-    const provisional = buildScoreSummaryBlock(
-      makeData({ isDraft: true, factorEntries: entriesMissing(["A"]) }),
-      palette,
-    )
-    expect(provisional.height).toBeGreaterThan(plain.height)
-  })
-
-  it("fills the bar in proportion to the score, with a dot decimal", () => {
-    const block = buildScoreSummaryBlock(makeData(), palette)
-    expect(block.html).toContain("width: 68%")
-    expect(block.html).toContain("width: 71.4%")
-    expect(block.html).toContain("width: 60%")
-  })
-
-  it("never prints a dash", () => {
-    const block = buildScoreSummaryBlock(makeData({ scores: null }), palette)
-    expect(block.html).not.toContain("—")
+  it("treats a score that is not a number as missing, alone", () => {
+    const bands = scoreBands({
+      ibp_total: Number.NaN,
+      ibp_peuplement_gestion: 25,
+      ibp_contexte: Number.POSITIVE_INFINITY,
+    })
+    expect(bands.total.points).toBeNull()
+    expect(bands.total.tone).toBeNull()
+    expect(bands.stand.points).toBe(25)
+    expect(bands.context.bandName).toBeNull()
   })
 })
 
-describe("scoreSectionCss", () => {
-  const css = scoreSectionCss(palette)
-
-  it("prefixes every class with score-", () => {
-    const classes = css.match(/\.[A-Za-z][\w-]*/g) ?? []
-    expect(classes.length).toBeGreaterThan(0)
-    for (const name of classes) expect(name.startsWith(".score-")).toBe(true)
+describe("standZones (phase 33, D-28)", () => {
+  it("cuts the stand axis at the package's cut-offs, 0 to the stand maximum", () => {
+    const zones = standZones()
+    expect(zones).toHaveLength(STAND_BAND_CUT_OFFS.length + 1)
+    expect(zones.map((zone) => zone.from)).toEqual([0, ...STAND_BAND_CUT_OFFS])
+    expect(zones.map((zone) => zone.to)).toEqual([...STAND_BAND_CUT_OFFS, IBP_MAX.stand])
   })
 
-  it("uses palette colours and the charter fonts, no hex, no CSS columns", () => {
-    expect(css).toContain("bandTrack")
-    expect(css).toContain(PDF_FONT_FAMILIES.numeral)
-    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
-    expect(css).not.toMatch(/rgba?\(/)
-    expect(css).not.toContain("column-count")
+  it("names the zones and gives their tones", () => {
+    expect(standZones().map((zone) => zone.name)).toEqual([
+      "faible",
+      "assez faible",
+      "moyenne",
+      "assez forte",
+      "forte",
+    ])
+    expect(standZones().map((zone) => zone.tone)).toEqual(["low", "low", "mid", "high", "high"])
+  })
+
+  it("agrees with standBand inside every zone", () => {
+    for (const zone of standZones()) {
+      expect(fr.surveyDetail.bands.stand[standBand(zone.from)]).toBe(zone.name)
+      expect(bandTone(standBand(zone.to - 1))).toBe(zone.tone)
+    }
+  })
+})
+
+describe("contextLevels (phase 33, D-28)", () => {
+  it("cuts the context axis at the package's cut-offs, 0 to the context maximum", () => {
+    const levels = contextLevels()
+    expect(levels.map((level) => level.from)).toEqual([0, ...CONTEXT_BAND_CUT_OFFS])
+    expect(levels.map((level) => level.to)).toEqual([...CONTEXT_BAND_CUT_OFFS, IBP_MAX.context])
+  })
+
+  it("names the levels and gives their tones", () => {
+    expect(contextLevels().map((level) => level.name)).toEqual(["faible", "moyenne", "forte"])
+    expect(contextLevels().map((level) => level.tone)).toEqual(["low", "mid", "high"])
+    for (const level of contextLevels()) {
+      expect(fr.surveyDetail.bands.context[contextBand(level.from)]).toBe(level.name)
+    }
+  })
+})
+
+describe("roseRingScores (phase 33, D-27)", () => {
+  it("is the scores every factor allows, ascending", () => {
+    const expected = [0, 1, 2, 5].filter((score) =>
+      FACTOR_KEYS.every((key) => ALLOWED_SCORES_BY_FACTOR[key].includes(score as 0)),
+    )
+    expect(roseRingScores()).toEqual(expected)
+  })
+
+  it("is 0, 2, 5 today, so a package change is seen", () => {
+    expect(roseRingScores()).toEqual([0, 2, 5])
+  })
+})
+
+describe("zoneTint (phase 33, D-27)", () => {
+  it("gives the strong or the soft tint of a low and a high tone, one tint for mid", () => {
+    expect(zoneTint("low", true, palette)).toBe("zoneLow")
+    expect(zoneTint("low", false, palette)).toBe("zoneLowSoft")
+    expect(zoneTint("mid", true, palette)).toBe("zoneMid")
+    expect(zoneTint("mid", false, palette)).toBe("zoneMid")
+    expect(zoneTint("high", true, palette)).toBe("zoneHigh")
+    expect(zoneTint("high", false, palette)).toBe("zoneHighSoft")
   })
 })

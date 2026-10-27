@@ -8,6 +8,15 @@ import { surveyDetailFr } from "./survey-detail"
 // of the catalogue. Functions only interpolate: numbers arrive under count-like keys (`count`,
 // `total`) and drive a plural; every other argument is a string formatted by the caller.
 
+// Phase 33 (D-26): the two group names exist once; the chart prints them alone or followed by a score.
+const GROUP_STAND = "Peuplement et gestion"
+const GROUP_CONTEXT = "Contexte"
+
+// Phase 33 (D-27, U-24): the plane title heads the plane of the complete PDF and the score row of
+// the summary; "Score par facteur" titles the rose (and was the bars' heading).
+const PLANE_TITLE = "IBP contexte face à l'IBP peuplement et gestion"
+const CHART_TITLE = "Score par facteur"
+
 const SCALE_B = "1 strate = 0 ; 2 strates = 1 ; 3 ou 4 strates = 2 ; 5 strates = 5."
 const SCALE_F =
   "Moins de 2 arbres/ha = 0 ; de 2 à moins de 3 = 1 ; de 3 à moins de 8 = 2 ; 8 arbres/ha et plus = 5 (au plus 2 arbres/ha par groupe)."
@@ -33,14 +42,15 @@ export const surveyExportFr = {
     observationYear: "Année d'observation",
     versionNumber: "Version du relevé",
     date: "Date",
-    method: "Méthode IBP",
     unknown: "Non renseigné",
     observer: "Observateur",
     coordinates: "Coordonnées",
     coordinatesValue: ({ lat, lng }: { lat: string; lng: string }) =>
       `${lat}, ${lng} (WGS 84, système géodésique mondial)`,
-    commune: "Commune (code officiel géographique)",
-    department: "Département",
+    // Phase 33 (D-04, D-16): one row, the département being the first digits of the commune code.
+    commune: "Commune",
+    communeValue: ({ code, department }: { code: string; department: string }) =>
+      `${code} (département ${department})`,
     surveyMode: "Mode de relevé",
     cappedMode: "Relevé plafonné, aucun facteur déplafonné",
   },
@@ -55,8 +65,9 @@ export const surveyExportFr = {
   scores: {
     title: "Score IBP",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
-    stand: (points: number) => `Peuplement et gestion : ${points} / ${IBP_MAX.stand}`,
-    context: (points: number) => `Contexte : ${points} / ${IBP_MAX.context}`,
+    groupNames: { stand: GROUP_STAND, context: GROUP_CONTEXT },
+    stand: (points: number) => `${GROUP_STAND} : ${points} / ${IBP_MAX.stand}`,
+    context: (points: number) => `${GROUP_CONTEXT} : ${points} / ${IBP_MAX.context}`,
     factorHeader: "Facteur",
     classHeader: "Classe",
     notFilled: "Non renseigné",
@@ -69,8 +80,55 @@ export const surveyExportFr = {
     band: ({ band }: { band: string }) => `Niveau : ${band}`,
     provisional: ({ count }: { count: number }) =>
       `Score provisoire : ${count} ${count === 1 ? "facteur non renseigné" : "facteurs non renseignés"}`,
-    chartHeading: "Score par facteur",
-    chartA11y: "Diagramme des points des dix facteurs, de A à J",
+    chartHeading: CHART_TITLE,
+  },
+  // Phase 33 (D-27, D-28): the plane and the rose after the CNPF survey sheet. The numbers of the
+  // spoken labels arrive as strings formatted by the builder from the package's values.
+  charts: {
+    heading: "Lecture du score IBP",
+    planeTitle: PLANE_TITLE,
+    source:
+      "Graphiques d'après la fiche de relevé IBP du Centre national de la propriété forestière et de l'unité de recherche Dynafor.",
+    // A French list: "a", "a et b", "a, b et c".
+    joinList: ({ items }: { items: readonly string[] }) =>
+      items.length <= 1
+        ? (items[0] ?? "")
+        : `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`,
+    planeA11y: ({
+      stand,
+      standMax,
+      standBand,
+      context,
+      contextMax,
+      contextBand,
+      standCuts,
+      contextCuts,
+    }: {
+      stand: string
+      standMax: string
+      standBand: string
+      context: string
+      contextMax: string
+      contextBand: string
+      standCuts: string
+      contextCuts: string
+    }) =>
+      `${PLANE_TITLE}. Le relevé se place à ${stand} sur ${standMax} en peuplement et gestion, niveau ${standBand}, et à ${context} sur ${contextMax} en contexte, niveau ${contextBand}. Bandes du peuplement et gestion coupées à ${standCuts} sur ${standMax} ; niveaux du contexte coupés à ${contextCuts} sur ${contextMax}.`,
+    planeA11yEmpty: ({
+      standCuts,
+      standMax,
+      contextCuts,
+      contextMax,
+    }: {
+      standCuts: string
+      standMax: string
+      contextCuts: string
+      contextMax: string
+    }) =>
+      `${PLANE_TITLE}. Score non renseigné : le relevé n'est pas placé. Bandes du peuplement et gestion coupées à ${standCuts} sur ${standMax} ; niveaux du contexte coupés à ${contextCuts} sur ${contextMax}.`,
+    roseA11y: ({ rings, items }: { rings: string; items: string }) =>
+      `${CHART_TITLE}, anneaux à ${rings} points : ${items}.`,
+    roseItem: ({ title, value }: { title: string; value: string }) => `${title} ${value}`,
   },
   factors: {
     standGroup: "Facteurs liés au peuplement et à la gestion forestière",
@@ -222,6 +280,33 @@ export const surveyExportFr = {
         ? `${count} photo n'est pas disponible sur cet appareil.`
         : `${count} photos ne sont pas disponibles sur cet appareil.`,
   },
+  // Phase 33 (UI-SPEC Copywriting, Surface B): the words of the cover only. The cover reuses
+  // `sheetTitle`, `scores.*`, `map.*` and `identity.*`; nothing already above is repeated here.
+  cover: {
+    scoreA11y: ({ points, max }: { points: string; max: string }) =>
+      `Score IBP : ${points} sur ${max}`,
+    subscoreA11y: ({ heading, points, max }: { heading: string; points: string; max: string }) =>
+      `${heading} : ${points} sur ${max}`,
+    outOf: ({ max }: { max: string }) => `/ ${max}`,
+  },
+  // Phase 33 (D-07, D-08, D-11): the words of the one-page summary. It never prints
+  // `trend.unavailable`, which is an app instruction (D-18).
+  summary: {
+    eyebrow: "Résumé du relevé IBP",
+    mapHeading: "Parcelle",
+    metaLine: ({
+      commune,
+      parcels,
+      version,
+    }: {
+      commune: string
+      parcels: string
+      version: string
+    }) => `Commune ${commune}, parcelle ${parcels}, version ${version}`,
+    subscores: ({ stand, context }: { stand: string; context: string }) =>
+      `${stand} / ${IBP_MAX.stand} peuplement, ${context} / ${IBP_MAX.context} contexte`,
+    trendUnavailable: "Évolution de la parcelle non disponible sur cet appareil.",
+  },
   page: {
     number: ({ index, total }: { index: string; total: number }) => `Page ${index} / ${total}`,
     generatedAt: ({ date }: { date: string }) => `Généré le ${date}`,
@@ -229,6 +314,8 @@ export const surveyExportFr = {
   file: {
     prefix: "Cortege-IBP",
     draftSuffix: "brouillon",
+    // Phase 33 (D-13): the one-page summary, so it never replaces the complete export.
+    summarySuffix: "resume",
     fallbackSite: "releve",
   },
   footer: (generatedAt: string) => `Généré le ${generatedAt} par l'application Cortège.`,

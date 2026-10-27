@@ -31,6 +31,7 @@ import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { resolveVisibilityLine } from "./survey-detail/visibility-line"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
+import { useExportRequest } from "./survey-detail/useExportRequest"
 import { useSurveyPdfExport } from "./survey-detail/useSurveyPdfExport"
 import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
@@ -99,6 +100,9 @@ export function SurveyDetailScreen({
   onOpenFactor,
   onOpenHistory,
   onOpenJournal,
+  exportRequest,
+  onOpenExportChoice,
+  onExportRequestHandled,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
@@ -152,6 +156,8 @@ export function SurveyDetailScreen({
     apiUrl,
     accessToken,
   })
+  // Phase 33: the choice sheet hands back its mode; the export runs here, once per request.
+  useExportRequest(exportRequest, share, onExportRequestHandled)
   const changeNote = useLatestCallback((text: string) => void onChangeNote(selectedSurvey.id, text))
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
@@ -184,7 +190,7 @@ export function SurveyDetailScreen({
     siteName: activeSiteName,
     largeTitle,
     onRename: largeTitle && canEditSurvey ? handleRename : undefined,
-    onShare: () => void share(),
+    onShare: () => (exporting ? undefined : onOpenExportChoice(selectedSurvey.id)),
     onDelete: handleDelete,
     onOpenJournal,
     onOpenMenu: handleOpenMenu,

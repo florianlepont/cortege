@@ -17,8 +17,9 @@ import type { PublicParcelStatusItem } from "../types"
 import { loadExportAssets } from "./assets"
 import {
   GEOMETRY_FETCH_TIMEOUT_MS,
-  MAP_FRAME_SIZE,
+  COVER_MAP_FRAME_SIZE,
   PHOTO_EXPORT_SETTINGS,
+  SUMMARY_MAP_FRAME_SIZE,
   pdfLayoutFor,
 } from "./export-settings"
 import {
@@ -34,6 +35,7 @@ import {
   defaultBasemapDeps,
   takeBasemapJpeg,
   type BasemapChoice,
+  type SnapshotProfile,
 } from "./map-snapshot"
 import {
   preparePhotosForExport,
@@ -41,7 +43,7 @@ import {
   type PhotoSource,
   type PreparedPhoto,
 } from "./photo-prep"
-import type { ExportMap, PdfAssets, SurveyExportData, SurveyExportInput } from "./types"
+import type { ExportMap, ExportMode, PdfAssets, SurveyExportData, SurveyExportInput } from "./types"
 
 // Phase 25.1, D-01 / D-05 / D-06 / D-10 / D-13: turns what the screen hands over into the data the
 // pure builders read. Offline first: storage and the offline-area cache are read before anything
@@ -87,6 +89,7 @@ export type AssembleDeps = {
     mapStyle: string
     frame: MapFrame
     kind: BasemapChoice["kind"]
+    profile?: SnapshotProfile
   }) => Promise<BasemapSnapshot | null>
   loadHistory: (parcelId: string) => Promise<CachedParcelHistory | null>
 }
@@ -258,8 +261,19 @@ async function loadPolygons(
   return parcelPolygonsFrom(items, input.parcelIds)
 }
 
-function frameFor(bounds: LngLatBounds): MapFrame {
-  return fitFrameToBounds(bounds, MAP_FRAME_SIZE, {
+type FrameSize = { width: number; height: number }
+
+/**
+ * The map frame of a mode (phase 33, UI-SPEC B.5): the complete PDF's map is on the cover (D-24, plan
+ * 33-18) and the summary has its own zone; both are 515 x 228, kept as two constants because each
+ * document owns its measurement.
+ */
+function frameSizeOf(mode: ExportMode): FrameSize {
+  return mode === "summary" ? SUMMARY_MAP_FRAME_SIZE : COVER_MAP_FRAME_SIZE
+}
+
+function frameFor(bounds: LngLatBounds, size: FrameSize): MapFrame {
+  return fitFrameToBounds(bounds, size, {
     paddingRatio: FRAME_PADDING_RATIO,
     zoomRange: OFFLINE_ZOOM_RANGE,
   })
@@ -269,12 +283,15 @@ function frameFor(bounds: LngLatBounds): MapFrame {
 async function loadBasemap(
   frame: MapFrame,
   online: boolean,
+  mode: ExportMode,
   deps: AssembleDeps,
 ): Promise<BasemapSnapshot | null> {
   return orFallback("basemap", null, async () => {
     const choice = await deps.decideBasemap({ lat: frame.centerLat, lng: frame.centerLng }, online)
     if (choice.kind === "none") return null
-    return deps.takeBasemap({ mapStyle: choice.mapStyle, frame, kind: choice.kind })
+    // Only the one-page summary gets the lighter basemap (plan 33-16); the complete PDF stays sharp.
+    const profile: SnapshotProfile = mode === "summary" ? "summary" : "complete"
+    return deps.takeBasemap({ mapStyle: choice.mapStyle, frame, kind: choice.kind, profile })
   })
 }
 
@@ -293,7 +310,11 @@ function centreOf(bounds: LngLatBounds | null): Located | null {
  * no outline there is no snapshot either: the map block prints its "no outline" note and never
  * uses a basemap, so taking one (up to 12 s online) would be wasted.
  */
-async function loadMapPiece(input: SurveyExportInput, deps: AssembleDeps): Promise<MapPiece> {
+async function loadMapPiece(
+  input: SurveyExportInput,
+  mode: ExportMode,
+  deps: AssembleDeps,
+): Promise<MapPiece> {
   const location = input.displayLocation
   if (input.parcelIds.length === 0) return { coordinates: location, map: null }
   const online = await orFallback("network", false, deps.isOnline)
@@ -301,32 +322,48 @@ async function loadMapPiece(input: SurveyExportInput, deps: AssembleDeps): Promi
   const bounds = boundsOf(polygons)
   const coordinates = location ?? centreOf(bounds)
   if (!coordinates) return { coordinates: null, map: null }
-  const basemap = bounds ? await loadBasemap(frameFor(bounds), online, deps) : null
-  return { coordinates, map: { polygons, basemap, frameSize: { ...MAP_FRAME_SIZE } } }
+  const size = frameSizeOf(mode)
+  const basemap = bounds ? await loadBasemap(frameFor(bounds, size), online, mode, deps) : null
+  return { coordinates, map: { polygons, basemap, frameSize: { ...size } } }
+}
+
+/** The third guard of D-09: a draft is always printed complete, whatever was asked. */
+function effectiveModeOf(input: SurveyExportInput): ExportMode {
+  if (input.mode === "summary" && input.isDraft) {
+    logStatusDetail("surveyExport.modeCoerced", { surveyId: input.surveyId })
+    return "complete"
+  }
+  return input.mode
 }
 
 /**
  * Everything the PDF builders read, gathered offline first. It resolves whatever fails: a piece
  * that cannot be read is `{}`, `null`, an empty list or no font, and the builders print a note.
  * The photo branch, the map branch (geometry then snapshot) and the history and asset reads run in
- * parallel. Online, the only network reads are the optional parcel outline (4 s) and the optional
+ * parallel. Phase 33: the summary reads no photo at all and frames its map at the summary size; a
+ * draft never gets a summary (D-09), the mode then falls back to complete and says so in the debug
+ * console. Online, the only network reads are the optional parcel outline (4 s) and the optional
  * basemap snapshot (8 s offline style, 12 s online style).
  */
 export async function assembleSurveyExportData(
   input: SurveyExportInput,
   deps: AssembleDeps = defaultAssembleDeps(),
 ): Promise<SurveyExportData> {
+  const mode = effectiveModeOf(input)
   const [draftParts, photos, mapPiece, history, assets] = await Promise.all([
     orFallback("factors", NO_DRAFT_PARTS, () => loadDraftParts(input.surveyId, deps)),
-    orFallback("photos", NO_PHOTOS, () => loadPhotos(input.surveyId, deps)),
+    mode === "summary"
+      ? NO_PHOTOS
+      : orFallback("photos", NO_PHOTOS, () => loadPhotos(input.surveyId, deps)),
     orFallback<MapPiece>("map", { coordinates: input.displayLocation, map: null }, () =>
-      loadMapPiece(input, deps),
+      loadMapPiece(input, mode, deps),
     ),
     orFallback("history", null, () => loadHistory(input.parcelIds[0], deps)),
     orFallback<PdfAssets>("assets", { fonts: [], logoDataUri: null }, deps.loadAssets),
   ])
   // Field by field: the access token and the API URL never reach the builders.
   return {
+    mode,
     surveyId: input.surveyId,
     siteName: input.siteName,
     parcelIds: input.parcelIds,

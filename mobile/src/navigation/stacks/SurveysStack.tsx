@@ -6,6 +6,7 @@ import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { DmhGuideRoute } from "../routes/DmhGuideRoute"
+import { ExportChoiceRoute } from "../routes/ExportChoiceRoute"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
 import { FactorHelpRoute } from "../routes/FactorHelpRoute"
 import { FinishSheetRoute } from "../routes/FinishSheetRoute"
@@ -29,6 +30,7 @@ import {
   createBaseStackScreenOptions,
   dmhGuideScreenOptions,
   factorHelpScreenOptions,
+  exportChoiceScreenOptions,
   finishSheetScreenOptions,
   hiddenNativeTitle,
   nativeLargeTitle,
@@ -214,6 +216,12 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             // Phase 29, D-04: the submission step (who can see the survey, then finish).
             options={finishSheetScreenOptions(theme)}
             component={FinishSheetRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyExportChoice"
+            // Phase 33, D-14: the export choice (complete or summary PDF); the summary exports.
+            options={exportChoiceScreenOptions(theme)}
+            component={ExportChoiceRoute}
           />
           <SurveysStack.Screen
             name="surveyParcels"
