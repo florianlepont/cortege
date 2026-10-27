@@ -21,6 +21,9 @@ type AppCollapsibleSectionProps = {
   title: string
   badge?: string
   defaultExpanded?: boolean
+  /** Phase 32: a test handle on the header, and a label that replaces the default toggle label. */
+  testID?: string
+  accessibilityLabel?: string
   children: ReactNode
 }
 
@@ -28,6 +31,8 @@ export function AppCollapsibleSection({
   title,
   badge,
   defaultExpanded = false,
+  testID,
+  accessibilityLabel,
   children,
 }: AppCollapsibleSectionProps) {
   const theme = useBrandTheme()
@@ -59,7 +64,10 @@ export function AppCollapsibleSection({
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={fr.components.collapsibleSection.toggleLabel({ title, expanded })}
+        accessibilityLabel={
+          accessibilityLabel ?? fr.components.collapsibleSection.toggleLabel({ title, expanded })
+        }
+        testID={testID}
       >
         <Text style={styles.title}>{title}</Text>
         {badge ? <AppChoiceChip variant="status" label={badge} tone="neutral" /> : null}

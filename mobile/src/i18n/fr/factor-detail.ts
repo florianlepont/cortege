@@ -87,7 +87,43 @@ export const factorDetailFr = {
     },
   },
   // Phase 32: the dendromicrohabitat group list of factor F
+  // Texts verbatim from section 8.1 of docs/specs/dmh-guide-content-v1.md (validated 2026-10-27).
   dmhList: {
+    entry: {
+      title: "Guide des dendromicrohabitats",
+      caption: "Reconnaître chaque groupe, sans réseau.",
+    },
+    forms: {
+      cavities: "Cavités",
+      wounds: "Blessures et bois apparent",
+      crown_deadwood: "Bois mort dans le houppier",
+      growths: "Excroissances",
+      fruiting_bodies: "Champignons et myxomycètes",
+      epiphytic: "Plantes, nids et microsols",
+      exudates: "Exsudats",
+    },
+    badge: ({ ticked, total }: { ticked: number; total: number }) => `${ticked} sur ${total}`,
+    sectionA11y: ({ form, ticked, total }: { form: string; ticked: number; total: number }) =>
+      ticked === 1
+        ? `${form}, 1 groupe sur ${total} coché`
+        : `${form}, ${ticked} groupes sur ${total} cochés`,
+    summaryNone: "Aucun groupe coché.",
+    summaryCapped: ({ groups }: { groups: number }) =>
+      groups === 1 ? "1 groupe coché" : `${groups} groupes cochés`,
+    summaryFull: ({ groups, trees }: { groups: number; trees: number }) =>
+      `${groups === 1 ? "1 groupe" : `${groups} groupes`}, ${trees === 1 ? "1 arbre" : `${trees} arbres`}`,
+    treesCaption: "Arbres",
+    lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
+    a11y: {
+      info: ({ label }: { label: string }) => `En savoir plus sur ${label}`,
+      infoHint: "Ouvre le guide à ce groupe",
+      tickHint: "Double-tapez pour cocher ou décocher",
+      tickLockedHint: "Ramenez d'abord le nombre à 0 pour décocher",
+      withCount: ({ label, trees }: { label: string; trees: number }) =>
+        `${label}, ${trees === 1 ? "1 arbre" : `${trees} arbres`}`,
+      add: ({ label }: { label: string }) => `Compter un arbre dans ${label}`,
+      addHint: "Coche le groupe et compte 1",
+    },
     stepper: {
       label: ({ label }: { label: string }) => `Nombre d'arbres, ${label}`,
       value: ({ trees }: { trees: number }) => (trees === 1 ? "1 arbre" : `${trees} arbres`),
