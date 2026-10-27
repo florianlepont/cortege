@@ -1,13 +1,15 @@
 # Contenu du guide des dendromicrohabitats (v1)
 
-Statut : brouillon, à valider par le propriétaire et à relire par un expert
+Statut : validée par le propriétaire le 2026-10-27
 
-Brouillon, non validé : toutes les cellules de validation de ce document sont vides et le restent
-jusqu'au plan 32-09.
+Validée sans expert : le propriétaire a validé ce document seul le 2026-10-27, sans relecture par un
+expert (section 12). Les seuils et l'exactitude des dessins n'ont été lus que par le propriétaire : les
+essais sur le terrain peuvent encore y trouver des erreurs, qui se corrigent par une révision datée de
+ce document.
 
 Date de rédaction : 2026-10-26
 
-Validation du propriétaire : à remplir par le plan 32-09
+Validation du propriétaire : validé par le propriétaire le 2026-10-27, sans expert (section 12)
 
 Phase : 32, informations détaillées sur les dendromicrohabitats (V1). Cette spécification est la
 source unique de chaque texte et de chaque nombre que le guide affichera : aucun plan de code ne
@@ -613,7 +615,10 @@ ne change jamais, quel que soit l'ordre affiché.
 
 Ordre de base : ordre IBP (1 à 15)
 
-Ordre validé :
+Ordre validé : `dmh_01`, `dmh_02`, `dmh_03`, `dmh_04`, `dmh_05`, `dmh_06`, `dmh_07`, `dmh_08`, `dmh_09`, `dmh_10`, `dmh_11`, `dmh_12`, `dmh_13`, `dmh_14`, `dmh_15`
+
+Décision du propriétaire du 2026-10-27 (O-32-12) : option (a), cochés ou comptés d'abord, puis l'ordre
+IBP de 1 à 15.
 
 Question O-32-12 : le propriétaire a retenu le 2026-10-23 le levier « groupes fréquents ou déjà
 cochés en premier ». La partie « déjà cochés » ne demande aucune source. La partie « fréquents » en
@@ -633,8 +638,8 @@ peuvent être différentes (G p. 7). Trois options :
 ## 8. Textes de l'interface
 
 Chaque phrase de l'interface avec sa future clé. Les valeurs entre accolades sont insérées par le
-code. Aucun sigle, aucun tiret cadratin. Ces textes restent des brouillons tant que la section 12 est
-vide.
+code. Aucun sigle, aucun tiret cadratin. Ces textes sont validés par le propriétaire le 2026-10-27
+(section 12).
 
 ### 8.1. Liste du facteur F (`fr.factorDetail`)
 
@@ -773,28 +778,30 @@ boucle). Budget : au plus 12 ko de données par dessin et 120 ko pour tout le mo
 `mobile/src/__checks__/dmh-drawings.test.ts`. Le lecteur d'écran lit le « Texte du dessin » de la
 fiche du groupe (section 6).
 
-Registre des dessins. La colonne « Relu (exactitude) » reste vide : l'expert la remplit au plan
-32-09, après avoir regardé chaque dessin avec le libellé de son groupe et sa phrase.
+Registre des dessins. La colonne « Relu (exactitude) » a été remplie au plan 32-09 : le propriétaire a
+regardé chacun des quinze dessins avec le libellé de son groupe et ses textes le 2026-10-27, sans
+expert ; aucun dessin n'a été corrigé. Un dessin faux découvert plus tard passe par la procédure
+ci-dessous.
 
 <!-- prettier-ignore-start -->
 
 | Fichier | Groupe | Ce que montre le dessin | Relu (exactitude) |
 | --- | --- | --- | --- |
-| `dmh_01-loges-de-pic.svg` | 1. Loges de pic | Un tronc avec une grande loge ovale et deux petites loges rondes plus bas |  |
-| `dmh_02-cavites-a-terreau.svg` | 2. Cavités à terreau | Un pied de tronc vu de l'extérieur, puis en coupe, avec la voûte et le terreau au fond |  |
-| `dmh_03-orifices-et-galeries-d-insectes.svg` | 3. Orifices et galeries d'insectes | Des trous ronds et une plaque d'écorce tombée qui montre des galeries |  |
-| `dmh_04-concavites.svg` | 4. Concavités | Une cuvette dans une fourche et un tronc au pied ouvert en arche |  |
-| `dmh_05-aubier-apparent.svg` | 5. Aubier apparent | Une plage de bois nu sur un tronc et une plaque d'écorce décollée sur le côté |  |
-| `dmh_06-aubier-et-bois-de-coeur-apparents.svg` | 6. Aubier et bois de cœur apparents | Une cassure déchiquetée sur le côté d'un tronc et une longue fente en zigzag |  |
-| `dmh_07-bois-mort-dans-le-houppier.svg` | 7. Bois mort dans le houppier | Un houppier vivant à gauche, de grosses branches mortes et une pointe morte à droite |  |
-| `dmh_08-agglomerations-de-gourmands-ou-de-rameaux.svg` | 8. Agglomérations de gourmands ou de rameaux | Une touffe de pousses sur un tronc et une boule de rameaux au bout d'une branche |  |
-| `dmh_09-loupes-et-chancres.svg` | 9. Loupes et chancres | Une bosse arrondie vue de profil et une plaie à bourrelets emboîtés |  |
-| `dmh_10-champignons-perennes.svg` | 10. Champignons pérennes | Trois champignons durs en console sur un tronc, aux bourrelets concentriques |  |
-| `dmh_11-champignons-ephemeres.svg` | 11. Champignons éphémères | Une souche avec trois petites consoles d'un côté et un champignon à chapeau de l'autre |  |
-| `dmh_12-plantes-et-lichens-epiphytiques-ou-parasites.svg` | 12. Plantes et lichens épiphytiques ou parasites | Mousse, lierre, lichens, fougère et une touffe de gui sur un tronc |  |
-| `dmh_13-nids.svg` | 13. Nids | Un gros nid de branchages avec deux œufs au sommet d'un tronc qui s'évase |  |
-| `dmh_14-microsols.svg` | 14. Microsols | Une fourche de deux grosses branches avec un tas de terre et de la mousse dans l'angle |  |
-| `dmh_15-coulees-de-seve-et-de-resine.svg` | 15. Coulées de sève et de résine | Une coulée de sève longue sous une blessure et une coulée de résine épaisse sur un conifère |  |
+| `dmh_01-loges-de-pic.svg` | 1. Loges de pic | Un tronc avec une grande loge ovale et deux petites loges rondes plus bas | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_02-cavites-a-terreau.svg` | 2. Cavités à terreau | Un pied de tronc vu de l'extérieur, puis en coupe, avec la voûte et le terreau au fond | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_03-orifices-et-galeries-d-insectes.svg` | 3. Orifices et galeries d'insectes | Des trous ronds et une plaque d'écorce tombée qui montre des galeries | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_04-concavites.svg` | 4. Concavités | Une cuvette dans une fourche et un tronc au pied ouvert en arche | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_05-aubier-apparent.svg` | 5. Aubier apparent | Une plage de bois nu sur un tronc et une plaque d'écorce décollée sur le côté | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_06-aubier-et-bois-de-coeur-apparents.svg` | 6. Aubier et bois de cœur apparents | Une cassure déchiquetée sur le côté d'un tronc et une longue fente en zigzag | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_07-bois-mort-dans-le-houppier.svg` | 7. Bois mort dans le houppier | Un houppier vivant à gauche, de grosses branches mortes et une pointe morte à droite | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_08-agglomerations-de-gourmands-ou-de-rameaux.svg` | 8. Agglomérations de gourmands ou de rameaux | Une touffe de pousses sur un tronc et une boule de rameaux au bout d'une branche | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_09-loupes-et-chancres.svg` | 9. Loupes et chancres | Une bosse arrondie vue de profil et une plaie à bourrelets emboîtés | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_10-champignons-perennes.svg` | 10. Champignons pérennes | Trois champignons durs en console sur un tronc, aux bourrelets concentriques | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_11-champignons-ephemeres.svg` | 11. Champignons éphémères | Une souche avec trois petites consoles d'un côté et un champignon à chapeau de l'autre | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_12-plantes-et-lichens-epiphytiques-ou-parasites.svg` | 12. Plantes et lichens épiphytiques ou parasites | Mousse, lierre, lichens, fougère et une touffe de gui sur un tronc | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_13-nids.svg` | 13. Nids | Un gros nid de branchages avec deux œufs au sommet d'un tronc qui s'évase | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_14-microsols.svg` | 14. Microsols | Une fourche de deux grosses branches avec un tas de terre et de la mousse dans l'angle | exact, lu par le propriétaire le 2026-10-27, sans expert |
+| `dmh_15-coulees-de-seve-et-de-resine.svg` | 15. Coulées de sève et de résine | Une coulée de sève longue sous une blessure et une coulée de résine épaisse sur un conifère | exact, lu par le propriétaire le 2026-10-27, sans expert |
 
 <!-- prettier-ignore-end -->
 
@@ -810,29 +817,30 @@ Question O-32-6 : résolue. L'assistant dessine, l'expert relit l'exactitude de 
 
 ## 10. Décisions du propriétaire
 
-Chaque ligne a un défaut conseillé. Les cellules « Décision validée » sont remplies au plan 32-09 ;
-elles sont vides dans ce brouillon.
+Chaque ligne a un défaut conseillé. Les cellules « Décision validée » ont été remplies au plan 32-09
+le 2026-10-27 : le propriétaire a validé le document tel qu'écrit, tous les défauts gardés, aucune
+décision n'est donnée autrement.
 
 <!-- prettier-ignore-start -->
 
 | Id | Question | Défaut conseillé | Décision validée | Effet si différent |
 | --- | --- | --- | --- | --- |
-| O-32-1 | Taille des boutons du compteur sur le terrain avec des gants | 48 points (une seule constante) ; 56 si le propriétaire le demande ici (boutons plus grands pour les gants, lignes plus hautes) | | Seule la constante de taille du compteur change |
-| O-32-2 | Noms des formes sur la liste du facteur F | Noms courts sur la liste, noms officiels du guide de poche sur la page du groupe (section 4) | | Les titres de section de la liste deviennent les noms officiels |
-| O-32-3 | Un groupe compté peut-il être décoché | Non : verrouillé tant que le nombre n'est pas revenu à 0, avec une ligne d'explication | | Décocher garde le compte et la ligne, comme avant la phase |
-| O-32-4 | Sections ouvertes à l'arrivée sur la page | Toutes ouvertes si rien n'est coché ; sinon seules les sections qui ont un groupe coché ou compté | | Une autre règle d'ouverture, sans effet sur les données |
-| O-32-5 | Recherche sur la liste du facteur F elle-même | Non : recherche dans le catalogue du guide seulement ; à revoir si le propriétaire la demande après son essai de la liste en fin de phase | | Un champ de recherche s'ajoute en tête de liste |
-| O-32-6 | Dessins originaux : qui dessine, quel style | Résolu : l'assistant dessine les quinze dessins pour l'association (style approuvé sur trois essais le 2026-10-24), l'expert relit chacun pour l'exactitude au plan 32-09 (section 9), ils sont livrés fixes (2026-10-26) | | Un dessin à corriger passe par sa source et le script de la section 9 |
-| O-32-7 | Montrer les seuils du guide de poche à côté de ceux de l'IBP (bloc d'écart) | Oui, avec un libellé, seulement où ils diffèrent, la valeur de l'IBP en premier | | Le bloc d'écart disparaît des pages |
-| O-32-8 | Raccourci « cocher ce groupe » depuis la page d'un groupe | Non : guide en lecture seule | | Un bouton s'ajoute : deuxième chemin d'écriture sur le relevé, à tester |
-| O-32-9 | Texte de la page « Sources et licence » | Texte propre actuel (section 8) ; remplacé par le texte exigé par l'Institut fédéral si une autorisation écrite est obtenue | | La variante de licence est écrite et activée |
-| O-32-10 | Relecture de chaque texte de fiche (définition, reconnaissance, confusions, seuils) par le propriétaire et un expert | Point bloquant de ce document avant tout écran (section 12) | | Aucun écran ne se construit avant cette relecture |
-| O-32-11 | Ligne de résumé sur la page F (« 3 groupes, 14 arbres ») | Oui : affichage dérivé seulement, rien n'est stocké | | La ligne est retirée |
-| O-32-12 | Ordre « groupes fréquents d'abord » dans la liste | Option (a) de la section 7 : cochés ou comptés d'abord, puis ordre IBP, faute de source de fréquence fiable | | Option (b) : un ordre écrit dans « Ordre validé » ; option (c) : idée reportée |
-| P-01 | Édition du guide de poche sur laquelle repose la table | Édition française de 2024, empreinte donnée en tête de ce document (plan 32-02) | | Une autre édition change les numéros de type : la section 5 est à refaire |
-| P-02 | Expert qui relit les fiches et les dessins | Nom et date obligatoires dans la section 12 | | Pas de validation sans expert |
-| P-03 | Règle de réussite du chronométrage de la saisie | Sans objet : le propriétaire a abandonné le chronométrage le 2026-10-27 ; la simplicité est montrée par le décompte automatique des appuis et confirmée par écrit par le propriétaire après un essai sur son téléphone (voir `docs/user-tests/dmh-entry-timing.md`) | | Aucun |
-| P-04 | Leviers gardés après le chronométrage de départ | Sans objet depuis le 2026-10-27 (pas de chronométrage) : les trois leviers restent tels qu'ils sont construits, (a) compteur sur la ligne, (b) groupes par forme, (c) cochés d'abord ; le propriétaire peut en faire retirer un après son essai de fin de phase | | Un levier retiré ici demande une nouvelle planification, sans effet sur les données enregistrées |
+| O-32-1 | Taille des boutons du compteur sur le terrain avec des gants | 48 points (une seule constante) ; 56 si le propriétaire le demande ici (boutons plus grands pour les gants, lignes plus hautes) | 48 | Seule la constante de taille du compteur change |
+| O-32-2 | Noms des formes sur la liste du facteur F | Noms courts sur la liste, noms officiels du guide de poche sur la page du groupe (section 4) | Défaut gardé : noms courts sur la liste, noms officiels sur la page du groupe | Les titres de section de la liste deviennent les noms officiels |
+| O-32-3 | Un groupe compté peut-il être décoché | Non : verrouillé tant que le nombre n'est pas revenu à 0, avec une ligne d'explication | Défaut gardé : verrouillé tant que le nombre n'est pas revenu à 0 | Décocher garde le compte et la ligne, comme avant la phase |
+| O-32-4 | Sections ouvertes à l'arrivée sur la page | Toutes ouvertes si rien n'est coché ; sinon seules les sections qui ont un groupe coché ou compté | Défaut gardé : toutes ouvertes si rien n'est coché, sinon seules les sections avec un groupe coché ou compté | Une autre règle d'ouverture, sans effet sur les données |
+| O-32-5 | Recherche sur la liste du facteur F elle-même | Non : recherche dans le catalogue du guide seulement ; à revoir si le propriétaire la demande après son essai de la liste en fin de phase | Défaut gardé : pas de recherche sur la liste du facteur F | Un champ de recherche s'ajoute en tête de liste |
+| O-32-6 | Dessins originaux : qui dessine, quel style | Résolu : l'assistant dessine les quinze dessins pour l'association (style approuvé sur trois essais le 2026-10-24), l'expert relit chacun pour l'exactitude au plan 32-09 (section 9), ils sont livrés fixes (2026-10-26) | Défaut gardé : quinze dessins de l'assistant, tous lus par le propriétaire le 2026-10-27, aucune correction demandée | Un dessin à corriger passe par sa source et le script de la section 9 |
+| O-32-7 | Montrer les seuils du guide de poche à côté de ceux de l'IBP (bloc d'écart) | Oui, avec un libellé, seulement où ils diffèrent, la valeur de l'IBP en premier | Défaut gardé : bloc d'écart montré, avec libellé, la valeur de l'IBP en premier | Le bloc d'écart disparaît des pages |
+| O-32-8 | Raccourci « cocher ce groupe » depuis la page d'un groupe | Non : guide en lecture seule | Défaut gardé : pas de raccourci depuis la page d'un groupe | Un bouton s'ajoute : deuxième chemin d'écriture sur le relevé, à tester |
+| O-32-9 | Texte de la page « Sources et licence » | Texte propre actuel (section 8) ; remplacé par le texte exigé par l'Institut fédéral si une autorisation écrite est obtenue | Défaut gardé : texte propre de la section 8, pas d'autorisation écrite de l'Institut fédéral | La variante de licence est écrite et activée |
+| O-32-10 | Relecture de chaque texte de fiche (définition, reconnaissance, confusions, seuils) par le propriétaire et un expert | Point bloquant de ce document avant tout écran (section 12) | Fait : validation écrite du propriétaire le 2026-10-27, sans expert (section 12) | Aucun écran ne se construit avant cette relecture |
+| O-32-11 | Ligne de résumé sur la page F (« 3 groupes, 14 arbres ») | Oui : affichage dérivé seulement, rien n'est stocké | Défaut gardé : ligne de résumé montrée, rien n'est stocké | La ligne est retirée |
+| O-32-12 | Ordre « groupes fréquents d'abord » dans la liste | Option (a) de la section 7 : cochés ou comptés d'abord, puis ordre IBP, faute de source de fréquence fiable | Option (a) : cochés ou comptés d'abord, puis l'ordre IBP de 1 à 15 | Option (b) : un ordre écrit dans « Ordre validé » ; option (c) : idée reportée |
+| P-01 | Édition du guide de poche sur laquelle repose la table | Édition française de 2024, empreinte donnée en tête de ce document (plan 32-02) | Édition française de 2024, empreinte donnée en tête de ce document | Une autre édition change les numéros de type : la section 5 est à refaire |
+| P-02 | Expert qui relit les fiches et les dessins | Nom et date obligatoires dans la section 12 | Aucun expert : le propriétaire valide seul le 2026-10-27 (section 12) | Pas de validation sans expert |
+| P-03 | Règle de réussite du chronométrage de la saisie | Sans objet : le propriétaire a abandonné le chronométrage le 2026-10-27 ; la simplicité est montrée par le décompte automatique des appuis et confirmée par écrit par le propriétaire après un essai sur son téléphone (voir `docs/user-tests/dmh-entry-timing.md`) | Sans objet, décision du propriétaire du 2026-10-27 | Aucun |
+| P-04 | Leviers gardés après le chronométrage de départ | Sans objet depuis le 2026-10-27 (pas de chronométrage) : les trois leviers restent tels qu'ils sont construits, (a) compteur sur la ligne, (b) groupes par forme, (c) cochés d'abord ; le propriétaire peut en faire retirer un après son essai de fin de phase | Sans objet, décision du propriétaire du 2026-10-27 | Un levier retiré ici demande une nouvelle planification, sans effet sur les données enregistrées |
 
 <!-- prettier-ignore-end -->
 
@@ -860,13 +868,25 @@ Cinq exigences, avec la formulation de la recherche de la phase. Le plan d'ensem
 
 ## 12. Validation
 
-Validé par le propriétaire le :
+Validé par le propriétaire le 2026-10-27
 
-Relu par (expert) :
+Relu par (expert) : aucun, le propriétaire valide sans expert (déclaration du propriétaire, citée
+ci-dessous), le 2026-10-27. Les seuils de la section 5 et des fiches, et l'exactitude des quinze
+dessins, n'ont été lus que par le propriétaire, pas par un expert : les essais sur le terrain peuvent
+encore y trouver des erreurs. Les points de la section « Points à faire vérifier par l'expert » (fin
+de la section 6) restent donc non confirmés par un expert et sont gardés tels qu'écrits.
 
-Réponse du propriétaire :
+Réponse du propriétaire (2026-10-27, citée telle quelle) :
 
-Aucun texte du catalogue et aucun écran n'est écrit à partir de cette spécification avant que ces
-trois lignes soient remplies, que le statut en tête de document passe à « validée » et que chaque cellule
-« Décision validée » de la section 10 et chaque cellule « Relu (exactitude) » de la section 9 soit
-remplie.
+- « je peux valider sans [expert], mais j'ai pas vu les textes et tous les dessins »
+- Une page montrant chacun des quinze dessins à côté de ses textes lui a ensuite été envoyée.
+- « c'est bon ! »
+
+Lecture de la réponse : validation du document tel qu'écrit, tous les défauts de la section 10 gardés
+(O-32-1 : 48 points ; O-32-12 : option (a) ; P-01 : édition française de 2024 ; P-03 et P-04 sans
+objet). Le propriétaire ne change aucun texte, aucun dessin et aucun seuil.
+
+Les trois lignes ci-dessus sont remplies, le statut en tête de document est « validée », et chaque
+cellule « Décision validée » de la section 10 et chaque cellule « Relu (exactitude) » de la section 9
+est remplie : les textes du catalogue et les écrans peuvent être écrits à partir de cette
+spécification.

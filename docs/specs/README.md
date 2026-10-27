@@ -12,4 +12,4 @@ Project specifications index.
 - [Epic D - Offline and Synchronization](epic-d-offline-and-synchronization.md) — 7 US *(MVP)*
 - [Epic I - Workshops & Training "Ma Forêt Vivante"](epic-i-workshops-training-ma-foret-vivante.md) — 5 US *(V1)*
 - [Règles de choix du parcours et du relevé](route-choice-rules-v1.md) (route-choice-rules-v1.md), Phase 30 *(V1)*, validées par le propriétaire le 2026-10-14
-- [Contenu du guide des dendromicrohabitats](dmh-guide-content-v1.md) (dmh-guide-content-v1.md), Phase 32 *(V1)*, brouillon
+- [Contenu du guide des dendromicrohabitats](dmh-guide-content-v1.md) (dmh-guide-content-v1.md), Phase 32 *(V1)*, validé par le propriétaire le 2026-10-27
