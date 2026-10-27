@@ -9,11 +9,61 @@ import { DMH_STEPPER_SIZE } from "../../ui/DmhCounterStepper"
 const ROW_MIN_HEIGHT = 56
 const CHECKBOX_SIZE = 24
 const CHECKBOX_RADIUS = 8
+const ENTRY_TILE_SIZE = 40
 /** The second line of a row is indented to the label: checkbox 24 plus the 12 gap. */
 const LINE2_INDENT = CHECKBOX_SIZE + brandSpacing4.smd
 
 export function createDmhListStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    root: {
+      gap: brandSpacing4.smd,
+    },
+    heading: {
+      ...brandTypeScale.headline,
+      fontFamily: brandTypography.sectionHeader.fontFamily,
+      color: theme.colors.textPrimary,
+    },
+    helper: {
+      ...brandTypeScale.subhead,
+      color: theme.colors.textSecondary,
+    },
+    entryContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+      minHeight: ROW_MIN_HEIGHT - 2 * brandSpacing4.md,
+    },
+    entryTile: {
+      width: ENTRY_TILE_SIZE,
+      height: ENTRY_TILE_SIZE,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.visual.glass.iconTile,
+    },
+    entryText: {
+      flex: 1,
+      gap: brandSpacing4.xs,
+    },
+    entryTitle: {
+      ...brandTypeScale.headline,
+      fontFamily: brandTypography.sectionHeader.fontFamily,
+      color: theme.colors.textPrimary,
+    },
+    entryCaption: {
+      ...brandTypeScale.subhead,
+      color: theme.colors.textSecondary,
+    },
+    summary: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    sections: {
+      gap: brandSpacing4.sm,
+    },
+    sectionCard: {
+      overflow: "hidden",
+    },
     row: {
       minHeight: ROW_MIN_HEIGHT,
       paddingVertical: brandSpacing4.sm,
@@ -79,6 +129,11 @@ export function createDmhListStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
       marginTop: brandSpacing4.xs,
       marginLeft: LINE2_INDENT,
+    },
+    separator: {
+      height: 1,
+      marginLeft: brandSpacing4.md,
+      backgroundColor: theme.colors.divider,
     },
   })
 }

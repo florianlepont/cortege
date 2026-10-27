@@ -92,6 +92,8 @@ export const factorDetailFr = {
     entry: {
       title: "Guide des dendromicrohabitats",
       caption: "Reconnaître chaque groupe, sans réseau.",
+      // The spoken label of the whole entry row: title then caption.
+      label: "Guide des dendromicrohabitats. Reconnaître chaque groupe, sans réseau.",
     },
     forms: {
       cavities: "Cavités",
