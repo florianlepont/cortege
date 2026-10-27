@@ -100,7 +100,7 @@ function render(props: Partial<React.ComponentProps<typeof DmhCounterStepper>> =
 }
 
 describe("DmhCounterStepper", () => {
-  test("the buttons and the count cell are DMH_STEPPER_SIZE square (48 at this plan)", () => {
+  test("the buttons and the count cell are DMH_STEPPER_SIZE square (O-32-1, validated at plan 32-09)", () => {
     expect(DMH_STEPPER_SIZE).toBe(48)
     const { findByTestID } = render()
     for (const id of ["s-decrease", "s-increase", "s-value"]) {

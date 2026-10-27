@@ -16,8 +16,8 @@ import { AppPressable } from "./AppPressable"
 import { AppText as Text } from "./AppText"
 import { useHoldRepeat } from "./useHoldRepeat"
 
-// O-32-1: 48 pt until the owner's after timing on the phone settles 48 or 56 (plan 32-16 changes
-// only this constant).
+// O-32-1: 48 pt, validated by the owner at plan 32-09 on 2026-10-27; one constant shared by the
+// stepper and the row's +.
 export const DMH_STEPPER_SIZE = 48
 
 const MIN_TREES = 0

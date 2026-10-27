@@ -1,0 +1,187 @@
+import { memo, useEffect, useRef, useState } from "react"
+import { AccessibilityInfo, Platform, View } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import Animated, { FadeIn, LinearTransition, ReduceMotion } from "react-native-reanimated"
+import type { DmhGroupCode } from "@cortege/ibp-domain"
+import { brandInteraction, brandMotion } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
+import { fr } from "../../i18n"
+import { ABBREVIATION_INFO_ICON_SIZE } from "../../ui/AbbreviationInfo"
+import { AppPressable } from "../../ui/AppPressable"
+import { AppText as Text } from "../../ui/AppText"
+import { DmhCounterStepper } from "../../ui/DmhCounterStepper"
+import { feedback } from "../../ui/feedback"
+import type { DmhListStyles } from "./dmh-group-list.styles"
+
+const t = fr.factorDetail.dmhList
+
+/** How long the "bring the count back to 0" caption stays under a locked row (O-32-3). */
+const LOCKED_CAPTION_MS = 4000
+const INFO_SLOP = (brandInteraction.hitTarget.min - ABBREVIATION_INFO_ICON_SIZE) / 2
+
+export type DmhGroupRowProps = {
+  code: DmhGroupCode
+  label: string
+  ticked: boolean
+  /** Whole trees counted for the group; undefined when none is stored. */
+  count: number | undefined
+  /** Counted in full (D-10): the "+" and the stepper exist; false: the tick alone. */
+  full: boolean
+  editable: boolean
+  onToggle: (code: DmhGroupCode, next: boolean) => void
+  onAdd: (code: DmhGroupCode) => void
+  onStep: (code: DmhGroupCode, next: number) => void
+  onSubmitText: (code: DmhGroupCode, text: string) => void
+  onOpenInfo: (code: DmhGroupCode) => void
+  styles: DmhListStyles
+}
+
+const entering = () => FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)
+
+/**
+ * One group of the F list (32-UI-SPEC S1.3). Memoised on its own props, so one stepper tap
+ * re-renders this row only (research pitfall 8). A counted group cannot be unticked until its count
+ * is back to 0 (O-32-3): the tap shows a caption and changes nothing, no tap deletes data.
+ */
+export const DmhGroupRow = memo(function DmhGroupRow({
+  code,
+  label,
+  ticked,
+  count,
+  full,
+  editable,
+  onToggle,
+  onAdd,
+  onStep,
+  onSubmitText,
+  onOpenInfo,
+  styles,
+}: DmhGroupRowProps) {
+  const theme = useBrandTheme()
+  const [lockedShown, setLockedShown] = useState(false)
+  const lockedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (lockedTimer.current !== null) clearTimeout(lockedTimer.current)
+    },
+    [],
+  )
+
+  const counted = (count ?? 0) > 0
+  const locked = full && ticked && counted
+  const showAdd = full && editable && !ticked && !counted
+  const showStepper = full && (ticked || counted)
+
+  const onPressCheck = (): void => {
+    if (!ticked) {
+      onToggle(code, true)
+      feedback.selection()
+      return
+    }
+    if (locked) {
+      if (lockedTimer.current !== null) clearTimeout(lockedTimer.current)
+      setLockedShown(true)
+      lockedTimer.current = setTimeout(() => {
+        lockedTimer.current = null
+        setLockedShown(false)
+      }, LOCKED_CAPTION_MS)
+      if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(t.lockedUntick)
+      return
+    }
+    onToggle(code, false)
+    feedback.selection()
+  }
+
+  const onPressAdd = (): void => {
+    onAdd(code)
+    feedback.selection()
+  }
+
+  const checkLabel = full && counted ? t.a11y.withCount({ label, trees: count ?? 0 }) : label
+
+  return (
+    <Animated.View
+      style={styles.row}
+      layout={LinearTransition.reduceMotion(ReduceMotion.System)}
+      testID={`dmh-row-${code}`}
+    >
+      <View style={styles.line1}>
+        <AppPressable
+          disableScale
+          onPress={onPressCheck}
+          disabled={!editable}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: ticked, disabled: !editable }}
+          accessibilityLabel={checkLabel}
+          accessibilityHint={locked ? t.a11y.tickLockedHint : t.a11y.tickHint}
+          style={styles.checkZone}
+          testID={`dmh-tick-${code}`}
+        >
+          <View style={[styles.checkbox, ticked && styles.checkboxOn]}>
+            {ticked ? (
+              <Ionicons
+                name="checkmark-outline"
+                size={16}
+                color={theme.visual.chip.activeText}
+                accessible={false}
+              />
+            ) : null}
+          </View>
+          <Text style={styles.label}>{label}</Text>
+        </AppPressable>
+        <AppPressable
+          disableScale
+          onPress={() => onOpenInfo(code)}
+          hitSlop={{ top: INFO_SLOP, bottom: INFO_SLOP, left: INFO_SLOP, right: INFO_SLOP }}
+          accessibilityRole="button"
+          accessibilityLabel={t.a11y.info({ label })}
+          accessibilityHint={t.a11y.infoHint}
+          testID={`dmh-info-${code}`}
+        >
+          <Ionicons
+            name="information-circle-outline"
+            size={ABBREVIATION_INFO_ICON_SIZE}
+            color={theme.semanticColors.accent}
+          />
+        </AppPressable>
+        {showAdd ? (
+          <AppPressable
+            disableScale
+            onPress={onPressAdd}
+            accessibilityRole="button"
+            accessibilityLabel={t.a11y.add({ label })}
+            accessibilityHint={t.a11y.addHint}
+            style={styles.addButton}
+            testID={`dmh-add-${code}`}
+          >
+            <Ionicons name="add-outline" size={22} color={theme.colors.forest} />
+          </AppPressable>
+        ) : null}
+      </View>
+      {showStepper ? (
+        <Animated.View entering={entering()} style={styles.line2}>
+          <Text style={styles.caption}>{t.treesCaption}</Text>
+          <DmhCounterStepper
+            label={label}
+            value={count ?? 0}
+            onStep={(next) => onStep(code, next)}
+            onSubmitText={(text) => onSubmitText(code, text)}
+            editable={editable}
+            testID={`dmh-stepper-${code}`}
+          />
+        </Animated.View>
+      ) : null}
+      {lockedShown ? (
+        <Animated.View entering={entering()}>
+          <Text
+            style={styles.locked}
+            accessibilityLiveRegion="polite"
+            testID={`dmh-locked-${code}`}
+          >
+            {t.lockedUntick}
+          </Text>
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  )
+})
