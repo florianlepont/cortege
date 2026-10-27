@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react"
+import type { DmhGroupCode } from "@cortege/ibp-domain"
 import type { FactorKey } from "../../app/types"
 import { useSurveyRoute } from "../../hooks/useSurveyRoute"
 import { fr } from "../../i18n"
@@ -40,6 +41,9 @@ const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
  * Phase 30 (plan 30-19): the typed detail inputs of the relevé déplafonné (B cover per stratum, F
  * counts per group and F's surface) and their three setters travel as one `uncappedEntry` object;
  * the pager hands it to the factor page, which shows it only for B or F counted in full.
+ *
+ * Phase 32 (D-04): the group list of factor F opens the dendromicrohabitat guide sheet
+ * (`surveyDmhGuide`): on the catalogue with no group, on that group's page with one.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -101,6 +105,10 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
       navigation.navigate("surveyFactorHelp", { help, hints: [...hints] }),
     [navigation],
   )
+  const handleOpenDmhGuide = useCallback(
+    (group?: DmhGroupCode) => navigation.navigate("surveyDmhGuide", { group }),
+    [navigation],
+  )
   // Back to the summary, also when the pager was opened from the Score page.
   const handleFinished = useLatestCallback(() => navigation.popTo("surveyDetail"))
 
@@ -138,6 +146,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         onActiveFactorChange={handleActiveFactorChange}
         onFinish={handleFinish}
         onOpenHelp={handleOpenHelp}
+        onOpenDmhGuide={handleOpenDmhGuide}
         finishAction={finishAction}
         factorAnnotations={factorAnnotations}
         onChangeDoubt={handleChangeDoubt}

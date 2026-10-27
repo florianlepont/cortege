@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
+import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
 import {
   brandRadius,
   brandShadow,
@@ -71,6 +71,8 @@ type FactorPagerProps = {
   onFinish: () => void
   /** "Que relever ?": opens the help sheet route with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
+  /** Phase 32 (D-04): opens the dendromicrohabitat guide sheet, on a group or on the catalogue. */
+  onOpenDmhGuide: (group?: DmhGroupCode) => void
   /**
    * D-26: on the last factor, a labelled "Terminer le relevé" pill above the bar that finishes the
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".
@@ -113,6 +115,7 @@ export const FactorPager = memo(function FactorPager({
   onActiveFactorChange,
   onFinish,
   onOpenHelp,
+  onOpenDmhGuide,
   finishAction = null,
   factorAnnotations,
   onChangeDoubt,
@@ -236,6 +239,7 @@ export const FactorPager = memo(function FactorPager({
                 retainedScore={factorRetainedScores[factor]}
                 methodVersion={methodVersion}
                 onOpenHelp={onOpenHelp}
+                onOpenDmhGuide={onOpenDmhGuide}
                 doubt={factorAnnotations[factor]?.doubt === true}
                 note={factorAnnotations[factor]?.note ?? ""}
                 onChangeDoubt={(next) => onChangeDoubt(factor, next)}

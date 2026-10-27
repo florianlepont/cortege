@@ -281,3 +281,21 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
     expect(mockPagerProps.value.uncappedEntry).toBe(first)
   })
 })
+
+describe("FactorDetailRoute dendromicrohabitat guide (Phase 32, D-04)", () => {
+  const open = () => mockPagerProps.value.onOpenDmhGuide as (group?: string) => void
+
+  beforeEach(() => navigation.navigate.mockClear())
+
+  test("a group opens the guide on its page", () => {
+    mount()
+    open()("dmh_05")
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyDmhGuide", { group: "dmh_05" })
+  })
+
+  test("no group opens the catalogue", () => {
+    mount()
+    open()()
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyDmhGuide", { group: undefined })
+  })
+})

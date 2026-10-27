@@ -150,6 +150,7 @@ function render(
         onActiveFactorChange={onActiveFactorChange}
         onFinish={onFinish}
         onOpenHelp={jest.fn()}
+        onOpenDmhGuide={jest.fn()}
         finishAction={finishAction}
         factorAnnotations={factorAnnotations}
         onChangeDoubt={onChangeDoubt}
@@ -779,6 +780,13 @@ describe("FactorPager counting mode (Phase 30, D-07)", () => {
     const { tree } = render("B", {}, null, {}, { uncappedFactors: ["B"], uncappedEntry })
     const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]
     expect(probe.props.uncappedEntry).toBe(uncappedEntry)
+  })
+
+  test("the page receives the guide opener (Phase 32, D-04)", () => {
+    const onOpenDmhGuide = jest.fn()
+    const { tree } = render("F", {}, null, {}, { onOpenDmhGuide })
+    const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]
+    expect(probe.props.onOpenDmhGuide).toBe(onOpenDmhGuide)
   })
 
   test("the badge reads 'Relevé déplafonné'", () => {
