@@ -817,11 +817,11 @@ elles sont vides dans ce brouillon.
 
 | Id | Question | Défaut conseillé | Décision validée | Effet si différent |
 | --- | --- | --- | --- | --- |
-| O-32-1 | Taille des boutons du compteur sur le terrain avec des gants | 48 points maintenant (une seule constante) ; essai de 48 contre 56 sur le scénario S2 du chronométrage, on garde le meilleur | | Seule la constante de taille du compteur change |
+| O-32-1 | Taille des boutons du compteur sur le terrain avec des gants | 48 points (une seule constante) ; 56 si le propriétaire le demande ici (boutons plus grands pour les gants, lignes plus hautes) | | Seule la constante de taille du compteur change |
 | O-32-2 | Noms des formes sur la liste du facteur F | Noms courts sur la liste, noms officiels du guide de poche sur la page du groupe (section 4) | | Les titres de section de la liste deviennent les noms officiels |
 | O-32-3 | Un groupe compté peut-il être décoché | Non : verrouillé tant que le nombre n'est pas revenu à 0, avec une ligne d'explication | | Décocher garde le compte et la ligne, comme avant la phase |
 | O-32-4 | Sections ouvertes à l'arrivée sur la page | Toutes ouvertes si rien n'est coché ; sinon seules les sections qui ont un groupe coché ou compté | | Une autre règle d'ouverture, sans effet sur les données |
-| O-32-5 | Recherche sur la liste du facteur F elle-même | Non : recherche dans le catalogue du guide seulement ; à revoir si le chronométrage montre que le défilement domine | | Un champ de recherche s'ajoute en tête de liste |
+| O-32-5 | Recherche sur la liste du facteur F elle-même | Non : recherche dans le catalogue du guide seulement ; à revoir si le propriétaire la demande après son essai de la liste en fin de phase | | Un champ de recherche s'ajoute en tête de liste |
 | O-32-6 | Dessins originaux : qui dessine, quel style | Résolu : l'assistant dessine les quinze dessins pour l'association (style approuvé sur trois essais le 2026-10-24), l'expert relit chacun pour l'exactitude au plan 32-09 (section 9), ils sont livrés fixes (2026-10-26) | | Un dessin à corriger passe par sa source et le script de la section 9 |
 | O-32-7 | Montrer les seuils du guide de poche à côté de ceux de l'IBP (bloc d'écart) | Oui, avec un libellé, seulement où ils diffèrent, la valeur de l'IBP en premier | | Le bloc d'écart disparaît des pages |
 | O-32-8 | Raccourci « cocher ce groupe » depuis la page d'un groupe | Non : guide en lecture seule | | Un bouton s'ajoute : deuxième chemin d'écriture sur le relevé, à tester |
@@ -831,8 +831,8 @@ elles sont vides dans ce brouillon.
 | O-32-12 | Ordre « groupes fréquents d'abord » dans la liste | Option (a) de la section 7 : cochés ou comptés d'abord, puis ordre IBP, faute de source de fréquence fiable | | Option (b) : un ordre écrit dans « Ordre validé » ; option (c) : idée reportée |
 | P-01 | Édition du guide de poche sur laquelle repose la table | Édition française de 2024, empreinte donnée en tête de ce document (plan 32-02) | | Une autre édition change les numéros de type : la section 5 est à refaire |
 | P-02 | Expert qui relit les fiches et les dessins | Nom et date obligatoires dans la section 12 | | Pas de validation sans expert |
-| P-03 | Règle de réussite du chronométrage de la saisie | Scénario S2 : temps médian au moins 25 % plus bas et moins de touches ; scénarios S1 et S3 : médianes au plus 10 % plus hautes (voir `docs/user-tests/dmh-entry-timing.md`) | | Un autre seuil de réussite, écrit dans ce document de test |
-| P-04 | Leviers de vitesse gardés après le chronométrage de départ | Les trois : (a) compteur sur la ligne, (b) groupes par forme, (c) cochés d'abord | | Un levier retiré, sans effet sur les données enregistrées |
+| P-03 | Règle de réussite du chronométrage de la saisie | Sans objet : le propriétaire a abandonné le chronométrage le 2026-10-27 ; la simplicité est montrée par le décompte automatique des appuis et confirmée par écrit par le propriétaire après un essai sur son téléphone (voir `docs/user-tests/dmh-entry-timing.md`) | | Aucun |
+| P-04 | Leviers gardés après le chronométrage de départ | Sans objet depuis le 2026-10-27 (pas de chronométrage) : les trois leviers restent tels qu'ils sont construits, (a) compteur sur la ligne, (b) groupes par forme, (c) cochés d'abord ; le propriétaire peut en faire retirer un après son essai de fin de phase | | Un levier retiré ici demande une nouvelle planification, sans effet sur les données enregistrées |
 
 <!-- prettier-ignore-end -->
 
@@ -850,11 +850,13 @@ Cinq exigences, avec la formulation de la recherche de la phase. Le plan d'ensem
   poche) et un catalogue des quinze groupes avec recherche ; les sources sont montrées sur les pages.
 - `REQ-C-dmh-illustrations` : chaque groupe montre, sans réseau, son dessin original de l'association,
   fixe, relu pour l'exactitude par un expert ; un groupe sans dessin n'affiche rien.
-- `REQ-C-dmh-fast-entry` : saisir le facteur F avec beaucoup de groupes demande moins de touches et
-  moins de temps qu'avant ; les données enregistrées (`dmh_groups`, `dmh_counts`, `trees_per_ha`) et
+- `REQ-C-dmh-fast-entry` : saisir le facteur F avec beaucoup de groupes est plus simple qu'avant et
+  demande moins d'appuis ; les données enregistrées (`dmh_groups`, `dmh_counts`, `trees_per_ha`) et
   tous les scores restent identiques (cas de parité inchangés).
-- `REQ-FT-dmh-speed` : le gain de vitesse est chronométré sur un vrai relevé, avant et après, selon le
-  protocole de la phase, et le résultat est consigné (peut être clos aux essais de terrain).
+- `REQ-FT-dmh-speed` : la simplicité est montrée par le décompte automatique des appuis (ancien flux
+  contre nouveau, mêmes données enregistrées) et confirmée par écrit par le propriétaire après un
+  essai de la nouvelle liste sur son téléphone (décision du propriétaire du 2026-10-27 : pas de
+  chronométrage).
 
 ## 12. Validation
 

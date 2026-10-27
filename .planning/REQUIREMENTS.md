@@ -247,8 +247,8 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 - [ ] **REQ-DOC-dmh-sources** — The sources, authors, licence status, retrieval date and SHA-256 of every document the DMH guide draws on are recorded in `docs/references/README.md`; the IBP-to-WSL crosswalk and the group texts are written as a French spec (`docs/specs/dmh-guide-content-v1.md`) and validated in writing by the owner before any screen uses them. *(New - Phase 32)*
 - [ ] **REQ-C-dmh-guide** — From the factor F screen the observer opens, offline, a sheet per DMH group (what counts for the IBP, how to recognise it, frequent confusions, the types of the pocket guide) and a searchable catalogue of the 15 groups, with sources shown. *(New - Phase 32)*
 - [ ] **REQ-C-dmh-illustrations** — Each of the 15 groups shows an original drawing owned by the association, shown static (no animation), offline, checked for accuracy by a domain expert. *(New - Phase 32)*
-- [ ] **REQ-C-dmh-fast-entry** — Entering factor F with many groups takes fewer taps and less time than before; the stored payload and every score are unchanged. *(New - Phase 32)*
-- [ ] **REQ-FT-dmh-speed** — The speed gain is timed on a real survey, before and after, with the protocol of `32-RESEARCH.md`, and the result is recorded. *(New - Phase 32)*
+- [ ] **REQ-C-dmh-fast-entry** — Entering factor F with many groups is simpler than before (fewer taps and less scrolling); the stored payload and every score are unchanged. *(New - Phase 32)*
+- [ ] **REQ-FT-dmh-speed** — Simplicity is confirmed by the owner on their own phone with the new F list (no timing: owner decision 2026-10-27), next to the automated press-count proxy. *(New - Phase 32)*
 
 ## Traceability
 

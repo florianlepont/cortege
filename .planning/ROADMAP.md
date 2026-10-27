@@ -1116,9 +1116,9 @@ Plans:
 
   1. A tool or page reachable from the DMH inputs explains each DMH with its identification information, offline.
   2. The content crosses the IBP typology with the WSL one, and its sources and licence for reuse are recorded (WSL already has PDF content).
-  3. Recording a survey with many potential DMH is quicker than before, measured on a real survey.
+  3. Recording a survey with many potential DMH is simpler than before: fewer taps for the same stored data (automated proxy) and confirmed by the owner on their own phone (no timing, owner decision 2026-10-27).
 
-**Plans**: 16 plans in 9 waves, planned 2026-10-24 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`); owner checkpoints in 32-02 (WSL edition), 32-07 (baseline timing), 32-09 (content sign-off), 32-16 (final timing)
+**Plans**: 16 plans in 8 waves (32-07 skipped, 32-16 is now the owner's simplicity check), planned 2026-10-24 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`); owner checkpoints in 32-09 (content sign-off) and 32-16 (simplicity check)
 **UI hint**: yes
 
 ### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)

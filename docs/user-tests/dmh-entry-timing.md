@@ -1,26 +1,23 @@
-# Test plan: temps de saisie du facteur F (dendromicrohabitats), avant et après
+# Saisie du facteur F (dendromicrohabitats) : chronométrage abandonné
 
-Basé sur le critère 3 de la feuille de route de la phase 32, la décision D-08 (saisie plus rapide, données enregistrées inchangées), l'exigence `REQ-FT-dmh-speed` et la section « Recording-Speed Work » de la recherche de la phase 32 (`32-RESEARCH.md`).
+Basé sur le critère 3 de la feuille de route de la phase 32, la décision D-08 et l'exigence `REQ-FT-dmh-speed`.
 
-Légende : ✅ Réussi · ❌ Échec · ⚠️ Réussi avec un problème · 🔲 Non testé
+## 1. Décision du propriétaire (2026-10-27)
 
-Ce document est le **protocole**, écrit avant toute séance. La mesure « avant » (section 7) est prise sur le flux actuel du facteur F (puces à cocher, puis compteurs séparés), avant tout changement de la saisie. La mesure « après » (section 8) rejoue exactement le même protocole sur la version finie de la phase (plan 32-16).
+Le chronométrage de la saisie du facteur F sur l'iPhone, prévu avant et après la phase, est **abandonné**. Le propriétaire ne s'intéresse pas au temps de saisie : il veut seulement que **saisir le facteur F avec beaucoup de groupes soit plus simple qu'avant**. Le protocole écrit le 2026-10-26 (séances chronométrées, aide de mesure, règle de réussite sur le temps) n'a pas été exécuté : aucun temps n'a été mesuré et aucun n'est annoncé.
 
----
+Les trois leviers de la décision D-08 restent tels qu'ils sont construits : (a) le « + » et le compteur sur la ligne du groupe, en mode déplafonné ; (b) les groupes rangés par forme ; (c) les groupes cochés ou comptés en premier à l'arrivée sur la page. Aucun levier n'est retiré pour une raison de mesure ; le propriétaire peut en faire retirer un après l'avoir essayé.
 
-## 1. But
+## 2. Comment la simplicité est montrée
 
-Prouver que **saisir le facteur F est plus rapide qu'avant**, mesuré sur un vrai relevé, sur le même téléphone, avec le même type de build (critère 3 de la phase 32, décision D-08).
+1. **Le décompte automatique des appuis** (`mobile/src/screens/factor-detail/dmh-entry-cost.test.tsx`) : l'ancien flux demande 8 appuis pour S1 et 29 pour S2 ; le test rejoue S1 et S2 avec la nouvelle liste, compte ses appuis et vérifie que les données enregistrées sont exactement les mêmes (`OLD_FLOW_PRESSES` et `OLD_FLOW_F_PAYLOAD` dans `dmh-entry-scenarios.ts`).
+2. **L'essai du propriétaire** : à la fin de la phase, le propriétaire essaie la nouvelle liste du facteur F sur son téléphone et confirme par écrit qu'elle est plus simple qu'avant (section 4, plan 32-16).
 
-Deux choses sont mesurées, avant et après : le **temps** et l'**effort** (touchers, défilements, corrections). La mesure « avant » dit aussi quel levier compte vraiment (les défilements ou les appuis), pour garder ou abandonner chaque levier avec le propriétaire (section 9, point P-04 du plan 32-09).
+## 3. Scénarios de référence
 
-Hors périmètre : le temps de lecture de la fiche, le temps d'ouverture du guide des dendromicrohabitats, la vitesse des autres facteurs.
+Ils servent au décompte automatique et peuvent guider l'essai du propriétaire. Les groupes portent les intitulés exacts de l'application, dans l'ordre de l'IBP.
 
-## 2. Scénarios
-
-Chaque scénario est une feuille de papier écrite à l'avance (groupe, nombre d'arbres), pour que le temps de lecture soit exclu de la mesure. Les groupes portent les intitulés exacts de l'application (puces du facteur F), dans l'ordre de l'IBP.
-
-### S1 : peu de groupes (mode déplafonné)
+### S1 : peu de groupes (mode déplafonné, surface de 1 ha)
 
 | Groupe                                           | Arbres |
 | ------------------------------------------------ | ------ |
@@ -28,11 +25,11 @@ Chaque scénario est une feuille de papier écrite à l'avance (groupe, nombre d
 | 5. Aubier apparent                               | 2      |
 | 12. Plantes et lichens épiphytiques ou parasites | 1      |
 
-Soit 3 groupes et 5 arbres.
+Soit 3 groupes et 5 arbres. Ancien flux : **8 appuis** (3 puces et 5 « + »).
 
-### S2 : beaucoup de groupes (mode déplafonné)
+### S2 : beaucoup de groupes (mode déplafonné, surface de 1 ha)
 
-Le relevé réel du propriétaire (groupe, arbres). **À remplir à la tâche 3 du plan 32-07**, d'après la feuille que le propriétaire utilise à la séance. Si le propriétaire n'a pas de relevé réel, on garde la liste provisoire du jeu de test (`dmh-entry-scenarios.ts`) :
+Liste provisoire du jeu de test, gardée telle quelle (aucune séance n'a eu lieu, il n'y a donc pas de relevé réel à reporter) :
 
 | Groupe                                           | Arbres |
 | ------------------------------------------------ | ------ |
@@ -46,124 +43,18 @@ Le relevé réel du propriétaire (groupe, arbres). **À remplir à la tâche 3 
 | 12. Plantes et lichens épiphytiques ou parasites | 3      |
 | 15. Coulées de sève et de résine                 | 1      |
 
-Soit 9 groupes et 20 arbres.
-
-Tableau S2 retenu à la séance : _à remplir (relevé réel ou liste provisoire)._
+Soit 9 groupes et 20 arbres. Ancien flux : **29 appuis** (9 puces et 20 « + »).
 
 ### S3 : mode plafonné (non-régression)
 
-Brouillon dont le parcours **plafonne** F. Taper « 5 » dans le champ « arbres par hectare », puis cocher les trois groupes de S1 (1, 5 et 12). Il n'y a pas de compteur par groupe dans ce mode. Ce scénario sert à vérifier que le mode plafonné n'est pas devenu plus lent.
+Brouillon dont le parcours **plafonne** F : taper « 5 » dans le champ « arbres par hectare », puis cocher les trois groupes de S1 (1, 5 et 12). Il n'y a pas de compteur par groupe dans ce mode. Ancien flux : 3 coches ; le nouveau flux n'en demande pas plus.
 
-## 3. Préparation
+## 4. Essai du propriétaire (fin de phase)
 
-- **Même iPhone** (celui du propriétaire) et **même type de build** (Release) pour l'avant et l'après. Avant : build de `origin/main` avec l'aide de mesure. Après : build du dernier commit de la phase avec la même aide de mesure (plan 32-16).
-- **Deux brouillons préparés à l'avance** :
-  1. un brouillon dont le parcours compte F **en plein** (relevé déplafonné) avec une **surface de 1 ha** déjà enregistrée : pour S1 et S2 ;
-  2. un brouillon dont le parcours **plafonne** F : pour S3.
-- **Entre deux essais** : remettre F à vide (décocher tous les groupes, remettre les compteurs à 0, vider le champ), puis **quitter la page F**. Cette sortie affiche une alerte de remise à zéro : l'ignorer, elle ne compte pas. Revenir ensuite sur F pour l'essai suivant.
-- Les trois feuilles de scénario sont **lues avant** de commencer l'essai : la lecture n'est pas chronométrée.
-- Téléphone chargé, branché ou non, luminosité habituelle. Noter si la séance a lieu au bureau ou sur le terrain (gants, soleil) : le bureau suffit pour le critère, un essai sur le terrain est un meilleur témoin.
+Rempli par le plan 32-16, en une seule ligne, d'après la réponse écrite du propriétaire.
 
-## 4. Mesure
+Résultat : _à remplir par le plan 32-16._
 
-L'aide de mesure est un correctif jetable (`32-dmh-timing-diag.patch`, dans le dossier de la phase), appliqué seulement pour les builds de mesure. Elle n'entre jamais dans le code de l'application ni dans `main`.
+## 5. Trace
 
-- **Début du chronomètre** : le premier toucher sur la page F.
-- **Fin du chronomètre** : le dernier changement de F (dernier arbre compté, dernière case cochée ou dernier chiffre tapé). La surface est déjà enregistrée (section 3) : elle n'entre pas dans la mesure.
-- **Touchers** : chaque contact du doigt sur la page F, y compris celui qui commence un défilement.
-- **Défilements** : chaque geste vertical de défilement de la page F.
-- **Corrections** : un compteur qui baisse, ou un groupe décoché.
-- À la sortie de la page F, une **alerte** affiche les quatre nombres : secondes (une décimale), touches, défilements, corrections. Le propriétaire note les quatre nombres de chaque essai (ou fait une capture d'écran de l'alerte).
-- Un **enregistrement d'écran** (celui de l'iPhone) est gardé comme preuve et pour recouper le temps image par image si un chiffre paraît faux.
-
-## 5. Déroulé
-
-Trois essais par scénario, dans un ordre qui tourne pour ne pas avantager le dernier scénario :
-
-| Essai | Ordre des scénarios |
-| ----- | ------------------- |
-| 1     | S1, S2, S3          |
-| 2     | S2, S3, S1          |
-| 3     | S3, S1, S2          |
-
-Pour chaque scénario de chaque essai :
-
-1. Remettre F à vide et quitter la page F (alerte de remise à zéro ignorée).
-2. Ouvrir le bon brouillon et aller au facteur F.
-3. Saisir le scénario d'après la feuille, à la vitesse normale (ni précipitée, ni appliquée).
-4. Quitter la page F, noter les quatre nombres de l'alerte.
-5. Vérifier que le facteur F affiche bien le contenu de la feuille. Un essai faux (un arbre oublié, un faux appui non corrigé) est recommencé et noté comme remarque.
-
-Cela fait neuf essais, au total.
-
-## 6. Règle de réussite proposée
-
-À confirmer par le propriétaire au plan 32-09 (point P-03) :
-
-- **S2** : temps médian **au moins 25 % plus bas** qu'avant, et **moins de touchers** qu'avant.
-- **S1 et S3** : temps médian **au plus 10 % plus haut** qu'avant (pas plus lent).
-- Si un levier ne montre aucun gain d'après la mesure « avant », il est abandonné (D-08).
-
-## 7. Résultats avant
-
-Date : _à remplir_ · iPhone : _à remplir_ · Build : `origin/main` au commit _à remplir_, avec l'aide de mesure.
-
-| Scénario | Essai | Secondes | Touchers | Défilements | Corrections |
-| -------- | ----- | -------- | -------- | ----------- | ----------- |
-| S1       | 1     |          |          |             |             |
-| S1       | 2     |          |          |             |             |
-| S1       | 3     |          |          |             |             |
-| S2       | 1     |          |          |             |             |
-| S2       | 2     |          |          |             |             |
-| S2       | 3     |          |          |             |             |
-| S3       | 1     |          |          |             |             |
-| S3       | 2     |          |          |             |             |
-| S3       | 3     |          |          |             |             |
-
-| Scénario | Médiane secondes | Médiane touchers | Médiane défilements | Médiane corrections |
-| -------- | ---------------- | ---------------- | ------------------- | ------------------- |
-| S1       |                  |                  |                     |                     |
-| S2       |                  |                  |                     |                     |
-| S3       |                  |                  |                     |                     |
-
-Remarques du propriétaire (gants, soleil, faux appuis) : _à remplir._
-
-## 8. Résultats après
-
-À remplir par le plan 32-16, sur le build du dernier commit de la phase, avec le même protocole et la même aide de mesure (reportée sur le commit de la phase si elle ne s'applique plus, module d'enregistrement inchangé).
-
-Date : _à remplir_ · iPhone : _à remplir_ · Build : _à remplir_
-
-| Scénario | Essai | Secondes | Touchers | Défilements | Corrections |
-| -------- | ----- | -------- | -------- | ----------- | ----------- |
-| S1       | 1     |          |          |             |             |
-| S1       | 2     |          |          |             |             |
-| S1       | 3     |          |          |             |             |
-| S2       | 1     |          |          |             |             |
-| S2       | 2     |          |          |             |             |
-| S2       | 3     |          |          |             |             |
-| S3       | 1     |          |          |             |             |
-| S3       | 2     |          |          |             |             |
-| S3       | 3     |          |          |             |             |
-
-| Scénario | Médiane secondes | Médiane touchers | Médiane défilements | Médiane corrections |
-| -------- | ---------------- | ---------------- | ------------------- | ------------------- |
-| S1       |                  |                  |                     |                     |
-| S2       |                  |                  |                     |                     |
-| S3       |                  |                  |                     |                     |
-
-Verdict (règle de la section 6) : _à remplir._
-
-## 9. Leviers
-
-Les trois leviers de la décision D-08. L'estimation vient des nombres de la section 7 (tâche 3 du plan 32-07) ; le propriétaire décide au plan 32-09 (point P-04) ; l'état après la mesure est ajouté par le plan 32-16.
-
-| Levier                                                                      | Estimation d'après la mesure avant | État après la mesure |
-| --------------------------------------------------------------------------- | ---------------------------------- | -------------------- |
-| a. Compteur sur la ligne du groupe (moins et plus, sans passer par la puce) | _à remplir_                        | _à remplir_          |
-| b. Regroupement des groupes par forme (sections repliables)                 | _à remplir_                        | _à remplir_          |
-| c. Groupes déjà cochés ou comptés en premier, puis l'ordre de l'IBP         | _à remplir_                        | _à remplir_          |
-
-## 10. Taille des boutons du compteur (O-32-1)
-
-Question ouverte du plan 32-16 : le compteur compact (boutons de 44 à 48 points au lieu des 56 points actuels, prévus pour les gants) est-il acceptable sur le terrain ? Réponse du propriétaire, avec son essai en conditions réelles : _à remplir par le plan 32-16._
+L'aide de mesure (`32-dmh-timing-diag.patch`, dans le dossier de la phase) reste un simple fichier de trace : elle n'a servi à aucun build, elle n'est jamais entrée dans le code de l'application et elle ne sera jamais fusionnée.

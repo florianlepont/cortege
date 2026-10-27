@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-While recording factor F, the observer reaches detailed identification information on dendromicrohabitats (DMH), offline, in a dedicated tool. The content crosses the IBP typology (15 groups, `dmh_01` to `dmh_15`) with the WSL one, with sources and reuse licence recorded. Recording a survey with many potential DMH must be quicker than before, measured on a real survey.
+While recording factor F, the observer reaches detailed identification information on dendromicrohabitats (DMH), offline, in a dedicated tool. The content crosses the IBP typology (15 groups, `dmh_01` to `dmh_15`) with the WSL one, with sources and reuse licence recorded. Recording a survey with many potential DMH must be quicker than before, measured on a real survey (amended 2026-10-27, D-08: simpler than before, shown by the press-count proxy and the owner's written confirmation on the phone; not timed).
 
 **Not in scope (owner clarification, seminar 2026-10-10):** any change to recorded data. `F.dmh_groups`, `F.dmh_counts`, the IBP rules, the package and the SQLite schema (version 5) do not change. No API change. Avoid `mobile/src/app/survey-pdf/` (phase 33) and the map screens.
 
@@ -31,6 +31,7 @@ While recording factor F, the observer reaches detailed identification informati
 
 ### Faster recording
 - **D-08:** Owner-chosen levers (2026-10-23): (a) +/- counters directly on the group row, (b) search and grouping of the 15 groups by form, (c) frequent or already ticked groups first. A timed baseline on a real survey comes first, so the plan can drop a lever that does not help. Hard constraints: the stored payload is unchanged, the capped score is unchanged (parity cases untouched), and the speed gain is measured on a real survey (timed before and after, protocol written in the plan).
+- **D-08 amended (owner, 2026-10-27):** the owner does not care about the time the entry takes; they only want recording factor F with many groups to be SIMPLER, and they refuse the timed measurement on the iPhone. So: no timing campaign, no before or after seconds, no pass rule on time, no measuring-aid build (plan 32-07 skipped; plan 32-16 becomes the owner's final check). Success criterion 3 becomes "entering many groups is simpler than before", shown by (a) the automated proxy written in 32-01 (old flow 8 presses for S1 and 29 for S2, against the new flow's presses replayed in 32-14, same stored payload) and (b) the owner trying the new F list on their own phone at the end of the phase and confirming in writing that it is simpler (32-16). No lever is dropped on measurement grounds: the three levers (a) "+" and counter on the row in the counted-in-full mode, (b) grouping by form, (c) ticked or counted first at mount stay as built, and the owner may ask to remove one after trying it (a gap for gap closure). The counter button size (O-32-1) is decided at the content gate (32-09) and applied by 32-11. The other hard constraints stand: stored payload unchanged, capped score unchanged (parity cases untouched).
 
 ### Licence outcome and counters (owner, 2026-10-23, after research)
 - **D-09:** Research found the WSL pocket guide (2024) carries only "(c) WSL 2024", no reuse licence, photos by 7 creators. So texts are our own wording with sources cited (D-02 applies) and no WSL image is embedded. The drawings are the association's own (D-11).
@@ -40,7 +41,7 @@ While recording factor F, the observer reaches detailed identification informati
 - **D-11 (amended 2026-10-26):** The 15 drawings (one per IBP group) are drawn by the assistant for the association, original work, no WSL material. Style approved by the owner from three pilots (line drawing, 800x600, round caps; stroke widths between 4 and 12, dots as zero-length strokes, rotated ellipses accepted by the converter). They ship as SVG path data in the app (react-native-svg, already installed), shown STATIC: no animation of any kind (the owner tried a stroke-drawing preview and a looping preview and dropped both: "ca sert a rien"). Stroke colour from the theme, so no paper tile. SVG sources: `drawings/` in this phase folder. A domain expert must check each drawing for identification accuracy before release (sign-off with the content spec, plan 32-09).
 
 ### Claude's Discretion
-- Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone.
+- Details of the three speed levers (D-08) and which to keep after the timed baseline; the owner validates on the phone. (Amended 2026-10-27: no timed baseline; the three levers stay as built and the owner validates them on the phone at the end of the phase.)
 - Exact sheet layout, within the visual layer rules of CLAUDE.md.
 
 </decisions>
@@ -106,3 +107,5 @@ While recording factor F, the observer reaches detailed identification informati
 
 
 *Note 2026-10-26: 32-RESEARCH.md and the 32-UI-SPEC.md revision history describe earlier drawing designs (paper tile, then animation); D-11 above and the current plans prevail. The 15 drawings were redrawn on 2026-10-26 from the online verification notes in `drawings/verification-groupes-*.md`.*
+
+*Note 2026-10-27: the "Measurement protocol" of 32-RESEARCH.md (timed sessions, instrumented build, REQ-FT-dmh-speed as a timing) and the mentions of a timing, a timed baseline or a glove test in 32-UI-SPEC.md (O-32-1, O-32-5, the performance contract) are superseded by the D-08 amendment above; the plans as revised on 2026-10-27 prevail.*
