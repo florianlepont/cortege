@@ -28,8 +28,8 @@ type UncappedFieldBlockProps = {
 
 /**
  * The detail block of a factor counted in full: B's cover per stratum (it replaces the strata
- * chips) or F's counts per group and its surface (it comes under the group chips). Nothing for the
- * other factors, which keep their entry.
+ * chips) or F's own surface (it comes under the group list, which holds the counts since phase 32).
+ * Nothing for the other factors, which keep their entry.
  */
 export function UncappedFieldBlock({
   factor,
@@ -51,12 +51,8 @@ export function UncappedFieldBlock({
   if (factor === "F") {
     return (
       <DmhCountFields
-        methodVersion={methodVersion}
-        selectedGroups={field.selection?.selected ?? []}
-        counts={entry.state.dmhCounts}
         surfaceText={entry.state.fSurfaceText}
         zoneSurfaceHa={zoneSurfaceHa}
-        onChangeCount={entry.setDmhCount}
         onChangeSurface={entry.setFSurface}
       />
     )

@@ -2,7 +2,7 @@ import { Fragment, useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
+import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
@@ -56,6 +56,8 @@ type FactorDetailScreenProps = {
    * Absent: the capped entry everywhere.
    */
   uncappedEntry?: UncappedEntryProps
+  /** Phase 32 (D-04): opens the guide sheet; a group opens its page, none the catalogue. */
+  onOpenDmhGuide?: (group?: DmhGroupCode) => void
 }
 
 /**
@@ -65,9 +67,10 @@ type FactorDetailScreenProps = {
  * between the score line and the help link; it never changes the score line. Phase 30 (D-07): a
  * factor counted in full opens with its one-line caption, and the surface field of C, D and E starts
  * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
- * B counted in full swaps its strata chips for a cover per stratum, F adds a counter per ticked
- * group and its own surface under its group chips (the detail values are kept, never deleted, when
- * the factor goes back to the capped entry, U-O10).
+ * B counted in full swaps its strata chips for a cover per stratum. Phase 32 (D-08): F shows the
+ * group list by form (a tick per row; counted in full, a "+" then a stepper per row) with the guide
+ * entry points, and its own surface stays under the list (the detail values are kept, never
+ * deleted, when the factor goes back to the capped entry, U-O10).
  */
 export function FactorDetailScreen({
   factor,
@@ -83,6 +86,7 @@ export function FactorDetailScreen({
   uncappedFactors = NO_FACTORS,
   zoneSurfaceHa = null,
   uncappedEntry,
+  onOpenDmhGuide,
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
@@ -131,6 +135,7 @@ export function FactorDetailScreen({
               field,
               methodVersion,
               detailStyles,
+              { uncappedEntry: detailEntry, onOpenDmhGuide },
             )
             if (block !== null) {
               return (

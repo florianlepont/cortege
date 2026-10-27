@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
+import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
 import { parseFiniteNumberInput } from "../../app/number-utils"
 import {
   selectionOptionsFor,
@@ -16,14 +16,17 @@ import type { FactorSegmentedOption } from "../../ui/FactorSegmentedInput"
 import { FactorSegmentedInput } from "../../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../../ui/FactorSliderInput"
 import { fr } from "../../i18n"
+import { DmhGroupList } from "./DmhGroupList"
+import type { UncappedEntryProps } from "./UncappedFieldBlock"
 
 const t = fr.factorDetail
 
 // FLOW-01: which FactorInput variant each factor's fields render as, in the fixed order
 // useSurveyForm's factorSections builds them. F's trees_per_ha has no natural discrete variant and
-// stays numeric. Phase 25.1 (D-12): F and H carry an optional companion chip list under their
-// scored field (dendromicrohabitat groups, continuity sources), and the chip options of B, I and J
-// come from selectionOptionsFor so I and J follow the CNPF typology of the survey's method (D-09).
+// stays numeric. Phase 25.1 (D-12): F and H carry an optional companion under their scored field
+// (F: the dendromicrohabitat group list since phase 32, D-08; H: the continuity source chips), and
+// the chip options of B, I and J come from selectionOptionsFor so I and J follow the CNPF typology
+// of the survey's method (D-09).
 type OptionsFor = (selected: readonly string[] | null) => SelectionOption[]
 type Companion = "F" | "H"
 
@@ -36,11 +39,6 @@ export type FieldVariant =
   | { kind: "slider" }
 
 const CHIP_COUNT_LABEL = (count: number): string => fr.factorInput.chips.selectedCount({ count })
-
-const COMPANION_LABELS: Record<Companion, string> = {
-  F: t.companionLabels.dmh_groups,
-  H: t.companionLabels.evidence,
-}
 
 export const ignoreSelectionChange = (): void => undefined
 
@@ -88,8 +86,8 @@ function legacyCountOf(field: FactorField): number | null {
   return parsed === null ? null : Math.max(0, Math.round(parsed))
 }
 
-function renderCompanion(
-  companion: Companion,
+/** H's optional source chips, under its class. */
+function renderEvidenceChips(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   key: string,
@@ -98,8 +96,8 @@ function renderCompanion(
   return (
     <FactorChipsInput
       key={`${key}-companion`}
-      label={COMPANION_LABELS[companion]}
-      options={selectionOptionsFor(companion, methodVersion, selected)}
+      label={t.companionLabels.evidence}
+      options={selectionOptionsFor("H", methodVersion, selected)}
       selected={selected}
       onSelectionChange={field.selection?.onChange ?? ignoreSelectionChange}
       touched={false}
@@ -110,12 +108,49 @@ function renderCompanion(
   )
 }
 
+/** What the factor F page adds around its input: the counting entry and the guide opener. */
+export type FactorFieldExtras = {
+  /** Phase 30: the detail inputs; F's counting is on only when the route counts F in full. */
+  uncappedEntry?: UncappedEntryProps
+  /** Phase 32 (D-04): opens the guide on the catalogue (no argument) or on one group. */
+  onOpenDmhGuide?: (group?: DmhGroupCode) => void
+}
+
+/** F's companion: the group list, counting only when `extras` carries the entry (full mode). */
+function renderDmhList(
+  field: FactorField,
+  methodVersion: IbpMethodVersion | null,
+  key: string,
+  extras: FactorFieldExtras,
+) {
+  const entry = extras.uncappedEntry
+  return (
+    <DmhGroupList
+      key={`${key}-companion`}
+      methodVersion={methodVersion}
+      selected={field.selection?.selected ?? null}
+      onChangeSelection={field.selection?.onChange ?? ignoreSelectionChange}
+      counting={
+        entry
+          ? {
+              counts: entry.state.dmhCounts,
+              onBump: entry.bumpDmhGroup,
+              onSetCount: entry.setDmhCount,
+            }
+          : undefined
+      }
+      onOpenDmhGuide={extras.onOpenDmhGuide ?? ignoreSelectionChange}
+    />
+  )
+}
+
 export function renderFactorField(
   factor: FactorKey,
   variant: FieldVariant | undefined,
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   detailStyles: ReturnType<typeof createDetailStyles>,
+  extras: FactorFieldExtras = {},
 ) {
   const current: FieldVariant = variant ?? { kind: "numeric" }
   const label = field.required
@@ -124,7 +159,12 @@ export function renderFactorField(
   const key = `${factor}-${field.label}`
   const withCompanion = (input: ReactElement): ReactElement | ReactElement[] =>
     "companion" in current && current.companion
-      ? [input, renderCompanion(current.companion, field, methodVersion, key)]
+      ? [
+          input,
+          current.companion === "F"
+            ? renderDmhList(field, methodVersion, key, extras)
+            : renderEvidenceChips(field, methodVersion, key),
+        ]
       : input
 
   switch (current.kind) {

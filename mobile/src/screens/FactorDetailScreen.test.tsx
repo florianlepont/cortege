@@ -135,6 +135,15 @@ jest.mock("./factor-detail/DmhCountFields", () => {
   }
 })
 
+// Phase 32 (plan 32-14): the group list is under test in factor-detail/DmhGroupList.test.tsx; here it
+// is a probe that keeps its props.
+jest.mock("./factor-detail/DmhGroupList", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    DmhGroupList: (props: Record<string, unknown>) => ReactRef.createElement("DmhGroupList", props),
+  }
+})
+
 const STRIP_PROPS = {
   doubt: false,
   note: "",
@@ -389,22 +398,39 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(chips[12].props.accessibilityState.selected).toBe(true)
   })
 
-  test("F renders the numeric trees field and the 15 optional group chips under it", () => {
+  test("F renders the numeric trees field then the group list, with the field's selection", () => {
     const onChange = jest.fn()
-    const { tree, inputs } = renderDetail(
-      "F",
-      [withSelection("trees_per_ha", ["dmh_02"], "120", onChange)],
-      IBP_METHOD_V3_2,
-    )
-    expect(inputs).toHaveLength(1)
-    const chips = chipsOf(tree)
-    expect(chips).toHaveLength(15)
-    expect(chips[1].props.accessibilityState.selected).toBe(true)
-    expect(textsOf(tree)).toContain(fr.factorDetail.companionLabels.dmh_groups)
+    const onOpenDmhGuide = jest.fn()
+    let tree!: renderer.ReactTestRenderer
     act(() => {
-      chips[0].props.onPress()
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="F"
+          fields={[withSelection("trees_per_ha", ["dmh_02"], "120", onChange)]}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          onOpenDmhGuide={onOpenDmhGuide}
+          {...STRIP_PROPS}
+        />,
+      )
     })
+    const lists = tree.root.findAll((n) => (n.type as unknown) === "DmhGroupList")
+    expect(lists).toHaveLength(1)
+    expect(chipsOf(tree)).toHaveLength(0)
+    const props = lists[0].props
+    expect(props.methodVersion).toBe(IBP_METHOD_V3_2)
+    expect(props.selected).toEqual(["dmh_02"])
+    expect(props.counting).toBeUndefined()
+    props.onChangeSelection(["dmh_01", "dmh_02"])
     expect(onChange).toHaveBeenCalledWith(["dmh_01", "dmh_02"])
+    props.onOpenDmhGuide("dmh_05")
+    expect(onOpenDmhGuide).toHaveBeenCalledWith("dmh_05")
+    // The numeric field comes first, the list under it.
+    const order = tree.root
+      .findAll((n) => ["AppField", "DmhGroupList"].includes(n.type as unknown as string))
+      .map((n) => n.type as unknown as string)
+    expect(order).toEqual(["AppField", "DmhGroupList"])
   })
 
   test("H renders the segmented class and the 3 optional source chips under it", () => {
@@ -423,14 +449,12 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(chips[2].props.accessibilityState.selected).toBe(true)
   })
 
-  test("a companion renders without a selection, ticks nothing and does not crash", () => {
+  test("a companion renders without a selection, nothing ticked, and without the guide opener", () => {
     const tree = renderPlain("F", [field("trees_per_ha")], IBP_METHOD_V3_2)
-    const chips = chipsOf(tree)
-    expect(chips).toHaveLength(15)
-    expect(chips.every((chip) => !chip.props.accessibilityState.selected)).toBe(true)
-    act(() => {
-      chips[0].props.onPress()
-    })
+    const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
+    expect(list.props.selected).toBeNull()
+    expect(() => list.props.onChangeSelection(["dmh_01"])).not.toThrow()
+    expect(() => list.props.onOpenDmhGuide()).not.toThrow()
   })
 })
 
@@ -776,29 +800,40 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(chips.length).toBeGreaterThan(0)
   })
 
-  test("F counted in full keeps its fields and group chips and adds the counts and the surface", () => {
-    const { dmh, fields } = mount("F", fFields, {
+  test("F counted in full gives the list the counting entry and keeps the surface block below", () => {
+    const { dmh, fields, tree } = mount("F", fFields, {
       uncappedFactors: ["F"],
       uncappedEntry: entry,
       zoneSurfaceHa: 1.2,
     })
     expect(fields()).toHaveLength(1)
+    const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
+    expect(list.props.counting.counts).toBe(entry.state.dmhCounts)
+    list.props.counting.onBump("dmh_13", 1)
+    list.props.counting.onSetCount("dmh_13", 2)
+    expect(entry.bumpDmhGroup).toHaveBeenCalledWith("dmh_13", 1)
+    expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2)
     expect(dmh()).toHaveLength(1)
     const props = dmh()[0].props
-    expect(props.selectedGroups).toEqual(["dmh_01", "dmh_13"])
-    expect(props.counts).toBe(entry.state.dmhCounts)
+    expect(props.selectedGroups).toBeUndefined()
+    expect(props.counts).toBeUndefined()
     expect(props.surfaceText).toBe("1,2")
     expect(props.zoneSurfaceHa).toBe(1.2)
-    props.onChangeCount("dmh_13", 2)
     props.onChangeSurface("2")
-    expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2)
     expect(entry.setFSurface).toHaveBeenCalledWith("2")
+    const order = tree.root
+      .findAll((n) => ["AppField", "DmhGroupList", "DmhCountFields"].includes(n.type as never))
+      .map((n) => n.type as unknown as string)
+    expect(order).toEqual(["AppField", "DmhGroupList", "DmhCountFields"])
   })
 
   test("F capped, or no route entry: exactly today's entry", () => {
-    expect(
-      mount("F", fFields, { uncappedFactors: ["B"], uncappedEntry: entry }).dmh(),
-    ).toHaveLength(0)
+    for (const extra of [{ uncappedFactors: ["B" as const], uncappedEntry: entry }, {}]) {
+      const { dmh, tree } = mount("F", fFields, extra)
+      expect(dmh()).toHaveLength(0)
+      const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
+      expect(list.props.counting).toBeUndefined()
+    }
     expect(mount("F", fFields, { uncappedFactors: ["F"] }).dmh()).toHaveLength(0)
     expect(mount("B", bFields, { uncappedFactors: ["B"] }).strata()).toHaveLength(0)
   })

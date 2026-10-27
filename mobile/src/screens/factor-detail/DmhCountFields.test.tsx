@@ -1,6 +1,5 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
-import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import { DmhCountFields } from "./DmhCountFields"
 
@@ -22,14 +21,7 @@ jest.mock("react-native", () => {
   }
 })
 
-// The counter and the field are under test in their own files: probes that keep their props.
-jest.mock("../../ui/FactorCounterInput", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    FactorCounterInput: (props: Record<string, unknown>) =>
-      ReactRef.createElement("FactorCounterInput", props),
-  }
-})
+// The field is under test in its own file: a probe that keeps its props.
 jest.mock("../../ui/AppField", () => {
   const ReactRef = require("react") as typeof import("react")
   return { AppField: (props: Record<string, unknown>) => ReactRef.createElement("AppField", props) }
@@ -53,16 +45,11 @@ const textOf = (node: renderer.ReactTestInstance): string =>
   node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("")
 
 function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {}) {
-  const onChangeCount = jest.fn()
   const onChangeSurface = jest.fn()
   const element = (next: Partial<React.ComponentProps<typeof DmhCountFields>>) => (
     <DmhCountFields
-      methodVersion={IBP_METHOD_V3_2}
-      selectedGroups={["dmh_01", "dmh_13"]}
-      counts={{}}
       surfaceText=""
       zoneSurfaceHa={null}
-      onChangeCount={onChangeCount}
       onChangeSurface={onChangeSurface}
       {...next}
     />
@@ -71,19 +58,13 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
   act(() => {
     tree = renderer.create(element(props))
   })
-  const counter = (code: string) =>
-    tree.root.findAll(
-      (n) => (n.type as unknown) === "FactorCounterInput" && n.props.testID === `dmh-count-${code}`,
-    )
   const surface = () =>
     tree.root.find(
       (n) => (n.type as unknown) === "AppField" && n.props.testID === "dmh-surface-field",
     )
   return {
     tree,
-    onChangeCount,
     onChangeSurface,
-    counter,
     surface,
     update: (next: Partial<React.ComponentProps<typeof DmhCountFields>>) =>
       act(() => tree.update(element({ ...props, ...next }))),
@@ -95,42 +76,18 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
 }
 
 describe("DmhCountFields", () => {
-  test("one counter row per ticked group, with the group's label, plus the hint", () => {
-    const { tree, counter } = mount()
-    expect(counter("dmh_01")).toHaveLength(1)
-    expect(counter("dmh_13")).toHaveLength(1)
-    expect(counter("dmh_02")).toHaveLength(0)
-    expect(counter("dmh_01")[0].props.label).toBe("1. Loges de pic")
-    expect(counter("dmh_13")[0].props.label).toBe("13. Nids")
+  test("renders only the surface field: no title, no helper, no counter row", () => {
+    const { tree, surface } = mount()
+    expect(surface().props.label).toBe(t.dmhSurfaceLabel)
     const texts = textOf(tree.root)
-    expect(texts).toContain(t.dmhTitle)
-    expect(texts).toContain(t.dmhHelper)
-  })
-
-  test("no ticked group, no counter row", () => {
-    const { tree } = mount({ selectedGroups: [] })
+    expect(texts).not.toContain(t.dmhTitle)
+    expect(texts).not.toContain(t.dmhHelper)
+    expect(
+      tree.root.findAll(
+        (n) => typeof n.props.testID === "string" && n.props.testID.startsWith("dmh-count-"),
+      ),
+    ).toHaveLength(0)
     expect(tree.root.findAll((n) => (n.type as unknown) === "FactorCounterInput")).toHaveLength(0)
-  })
-
-  test("a group with a stored count keeps its row after it is unticked", () => {
-    const { counter } = mount({ selectedGroups: ["dmh_01"], counts: { dmh_13: 3 } })
-    expect(counter("dmh_13")).toHaveLength(1)
-    expect(counter("dmh_13")[0].props.value).toBe("3")
-  })
-
-  test("the counter shows the stored count and calls onChangeCount with a whole number", () => {
-    const { counter, onChangeCount } = mount({ counts: { dmh_01: 4 } })
-    expect(counter("dmh_01")[0].props.value).toBe("4")
-    expect(counter("dmh_13")[0].props.value).toBe("")
-    act(() => counter("dmh_01")[0].props.onChange("5"))
-    act(() => counter("dmh_13")[0].props.onChange("2,6"))
-    act(() => counter("dmh_13")[0].props.onChange("-3"))
-    act(() => counter("dmh_13")[0].props.onChange(""))
-    expect(onChangeCount).toHaveBeenNthCalledWith(1, "dmh_01", 5)
-    expect(onChangeCount).toHaveBeenNthCalledWith(2, "dmh_13", 3)
-    expect(onChangeCount).toHaveBeenNthCalledWith(3, "dmh_13", 0)
-    expect(onChangeCount.mock.calls[3][0]).toBe("dmh_13")
-    expect(Number.isNaN(onChangeCount.mock.calls[3][1])).toBe(true)
   })
 
   test("F's surface starts from the route's zone, once, and says where it comes from", () => {
