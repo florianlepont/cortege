@@ -5,6 +5,7 @@ import { brandColors, brandMediaBackdrop } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
+import { DmhGuideRoute } from "../routes/DmhGuideRoute"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
 import { FactorHelpRoute } from "../routes/FactorHelpRoute"
 import { FinishSheetRoute } from "../routes/FinishSheetRoute"
@@ -26,6 +27,7 @@ import type { SurveysStackParamList } from "../types"
 import { usesNativeLargeTitle } from "../large-title"
 import {
   createBaseStackScreenOptions,
+  dmhGuideScreenOptions,
   factorHelpScreenOptions,
   finishSheetScreenOptions,
   hiddenNativeTitle,
@@ -200,6 +202,12 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyFactorHelp"
             options={factorHelpScreenOptions(theme)}
             component={FactorHelpRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyDmhGuide"
+            // Phase 32, D-05: the dendromicrohabitat guide, in the survey stack only.
+            options={dmhGuideScreenOptions(theme)}
+            component={DmhGuideRoute}
           />
           <SurveysStack.Screen
             name="surveyFinish"
