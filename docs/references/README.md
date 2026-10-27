@@ -140,6 +140,11 @@ Cite as:
 - The PDFs are not part of the repository (`*.pdf` is ignored in this directory). Download them
   from the links above if needed and check the SHA-256 values.
 
+The correspondence of the IBP groups with the pocket guide's types and the texts of the in-app
+guide are in [`../specs/dmh-guide-content-v1.md`](../specs/dmh-guide-content-v1.md), validated by
+the owner on 2026-10-27, without a reading by an expert; that spec is the only source of the guide's
+texts and numbers.
+
 ## Etats Sauvages graphic charter
 
 The charter PDF is an internal document of the association and is not published
