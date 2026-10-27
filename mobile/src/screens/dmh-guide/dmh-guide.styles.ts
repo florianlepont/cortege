@@ -169,14 +169,40 @@ export function createDmhGuideStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.smd,
+    },
+    rowCopy: {
+      flex: 1,
+      gap: brandSpacing4.xs,
     },
     rowLabel: {
-      flex: 1,
       ...body,
       color: theme.colors.textPrimary,
     },
+    rowDivider: {
+      height: 1,
+      marginLeft: brandSpacing4.md,
+      backgroundColor: theme.colors.divider,
+    },
+    // The card of rows has no padding of its own: the rows run edge to edge.
+    rowsCard: {
+      overflow: "hidden",
+    },
+    // A form header over its card, 8 apart.
+    formSection: {
+      gap: brandSpacing4.sm,
+    },
+    formHeader: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
     searchRow: {
       minHeight: DMH_GUIDE_SEARCH_MIN_HEIGHT,
+    },
+    // The sources link, 32 below the last card (the page gap is 16).
+    catalogueFoot: {
+      marginTop: brandSpacing4.md,
     },
   })
 }
