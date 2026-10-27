@@ -84,4 +84,4 @@ deviations:
 - Task 2 verify greps (validation date, status line, "Relu par (expert) : .") pass; no em dash in the spec; all 15 section 9 review cells and all 16 section 10 decision cells filled; O-32-1 cell reads 48; P-03 and P-04 read "Sans objet, décision du propriétaire du 2026-10-27"; "Ordre validé" lists the 15 codes on one line.
 - `npm --workspace mobile run test:unit -- src/__checks__/dmh-drawings.test.ts`: 19 passed.
 - `npx prettier --check docs/specs/dmh-guide-content-v1.md mobile/src/app/dmh-guide/drawings.ts`: clean.
-- The verify command's `grep "—"` is a hard no-match on the spec (0 occurrences).
+- No em dash (U+2014) in the spec: 0 occurrences.
