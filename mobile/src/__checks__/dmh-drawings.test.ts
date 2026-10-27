@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import { DMH_GROUP_CODES } from "@cortege/ibp-domain"
+import { fr } from "../i18n"
 import {
   DMH_DRAWING_MAX_BYTES,
   DMH_DRAWING_STROKE_RANGE,
@@ -206,5 +207,18 @@ describe("the real drawings module", () => {
     })
     expect(findings).toEqual([])
     expect(Object.keys(DMH_DRAWINGS)).toHaveLength(15)
+  })
+
+  test("every drawing has an alt sentence", () => {
+    const groups: Record<string, { illustrationAlt?: unknown }> = fr.dmhGuide.groups
+    const codes = Object.keys(DMH_DRAWINGS)
+    expect(codes.length).toBeGreaterThan(0)
+    for (const code of codes) {
+      const alt = groups[code]?.illustrationAlt
+      expect(typeof alt).toBe("string")
+      expect(alt as string).toMatch(/\S/)
+      expect(alt as string).toMatch(/\.$/)
+      expect(alt as string).not.toMatch(/dmh_\d+/)
+    }
   })
 })
