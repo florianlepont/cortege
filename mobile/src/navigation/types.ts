@@ -3,6 +3,7 @@ import type { CompositeScreenProps, NavigatorScreenParams } from "@react-navigat
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type {
   CountingMode,
+  DmhGroupCode,
   RouteMethod,
   SearchPlaceKind,
   UncappableFactor,
@@ -57,6 +58,9 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyFactorHelp: { help: string; hints: string[] }
+  // Phase 32, D-04 and D-05: the dendromicrohabitat guide, a native form sheet on iOS and a modal on
+  // Android. `group` opens that group's page, none (or an unknown one) opens the catalogue.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
   // Phase 29, D-04: the submission step (a native form sheet: who can see the survey, then finish).
   surveyFinish: { surveyId: string }
   surveyParcels: {
@@ -191,6 +195,7 @@ export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "su
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
+export type DmhGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">
 export type RouteGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyRouteGuide">

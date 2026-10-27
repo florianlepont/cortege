@@ -43,8 +43,10 @@ export function createDmhGuideStyles(theme: BrandTheme) {
       justifyContent: "space-between",
       gap: brandSpacing4.smd,
     },
-    sheetTitle: {
+    sheetTitleBox: {
       flex: 1,
+    },
+    sheetTitle: {
       ...headline,
       color: theme.semanticColors.textStrong,
     },
