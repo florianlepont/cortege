@@ -1118,7 +1118,7 @@ Plans:
   2. The content crosses the IBP typology with the WSL one, and its sources and licence for reuse are recorded (WSL already has PDF content).
   3. Recording a survey with many potential DMH is simpler than before: fewer taps for the same stored data (automated proxy) and confirmed by the owner on their own phone (no timing, owner decision 2026-10-27).
 
-**Plans**: 25 plans (16 planned + 9 from the owner's iPhone feedback: 32-17a/b/c, 32-18a/c, 32-19, 32-20 guide in the global search, 32-21 F page title DMH, 32-22 F list without entry card); 32-07 skipped by owner decision; complete 2026-10-28 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`)
+**Plans**: 38 plans (16 planned + 22 from the owner's iPhone feedback rounds of 2026-10-28 to 2026-10-30: redesign of the F list and the guide, guide in the global search and on Accueil, capped counters per group, the F look applied to factors A to J, G open-area zones, "Incertitude" wording; see 32-17 to 32-35 summaries); 32-07 skipped by owner decision; complete 2026-10-28 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`)
 **UI hint**: yes
 
 ### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)
@@ -1312,7 +1312,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
 | 30. Route Choice Assistant | 23/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
-| 32. Detailed DMH Information | 24/25 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-28; expert reading of the drawings and thresholds not done) | 2026-10-28 |
+| 32. Detailed DMH Information | 37/38 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-28; expert reading of the drawings and thresholds not done) | 2026-10-28 |
 | 33. PDF Export, Exhaustive and Simplified | 20/20 | Complete (owner validated both versions on the iPhone 2026-10-26) | 2026-10-26 |
 | 34. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
 | 35. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
