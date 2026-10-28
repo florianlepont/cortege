@@ -57,6 +57,54 @@ export const factorDetailFr = {
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
     fromRoute: "D'après le parcours",
   },
+  // Follow-up 32-29: the one short paragraph that opens each factor page other than F (F's is
+  // `dmhList.intro`), in the imperative, saying what to record. Each rests on the factor's help text
+  // (`fr.labels.factorHelp`); the differences between the method versions stay in the help sheet.
+  // A factor counted in full opens with its `countingMode` sentence instead.
+  intro: {
+    A: "Notez les genres d'arbres autochtones présents dans le peuplement, puis le couvert des essences autochtones.",
+    B: "Comptez les strates de végétation qui couvrent au moins 20 % de la surface décrite.",
+    C: "Comptez les bois morts sur pied sur la surface décrite : les grosses dimensions comptent le plus.",
+    D: "Comptez les bois morts au sol sur la surface décrite : les grosses dimensions comptent le plus.",
+    E: "Comptez les très gros bois et les gros bois vivants sur la surface décrite : les très gros bois comptent le plus.",
+    G: "Estimez la part de la surface décrite occupée par des milieux ouverts fleuris.",
+    H: "Choisissez l'ancienneté de l'état boisé de la station : récente, partielle ou ancienne.",
+    I: "Cochez les types de milieux aquatiques présents dans le peuplement ou en bordure.",
+    J: "Cochez les types de milieux rocheux présents dans le peuplement ou en bordure.",
+  },
+  // Follow-up 32-29: the hero card of every factor but F (F's is `dmhList.hero`): the figure the
+  // observer cares about, what it counts and where it comes from. The figure shows a word while it
+  // cannot be given yet. The spoken form reads "label, value".
+  keyFigure: {
+    label: {
+      genera: "genres autochtones",
+      strata: "strates de végétation",
+      standingDeadwoodPerHa: "gros bois morts sur pied par hectare",
+      groundDeadwoodPerHa: "gros bois morts au sol par hectare",
+      veryLargeTreesPerHa: "très gros bois vivants par hectare",
+      floweringOpen: "milieux ouverts fleuris",
+      continuity: "continuité boisée",
+      aquaticTypes: "types de milieux aquatiques",
+      rockyTypes: "types de milieux rocheux",
+    },
+    sub: {
+      fromList: "d'après la liste ci-dessous",
+      fromChoices: "d'après vos choix",
+      fromStrataCover: "d'après le couvert de chaque strate",
+      fromDescribedSurface: "calculé d'après la surface décrite",
+      shareOfSurface: "part de la surface",
+      continuityAge: "ancienneté de l'état boisé",
+    },
+    pending: {
+      compute: "À calculer",
+      choose: "À choisir",
+      estimate: "À estimer",
+    },
+    // A percentage keeps a no-break space before the sign.
+    percent: ({ value }: { value: string }) => `${value}\u00A0%`,
+    a11y: ({ label, value }: { label: string; value: string }) => `${label}, ${value}`,
+    // The quiet pill and its spoken hint are F's (`dmhList.topScoreTrace`, `topScoreHint`).
+  },
   // Phase 27 (D-13, D-18), follow-up 32-27: the two small pills at the top of each factor page, a
   // "Douteux" toggle and a "Note" that opens the field in place.
   // Neither changes the score. The note is visible to the members who can read the survey (D-06).

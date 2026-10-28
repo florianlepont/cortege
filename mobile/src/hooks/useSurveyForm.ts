@@ -27,7 +27,7 @@ import {
 } from "../app/factor-a-genus-list"
 import { readSelection, withSelectionToggled } from "../app/factor-selections"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
-import { parseFiniteNumberInput } from "../app/number-utils"
+import { parseFiniteNumberInput, toFiniteNumberInRange } from "../app/number-utils"
 import { fr } from "../i18n"
 import { useFactorAnnotations } from "./useFactorAnnotations"
 import { useUncappedEntry } from "./useUncappedEntry"
@@ -69,18 +69,6 @@ const normalizeParcelIds = (value: unknown): string[] => {
     output.push(normalized)
   }
   return output
-}
-
-const toFiniteNumberInRange = (
-  value: string,
-  options?: { min?: number; max?: number; integer?: boolean },
-): number | null => {
-  const parsed = parseFiniteNumberInput(value)
-  if (parsed === null) return null
-  if (options?.integer && !Number.isInteger(parsed)) return null
-  if (typeof options?.min === "number" && parsed < options.min) return null
-  if (typeof options?.max === "number" && parsed > options.max) return null
-  return parsed
 }
 
 type GpsFormValue = typeof DEFAULT_SURVEY_FORM.gpsLocation

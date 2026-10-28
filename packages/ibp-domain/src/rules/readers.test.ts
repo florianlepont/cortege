@@ -10,6 +10,7 @@ describe("package entry", () => {
   it("exports the display readers", () => {
     expect(domain.readDensityPerHa).toBe(readDensityPerHa)
     expect(domain.readFactorAGenusCount).toBe(readFactorAGenusCount)
+    expect(domain.DENSITY_COUNT_KEYS).toBe(DENSITY_COUNT_KEYS)
   })
 })
 
