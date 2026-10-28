@@ -23,8 +23,9 @@ const t = fr.factorDetail
 
 // FLOW-01: which FactorInput variant each factor's fields render as, in the fixed order
 // useSurveyForm's factorSections builds them. F's trees_per_ha has no natural discrete variant and
-// stays numeric. Phase 25.1 (D-12): F and H carry an optional companion under their scored field
-// (F: the dendromicrohabitat group list since phase 32, D-08; H: the continuity source chips), and
+// stays numeric. Phase 25.1 (D-12): F and H carry an optional companion to their scored field
+// (F: the dendromicrohabitat group list since phase 32, D-08, which the screen draws after the input
+// card, straight on the canvas, redesign 32-18 A-C1; H: the continuity source chips under it), and
 // the chip options of B, I and J come from selectionOptionsFor so I and J follow the CNPF typology
 // of the survey's method (D-09).
 type OptionsFor = (selected: readonly string[] | null) => SelectionOption[]
@@ -108,7 +109,7 @@ function renderEvidenceChips(
   )
 }
 
-/** What the factor F page adds around its input: the counting entry and the guide opener. */
+/** What the factor F page hands its group list: the counting entry and the guide opener. */
 export type FactorFieldExtras = {
   /** Phase 30: the detail inputs; F's counting is on only when the route counts F in full. */
   uncappedEntry?: UncappedEntryProps
@@ -116,17 +117,24 @@ export type FactorFieldExtras = {
   onOpenDmhGuide?: (group?: DmhGroupCode) => void
 }
 
-/** F's companion: the group list, counting only when `extras` carries the entry (full mode). */
-function renderDmhList(
+/** True when the variant's companion is F's group list, which the screen draws after its card. */
+export function hasDmhListCompanion(variant: FieldVariant | undefined): boolean {
+  return variant !== undefined && "companion" in variant && variant.companion === "F"
+}
+
+/**
+ * F's companion: the group list, counting only when `extras` carries the entry (full mode). The
+ * screen calls it after the input card (A-C1), so the list is not one more frame inside the card.
+ */
+export function renderDmhGroupList(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
-  key: string,
   extras: FactorFieldExtras,
 ) {
   const entry = extras.uncappedEntry
   return (
     <DmhGroupList
-      key={`${key}-companion`}
+      key={`F-${field.label}-companion`}
       methodVersion={methodVersion}
       selected={field.selection?.selected ?? null}
       onChangeSelection={field.selection?.onChange ?? ignoreSelectionChange}
@@ -150,21 +158,16 @@ export function renderFactorField(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   detailStyles: ReturnType<typeof createDetailStyles>,
-  extras: FactorFieldExtras = {},
 ) {
   const current: FieldVariant = variant ?? { kind: "numeric" }
   const label = field.required
     ? t.requiredField({ label: humanizeFieldLabel(field.label) })
     : humanizeFieldLabel(field.label)
   const key = `${factor}-${field.label}`
+  // Only H's chips follow the input here; F's list is drawn by the screen, outside the card.
   const withCompanion = (input: ReactElement): ReactElement | ReactElement[] =>
-    "companion" in current && current.companion
-      ? [
-          input,
-          current.companion === "F"
-            ? renderDmhList(field, methodVersion, key, extras)
-            : renderEvidenceChips(field, methodVersion, key),
-        ]
+    "companion" in current && current.companion === "H"
+      ? [input, renderEvidenceChips(field, methodVersion, key)]
       : input
 
   switch (current.kind) {

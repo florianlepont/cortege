@@ -184,6 +184,74 @@ describe("DmhGroupList, structure", () => {
   })
 })
 
+describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", () => {
+  type Style = Record<string, unknown>
+  const flat = (style: unknown): Style =>
+    Array.isArray(style)
+      ? style.reduce<Style>((acc, item) => ({ ...acc, ...flat(item) }), {})
+      : typeof style === "function"
+        ? flat(style({ pressed: false }))
+        : ((style as Style | null | undefined) ?? {})
+
+  test("draws no card of its own: no AppCard, no bordered box around a section", () => {
+    const { tree, open } = mount({ selected: ["dmh_01"] })
+    open("cavities")
+    expect(tree.root.findAll((n) => (n.type as unknown) === "AppCard")).toHaveLength(0)
+    const boxed = tree.root.findAll(
+      (n) => flat(n.props.style).borderWidth === 1 && flat(n.props.style).borderRadius === 999,
+    )
+    expect(boxed).toHaveLength(0)
+  })
+
+  test("the sections use the grouped header", () => {
+    const { one, textOf } = mount()
+    expect(textOf(one("dmh-section-cavities"))).toBe(
+      `${t.forms.cavities}${t.badge({ ticked: 0, total: 4 })}`,
+    )
+    expect(flat(one("dmh-section-cavities").props.style).minHeight).toBe(44)
+  })
+
+  test("the rows of a section sit in one glass container with hairlines from the label (52)", () => {
+    const { tree, open } = mount()
+    open("cavities")
+    const containers = tree.root.findAll(
+      (n) => (n.type as unknown) === "View" && flat(n.props.style).borderRadius === 22,
+    )
+    // The guide entry row and the open section.
+    expect(containers).toHaveLength(2)
+    const section = containers[1]
+    const dividers = section.findAll(
+      (n) => (n.type as unknown) === "View" && flat(n.props.style).height === 1,
+    )
+    expect(dividers).toHaveLength(3)
+    for (const divider of dividers) expect(flat(divider.props.style).marginLeft).toBe(52)
+  })
+
+  test("the guide entry is one grouped row: tile, title, caption under it, chevron", () => {
+    const { one, tree, textOf } = mount()
+    const entry = one("dmh-guide-entry")
+    expect(entry.props.accessibilityLabel).toBe(t.entry.label)
+    expect(entry.props.accessibilityRole).toBe("button")
+    expect(textOf(entry)).toBe(`${t.entry.title}${t.entry.caption}`)
+    const glyphs = entry.findAll((n) => (n.type as unknown) === "Ionicons").map((n) => n.props.name)
+    expect(glyphs).toEqual(["book-outline", "chevron-forward-outline"])
+    expect(tree).toBeDefined()
+  })
+
+  test("the summary sits with the heading block, under the helper, in the meta style", () => {
+    const { tree, one } = mount({ selected: ["dmh_01"], counting: counting({ dmh_01: 2 }) })
+    const block = tree.root.find(
+      (n) =>
+        (n.type as unknown) === "View" &&
+        n.findAll((m) => m.props.testID === "dmh-summary").length > 0 &&
+        flat(n.props.style).gap === 4,
+    )
+    const texts = block.findAll((n) => (n.type as unknown) === "Text").map((n) => n.props.testID)
+    expect(texts).toEqual([undefined, undefined, "dmh-summary"])
+    expect(flat(one("dmh-summary").props.style).fontSize).toBe(12)
+  })
+})
+
 describe("DmhGroupList, modes", () => {
   test("capped: heading, no +, summary capped", () => {
     const { tree, all, textOf, one } = mount({ selected: ["dmh_01", "dmh_02"] })

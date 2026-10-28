@@ -3,21 +3,21 @@ import { AccessibilityInfo, Platform, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, { FadeIn, LinearTransition, ReduceMotion } from "react-native-reanimated"
 import type { DmhGroupCode } from "@cortege/ibp-domain"
-import { brandInteraction, brandMotion } from "../../app/brand-tokens"
+import { brandMotion } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { ABBREVIATION_INFO_ICON_SIZE } from "../../ui/AbbreviationInfo"
 import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 import { DmhCounterStepper } from "../../ui/DmhCounterStepper"
 import { feedback } from "../../ui/feedback"
+import { SelectionCircle } from "../../ui/SelectionCircle"
 import type { DmhListStyles } from "./dmh-group-list.styles"
 
 const t = fr.factorDetail.dmhList
 
 /** How long the "bring the count back to 0" caption stays under a locked row (O-32-3). */
 const LOCKED_CAPTION_MS = 4000
-const INFO_SLOP = (brandInteraction.hitTarget.min - ABBREVIATION_INFO_ICON_SIZE) / 2
+export const DMH_INFO_GLYPH_SIZE = 22
 
 export type DmhGroupRowProps = {
   code: DmhGroupCode
@@ -39,7 +39,10 @@ export type DmhGroupRowProps = {
 const entering = () => FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)
 
 /**
- * One group of the F list (32-UI-SPEC S1.3). Memoised on its own props, so one stepper tap
+ * One group of the F list (32-UI-SPEC S1.3, redesign 32-18 A-I2). Line 1 is the check zone (a
+ * leading circle and the label, the whole zone shows a soft fill while pressed), the 44 pt info
+ * button and, unticked in full mode, the add button; line 2 (ticked or counted, full mode) is the
+ * "Arbres" caption and the stepper. Memoised on its own props, so one stepper tap
  * re-renders this row only (research pitfall 8). A counted group cannot be unticked until its count
  * is back to 0 (O-32-3): the tap shows a caption and changes nothing, no tap deletes data.
  */
@@ -108,45 +111,42 @@ export const DmhGroupRow = memo(function DmhGroupRow({
       <View style={styles.line1}>
         <AppPressable
           disableScale
+          disableRipple
           onPress={onPressCheck}
           disabled={!editable}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: ticked, disabled: !editable }}
           accessibilityLabel={checkLabel}
           accessibilityHint={locked ? t.a11y.tickLockedHint : t.a11y.tickHint}
-          style={styles.checkZone}
+          style={({ pressed }) => [
+            styles.checkZone,
+            pressed && editable ? styles.checkZonePressed : null,
+          ]}
           testID={`dmh-tick-${code}`}
         >
-          <View style={[styles.checkbox, ticked && styles.checkboxOn]}>
-            {ticked ? (
-              <Ionicons
-                name="checkmark-outline"
-                size={16}
-                color={theme.visual.chip.activeText}
-                accessible={false}
-              />
-            ) : null}
-          </View>
+          <SelectionCircle selected={ticked} />
           <Text style={styles.label}>{label}</Text>
         </AppPressable>
         <AppPressable
           disableScale
+          disableRipple
           onPress={() => onOpenInfo(code)}
-          hitSlop={{ top: INFO_SLOP, bottom: INFO_SLOP, left: INFO_SLOP, right: INFO_SLOP }}
           accessibilityRole="button"
           accessibilityLabel={t.a11y.info({ label })}
           accessibilityHint={t.a11y.infoHint}
+          style={styles.infoButton}
           testID={`dmh-info-${code}`}
         >
           <Ionicons
             name="information-circle-outline"
-            size={ABBREVIATION_INFO_ICON_SIZE}
-            color={theme.semanticColors.accent}
+            size={DMH_INFO_GLYPH_SIZE}
+            color={theme.visual.accentText}
           />
         </AppPressable>
         {showAdd ? (
           <AppPressable
             disableScale
+            disableRipple
             onPress={onPressAdd}
             accessibilityRole="button"
             accessibilityLabel={t.a11y.add({ label })}
@@ -154,7 +154,9 @@ export const DmhGroupRow = memo(function DmhGroupRow({
             style={styles.addButton}
             testID={`dmh-add-${code}`}
           >
-            <Ionicons name="add-outline" size={22} color={theme.colors.forest} />
+            <View style={styles.addDisc}>
+              <Ionicons name="add-outline" size={20} color={theme.semanticColors.ctaPrimary} />
+            </View>
           </AppPressable>
         ) : null}
       </View>

@@ -4,7 +4,7 @@ import { fr } from "../../i18n"
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { defaultTheme } from "../../app/theme"
 import { DMH_STEPPER_SIZE } from "../../ui/DmhCounterStepper"
-import { createDmhListStyles } from "./dmh-group-list.styles"
+import { createDmhListStyles, DMH_LABEL_INSET } from "./dmh-group-list.styles"
 import { DmhGroupRow, type DmhGroupRowProps } from "./DmhGroupRow"
 
 const mockAnnounce = jest.fn()
@@ -229,14 +229,28 @@ describe("DmhGroupRow", () => {
     }
   })
 
-  test("the info glyph reaches a 44 pt target and is the outline glyph", () => {
+  test("the info button is a 44 x 44 target holding the 22 pt outline glyph in the accent ink", () => {
     const { one, tree } = mount()
-    const slop = one("dmh-info-dmh_05").props.hitSlop
-    for (const side of ["top", "bottom", "left", "right"]) expect(20 + 2 * slop[side]).toBe(44)
+    const style = flatten(one("dmh-info-dmh_05").props.style)
+    expect(style.width).toBe(44)
+    expect(style.height).toBe(44)
     const glyph = tree.root.findAll(
       (n) => (n.type as unknown) === "Ionicons" && n.props.name === "information-circle-outline",
     )[0]
-    expect(glyph.props.color).toBe(defaultTheme.semanticColors.accent)
+    expect(glyph.props.size).toBe(22)
+    // visual.accentText (8.5:1 light, 9:1 dark), not the moss accent (2.6:1 on the light card).
+    expect(glyph.props.color).toBe(defaultTheme.visual.accentText)
+  })
+
+  test("the check zone shows the soft pressed fill, and not when read-only", () => {
+    const { one } = mount()
+    const style = one("dmh-tick-dmh_05").props.style as (s: { pressed: boolean }) => unknown
+    expect(flatten(style({ pressed: false })).backgroundColor).toBeUndefined()
+    expect(flatten(style({ pressed: true })).backgroundColor).toBe(defaultTheme.colors.surfaceSoft)
+    const readOnly = mount({ editable: false }).one("dmh-tick-dmh_05").props.style as (s: {
+      pressed: boolean
+    }) => unknown
+    expect(flatten(readOnly({ pressed: true })).backgroundColor).toBeUndefined()
   })
 
   test("read-only: the check zone is disabled, no +, the stepper is read-only", () => {
@@ -277,8 +291,8 @@ describe("DmhGroupRow", () => {
     expect(zero.one("dmh-tick-dmh_05").props.accessibilityHint).toBe(t.a11y.tickHint)
   })
 
-  test("the + names its group and shares DMH_STEPPER_SIZE with the stepper (O-32-1)", () => {
-    const { one } = mount({ full: true })
+  test("the + names its group, is a 48 pt target and holds a 36 pt disc in the control fill", () => {
+    const { one, tree } = mount({ full: true })
     const add = one("dmh-add-dmh_05")
     expect(add.props.accessibilityLabel).toBe(t.a11y.add({ label: LABEL }))
     expect(add.props.accessibilityHint).toBe(t.a11y.addHint)
@@ -286,9 +300,24 @@ describe("DmhGroupRow", () => {
     expect(style.width).toBe(DMH_STEPPER_SIZE)
     expect(style.height).toBe(DMH_STEPPER_SIZE)
     expect(DMH_STEPPER_SIZE).toBe(48)
+    const disc = flatten(styles.addDisc)
+    expect(disc.width).toBe(36)
+    expect(disc.height).toBe(36)
+    expect(disc.backgroundColor).toBe(defaultTheme.visual.control.fill)
+    const glyph = add.findAll(
+      (n) => (n.type as unknown) === "Ionicons" && n.props.name === "add-outline",
+    )[0]
+    expect(glyph.props.size).toBe(20)
+    expect(glyph.props.color).toBe(defaultTheme.semanticColors.ctaPrimary)
+    expect(tree).toBeDefined()
   })
 
-  test("a ticked box carries the inverted neutral fill and a check, an empty one does not", () => {
+  test("the second line is indented to the label, where the hairlines start", () => {
+    expect(flatten(styles.line2).marginLeft).toBe(DMH_LABEL_INSET)
+    expect(DMH_LABEL_INSET).toBe(52)
+  })
+
+  test("a ticked row draws the filled circle with a check, an empty one does not", () => {
     const on = mount({ ticked: true })
     expect(
       on.tree.root.findAll(

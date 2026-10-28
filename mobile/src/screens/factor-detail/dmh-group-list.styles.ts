@@ -1,22 +1,34 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import type { BrandTheme } from "../../app/theme"
 import { DMH_STEPPER_SIZE } from "../../ui/DmhCounterStepper"
+import { SELECTION_CIRCLE_SIZE } from "../../ui/SelectionCircle"
 
-// Phase 32 (plan 32-11, 32-UI-SPEC S1): the sizes are the spacing scale of the contract, the colours
-// come from the theme only. The row's "+" uses DMH_STEPPER_SIZE, so it and the stepper buttons share
-// one size (O-32-1).
+// Phase 32 (plan 32-11, 32-UI-SPEC S1; redesign 32-18 A-I1 to A-I4): the sizes are the spacing scale
+// of the contract, the colours come from the theme only. The row's "+" uses DMH_STEPPER_SIZE, so it
+// and the stepper segments share the 48 pt glove height (O-32-1). The rows sit in one
+// AppGroupedContainer, so a row carries no card, no border and no horizontal padding of its own:
+// its check zone runs to the container's edge, so the pressed fill does too.
 const ROW_MIN_HEIGHT = 56
-const CHECKBOX_SIZE = 24
-const CHECKBOX_RADIUS = 8
-const ENTRY_TILE_SIZE = 40
-/** The second line of a row is indented to the label: checkbox 24 plus the 12 gap. */
-const LINE2_INDENT = CHECKBOX_SIZE + brandSpacing4.smd
+const ROW_SIDE_PADDING = brandSpacing4.md
+const CIRCLE_SIZE = SELECTION_CIRCLE_SIZE
+const INFO_SIZE = brandInteraction.hitTarget.min
+const ADD_DISC_SIZE = 36
+/** The second line of a row is indented to the label: padding 16, circle 24 and the 12 gap. */
+export const DMH_LABEL_INSET = ROW_SIDE_PADDING + CIRCLE_SIZE + brandSpacing4.smd
 
 export function createDmhListStyles(theme: BrandTheme) {
   return StyleSheet.create({
     root: {
-      gap: brandSpacing4.smd,
+      gap: brandSpacing4.md,
+    },
+    headingBlock: {
+      gap: brandSpacing4.xs,
     },
     heading: {
       ...brandTypeScale.headline,
@@ -27,53 +39,22 @@ export function createDmhListStyles(theme: BrandTheme) {
       ...brandTypeScale.subhead,
       color: theme.colors.textSecondary,
     },
-    entryContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.smd,
-      minHeight: ROW_MIN_HEIGHT - 2 * brandSpacing4.md,
-    },
-    entryTile: {
-      width: ENTRY_TILE_SIZE,
-      height: ENTRY_TILE_SIZE,
-      borderRadius: brandRadius.field,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.visual.glass.iconTile,
-    },
-    entryText: {
-      flex: 1,
-      gap: brandSpacing4.xs,
-    },
-    entryTitle: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.sectionHeader.fontFamily,
-      color: theme.colors.textPrimary,
-    },
-    entryCaption: {
-      ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
-    },
     summary: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
     sections: {
-      gap: brandSpacing4.sm,
-    },
-    sectionCard: {
-      overflow: "hidden",
+      gap: brandSpacing4.md,
     },
     row: {
       minHeight: ROW_MIN_HEIGHT,
-      paddingVertical: brandSpacing4.sm,
-      paddingHorizontal: brandSpacing4.md,
       justifyContent: "center",
     },
     line1: {
       flexDirection: "row",
       alignItems: "center",
-      gap: brandSpacing4.sm,
+      minHeight: ROW_MIN_HEIGHT,
+      paddingRight: brandSpacing4.xs,
     },
     checkZone: {
       flex: 1,
@@ -81,35 +62,38 @@ export function createDmhListStyles(theme: BrandTheme) {
       alignItems: "center",
       gap: brandSpacing4.smd,
       minHeight: ROW_MIN_HEIGHT,
+      paddingLeft: ROW_SIDE_PADDING,
     },
-    checkbox: {
-      width: CHECKBOX_SIZE,
-      height: CHECKBOX_SIZE,
-      borderRadius: CHECKBOX_RADIUS,
-      borderWidth: 1,
-      borderColor: theme.colors.divider,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    checkboxOn: {
-      backgroundColor: theme.visual.chip.activeBg,
-      borderColor: theme.visual.chip.activeBg,
+    // The pressed look of an AppGroupedList row.
+    checkZonePressed: {
+      backgroundColor: theme.colors.surfaceSoft,
     },
     label: {
-      ...brandTypeScale.subhead,
+      ...brandTypography.heroBody,
       flex: 1,
       color: theme.colors.textPrimary,
+    },
+    infoButton: {
+      width: INFO_SIZE,
+      height: INFO_SIZE,
+      alignItems: "center",
+      justifyContent: "center",
     },
     addButton: {
       width: DMH_STEPPER_SIZE,
       height: DMH_STEPPER_SIZE,
       minHeight: DMH_STEPPER_SIZE,
-      borderRadius: brandRadius.field,
+      marginLeft: brandSpacing4.sm,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.visual.chip.fill,
-      borderWidth: 1,
-      borderColor: theme.visual.chip.border,
+    },
+    addDisc: {
+      width: ADD_DISC_SIZE,
+      height: ADD_DISC_SIZE,
+      borderRadius: ADD_DISC_SIZE / 2,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.visual.control.fill,
     },
     line2: {
       flexDirection: "row",
@@ -118,7 +102,9 @@ export function createDmhListStyles(theme: BrandTheme) {
       justifyContent: "space-between",
       gap: brandSpacing4.sm,
       marginTop: brandSpacing4.sm,
-      marginLeft: LINE2_INDENT,
+      marginBottom: brandSpacing4.sm,
+      marginLeft: DMH_LABEL_INSET,
+      marginRight: ROW_SIDE_PADDING,
     },
     caption: {
       ...brandTypography.meta,
@@ -127,13 +113,9 @@ export function createDmhListStyles(theme: BrandTheme) {
     locked: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
-      marginTop: brandSpacing4.xs,
-      marginLeft: LINE2_INDENT,
-    },
-    separator: {
-      height: 1,
-      marginLeft: brandSpacing4.md,
-      backgroundColor: theme.colors.divider,
+      marginBottom: brandSpacing4.sm,
+      marginLeft: DMH_LABEL_INSET,
+      marginRight: ROW_SIDE_PADDING,
     },
   })
 }

@@ -13,7 +13,9 @@ import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingM
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import {
   fieldVariantsFor,
+  hasDmhListCompanion,
   ignoreSelectionChange,
+  renderDmhGroupList,
   renderFactorField,
 } from "./factor-detail/renderFactorField"
 import {
@@ -69,8 +71,10 @@ type FactorDetailScreenProps = {
  * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
  * B counted in full swaps its strata chips for a cover per stratum. Phase 32 (D-08): F shows the
  * group list by form (a tick per row; counted in full, a "+" then a stepper per row) with the guide
- * entry points, and its own surface stays under the list (the detail values are kept, never
- * deleted, when the factor goes back to the capped entry, U-O10).
+ * entry points. Redesign 32-18 (A-C1): the list is drawn after the input card, straight on the
+ * canvas, so the card keeps only the trees per hectare and, counted in full, F's own surface above
+ * the list (the detail values are kept, never deleted, when the factor goes back to the capped
+ * entry, U-O10).
  */
 export function FactorDetailScreen({
   factor,
@@ -103,6 +107,9 @@ export function FactorDetailScreen({
     ? variants.findIndex((variant) => variant.kind === "numeric")
     : -1
   const surfaceField = surfaceIndex >= 0 ? fields[surfaceIndex] : undefined
+  // F's group list follows the card, drawn by the screen (A-C1).
+  const dmhListIndex = variants.findIndex(hasDmhListCompanion)
+  const dmhListField = dmhListIndex >= 0 ? fields[dmhListIndex] : undefined
   const { fromRoute } = useRouteSurfacePrefill({
     zoneSurfaceHa,
     surfaceText: surfaceField?.value ?? "",
@@ -135,7 +142,6 @@ export function FactorDetailScreen({
               field,
               methodVersion,
               detailStyles,
-              { uncappedEntry: detailEntry, onOpenDmhGuide },
             )
             if (block !== null) {
               return (
@@ -156,6 +162,13 @@ export function FactorDetailScreen({
           })}
         </View>
       </AppCard>
+
+      {dmhListField
+        ? renderDmhGroupList(dmhListField, methodVersion, {
+            uncappedEntry: detailEntry,
+            onOpenDmhGuide,
+          })
+        : null}
 
       <View
         testID="factor-score-line"

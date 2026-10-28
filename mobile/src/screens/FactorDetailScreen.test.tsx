@@ -426,11 +426,15 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(onChange).toHaveBeenCalledWith(["dmh_01", "dmh_02"])
     props.onOpenDmhGuide("dmh_05")
     expect(onOpenDmhGuide).toHaveBeenCalledWith("dmh_05")
-    // The numeric field comes first, the list under it.
+    // The numeric field comes first, the list after the card.
     const order = tree.root
       .findAll((n) => ["AppField", "DmhGroupList"].includes(n.type as unknown as string))
       .map((n) => n.type as unknown as string)
     expect(order).toEqual(["AppField", "DmhGroupList"])
+    // The list is not inside the input card: one container level, straight on the canvas (A-C1).
+    const card = tree.root.findAll((n) => (n.type as unknown) === "AppCard")[0]
+    expect(card.findAll((n) => (n.type as unknown) === "DmhGroupList")).toHaveLength(0)
+    expect(card.findAll((n) => (n.type as unknown) === "AppField")).toHaveLength(1)
   })
 
   test("H renders the segmented class and the 3 optional source chips under it", () => {
@@ -800,7 +804,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(chips.length).toBeGreaterThan(0)
   })
 
-  test("F counted in full gives the list the counting entry and keeps the surface block below", () => {
+  test("F counted in full gives the list the counting entry; the surface block sits above the list", () => {
     const { dmh, fields, tree } = mount("F", fFields, {
       uncappedFactors: ["F"],
       uncappedEntry: entry,
@@ -824,7 +828,8 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     const order = tree.root
       .findAll((n) => ["AppField", "DmhGroupList", "DmhCountFields"].includes(n.type as never))
       .map((n) => n.type as unknown as string)
-    expect(order).toEqual(["AppField", "DmhGroupList", "DmhCountFields"])
+    // The surface field sits with the density field in the card, above the list (A-C1).
+    expect(order).toEqual(["AppField", "DmhCountFields", "DmhGroupList"])
   })
 
   test("F capped, or no route entry: exactly today's entry", () => {

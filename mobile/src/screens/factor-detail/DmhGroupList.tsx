@@ -1,18 +1,16 @@
-import { Fragment, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
 import { DMH_GROUP_CODES, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { orderDmhRows } from "../../app/dmh-guide/order"
 import { selectionLabel, withSelectionToggled } from "../../app/factor-selections"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useLatestCallback } from "../../state/useLatestCallback"
-import { AppCard } from "../../ui/AppCard"
 import { AppCollapsibleSection } from "../../ui/AppCollapsibleSection"
-import { AppPressable } from "../../ui/AppPressable"
+import { AppGroupedContainer, AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { countFromText } from "./count-from-text"
-import { createDmhListStyles } from "./dmh-group-list.styles"
+import { createDmhListStyles, DMH_LABEL_INSET } from "./dmh-group-list.styles"
 import { DmhGroupRow } from "./DmhGroupRow"
 
 const t = fr.factorDetail.dmhList
@@ -41,8 +39,10 @@ type DmhGroupListProps = {
 const KNOWN_CODES: ReadonlySet<string> = new Set(DMH_GROUP_CODES)
 
 /**
- * The factor F group list (32-UI-SPEC S1): heading, guide entry, summary line and seven form
- * sections. The order and the open sections are computed once, when the list mounts (D-08 levers
+ * The factor F group list (32-UI-SPEC S1, redesign 32-18): heading, helper and summary line, the
+ * guide entry (one grouped row) and seven form sections, each a grouped-list header over one
+ * `AppGroupedContainer` of rows. It is drawn straight on the screen, not inside the factor's input
+ * card (A-C1): one container level, as in an iOS inset grouped list. The order and the open sections are computed once, when the list mounts (D-08 levers
  * b and c): ticking, counting or unticking never moves a row or a section, so a thumb never meets
  * a row that has jumped (research pitfall 5). The guide entry and the info glyphs stay active when
  * the list is read-only.
@@ -91,38 +91,35 @@ export function DmhGroupList({
 
   return (
     <View style={styles.root}>
-      <Text style={styles.heading} accessibilityRole="header">
-        {full ? fr.factorDetail.countingMode.dmhTitle : fr.factorDetail.companionLabels.dmh_groups}
-      </Text>
-      {full ? <Text style={styles.helper}>{fr.factorDetail.countingMode.dmhHelper}</Text> : null}
-      <AppPressable
-        disableScale
-        onPress={onOpenCatalogue}
-        accessibilityRole="button"
-        accessibilityLabel={t.entry.label}
-        testID="dmh-guide-entry"
-      >
-        <AppCard variant="glass" padding={16}>
-          <View style={styles.entryContent}>
-            <View style={styles.entryTile} accessible={false}>
-              <Ionicons name="book-outline" size={24} color={theme.semanticColors.accent} />
-            </View>
-            <View style={styles.entryText}>
-              <Text style={styles.entryTitle}>{t.entry.title}</Text>
-              <Text style={styles.entryCaption}>{t.entry.caption}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward-outline"
-              size={20}
-              color={theme.colors.textSecondary}
-              accessible={false}
-            />
-          </View>
-        </AppCard>
-      </AppPressable>
-      <Text style={styles.summary} testID="dmh-summary">
-        {summary}
-      </Text>
+      <View style={styles.headingBlock}>
+        <Text style={styles.heading} accessibilityRole="header">
+          {full
+            ? fr.factorDetail.countingMode.dmhTitle
+            : fr.factorDetail.companionLabels.dmh_groups}
+        </Text>
+        {full ? <Text style={styles.helper}>{fr.factorDetail.countingMode.dmhHelper}</Text> : null}
+        <Text style={styles.summary} testID="dmh-summary">
+          {summary}
+        </Text>
+      </View>
+      <AppGroupedList
+        sections={[
+          {
+            key: "dmh-guide",
+            rows: [
+              {
+                key: "entry",
+                label: t.entry.title,
+                subtitle: t.entry.caption,
+                icon: "book-outline",
+                onPress: onOpenCatalogue,
+                accessibilityLabel: t.entry.label,
+                testID: "dmh-guide-entry",
+              },
+            ],
+          },
+        ]}
+      />
       <View style={styles.sections}>
         {sections.map((section) => {
           const total = section.codes.length
@@ -130,6 +127,7 @@ export function DmhGroupList({
           return (
             <AppCollapsibleSection
               key={section.form}
+              variant="grouped"
               title={t.forms[section.form]}
               badge={t.badge({ ticked: tickedHere, total })}
               accessibilityLabel={t.sectionA11y({
@@ -140,27 +138,25 @@ export function DmhGroupList({
               defaultExpanded={section.defaultExpanded}
               testID={`dmh-section-${section.form}`}
             >
-              <AppCard variant="glass" padding={0} style={styles.sectionCard}>
-                {section.codes.map((code, index) => (
-                  <Fragment key={code}>
-                    {index > 0 ? <View style={styles.separator} /> : null}
-                    <DmhGroupRow
-                      code={code}
-                      label={selectionLabel("F", code, methodVersion) ?? code}
-                      ticked={tickedSet.has(code)}
-                      count={counts?.[code]}
-                      full={full}
-                      editable={editable}
-                      onToggle={onToggle}
-                      onAdd={onAdd}
-                      onStep={onStep}
-                      onSubmitText={onSubmitText}
-                      onOpenInfo={onOpenInfo}
-                      styles={styles}
-                    />
-                  </Fragment>
+              <AppGroupedContainer dividerInset={DMH_LABEL_INSET}>
+                {section.codes.map((code) => (
+                  <DmhGroupRow
+                    key={code}
+                    code={code}
+                    label={selectionLabel("F", code, methodVersion) ?? code}
+                    ticked={tickedSet.has(code)}
+                    count={counts?.[code]}
+                    full={full}
+                    editable={editable}
+                    onToggle={onToggle}
+                    onAdd={onAdd}
+                    onStep={onStep}
+                    onSubmitText={onSubmitText}
+                    onOpenInfo={onOpenInfo}
+                    styles={styles}
+                  />
                 ))}
-              </AppCard>
+              </AppGroupedContainer>
             </AppCollapsibleSection>
           )
         })}
