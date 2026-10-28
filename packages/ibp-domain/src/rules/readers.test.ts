@@ -1,5 +1,12 @@
 import * as domain from "../index"
-import { DENSITY_COUNT_KEYS, densityPerHa, readDensityPerHa, readFactorAGenusCount } from "./common"
+import {
+  DENSITY_COUNT_KEYS,
+  densityLowerCountNeeded,
+  densityPerHa,
+  readDensityPair,
+  readDensityPerHa,
+  readFactorAGenusCount,
+} from "./common"
 import { scoreFactorV30 } from "./v3-0"
 import { scoreFactorV32 } from "./v3-2"
 
@@ -11,6 +18,7 @@ describe("package entry", () => {
     expect(domain.readDensityPerHa).toBe(readDensityPerHa)
     expect(domain.readFactorAGenusCount).toBe(readFactorAGenusCount)
     expect(domain.DENSITY_COUNT_KEYS).toBe(DENSITY_COUNT_KEYS)
+    expect(domain.densityLowerCountNeeded).toBe(densityLowerCountNeeded)
   })
 })
 
@@ -56,10 +64,27 @@ describe("readDensityPerHa", () => {
 
   it("is null without a count or without a positive surface", () => {
     expect(readDensityPerHa("C", { bmm_count: 1, surface_ha: 1 })).toBeNull()
-    expect(readDensityPerHa("C", { bmg_count: 1, surface_ha: 1 })).toBeNull()
+    expect(readDensityPerHa("C", { bmg_count: 1, surface_ha: 2 })).toBeNull()
     expect(readDensityPerHa("C", { bmg_count: 1, bmm_count: 1 })).toBeNull()
     expect(readDensityPerHa("C", { bmg_count: 1, bmm_count: 1, surface_ha: 0 })).toBeNull()
     expect(readDensityPerHa("C", {})).toBeNull()
+  })
+
+  it("reads the densities without a lower count only from 1 upper per hectare", () => {
+    expect(readDensityPerHa("C", { bmg_count: 3, surface_ha: 2 })).toEqual({
+      upperPerHa: 1.5,
+      lowerPerHa: 0,
+      sumPerHa: 1.5,
+    })
+    expect(readDensityPerHa("E", { tgb_count: 1, gb_count: null, surface_ha: 1 })?.upperPerHa).toBe(
+      1,
+    )
+    expect(readDensityPerHa("E", { tgb_count: 1, gb_count: "  ", surface_ha: 1 })).not.toBeNull()
+    // Under 1 per hectare, or a lower count given but unreadable: no density.
+    expect(readDensityPerHa("C", { bmg_count: 1, surface_ha: 2 })).toBeNull()
+    expect(readDensityPerHa("C", { bmg_count: 3, bmm_count: "x", surface_ha: 1 })).toBeNull()
+    expect(readDensityPerHa("C", { bmg_count: 3, bmm_count: {}, surface_ha: 1 })).toBeNull()
+    expect(readDensityPerHa("C", { bmg_count: 3 })).toBeNull()
   })
 
   it("agrees with the score: the upper class per hectare is what the thresholds read", () => {
@@ -69,6 +94,40 @@ describe("readDensityPerHa", () => {
     expect(readDensityPerHa("C", raw)?.upperPerHa).toBe(3)
     expect(scoreFactorV32("C", raw, ctx)).toEqual({ kind: "scored", score: 5 })
     expect(scoreFactorV30("C", raw, ctx)).toEqual({ kind: "scored", score: 5 })
+  })
+})
+
+describe("readDensityPair", () => {
+  it("keeps a typed lower count as it is, even when it is not needed", () => {
+    expect(
+      readDensityPair({ bmg_count: 5, bmm_count: 2, surface_ha: 1 }, "bmg_count", "bmm_count"),
+    ).toEqual({
+      upper: 5,
+      lower: 2,
+      surfaceHa: 1,
+    })
+  })
+})
+
+describe("densityLowerCountNeeded", () => {
+  it("is needed while the upper class per hectare is under 1 or cannot be computed", () => {
+    expect(densityLowerCountNeeded("C", {})).toBe(true)
+    expect(densityLowerCountNeeded("C", { bmg_count: 4 })).toBe(true)
+    expect(densityLowerCountNeeded("C", { surface_ha: 2 })).toBe(true)
+    expect(densityLowerCountNeeded("C", { bmg_count: 4, surface_ha: 0 })).toBe(true)
+    expect(densityLowerCountNeeded("D", { bmg_count: 1, surface_ha: 2 })).toBe(true)
+    expect(densityLowerCountNeeded("E", { tgb_count: "1", surface_ha: "2" })).toBe(true)
+  })
+
+  it("is not needed from 1 upper per hectare, the exact line included", () => {
+    expect(densityLowerCountNeeded("C", { bmg_count: 2, surface_ha: 2 })).toBe(false)
+    expect(densityLowerCountNeeded("D", { bmg_count: 7, surface_ha: 2 })).toBe(false)
+    expect(densityLowerCountNeeded("E", { tgb_count: "1", surface_ha: "1" })).toBe(false)
+  })
+
+  it("reads the upper key of its own factor", () => {
+    expect(densityLowerCountNeeded("E", { bmg_count: 9, surface_ha: 1 })).toBe(true)
+    expect(densityLowerCountNeeded("C", { tgb_count: 9, surface_ha: 1 })).toBe(true)
   })
 })
 

@@ -204,17 +204,33 @@ export function scoreFactorIJ(raw: Record<string, unknown>): FactorOutcome {
   return count === null ? INVALID : scored(scoreTypeCount(count))
 }
 
-/** Counts and surface of a two-class density factor (C/D: BMg/BMm; E: TGB/GB), or null. */
+/** The upper class per hectare from which the lower class no longer changes the score of C, D, E. */
+export const DENSITY_LOWER_UNREAD_FROM_PER_HA = 1
+
+/** A raw value that was not given at all: absent, null or a blank string (not a bad one). */
+function isAbsentCount(value: unknown): boolean {
+  return value === undefined || value === null || (typeof value === "string" && value.trim() === "")
+}
+
+/**
+ * Counts and surface of a two-class density factor (C/D: BMg/BMm; E: TGB/GB), or null. The lower
+ * class only decides the score while the upper class is under 1 per hectare (v3.0: score 0 or 1;
+ * v3.2: the sum for 0 or 1), so a lower count that was not given at all is accepted from 1 upper
+ * per hectare and reads as 0 (the scorers never look at it then). Below that it stays unreadable,
+ * and so does a lower count that is present but not a number.
+ */
 export function readDensityPair(
   raw: Record<string, unknown>,
   upperKey: string,
   lowerKey: string,
 ): { upper: number; lower: number; surfaceHa: number } | null {
   const upper = pickNumber(raw, [upperKey])
-  const lower = pickNumber(raw, [lowerKey])
   const surfaceHa = pickNumber(raw, ["surface_ha"])
-  if (upper === null || lower === null || surfaceHa === null || surfaceHa <= 0) return null
-  return { upper, lower, surfaceHa }
+  if (upper === null || surfaceHa === null || surfaceHa <= 0) return null
+  const lower = pickNumber(raw, [lowerKey])
+  if (lower !== null) return { upper, lower, surfaceHa }
+  const lowerUnneeded = upper / surfaceHa >= DENSITY_LOWER_UNREAD_FROM_PER_HA
+  return lowerUnneeded && isAbsentCount(raw[lowerKey]) ? { upper, lower: 0, surfaceHa } : null
 }
 
 /** The raw keys of each two-class density factor: [upper class, lower class]. */
@@ -255,4 +271,20 @@ export function readDensityPerHa(
   const [upperKey, lowerKey] = DENSITY_COUNT_KEYS[factor]
   const pair = readDensityPair(raw, upperKey, lowerKey)
   return pair === null ? null : densityPerHa(pair)
+}
+
+/**
+ * Whether the lower class of C, D or E (BMm, GB) still has to be counted: true while the upper
+ * class per hectare cannot be computed yet (no readable upper count or positive surface) or is
+ * under 1 per hectare, false from there on (the score ignores the lower class then). The form shows
+ * and requires the lower counter by this answer, so the threshold lives only in the package.
+ */
+export function densityLowerCountNeeded(
+  factor: DensityFactor,
+  raw: Record<string, unknown>,
+): boolean {
+  const upper = pickNumber(raw, [DENSITY_COUNT_KEYS[factor][0]])
+  const surfaceHa = pickNumber(raw, ["surface_ha"])
+  if (upper === null || surfaceHa === null || surfaceHa <= 0) return true
+  return upper / surfaceHa < DENSITY_LOWER_UNREAD_FROM_PER_HA
 }

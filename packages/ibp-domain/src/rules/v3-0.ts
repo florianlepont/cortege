@@ -7,6 +7,7 @@ import {
   incomplete,
   readANativeCover,
   DENSITY_COUNT_KEYS,
+  DENSITY_LOWER_UNREAD_FROM_PER_HA,
   densityPerHa,
   readDensityPair,
   readFactorAGenusCount,
@@ -34,8 +35,7 @@ function scoreDensityV30(
 ): FactorOutcome {
   if (pair === null) return INVALID
   const { upperPerHa, lowerPerHa } = densityPerHa(pair)
-  if (upperPerHa < 1 && lowerPerHa < 1) return scored(0)
-  if (upperPerHa < 1) return scored(1)
+  if (upperPerHa < DENSITY_LOWER_UNREAD_FROM_PER_HA) return scored(lowerPerHa < 1 ? 0 : 1)
   if (upperPerHa < upperCap) return scored(2)
   return scored(5)
 }

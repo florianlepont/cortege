@@ -80,7 +80,12 @@ export {
 // Read-only readers of the raw inputs the scorers use, for the figures the app shows beside a
 // factor (A's genus count, the per-hectare densities of C, D and E). The scorers call the same
 // code, so a displayed figure can never drift from the one the score is read from.
-export { DENSITY_COUNT_KEYS, readDensityPerHa, readFactorAGenusCount } from "./rules/common"
+export {
+  DENSITY_COUNT_KEYS,
+  densityLowerCountNeeded,
+  readDensityPerHa,
+  readFactorAGenusCount,
+} from "./rules/common"
 export type { DensityFactor, DensityPerHa, GenusCountOutcome } from "./rules/common"
 
 export {
