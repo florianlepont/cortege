@@ -387,11 +387,12 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   division: the counts are already per hectare, and fractions are not allowed. The form stores
   `dmh_groups` (the ticks), `dmh_counts` (values 0 to 2) and a derived `trees_per_ha` that is the
   sum of the counts (`cappedDmhTotalPerHa` of the package); `surface_ha` is not written. The total
-  is shown under the list ("Total : N arbres par hectare") and is not limited to 8: the score
-  classes already stop there (8 and above is class `5`), so the sheet's total of 8 is a display
-  matter. The "Arbres par ha" field becomes read-only and derived as soon as one counter is above 0;
-  while every counter is 0 the typed number stays editable. Touching a counter takes over from a
-  typed number: the derived total replaces it (existing data is test data). A capped survey saved
+  is not limited to 8: the score classes already stop there (8 and above is class `5`), so the
+  sheet's total of 8 is a display matter. The total is shown only in the "Arbres par ha" field above
+  the list (no second total under it), which is always read-only and derived (a value, not an
+  input; it shows 0 while nothing is counted); once F's class is `5` a note under the field says
+  from 8 trees per hectare the class is 5 and counting more is pointless. Touching a counter takes
+  over from a typed number: the derived total replaces it (existing data is test data). A capped survey saved
   before (typed number, ticks only) opens as it was and still validates. Counts of a counted-in-full
   survey (trees on a surface) are brought to the cap on the first touch in the capped mode. The
   score never reads the counts (parity cases `MAT-F-CAP-*`).
