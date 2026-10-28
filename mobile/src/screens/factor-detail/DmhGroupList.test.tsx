@@ -119,14 +119,30 @@ const FORM_ORDER = [
 ].map((form) => `dmh-section-${form}`)
 
 describe("DmhGroupList, structure", () => {
-  test("nothing ticked: seven sections in form order, all expanded, summary says none", () => {
+  test("nothing ticked: seven sections in form order, all closed, summary says none", () => {
     const { sectionIds, one, textOf, all } = mount()
     expect(sectionIds()).toEqual(FORM_ORDER)
     for (const id of FORM_ORDER)
-      expect(one(id).props.accessibilityState).toEqual({ expanded: true })
+      expect(one(id).props.accessibilityState).toEqual({ expanded: false })
     expect(textOf(one("dmh-summary"))).toBe(t.summaryNone)
+    expect(all("dmh-row-dmh_01")).toHaveLength(0)
+    expect(all("dmh-row-dmh_15")).toHaveLength(0)
+  })
+
+  test("a section opens on a press of its header and closes on the next", () => {
+    const { open, one, all } = mount()
+    open("cavities")
+    expect(one("dmh-section-cavities").props.accessibilityState).toEqual({ expanded: true })
     expect(all("dmh-row-dmh_01")).toHaveLength(1)
-    expect(all("dmh-row-dmh_15")).toHaveLength(1)
+    expect(all("dmh-row-dmh_15")).toHaveLength(0)
+    open("cavities")
+    expect(one("dmh-section-cavities").props.accessibilityState).toEqual({ expanded: false })
+  })
+
+  test("ticking never opens or closes a section after mount", () => {
+    const { update, one } = mount({ selected: [] })
+    update({ selected: ["dmh_12"] })
+    expect(one("dmh-section-epiphytic").props.accessibilityState).toEqual({ expanded: false })
   })
 
   test("mounted with dmh_12 ticked: epiphytic first and open, the others closed", () => {
@@ -212,7 +228,8 @@ describe("DmhGroupList, handlers", () => {
 
   test("the row labels are the selectionLabel of the survey method", () => {
     for (const version of [IBP_METHOD_V3_2, IBP_METHOD_V3_0]) {
-      const { one } = mount({ methodVersion: version })
+      const { one, open } = mount({ methodVersion: version })
+      open("wounds")
       expect(one("dmh-tick-dmh_06").props.accessibilityLabel).toBe(
         selectionLabel("F", "dmh_06", version),
       )
@@ -230,7 +247,8 @@ describe("DmhGroupList, handlers", () => {
 
   test("a row info glyph opens that group, also when read-only, and ticks nothing", () => {
     for (const editable of [true, false]) {
-      const { press, onOpenDmhGuide, onChangeSelection } = mount({ editable })
+      const { press, open, onOpenDmhGuide, onChangeSelection } = mount({ editable })
+      open("wounds")
       press("dmh-info-dmh_05")
       expect(onOpenDmhGuide).toHaveBeenCalledWith("dmh_05")
       expect(onChangeSelection).not.toHaveBeenCalled()
@@ -244,7 +262,8 @@ describe("DmhGroupList, handlers", () => {
 
   test("the + on dmh_05 bumps it by 1", () => {
     const c = counting()
-    const { press } = mount({ counting: c })
+    const { press, open } = mount({ counting: c })
+    open("wounds")
     press("dmh-add-dmh_05")
     expect(c.onBump).toHaveBeenCalledWith("dmh_05", 1)
   })
@@ -273,7 +292,8 @@ describe("DmhGroupList, handlers", () => {
   })
 
   test("the row handlers keep their identity while the selection changes (memoised rows)", () => {
-    const { tree, update } = mount({ selected: [] })
+    const { tree, update, open } = mount({ selected: [] })
+    open("cavities")
     const handlers = () => {
       const row = tree.root.findAll(
         (n) => n.props.code === "dmh_01" && n.props.onToggle !== undefined,

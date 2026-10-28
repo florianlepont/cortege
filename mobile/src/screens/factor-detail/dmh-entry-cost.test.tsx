@@ -7,11 +7,19 @@
  * press counts (new against OLD_FLOW_PRESSES) and the unchanged stored payload are the automated
  * evidence; part (b) is the owner's written confirmation on the phone (plan 32-16). The recorded
  * constants (OLD_FLOW_PRESSES, OLD_FLOW_F_PAYLOAD) stay the bar and are never edited here.
+ *
+ * Amended on 2026-10-28 (owner request, plan 32-17): every form section starts closed, so the replay
+ * also counts one header press the first time it needs a section. S1 (three groups in three forms)
+ * is therefore a TIE on presses with the old flow, 8 against 8 (3 section presses + 5), by the
+ * owner's explicit choice; the gain stays on the loaded scenario S2, 26 against 29 (6 section
+ * presses + 20), which is still asserted strictly. The owner's own judgement on the phone is the
+ * criterion of the phase (confirmed 2026-10-27), not a press count.
  */
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { useSurveyForm } from "../../hooks/useSurveyForm"
+import { formOf } from "../../app/dmh-guide/structure"
 import { FactorDetailScreen } from "../FactorDetailScreen"
 import {
   DMH_ENTRY_SCENARIOS,
@@ -122,10 +130,10 @@ const treesOf = (id: DmhEntryScenarioId): number =>
 
 describe("new factor F flow (row list) against the recorded old flow", () => {
   test.each<[DmhEntryScenarioId, number, number]>([
-    ["S1", OLD_FLOW_PRESSES.S1, treesOf("S1")],
-    ["S2", OLD_FLOW_PRESSES.S2, treesOf("S2")],
+    ["S1", OLD_FLOW_PRESSES.S1, treesOf("S1") + 3],
+    ["S2", OLD_FLOW_PRESSES.S2, treesOf("S2") + 6],
   ])(
-    "scenario %s: %i presses in the old flow, %i in the new one, same stored payload",
+    "scenario %s: %i presses in the old flow, %i in the new one (sections included), same stored payload",
     (id, _oldPresses, expected) => {
       const { formRef, byTestID, stepperIncrease } = mount(true)
       const form = (): Form => formRef.current as Form
@@ -135,8 +143,16 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
       act(() => form().setFSurface(DMH_ENTRY_SURFACE_HA))
 
       let presses = 0
+      const opened = new Set<string>()
       for (const { code, trees } of DMH_ENTRY_SCENARIOS[id].groups) {
-        // Nothing is ticked at mount: every section is open (O-32-4), no header press is needed.
+        // Nothing is ticked at mount: every section starts closed (O-32-4 as amended), so the first
+        // group of a form costs one header press.
+        const form = formOf(code)
+        if (!opened.has(form)) {
+          opened.add(form)
+          act(() => byTestID(`dmh-section-${form}`).props.onPress())
+          presses += 1
+        }
         act(() => byTestID(`dmh-add-${code}`).props.onPress())
         presses += 1
         for (let tree = 1; tree < trees; tree += 1) {
@@ -148,7 +164,12 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
       }
 
       expect(presses).toBe(expected)
-      expect(presses).toBeLessThan(OLD_FLOW_PRESSES[id])
+      if (id === "S1") {
+        // A tie on presses (8 against 8), by the owner's explicit choice of 2026-10-28.
+        expect(presses).toBeLessThanOrEqual(OLD_FLOW_PRESSES[id])
+      } else {
+        expect(presses).toBeLessThan(OLD_FLOW_PRESSES[id])
+      }
       expect(form().draftInput.factors.F).toEqual(OLD_FLOW_F_PAYLOAD[id])
     },
   )
@@ -159,12 +180,20 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
     // Setup, not counted: the groups are stored only with their scored key (trees per hectare).
     act(() => form().factorSections.F[0].onChange("5"))
     let presses = 0
+    const opened = new Set<string>()
     for (const { code } of DMH_ENTRY_SCENARIOS.S1.groups) {
+      // Sections start closed: the first group of a form needs its header pressed (not a tick).
+      const form = formOf(code)
+      if (!opened.has(form)) {
+        opened.add(form)
+        act(() => byTestID(`dmh-section-${form}`).props.onPress())
+      }
       act(() => byTestID(`dmh-tick-${code}`).props.onPress())
       presses += 1
     }
     expect(presses).toBe(DMH_ENTRY_SCENARIOS.S1.groups.length)
     expect(presses).toBeLessThanOrEqual(3)
+    expect(opened.size).toBe(3)
     expect((form().draftInput.factors.F as { dmh_groups?: string[] }).dmh_groups).toEqual(
       DMH_ENTRY_SCENARIOS.S1.groups.map((group) => group.code),
     )

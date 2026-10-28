@@ -6,10 +6,10 @@ import { DMH_FORM_IDS, DMH_LIST_ORDER, formOf } from "./structure"
 const none = { ticked: null, counts: {} } as const
 
 describe("orderDmhRows with nothing ticked or counted", () => {
-  test("gives the seven sections in form order, all open, rows in the validated order", () => {
+  test("gives the seven sections in form order, all closed, rows in the validated order", () => {
     const sections = orderDmhRows(none)
     expect(sections.map((section) => section.form)).toEqual([...DMH_FORM_IDS])
-    expect(sections.every((section) => section.defaultExpanded)).toBe(true)
+    expect(sections.every((section) => !section.defaultExpanded)).toBe(true)
     for (const section of sections) {
       expect(section.codes).toEqual(DMH_LIST_ORDER.filter((code) => formOf(code) === section.form))
     }

@@ -5,9 +5,10 @@ import { DMH_FORM_IDS, DMH_LIST_ORDER, formOf, type DmhFormId } from "./structur
 // Phase 32 (plan 32-10, D-08 lever c and the open sections of lever b): the order of the seven form
 // sections of the list of factor F and of their rows. Ticked or counted groups come first (their
 // section, then their place in the section), the rest follows the validated order of the spec
-// (section 7, O-32-12 option a). A section starts open when it holds a ticked or counted group, or
-// when nothing is ticked or counted at all (O-32-4). Pure: no score, no density; the stored
-// dmh_groups order is never touched, only the displayed one.
+// (section 7, O-32-12 option a). Every section starts closed, except one that holds a ticked or
+// counted group at mount, so what is already entered stays visible (O-32-4, amended by the owner on
+// 2026-10-28). Pure: no score, no density; the stored dmh_groups order is never touched, only the
+// displayed one.
 
 export type DmhListSection = {
   form: DmhFormId
@@ -50,13 +51,12 @@ export function orderDmhRows({
       hasActive: own.some((code) => active.has(code)),
     }
   })
-  const nothingActive = active.size === 0
   return [
     ...sections.filter((section) => section.hasActive),
     ...sections.filter((section) => !section.hasActive),
   ].map(({ form, codes, hasActive }) => ({
     form,
     codes,
-    defaultExpanded: nothingActive || hasActive,
+    defaultExpanded: hasActive,
   }))
 }
