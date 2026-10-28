@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 32
 current_phase_name: Detailed DMH Information (INSERTED, V1)
 status: complete
-stopped_at: "Phase 32 complete (37/38 plans, 32-07 skipped): list and guide validated by the owner on the iPhone 2026-10-28; nothing pushed or merged"
+stopped_at: "Phase 32 complete and merged (PR #316, db43306f, 2026-10-30; 37/38 plans, 32-07 skipped): list and guide validated by the owner on the iPhone; plans 32-20 to 32-35 not yet seen on a device (see 32-UAT.md); verification status human_needed (32-VERIFICATION.md)"
 last_updated: "2026-10-28T12:00:00.000Z"
 last_activity: 2026-10-28
-last_activity_desc: Phase 32 closed after the owner validated the redesigned iPhone build; branch claude/practical-bhaskara-39c526 not pushed
+last_activity_desc: Phase 32 merged (PR 316) after the owner's feedback rounds of 2026-10-28 to 2026-10-30; UAT and verification recorded
 progress:
   total_phases: 39
   completed_phases: 23
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 32 (Detailed DMH Information (INSERTED, V1)) — COMPLETE
 Plan: 37 of 38 done (32-07, the timing campaign, skipped by the owner's decision of 2026-10-27)
-Status: Phase 32 closed 2026-10-28; the expert reading of the 15 drawings and of the thresholds was not done, field tests will check them
+Status: Phase 32 closed and merged 2026-10-30 (owner validations on 2026-10-27 and 2026-10-28, feedback rounds until 2026-10-30); the expert reading of the 15 drawings and of the thresholds was not done, field tests will check them
 Last activity: 2026-10-28 — Phase 32 (Detailed DMH Information) complete: F group list, guide sheet with 15 original drawings, entry on Accueil, native-feel redesign; validated by the owner on the iPhone, branch claude/practical-bhaskara-39c526 (merged with origin/main) not pushed. Before: 2026-10-26 Phase 33 (PDF Export, Exhaustive and Simplified) complete: 20 plans (15 planned, 5 gap plans from the owner's decisions and iPhone reviews), both versions validated on the iPhone. Branch claude/intelligent-agnesi-22f0a3 not pushed.
 
 Progress: [█████████░] 33/39 phases complete
