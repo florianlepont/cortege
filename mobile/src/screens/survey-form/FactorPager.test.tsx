@@ -228,6 +228,78 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
     expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
   })
 
+  describe("the active factor's class in the header (follow-up 32-24)", () => {
+    const retained = (
+      overrides: Partial<Record<FactorKey, { selected_class: string; score: number }>>,
+    ) =>
+      FACTORS.reduce(
+        (acc, factor) => ({ ...acc, [factor]: overrides[factor] ?? null }),
+        {} as Record<FactorKey, never>,
+      )
+    const withScores = (initial: FactorKey) =>
+      render(
+        initial,
+        {},
+        null,
+        {},
+        {
+          factorRetainedScores: retained({
+            A: { selected_class: "S2", score: 2 },
+            F: { selected_class: "S5", score: 5 },
+            J: { selected_class: "S0", score: 0 },
+          }),
+        },
+      )
+
+    test("a factor with a class shows it as a pill beside the total, for A to J alike", () => {
+      const { byTestID, texts } = withScores("F")
+      expect(texts()).toContain(fr.factorPager.classLabel({ retainedClass: "S5" }))
+      expect(texts()).toContain("Classe 5")
+      expect(byTestID("pager-class")).toBeDefined()
+      // One element for a screen reader: the class, then the survey total (2 + 5 + 0 = 7).
+      const group = byTestID("pager-score-group")
+      expect(group.props.accessible).toBe(true)
+      expect(group.props.accessibilityLabel).toBe("Classe 5, total du relevé 7 sur 50")
+      // The total pill keeps its testID and its own spoken label; the group reads it for the screen.
+      expect(byTestID("pager-total").props.accessible).toBe(false)
+      expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(7))
+      const pill = byTestID("pager-class").findAll((n) => (n.type as unknown) === "Text")[0]
+      expect(flat(pill.props.style).fontVariant).toEqual(["tabular-nums"])
+      const totalText = byTestID("pager-total").findAll((n) => (n.type as unknown) === "Text")[0]
+      expect(flat(totalText.props.style).fontVariant).toEqual(["tabular-nums"])
+    })
+
+    test("class 0 is a class too, and the pill follows the page", () => {
+      const first = withScores("J")
+      expect(first.texts()).toContain("Classe 0")
+      const other = withScores("A")
+      expect(other.texts()).toContain("Classe 2")
+      expect(other.texts()).not.toContain("Classe 5")
+      for (let step = 0; step < 5; step += 1) {
+        act(() => other.byTestID("pager-next").props.onPress())
+      }
+      expect(other.texts()).toContain("Classe 5")
+      expect(other.byTestID("pager-score-group").props.accessibilityLabel).toBe(
+        "Classe 5, total du relevé 7 sur 50",
+      )
+    })
+
+    test("a factor without a class shows only the total, as before", () => {
+      const { byTestID, texts } = withScores("B")
+      expect(texts().some((text) => text.startsWith("Classe"))).toBe(false)
+      expect(byTestID("pager-class")).toBeUndefined()
+      expect(byTestID("pager-score-group").props.accessible).toBeUndefined()
+      expect(byTestID("pager-total").props.accessible).toBe(true)
+      expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(7))
+    })
+
+    test("the page no longer draws the class itself (no duplicate)", () => {
+      const { tree } = withScores("F")
+      const probe = tree.root.find((n) => (n.type as unknown) === "FactorDetailScreenProbe")
+      expect(probe.props.retainedScore).toEqual({ selected_class: "S5", score: 5 })
+    })
+  })
+
   test("next advances to the following factor and reports it", () => {
     const { byTestID, onActiveFactorChange, texts } = render("A")
     expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.next)

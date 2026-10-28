@@ -10,27 +10,19 @@ import {
   useWindowDimensions,
   View,
 } from "react-native"
-import { AppText as Text } from "../../ui/AppText"
 import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
-import {
-  brandRadius,
-  brandShadow,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandShadow, brandSpacing4 } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
-import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
-import { CountingModeChip } from "../factor-detail/CountingModeStrip"
 import type { UncappedEntryProps } from "../factor-detail/UncappedFieldBlock"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
 import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
+import { FactorPagerHeader, TOTAL_CHIP_HEIGHT } from "./FactorPagerHeader"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
@@ -44,7 +36,7 @@ const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
 // The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it. Field
 // sizes (D-05): the bar and the round button stay 46 pt, the total pill 36 pt.
 export const BAR_HEIGHT = STRIP_HEIGHT
-export const TOTAL_CHIP_HEIGHT = 36
+export { TOTAL_CHIP_HEIGHT }
 // D-26: the "Terminer le relevé" pill row above the bar; at least the 50 pt of a large GlassButton
 // (the row is measured, so a label that wraps at a large text size grows the page padding too).
 export const FINISH_ROW_MIN_HEIGHT = 50
@@ -189,31 +181,12 @@ export const FactorPager = memo(function FactorPager({
       (showFinish ? Math.max(FINISH_ROW_MIN_HEIGHT, finishRowHeight) + brandSpacing4.smd : 0)
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
-           * instead of ending in an ellipsis. */}
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            accessibilityRole="header"
-            accessibilityLabel={FACTOR_TITLES[activeFactor]}
-          >
-            {t.pageTitles[activeFactor]}
-          </Text>
-          <View
-            style={styles.totalChip}
-            accessible
-            accessibilityLabel={t.totalA11y(total)}
-            testID="pager-total"
-          >
-            <Text style={styles.totalChipText}>{t.total(total)}</Text>
-          </View>
-        </View>
-        {uncappedFactors.includes(activeFactor) ? <CountingModeChip /> : null}
-      </View>
+      <FactorPagerHeader
+        factor={activeFactor}
+        total={total}
+        retainedClass={factorRetainedScores[activeFactor]?.selected_class ?? null}
+        countedInFull={uncappedFactors.includes(activeFactor)}
+      />
 
       <ScrollView
         ref={scrollRef}
@@ -313,44 +286,6 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     container: {
       flex: 1,
-    },
-    // D-19: the route's ScreenFrame already starts the pager below the transparent header (OA-20).
-    header: {
-      paddingTop: brandSpacing4.sm,
-      paddingHorizontal: brandSpacing4.md,
-      paddingBottom: brandSpacing4.smd,
-      gap: brandSpacing4.smd,
-    },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: brandSpacing4.smd,
-    },
-    // The screen title role (Sora SemiBold 24 on 28): its line is shorter than the 36 pt total
-    // pill, so the row keeps its height (D-05).
-    title: {
-      flex: 1,
-      ...brandTypography.screenTitle,
-      color: theme.semanticColors.textStrong,
-    },
-    // The running total is a small forest pill (variant I): forest gradient over its flat
-    // fallback, white figures, a light hairline, no drop shadow. Same 36 pt height and padding.
-    // The hairline is an inset ring, never a border on the gradient view (12.2-17, see ForestCard).
-    totalChip: {
-      height: TOTAL_CHIP_HEIGHT,
-      borderRadius: brandRadius.pill,
-      paddingHorizontal: brandSpacing4.smd,
-      justifyContent: "center",
-      backgroundColor: theme.visual.forest.fallback,
-      experimental_backgroundImage: theme.visual.forest.image,
-      boxShadow: theme.visual.forest.ring,
-    },
-    totalChipText: {
-      fontSize: brandTypeScale.subhead.fontSize,
-      lineHeight: 20,
-      fontFamily: brandTypography.button.fontFamily,
-      color: theme.visual.forest.title,
     },
     pages: {
       flex: 1,
