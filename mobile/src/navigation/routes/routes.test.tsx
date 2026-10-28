@@ -1227,6 +1227,15 @@ describe("SurveyDetailRoute", () => {
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFinish", { surveyId: "survey-9" })
     expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
+    // Route first: the bottom button of a draft with no route opens the route step in edit mode.
+    await act(async () => {
+      callback("surveyDetail", "onDefineRoute")("survey-9")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteGuide", {
+      surveyId: "survey-9",
+      mode: "edit",
+      surfaceHa: null,
+    })
     await act(async () => {
       callback("surveyDetail", "onOpenConditions")()
     })

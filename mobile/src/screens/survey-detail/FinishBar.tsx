@@ -13,13 +13,16 @@ type FinishBarProps = {
   accessibilityLabel: string
   onFinish: () => void
   onOpenFactor: (factor: FactorKey) => void
+  /** Opens the route step for a draft with no route (the `route` button). */
+  onDefineRoute: () => void
   /** Reports the bar's height so the scroll content can end above it. */
   onLayout?: (event: LayoutChangeEvent) => void
 }
 
 /**
  * The summary's single bottom button (OA-40): "Commencer / Continuer la notation" while factors
- * remain, greyed with what is still missing otherwise, then "Terminer le relevé". There is no lock and no deadline, and nothing once the survey is finished.
+ * remain (or "Définir le parcours" first on a draft with no route), greyed with what is still missing
+ * otherwise, then "Terminer le relevé". There is no lock and no deadline, and nothing once the survey is finished.
  *
  * D-27c: the bar has no background and floats over the bottom of the page, so the content shows
  * behind it; the button is green glass, the only filled element. The reason a disabled button is
@@ -31,6 +34,7 @@ export function FinishBar({
   accessibilityLabel,
   onFinish,
   onOpenFactor,
+  onDefineRoute,
   onLayout,
 }: FinishBarProps) {
   const theme = useBrandTheme()
@@ -49,7 +53,11 @@ export function FinishBar({
         size="lg"
         disabled={cta.kind === "disabled"}
         accessibilityLabel={cta.kind === "ready" ? accessibilityLabel : cta.label}
-        onPress={() => (cta.kind === "next" ? onOpenFactor(cta.factor) : onFinish())}
+        onPress={() => {
+          if (cta.kind === "next") onOpenFactor(cta.factor)
+          else if (cta.kind === "route") onDefineRoute()
+          else onFinish()
+        }}
         testID="finish-bar-button"
       />
     </View>

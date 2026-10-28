@@ -61,6 +61,8 @@ export const surveyDetailFr = {
   cta: {
     finish: "Terminer le relevé",
     start: "Commencer la notation",
+    // A draft with no route starts with the route: the button opens the route step (edit mode).
+    defineRoute: "Définir le parcours",
     continue: "Continuer la notation",
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",

@@ -32,6 +32,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onDeleteSurvey: (surveyId: string) => void
   /** Opens the submission step (the finish sheet: visibility choice, then the send), Phase 29. */
   onOpenFinish: (surveyId: string) => void
+  /** Opens the route step in edit mode for a draft with no route ("Définir le parcours"). */
+  onDefineRoute: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
