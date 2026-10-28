@@ -84,6 +84,7 @@ export const factorDetailFr = {
       density: "Arbres par hectare",
     },
     percentSuffix: "\u00a0%",
+    hectaresSuffix: "\u00a0ha",
     spoken: {
       count: ({ text }: { text: string }) => text,
       percent: ({ text }: { text: string }) => `${text} %`,
@@ -117,6 +118,34 @@ export const factorDetailFr = {
     I: "Cochez les types de milieux aquatiques présents dans le peuplement ou en bordure.",
     J: "Cochez les types de milieux rocheux présents dans le peuplement ou en bordure.",
   },
+  // Follow-up 32-35 (owner decision 2026-10-30): factor G lists several zones of open flowering
+  // habitat, each a surface in hectares, and the app computes the percent from the surface décrite.
+  openAreas: {
+    header: "Zones de milieux ouverts fleuris",
+    zone: ({ index }: { index: number }) => `Zone ${index}`,
+    add: {
+      label: "Ajouter une zone",
+      hint: "Ajoute une ligne à renseigner en hectares",
+      maxReached: "Vous ne pouvez pas ajouter plus de 20 zones.",
+    },
+    remove: {
+      a11y: ({ index }: { index: number }) => `Supprimer la zone ${index}`,
+      hint: "Retire cette zone de la liste",
+    },
+    announce: {
+      added: ({ index }: { index: number }) => `Zone ${index} ajoutée`,
+      removed: ({ index }: { index: number }) => `Zone ${index} supprimée`,
+    },
+    none: {
+      label: "Aucune zone de milieux ouverts fleuris",
+      hint: "Enregistre 0 % et vide la liste des zones",
+      locked: "Supprimez d'abord les zones pour choisir cette ligne.",
+      lockedHint: "Supprimez d'abord les zones",
+    },
+    total: ({ total, surface }: { total: string; surface: string }) =>
+      `Total des zones : ${total} ha sur ${surface} ha décrits`,
+    exceeds: "Les zones dépassent la surface décrite : le total est limité à 100 %",
+  },
   // Follow-up 32-29: the hero card of every factor but F (F's is `dmhList.hero`): the figure the
   // observer cares about, what it counts and where it comes from. The figure shows a word while it
   // cannot be given yet. The spoken form reads "label, value".
@@ -138,6 +167,7 @@ export const factorDetailFr = {
       fromStrataCover: "d'après le couvert de chaque strate",
       fromDescribedSurface: "calculé d'après la surface décrite",
       shareOfSurface: "part de la surface",
+      fromZones: "calculé d'après les zones et la surface décrite",
       continuityAge: "ancienneté de l'état boisé",
     },
     pending: {
