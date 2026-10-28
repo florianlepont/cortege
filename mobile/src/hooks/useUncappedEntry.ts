@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from "react"
 import {
   B_STRATUM_CODES,
   DMH_GROUP_CODES,
+  cappedDmhCounts,
+  cappedDmhTotalPerHa,
   dmhDensityPerHa,
   readDmhCounts,
   readStrataCover,
@@ -104,6 +106,21 @@ export function useUncappedEntry() {
     return next
   }, [])
 
+  /**
+   * The capped survey mode writes the counts of its groups: trees per hectare, so every count is
+   * brought to the package's cap (this also normalises counts left by a counted-in-full survey),
+   * F's surface is dropped (the capped mode stores none) and the scored total is the package's
+   * `cappedDmhTotalPerHa`, always a number. Touching a counter takes over from a typed number.
+   */
+  const commitCapped = useCallback(
+    (counts: UncappedState["dmhCounts"]): number => {
+      const dmhCounts = cappedDmhCounts(counts)
+      commit({ ...latest.current, dmhCounts, fSurfaceText: "" })
+      return cappedDmhTotalPerHa(dmhCounts)
+    },
+    [commit],
+  )
+
   /** Stores the typed cover of a stratum; returns the derived strata count (null: nothing valid). */
   const setStratumCover = useCallback(
     (code: BStratumCode, text: string): number | null => {
@@ -115,15 +132,21 @@ export function useUncappedEntry() {
     [commit],
   )
 
-  /** Stores a group count (0 or more, whole); returns the derived trees per hectare or null. */
+  /**
+   * Stores a group count (0 or more, whole); returns the derived trees per hectare or null.
+   * `cap` switches to the capped survey mode (follow-up of phase 32): the counts are trees per
+   * hectare held at `cap` (the package's 2), the total is their sum with no surface, and the
+   * surface, which has no place there, is dropped (see `commitCapped`).
+   */
   const setDmhCount = useCallback(
-    (code: DmhGroupCode, count: number): number | null => {
+    (code: DmhGroupCode, count: number, cap?: number): number | null => {
       const dmhCounts = { ...latest.current.dmhCounts }
-      if (Number.isInteger(count) && count >= 0) dmhCounts[code] = count
+      if (Number.isInteger(count) && count >= 0) dmhCounts[code] = Math.min(count, cap ?? count)
       else delete dmhCounts[code]
+      if (cap !== undefined) return commitCapped(dmhCounts)
       return deriveTreesPerHa(commit({ ...latest.current, dmhCounts }))
     },
-    [commit],
+    [commit, commitCapped],
   )
 
   /**
@@ -132,14 +155,14 @@ export function useUncappedEntry() {
    * Returns the derived trees per hectare or null, like setDmhCount.
    */
   const bumpDmhCount = useCallback(
-    (code: DmhGroupCode, delta: number): number | null => {
+    (code: DmhGroupCode, delta: number, cap?: number): number | null => {
       const current = latest.current.dmhCounts[code] ?? 0
-      const count = Math.min(MAX_DMH_COUNT, Math.max(0, current + delta))
-      return deriveTreesPerHa(
-        commit({ ...latest.current, dmhCounts: { ...latest.current.dmhCounts, [code]: count } }),
-      )
+      const count = Math.min(cap ?? MAX_DMH_COUNT, Math.max(0, current + delta))
+      const dmhCounts = { ...latest.current.dmhCounts, [code]: count }
+      if (cap !== undefined) return commitCapped(dmhCounts)
+      return deriveTreesPerHa(commit({ ...latest.current, dmhCounts }))
     },
-    [commit],
+    [commit, commitCapped],
   )
 
   /** Stores F's surface text; returns the derived trees per hectare (null without a valid one). */

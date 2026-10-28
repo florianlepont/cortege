@@ -255,6 +255,76 @@ describe("useUncappedEntry", () => {
     })
   })
 
+  describe("capped survey mode (cap 2, trees per hectare, follow-up of phase 32)", () => {
+    test("a bump holds a group at the cap and derives the sum with no surface", async () => {
+      const result = await render()
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_01", 1, 2)
+      })
+      expect(derived).toBe(1)
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1, 2)
+        derived = result.current.bumpDmhCount("dmh_01", 1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2 })
+      expect(derived).toBe(2)
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_05", 1, 2)
+      })
+      expect(derived).toBe(3)
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_05", -1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2, dmh_05: 0 })
+      expect(derived).toBe(2)
+    })
+
+    test("a set count is held at the cap, an emptied field drops the entry", async () => {
+      const result = await render()
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.setDmhCount("dmh_02", 9, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_02: 2 })
+      expect(derived).toBe(2)
+      await act(async () => {
+        derived = result.current.setDmhCount("dmh_02", Number.NaN, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({})
+      expect(derived).toBe(0)
+    })
+
+    test("a touch brings counts left by a counted-in-full survey to the cap and drops the surface", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setFSurface("2.5")
+        result.current.setDmhCount("dmh_01", 7)
+        result.current.setDmhCount("dmh_02", 3)
+      })
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_03", 1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2, dmh_02: 2, dmh_03: 1 })
+      expect(result.current.fSurfaceText).toBe("")
+      expect(derived).toBe(5)
+      expect(result.current.uncappedPayload()).toEqual({
+        dmh_counts: { dmh_01: 2, dmh_02: 2, dmh_03: 1 },
+      })
+    })
+
+    test("counted in full is unchanged by the optional cap", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_01", 5)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 5 })
+      expect(result.current.fSurfaceText).toBe("1")
+    })
+  })
+
   describe("uncappedPayload", () => {
     test("gives only valid entries, in the package code order", async () => {
       const result = await render()

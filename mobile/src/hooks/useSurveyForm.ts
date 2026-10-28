@@ -513,9 +513,13 @@ export function useSurveyForm() {
     if (derived !== null) setFactorF((prev) => ({ ...prev, trees_per_ha: String(derived) }))
   }
 
-  /** A group count (0 or more); the density needs F's own surface, else nothing is written. */
-  const setDmhCount = (code: DmhGroupCode, count: number): void => {
-    writeTreesPerHa(storeDmhCount(code, count))
+  /**
+   * A group count (0 or more). Counted in full the density needs F's own surface, else nothing is
+   * written. With `cap` (the capped survey mode, follow-up of phase 32) the count is trees per
+   * hectare held at `cap` and the sum of the groups replaces the typed `trees_per_ha`, no surface.
+   */
+  const setDmhCount = (code: DmhGroupCode, count: number, cap?: number): void => {
+    writeTreesPerHa(storeDmhCount(code, count, cap))
   }
 
   /**
@@ -523,10 +527,11 @@ export function useSurveyForm() {
    * a later "+" or "-" moves the count. A negative delta never unticks (0 stays ticked) and no
    * count goes below 0 or above 999. Nothing new is stored: the ticks and the counts are the
    * `dmh_groups` and `dmh_counts` the chips and the counter block wrote before, and the density
-   * is still the package's, derived by the store.
+   * is still the package's, derived by the store. With `cap` (the capped survey mode, follow-up
+   * of phase 32) the same call counts trees per hectare up to `cap` and derives the sum instead.
    */
-  const bumpDmhGroup = (code: DmhGroupCode, delta: number): void => {
-    const derived = storeBumpDmhCount(code, delta)
+  const bumpDmhGroup = (code: DmhGroupCode, delta: number, cap?: number): void => {
+    const derived = storeBumpDmhCount(code, delta, cap)
     setFactorF((prev) => ({
       ...prev,
       dmh_groups:

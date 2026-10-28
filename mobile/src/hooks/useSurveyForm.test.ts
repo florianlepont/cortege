@@ -1193,6 +1193,111 @@ describe("useSurveyForm", () => {
     })
   })
 
+  describe("capped survey mode counters (follow-up of phase 32, owner decision 2026-10-28)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+    const CAP = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("the + ticks the group and counts 1; the total replaces the typed number; no surface", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("7")
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 7 })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+      })
+      expect(factorF(result)).not.toHaveProperty("surface_ha")
+    })
+
+    test("a group stops at 2, the total is the sum of the groups and the score follows it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        for (const code of ["dmh_01", "dmh_01", "dmh_01", "dmh_05", "dmh_05", "dmh_12"] as const) {
+          result.current.bumpDmhGroup(code, 1, CAP)
+        }
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 5,
+        dmh_groups: ["dmh_01", "dmh_05", "dmh_12"],
+        dmh_counts: { dmh_01: 2, dmh_05: 2, dmh_12: 1 },
+      })
+      expect(result.current.factorSections.F[0].value).toBe("5")
+      // 5 trees per hectare is class 2 of F, the same as typing 5.
+      expect(result.current.factorRetainedScores.F?.score).toBe(2)
+      await act(async () => {
+        result.current.setDmhCount("dmh_12", 0, CAP)
+      })
+      expect(factorF(result).trees_per_ha).toBe(4)
+      expect(factorF(result).dmh_counts).toEqual({ dmh_01: 2, dmh_05: 2, dmh_12: 0 })
+    })
+
+    test("all counters back to 0 write 0 and the number can be typed again", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", -1, CAP)
+      })
+      expect(factorF(result).trees_per_ha).toBe(0)
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+      })
+      expect(factorF(result).trees_per_ha).toBe(4)
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+    })
+
+    test("an old capped payload (typed number and ticks only) opens and stays as it was", async () => {
+      const result = await renderForm()
+      const stored = { F: { trees_per_ha: 5, dmh_groups: ["dmh_01", "dmh_05"] } }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: stored })
+      })
+      expect(result.current.uncapped.dmhCounts).toEqual({})
+      expect(factorF(result)).toEqual(stored.F)
+      // The first touch of a counter takes over from the typed number.
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_01", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_01", "dmh_05"],
+        dmh_counts: { dmh_01: 1 },
+      })
+    })
+
+    test("a capped payload with counts round-trips through applyDraftToForm", async () => {
+      const result = await renderForm()
+      const stored = {
+        F: {
+          trees_per_ha: 3,
+          dmh_groups: ["dmh_01", "dmh_05"],
+          dmh_counts: { dmh_01: 2, dmh_05: 1 },
+        },
+      }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: stored })
+      })
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_01: 2, dmh_05: 1 })
+      expect(result.current.uncapped.fSurfaceText).toBe("")
+      expect(factorF(result)).toEqual(stored.F)
+    })
+  })
+
   describe("factor annotations (D-23)", () => {
     const useRealRules = () => {
       mockParseFinite.mockImplementation(
