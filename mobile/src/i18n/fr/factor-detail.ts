@@ -57,6 +57,19 @@ export const factorDetailFr = {
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
     fromRoute: "D'après le parcours",
   },
+  // Follow-up 32-30: the choice lists of A, B, H, I and J (a grouped list of circles, as F's). A
+  // section header is the field's label unless this catalogue names it; A's list has a search field.
+  choice: {
+    headers: {
+      H: "Ancienneté",
+    },
+    search: {
+      placeholder: "Chercher un genre",
+      a11yLabel: "Chercher un genre dans la liste",
+      clear: "Effacer la recherche",
+      empty: "Aucun genre ne correspond à votre recherche.",
+    },
+  },
   // Follow-up 32-29: the one short paragraph that opens each factor page other than F (F's is
   // `dmhList.intro`), in the imperative, saying what to record. Each rests on the factor's help text
   // (`fr.labels.factorHelp`); the differences between the method versions stay in the help sheet.
