@@ -233,6 +233,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - Thin wrapper over `fetch` with Bearer token injection, timeout handling, and typed `ApiError`
 - Default timeout: 15 s (overridable per-request or via `EXPO_PUBLIC_API_TIMEOUT_MS`)
 - Endpoints defined in `mobile/src/api/ibp-api.ts`
+- Phase 32: deploy the API (its image carries the package) before installing an app build from this phase: a C, D or E submitted without its lower-size count (allowed when the upper density is at least 1 per hectare) is refused by an older API as invalid. The package also gained capped `dmh_counts` and the G `open_areas_ha` detail key (never scored).
 - Phase 30: `apiRequest` adds the client marker header `X-Cortege-Features: survey_route` (`CLIENT_FEATURES_HEADER` of the package) to every request; a header the caller sets under the same name wins. The API applies the mandatory route (`route_required`) only to requests that carry it, so older builds keep working. Deploy the API before installing an app build that sends it
 
 **PDF export** (phase 25.1, rebuilt in phase 33; `mobile/src/app/survey-pdf/`):

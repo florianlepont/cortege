@@ -109,3 +109,6 @@ While recording factor F, the observer reaches detailed identification informati
 *Note 2026-10-26: 32-RESEARCH.md and the 32-UI-SPEC.md revision history describe earlier drawing designs (paper tile, then animation); D-11 above and the current plans prevail. The 15 drawings were redrawn on 2026-10-26 from the online verification notes in `drawings/verification-groupes-*.md`.*
 
 *Note 2026-10-27: the "Measurement protocol" of 32-RESEARCH.md (timed sessions, instrumented build, REQ-FT-dmh-speed as a timing) and the mentions of a timing, a timed baseline or a glove test in 32-UI-SPEC.md (O-32-1, O-32-5, the performance contract) are superseded by the D-08 amendment above; the plans as revised on 2026-10-27 prevail.*
+
+
+*Amendment 2026-10-30 (verification): the package did change during the phase, by owner decisions taken after this context: per-group capped counters (`cappedDmhCounts`, 32-23), key-figure readers (32-29), lower-size count optional when the upper density is at least 1 per hectare (32-32), and the G `open_areas_ha` detail key (32-35), each with parity cases and no change to any existing score. Stored data now also holds capped `dmh_counts` and G `open_areas_ha`. SQLite stays at version 5 and the API code is unchanged.*

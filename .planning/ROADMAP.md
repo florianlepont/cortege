@@ -1312,7 +1312,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
 | 30. Route Choice Assistant | 23/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
-| 32. Detailed DMH Information | 37/38 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-28; expert reading of the drawings and thresholds not done) | 2026-10-28 |
+| 32. Detailed DMH Information | 37/38 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-27 and 2026-10-28, later feedback rounds not yet re-seen: see 32-UAT.md; expert reading of the drawings and thresholds not done) | 2026-10-30 |
 | 33. PDF Export, Exhaustive and Simplified | 20/20 | Complete (owner validated both versions on the iPhone 2026-10-26) | 2026-10-26 |
 | 34. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
 | 35. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
