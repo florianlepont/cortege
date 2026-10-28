@@ -1,4 +1,4 @@
-// Why custom: the F dendromicrohabitat rows need a counter of one line (48 pt) with a typeable count, where FactorCounterInput is a 110 to 130 pt shell; no native stepper offers both.
+// Why custom: the F dendromicrohabitat rows need a counter of one line (48 pt) with a typeable count, where FactorCounterInput is a 110 to 130 pt shell; no native stepper offers both. The SwiftUI Stepper was rejected: its value cannot be typed and its targets are 32 pt.
 import { useMemo, useRef, useState } from "react"
 import { AccessibilityActionEvent, StyleSheet, TextInput, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -14,11 +14,17 @@ import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
 import { AppText as Text } from "./AppText"
+import { feedback } from "./feedback"
 import { useHoldRepeat } from "./useHoldRepeat"
 
 // O-32-1: 48 pt, validated by the owner at plan 32-09 on 2026-10-27; one constant shared by the
-// stepper and the row's +.
+// stepper and the row's +. Redesign 32-18 (A-I3): the stepper is one 112 x 48 capsule of two 56 x 48
+// segments (the same 48 pt glove height), the count is plain text to its left.
 export const DMH_STEPPER_SIZE = 48
+const SEGMENT_WIDTH = 56
+const COUNT_MIN_WIDTH = 44
+const GLYPH_SIZE = 22
+const SEGMENT_DIVIDER_HEIGHT = 24
 
 const MIN_TREES = 0
 const MAX_TREES = 999
@@ -138,22 +144,6 @@ export function DmhCounterStepper({
         importantForAccessibility={editing ? "auto" : "no-hide-descendants"}
         accessibilityElementsHidden={!editing}
       >
-        <AppPressable
-          accessibilityRole="button"
-          accessibilityLabel={t.decrement}
-          accessibilityState={{ disabled: atMin }}
-          onPressIn={() => {
-            // Not the Pressable `disabled` prop: a button disabled mid-hold would never send its
-            // press out and the repeat would run on. At 0 a press simply does nothing.
-            if (!atMin) start(-1)
-          }}
-          onPressOut={stop}
-          style={[styles.button, atMin && styles.disabled]}
-          testID={`${testID}-decrease`}
-        >
-          <Ionicons name="remove-outline" size={22} color={theme.colors.forest} />
-        </AppPressable>
-
         {editing ? (
           <TextInput
             value={draftText}
@@ -169,6 +159,8 @@ export function DmhCounterStepper({
           />
         ) : (
           <AppPressable
+            disableScale
+            disableRipple
             accessibilityRole="button"
             accessibilityLabel={t.editHint}
             onPress={openEdit}
@@ -181,16 +173,55 @@ export function DmhCounterStepper({
           </AppPressable>
         )}
 
-        <AppPressable
-          accessibilityRole="button"
-          accessibilityLabel={t.increment}
-          onPressIn={() => start(1)}
-          onPressOut={stop}
-          style={styles.button}
-          testID={`${testID}-increase`}
-        >
-          <Ionicons name="add-outline" size={22} color={theme.colors.forest} />
-        </AppPressable>
+        <View style={styles.capsule}>
+          <AppPressable
+            disableScale
+            disableRipple
+            accessibilityRole="button"
+            accessibilityLabel={t.decrement}
+            accessibilityState={{ disabled: atMin }}
+            onPressIn={() => {
+              // Not the Pressable `disabled` prop: a button disabled mid-hold would never send its
+              // press out and the repeat would run on. At 0 a press simply does nothing.
+              if (atMin) return
+              feedback.selection()
+              start(-1)
+            }}
+            onPressOut={stop}
+            style={({ pressed }) => [
+              styles.segment,
+              pressed && !atMin ? styles.segmentPressed : null,
+            ]}
+            testID={`${testID}-decrease`}
+          >
+            <Ionicons
+              name="remove-outline"
+              size={GLYPH_SIZE}
+              color={theme.semanticColors.ctaPrimary}
+              style={atMin ? styles.disabledGlyph : undefined}
+            />
+          </AppPressable>
+          <View style={styles.segmentDivider} />
+          <AppPressable
+            disableScale
+            disableRipple
+            accessibilityRole="button"
+            accessibilityLabel={t.increment}
+            onPressIn={() => {
+              feedback.selection()
+              start(1)
+            }}
+            onPressOut={stop}
+            style={({ pressed }) => [styles.segment, pressed ? styles.segmentPressed : null]}
+            testID={`${testID}-increase`}
+          >
+            <Ionicons
+              name="add-outline"
+              size={GLYPH_SIZE}
+              color={theme.semanticColors.ctaPrimary}
+            />
+          </AppPressable>
+        </View>
       </View>
     </View>
   )
@@ -204,35 +235,53 @@ function createStyles(theme: BrandTheme) {
       justifyContent: "flex-end",
       gap: brandSpacing4.sm,
     },
-    button: {
-      width: DMH_STEPPER_SIZE,
+    // One capsule of two halves, clipped so a pressed half takes the capsule's curve.
+    capsule: {
+      width: 2 * SEGMENT_WIDTH,
+      height: DMH_STEPPER_SIZE,
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: brandRadius.pill,
+      overflow: "hidden",
+      backgroundColor: theme.visual.control.fill,
+    },
+    segment: {
+      width: SEGMENT_WIDTH,
       height: DMH_STEPPER_SIZE,
       minHeight: DMH_STEPPER_SIZE,
-      borderRadius: brandRadius.field,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.visual.chip.fill,
-      borderWidth: 1,
-      borderColor: theme.visual.chip.border,
     },
-    disabled: {
+    segmentPressed: {
+      backgroundColor: theme.colors.surfaceSoft,
+    },
+    segmentDivider: {
+      width: 1,
+      height: SEGMENT_DIVIDER_HEIGHT,
+      backgroundColor: theme.colors.divider,
+    },
+    // The disabled "-" at 0: the glyph alone dims, the capsule keeps its fill.
+    disabledGlyph: {
       opacity: brandInteraction.disabledOpacity,
     },
     countCell: {
-      width: DMH_STEPPER_SIZE,
+      minWidth: COUNT_MIN_WIDTH,
       height: DMH_STEPPER_SIZE,
       minHeight: DMH_STEPPER_SIZE,
-      alignItems: "center",
+      alignItems: "flex-end",
       justifyContent: "center",
     },
     count: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.sectionHeader.fontFamily,
+      ...brandTypeScale.title3,
+      fontFamily: brandTypography.screenTitle.fontFamily,
       color: theme.colors.textPrimary,
-      textAlign: "center",
+      textAlign: "right",
     },
+    // The typed count: same metrics as the plain count, a 2 pt underline while editing.
     input: {
       padding: 0,
+      borderBottomWidth: 2,
+      borderBottomColor: theme.colors.inputBorder,
     },
   })
 }

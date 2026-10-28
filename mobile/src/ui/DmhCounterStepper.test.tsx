@@ -4,7 +4,15 @@ import { AppText as Text } from "./AppText"
 import { defaultTheme } from "../app/theme"
 import { DMH_STEPPER_SIZE, DmhCounterStepper } from "./DmhCounterStepper"
 
+const mockSelection = jest.fn()
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("./feedback", () => ({ feedback: { selection: () => mockSelection() } }))
+
 const originalConsoleError = console.error
+
+beforeEach(() => {
+  mockSelection.mockClear()
+})
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -39,9 +47,11 @@ type Node = renderer.ReactTestInstance
 type Style = Record<string, unknown>
 
 const flatten = (style: unknown): Style =>
-  Array.isArray(style)
-    ? style.reduce<Style>((acc, item) => ({ ...acc, ...flatten(item) }), {})
-    : ((style as Style | null | undefined) ?? {})
+  typeof style === "function"
+    ? flatten(style({ pressed: false }))
+    : Array.isArray(style)
+      ? style.reduce<Style>((acc, item) => ({ ...acc, ...flatten(item) }), {})
+      : ((style as Style | null | undefined) ?? {})
 
 function render(props: Partial<React.ComponentProps<typeof DmhCounterStepper>> = {}) {
   const onStep = jest.fn()
@@ -100,17 +110,65 @@ function render(props: Partial<React.ComponentProps<typeof DmhCounterStepper>> =
 }
 
 describe("DmhCounterStepper", () => {
-  test("the buttons and the count cell are DMH_STEPPER_SIZE square (O-32-1, validated at plan 32-09)", () => {
+  test("one 112 x 48 capsule of two 56 x 48 segments, the count plain text of 44 x 48 at least (O-32-1)", () => {
     expect(DMH_STEPPER_SIZE).toBe(48)
-    const { findByTestID } = render()
-    for (const id of ["s-decrease", "s-increase", "s-value"]) {
+    const { findByTestID, tree } = render()
+    for (const id of ["s-decrease", "s-increase"]) {
       const style = flatten(findByTestID(id).props.style)
-      expect(style.width).toBe(DMH_STEPPER_SIZE)
+      expect(style.width).toBe(56)
       expect(style.height).toBe(DMH_STEPPER_SIZE)
+      // No box of its own: the capsule carries the fill.
+      expect(style.backgroundColor).toBeUndefined()
+      expect(style.borderWidth).toBeUndefined()
     }
-    const button = flatten(findByTestID("s-increase").props.style)
-    expect(button.backgroundColor).toBe(defaultTheme.visual.chip.fill)
-    expect(button.borderColor).toBe(defaultTheme.visual.chip.border)
+    const count = flatten(findByTestID("s-value").props.style)
+    expect(count.minWidth).toBe(44)
+    expect(count.height).toBe(DMH_STEPPER_SIZE)
+    expect(count.backgroundColor).toBeUndefined()
+    expect(count.borderWidth).toBeUndefined()
+    const capsule = tree.root.findAll((n) => {
+      const style = flatten(n.props.style)
+      return style.width === 112
+    })[0]
+    const capsuleStyle = flatten(capsule.props.style)
+    expect(capsuleStyle.height).toBe(48)
+    expect(capsuleStyle.borderRadius).toBe(999)
+    expect(capsuleStyle.backgroundColor).toBe(defaultTheme.visual.control.fill)
+  })
+
+  test("the glyphs use the call-to-action ink, the pressed half takes the soft fill", () => {
+    const { findByTestID, tree } = render()
+    const glyphs = tree.root.findAll((n) => (n.type as unknown) === "Ionicons")
+    expect(glyphs).toHaveLength(2)
+    for (const glyph of glyphs) {
+      expect(glyph.props.color).toBe(defaultTheme.semanticColors.ctaPrimary)
+      expect(glyph.props.size).toBe(22)
+    }
+    const pressed = findByTestID("s-increase").props.style({ pressed: true })
+    expect(flatten(pressed).backgroundColor).toBe(defaultTheme.colors.surfaceSoft)
+  })
+
+  test("each single tap of - or + gives a selection tick, a repeat does not, and - at 0 none", () => {
+    const { press, findByTestID, rerender } = render({ value: 3 })
+    press("s-increase")
+    expect(mockSelection).toHaveBeenCalledTimes(1)
+    press("s-decrease")
+    expect(mockSelection).toHaveBeenCalledTimes(2)
+    mockSelection.mockClear()
+    act(() => {
+      findByTestID("s-increase").props.onPressIn()
+    })
+    act(() => {
+      jest.advanceTimersByTime(120 * 8)
+    })
+    act(() => {
+      findByTestID("s-increase").props.onPressOut()
+    })
+    expect(mockSelection).toHaveBeenCalledTimes(1)
+    mockSelection.mockClear()
+    rerender({ value: 0 })
+    press("s-decrease")
+    expect(mockSelection).not.toHaveBeenCalled()
   })
 
   test("pressing + steps up by one, pressing - steps down by one", () => {
@@ -132,7 +190,10 @@ describe("DmhCounterStepper", () => {
     expect(onStep).not.toHaveBeenCalled()
     const button = findByTestID("s-decrease")
     expect(button.props.accessibilityState).toEqual({ disabled: true })
-    expect(flatten(button.props.style).opacity).toBe(0.4)
+    // The glyph alone dims; the capsule keeps its fill.
+    const glyph = button.findAll((n) => (n.type as unknown) === "Ionicons")[0]
+    expect(flatten(glyph.props.style).opacity).toBe(0.4)
+    expect(flatten(button.props.style({ pressed: true })).backgroundColor).toBeUndefined()
   })
 
   test("holding + repeats and releasing stops", () => {
@@ -165,6 +226,11 @@ describe("DmhCounterStepper", () => {
     expect(input.props.keyboardType).toBe("numeric")
     expect(input.props.inputAccessoryViewButtonLabel).toBe("Terminé")
     expect(input.props.autoFocus).toBe(true)
+    // The same metrics as the plain count, with a 2 pt underline while editing.
+    const style = flatten(input.props.style)
+    expect(style.minWidth).toBe(44)
+    expect(style.borderBottomWidth).toBe(2)
+    expect(style.borderBottomColor).toBe(defaultTheme.colors.inputBorder)
   })
 
   test("blur hands the typed text back as is and closes the field", () => {
