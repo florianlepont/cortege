@@ -70,6 +70,36 @@ export const factorDetailFr = {
       empty: "Aucun genre ne correspond à votre recherche.",
     },
   },
+  // Follow-up 32-31: the numeric controls of the other factors as grouped rows (a label, then the
+  // value and a -/+ capsule). The row label is the field's own label; a percent row drops the
+  // trailing "(%)", its value carries the sign.
+  valueRows: {
+    headers: {
+      count: "Comptage",
+      surface: "Surface",
+      cover: "Couvert",
+      percent: "Part de la surface",
+    },
+    percentSuffix: "\u00a0%",
+    spoken: {
+      count: ({ text }: { text: string }) => text,
+      percent: ({ text }: { text: string }) => `${text} %`,
+      hectares: ({ text }: { text: string }) => `${text} hectares`,
+    },
+    stepper: {
+      editHint: "Double-tapez pour saisir la valeur",
+      increment: "Augmenter",
+      decrement: "Diminuer",
+    },
+    slider: {
+      rowLabel: "Valeur",
+      min: "0\u00a0%",
+      max: "100\u00a0%",
+      a11yLabel: ({ label, percent }: { label: string; percent: number }) =>
+        `${label} : ${percent} %`,
+      a11yHint: "Glissez pour régler la part",
+    },
+  },
   // Follow-up 32-29: the one short paragraph that opens each factor page other than F (F's is
   // `dmhList.intro`), in the imperative, saying what to record. Each rests on the factor's help text
   // (`fr.labels.factorHelp`); the differences between the method versions stay in the help sheet.
