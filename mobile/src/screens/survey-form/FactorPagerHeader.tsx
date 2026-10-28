@@ -1,57 +1,58 @@
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
+import { allowedScoresFor } from "@cortege/ibp-domain"
 import { AppText as Text } from "../../ui/AppText"
 import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
-import type { FactorClass } from "@cortege/ibp-domain"
 import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
-import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { CountingModeChip } from "../factor-detail/CountingModeStrip"
 
 const t = fr.factorPager
 
-// D-05: the running total pill is 36 pt high; the title row keeps that height.
-export const TOTAL_CHIP_HEIGHT = 36
+// D-05 (follow-up 32-26, owner variant B): the score capsule is 40 pt high; the title row keeps it.
+export const TOTAL_CHIP_HEIGHT = 40
 
 type FactorPagerHeaderProps = {
   factor: FactorKey
   /** The survey's running total, out of 50. */
   total: number
-  /** The active factor's retained class (the package's evaluation); null until it has one. */
-  retainedClass: FactorClass | null
+  /** The active factor's retained score (the package's evaluation); null until it has one. */
+  factorScore: number | null
   /** Phase 30 (D-07): the factor is counted in full, the badge goes under the title row. */
   countedInFull: boolean
 }
 
 /**
  * OA-98: the slim title row of the factor pager, under the transparent native header: the factor's
- * name on the left; on the right the class of the active factor (follow-up 32-24, for every factor
- * A to J, a small neutral pill) and the survey's running total. With a class the two are one
- * element for a screen reader ("Classe 5, total du relevé 27 sur 50"); without one only the total
- * shows, as before.
+ * name on the left; on the right one capsule in two halves (follow-up 32-26, for every factor A to
+ * J): the factor's score out of its highest allowed score on forest green, then the survey's
+ * running total on a card. Without a score yet only the total half shows. With both, one element
+ * for a screen reader ("Score du facteur 5 sur 5, total du relevé 27 sur 50").
  */
 export function FactorPagerHeader({
   factor,
   total,
-  retainedClass,
+  factorScore,
   countedInFull,
 }: FactorPagerHeaderProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const scoreGroup =
-    retainedClass === null
+  // Read from the package, never a literal: each factor is scored up to its highest allowed score.
+  const max = Math.max(...allowedScoresFor(factor))
+  const group =
+    factorScore === null
       ? {}
       : {
           accessible: true,
-          accessibilityLabel: t.classWithTotalA11y({ retainedClass, points: total }),
+          accessibilityLabel: t.scoreWithTotalA11y({ score: factorScore, max, points: total }),
         }
   return (
     <View style={styles.header}>
       <View style={styles.titleRow}>
         {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
-         * instead of ending in an ellipsis. */}
+         * instead of ending in an ellipsis; the capsule never shrinks, the title does first. */}
         <Text
           style={styles.title}
           numberOfLines={1}
@@ -62,24 +63,21 @@ export function FactorPagerHeader({
         >
           {t.pageTitles[factor]}
         </Text>
-        <View style={styles.scoreGroup} testID="pager-score-group" {...scoreGroup}>
-          {retainedClass === null ? null : (
-            <View testID="pager-class">
-              <AppChoiceChip
-                variant="status"
-                tone="neutral"
-                label={t.classLabel({ retainedClass })}
-                labelStyle={styles.classText}
-              />
+        <View style={styles.capsule} testID="pager-score-group" {...group}>
+          {factorScore === null ? null : (
+            <View style={styles.factorHalf} testID="pager-factor-score">
+              <Text style={styles.factorValue}>{t.factorScore({ score: factorScore, max })}</Text>
+              <Text style={styles.factorCaption}>{t.factorCaption}</Text>
             </View>
           )}
           <View
-            style={styles.totalChip}
-            accessible={retainedClass === null}
+            style={styles.totalHalf}
+            accessible={factorScore === null}
             accessibilityLabel={t.totalA11y(total)}
             testID="pager-total"
           >
-            <Text style={styles.totalChipText}>{t.total(total)}</Text>
+            <Text style={styles.totalValue}>{t.total(total)}</Text>
+            <Text style={styles.totalCaption}>{t.totalCaption}</Text>
           </View>
         </View>
       </View>
@@ -89,6 +87,24 @@ export function FactorPagerHeader({
 }
 
 function createStyles(theme: BrandTheme) {
+  const value = {
+    fontSize: brandTypeScale.subhead.fontSize,
+    lineHeight: 18,
+    fontFamily: brandTypography.button.fontFamily,
+    fontVariant: ["tabular-nums" as const],
+  }
+  // 12 pt is the floor of the type scale; the line is tight so the two lines fit the 40 pt.
+  const caption = {
+    fontSize: brandTypeScale.caption.fontSize,
+    lineHeight: 13,
+    fontFamily: brandTypography.meta.fontFamily,
+  }
+  const half = {
+    height: TOTAL_CHIP_HEIGHT,
+    paddingHorizontal: brandSpacing4.smd,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  }
   return StyleSheet.create({
     // D-19: the route's ScreenFrame already starts the pager below the transparent header (OA-20).
     header: {
@@ -103,41 +119,39 @@ function createStyles(theme: BrandTheme) {
       justifyContent: "space-between",
       gap: brandSpacing4.smd,
     },
-    // The screen title role (Sora SemiBold 24 on 28): its line is shorter than the 36 pt total
-    // pill, so the row keeps its height (D-05).
+    // The screen title role (Sora SemiBold 24 on 28): its line is shorter than the 40 pt capsule,
+    // so the row keeps its height (D-05).
     title: {
       flex: 1,
       ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
     },
-    // The class and the total sit together at the end of the row, the class first.
-    scoreGroup: {
+    // Two halves, one outer radius: the capsule clips them, they touch with no gap.
+    capsule: {
       flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
-    // Tabular figures so the pill does not jiggle when the class changes from 2 to 5.
-    classText: {
-      fontVariant: ["tabular-nums"],
-    },
-    // The running total is a small forest pill (variant I): forest gradient over its flat
-    // fallback, white figures, a light hairline, no drop shadow. Same 36 pt height and padding.
-    // The hairline is an inset ring, never a border on the gradient view (12.2-17, see ForestCard).
-    totalChip: {
       height: TOTAL_CHIP_HEIGHT,
       borderRadius: brandRadius.pill,
-      paddingHorizontal: brandSpacing4.smd,
-      justifyContent: "center",
+      overflow: "hidden",
+      flexShrink: 0,
+    },
+    // The factor's score is the forest half (variant I): gradient over its flat fallback, white
+    // figures. A gradient view carries no border (12.2-17); the hairline is a ring, not a border.
+    factorHalf: {
+      ...half,
       backgroundColor: theme.visual.forest.fallback,
       experimental_backgroundImage: theme.visual.forest.image,
       boxShadow: theme.visual.forest.ring,
     },
-    totalChipText: {
-      fontSize: brandTypeScale.subhead.fontSize,
-      lineHeight: 20,
-      fontFamily: brandTypography.button.fontFamily,
-      fontVariant: ["tabular-nums"],
-      color: theme.visual.forest.title,
+    factorValue: { ...value, color: theme.visual.forest.title },
+    factorCaption: { ...caption, color: theme.visual.forest.titleAccent },
+    // The running total is the card half: the glass fill and its hairline, dark ink.
+    totalHalf: {
+      ...half,
+      backgroundColor: theme.visual.glass.cardFill,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
     },
+    totalValue: { ...value, color: theme.colors.textPrimary },
+    totalCaption: { ...caption, color: theme.colors.textSecondary },
   })
 }

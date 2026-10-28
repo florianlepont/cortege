@@ -388,15 +388,17 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   `dmh_groups` (the ticks), `dmh_counts` (values 0 to 2) and a derived `trees_per_ha` that is the
   sum of the counts (`cappedDmhTotalPerHa` of the package); `surface_ha` is not written. The total
   is not limited to 8: the score classes already stop there (8 and above is class `5`), so the
-  sheet's total of 8 is a display matter. The total is shown only in the "Arbres par ha" field above
-  the list (no second total under it), which is always read-only and derived (a value, not an
-  input; it shows 0 while nothing is counted); once F's class is `5` a note under the field says
-  from 8 trees per hectare the class is 5 and counting more is pointless. Touching a counter takes
+  sheet's total of 8 is a display matter. The total is shown only as the "Arbres par hectare : N" line
+  at the top of the list (follow-up 32-26: a plain line, label and value side by side, not a field
+  and not in a card; it shows 0 while nothing is counted). From the sum where F's score is the top
+  one (8) a quiet "maximum" stays beside the figure, and a toast ("Score maximal atteint : inutile de
+  compter davantage.") floats above the pager's bottom bar each time the sum crosses to that score
+  (not on opening a page already at it), for 4 seconds or until tapped. Touching a counter takes
   over from a typed number: the derived total replaces it (existing data is test data). A capped survey saved
   before (typed number, ticks only) opens as it was and still validates. Counts of a counted-in-full
   survey (trees on a surface) are brought to the cap on the first touch in the capped mode. The
   score never reads the counts (parity cases `MAT-F-CAP-*`).
-  A stand where no tree carries a dendromicrohabitat records it with one row above the first
+  A stand where no tree carries a dendromicrohabitat records it with one row after the last
   section of the list ("Aucun arbre porteur de dendromicrohabitats", both counting modes): it
   stores `trees_per_ha` 0 with no group and no count (a surface typed in the counted-in-full mode
   stays), a stored shape the package already scores; the row is ticked exactly when `trees_per_ha`

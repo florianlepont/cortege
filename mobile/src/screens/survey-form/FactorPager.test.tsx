@@ -5,6 +5,7 @@ import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
 import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
 import { defaultTheme } from "../../app/theme"
+import { allowedScoresFor } from "@cortege/ibp-domain"
 import { feedback } from "../../ui/feedback"
 import {
   BAR_HEIGHT,
@@ -99,6 +100,8 @@ jest.mock("../FactorDetailScreen", () => {
       ReactRef.createElement("FactorDetailScreenProbe", props),
   }
 })
+
+const visual = defaultTheme.visual
 
 const FACTORS: FactorKey[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
@@ -228,12 +231,13 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
     expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
   })
 
-  describe("the active factor's class in the header (follow-up 32-24)", () => {
-    const retained = (
-      overrides: Partial<Record<FactorKey, { selected_class: string; score: number }>>,
-    ) =>
+  describe("the active factor's score and the total, one capsule (follow-up 32-26, variant B)", () => {
+    const retained = (overrides: Partial<Record<FactorKey, { score: number }>>) =>
       FACTORS.reduce(
-        (acc, factor) => ({ ...acc, [factor]: overrides[factor] ?? null }),
+        (acc, factor) => ({
+          ...acc,
+          [factor]: overrides[factor] ? { ...overrides[factor], selected_class: "S0" } : null,
+        }),
         {} as Record<FactorKey, never>,
       )
     const withScores = (initial: FactorKey) =>
@@ -243,60 +247,93 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
         null,
         {},
         {
-          factorRetainedScores: retained({
-            A: { selected_class: "S2", score: 2 },
-            F: { selected_class: "S5", score: 5 },
-            J: { selected_class: "S0", score: 0 },
-          }),
+          factorRetainedScores: retained({ A: { score: 2 }, F: { score: 5 }, J: { score: 0 } }),
         },
       )
 
-    test("a factor with a class shows it as a pill beside the total, for A to J alike", () => {
+    test("a scored factor shows 'score / max' on forest and the total on a card, for A to J alike", () => {
       const { byTestID, texts } = withScores("F")
-      expect(texts()).toContain(fr.factorPager.classLabel({ retainedClass: "S5" }))
-      expect(texts()).toContain("Classe 5")
-      expect(byTestID("pager-class")).toBeDefined()
-      // One element for a screen reader: the class, then the survey total (2 + 5 + 0 = 7).
+      expect(texts()).toContain("5 / 5")
+      expect(texts()).toContain(fr.factorPager.factorCaption)
+      expect(texts()).toContain(fr.factorPager.totalCaption)
+      // One element for a screen reader: the factor's score, then the survey total (2 + 5 + 0 = 7).
       const group = byTestID("pager-score-group")
       expect(group.props.accessible).toBe(true)
-      expect(group.props.accessibilityLabel).toBe("Classe 5, total du relevé 7 sur 50")
-      // The total pill keeps its testID and its own spoken label; the group reads it for the screen.
+      expect(group.props.accessibilityLabel).toBe(
+        "Score du facteur 5 sur 5, total du relevé 7 sur 50",
+      )
       expect(byTestID("pager-total").props.accessible).toBe(false)
       expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(7))
-      const pill = byTestID("pager-class").findAll((n) => (n.type as unknown) === "Text")[0]
-      expect(flat(pill.props.style).fontVariant).toEqual(["tabular-nums"])
-      const totalText = byTestID("pager-total").findAll((n) => (n.type as unknown) === "Text")[0]
-      expect(flat(totalText.props.style).fontVariant).toEqual(["tabular-nums"])
+      for (const id of ["pager-factor-score", "pager-total"]) {
+        const figure = byTestID(id).findAll((n) => (n.type as unknown) === "Text")[0]
+        expect(flat(figure.props.style).fontVariant).toEqual(["tabular-nums"])
+      }
     })
 
-    test("class 0 is a class too, and the pill follows the page", () => {
-      const first = withScores("J")
-      expect(first.texts()).toContain("Classe 0")
+    test("the halves: forest for the factor, the glass card for the total, one clipped capsule of 40 pt", () => {
+      const { byTestID } = withScores("F")
+      const capsule = flat(byTestID("pager-score-group").props.style)
+      expect(capsule.flexDirection).toBe("row")
+      expect(capsule.height).toBe(TOTAL_CHIP_HEIGHT)
+      expect(capsule.borderRadius).toBe(999)
+      expect(capsule.overflow).toBe("hidden")
+      expect(capsule.gap).toBeUndefined()
+      const factor = flat(byTestID("pager-factor-score").props.style)
+      expect(factor.backgroundColor).toBe(visual.forest.fallback)
+      expect(factor.experimental_backgroundImage).toBe(visual.forest.image)
+      // A gradient view carries no border (12.2-17) and no radius of its own: the capsule clips it.
+      for (const key of Object.keys(factor)) expect(key).not.toMatch(/^border.*Width$/)
+      expect(factor.borderRadius).toBeUndefined()
+      const total = flat(byTestID("pager-total").props.style)
+      expect(total.backgroundColor).toBe(visual.glass.cardFill)
+      expect(total.height).toBe(TOTAL_CHIP_HEIGHT)
+      expect(total.borderRadius).toBeUndefined()
+      const factorText = byTestID("pager-factor-score").findAll(
+        (n) => (n.type as unknown) === "Text",
+      )
+      expect(flat(factorText[0].props.style).color).toBe(visual.forest.title)
+    })
+
+    test("the maximum is the package's highest allowed score of the factor, never a literal", () => {
+      const { texts } = render(
+        "G",
+        {},
+        null,
+        {},
+        {
+          factorRetainedScores: retained({ G: { score: 2 } }),
+        },
+      )
+      expect(texts()).toContain("2 / 5")
+      expect(Math.max(...allowedScoresFor("G"))).toBe(5)
+    })
+
+    test("a score of 0 shows too, and the capsule follows the page", () => {
+      expect(withScores("J").texts()).toContain("0 / 5")
       const other = withScores("A")
-      expect(other.texts()).toContain("Classe 2")
-      expect(other.texts()).not.toContain("Classe 5")
+      expect(other.texts()).toContain("2 / 5")
       for (let step = 0; step < 5; step += 1) {
         act(() => other.byTestID("pager-next").props.onPress())
       }
-      expect(other.texts()).toContain("Classe 5")
+      expect(other.texts()).toContain("5 / 5")
       expect(other.byTestID("pager-score-group").props.accessibilityLabel).toBe(
-        "Classe 5, total du relevé 7 sur 50",
+        "Score du facteur 5 sur 5, total du relevé 7 sur 50",
       )
     })
 
-    test("a factor without a class shows only the total, as before", () => {
+    test("a factor without a score shows only the total, and the word 'classe' appears nowhere", () => {
       const { byTestID, texts } = withScores("B")
-      expect(texts().some((text) => text.startsWith("Classe"))).toBe(false)
-      expect(byTestID("pager-class")).toBeUndefined()
+      expect(texts().some((text) => /classe/i.test(text))).toBe(false)
+      expect(byTestID("pager-factor-score")).toBeUndefined()
       expect(byTestID("pager-score-group").props.accessible).toBeUndefined()
       expect(byTestID("pager-total").props.accessible).toBe(true)
       expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(7))
     })
 
-    test("the page no longer draws the class itself (no duplicate)", () => {
+    test("the page gets the score for the toast logic only; it draws none itself", () => {
       const { tree } = withScores("F")
       const probe = tree.root.find((n) => (n.type as unknown) === "FactorDetailScreenProbe")
-      expect(probe.props.retainedScore).toEqual({ selected_class: "S5", score: 5 })
+      expect(probe.props.retainedScore).toEqual({ score: 5, selected_class: "S0" })
     })
   })
 
@@ -481,8 +518,6 @@ const flat = (style: unknown): Style =>
     : ((style ?? {}) as Style)
 
 describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => {
-  const visual = defaultTheme.visual
-
   test("field sizes keep their values: strip 46, letter pill 30, bar and round button 46", () => {
     expect(STRIP_HEIGHT).toBe(46)
     expect(PILL_SIZE).toBe(30)
@@ -494,32 +529,16 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     expect(next.borderRadius).toBe(23)
   })
 
-  test("the total is a small forest pill: gradient, fallback, white figures, no drop shadow", () => {
+  test("the total half without a factor score is the card half alone: glass fill, dark ink, 40 pt", () => {
     const { byTestID } = render("A")
     const chip = byTestID("pager-total")
     const style = flat(chip.props.style)
-    expect(style.backgroundColor).toBe(visual.forest.fallback)
-    expect(style.experimental_backgroundImage).toBe(visual.forest.image)
-    // Only the inset hairline ring: no outset shadow.
-    expect(style.boxShadow).toBe(visual.forest.ring)
-    expect(String(style.boxShadow)).toMatch(/^inset 0 0 0 1px rgba\(/)
-    expect(style.shadowOpacity).toBeUndefined()
+    expect(style.backgroundColor).toBe(visual.glass.cardFill)
     expect(style.height).toBe(TOTAL_CHIP_HEIGHT)
-    expect(TOTAL_CHIP_HEIGHT).toBe(36)
-    expect(style.borderRadius).toBe(999)
+    expect(TOTAL_CHIP_HEIGHT).toBe(40)
     const text = chip.findAll((n) => (n.type as unknown) === "Text")[0]
-    expect(flat(text.props.style).color).toBe(visual.forest.title)
+    expect(flat(text.props.style).color).toBe(defaultTheme.colors.textPrimary)
     expect(chip.props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
-  })
-
-  test("the total pill has no border under its gradient and circular corners (12.2-17)", () => {
-    // A border on the gradient view showed the tiled gradient as a flat ring around the pill.
-    const style = flat(render("A").byTestID("pager-total").props.style)
-    for (const key of Object.keys(style)) expect(key).not.toMatch(/^border.*Width$/)
-    expect(style.borderColor).toBeUndefined()
-    expect(style.borderCurve).toBeUndefined()
-    // The fallback colour sits on the gradient view itself, never on a larger layer.
-    expect(style.backgroundColor).toBe(visual.forest.fallback)
   })
 
   test("the pager header starts 8 pt under the route's ScreenFrame inset, no header height of its own (D-19)", () => {
@@ -533,7 +552,7 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     expect(flat(header.props.style).paddingTop).toBe(8)
   })
 
-  test("the title takes the screen title role without growing the 36 pt title row", () => {
+  test("the title takes the screen title role without growing the 40 pt title row", () => {
     const { tree } = render("A")
     const title = tree.root.findAll(
       (n) => (n.type as unknown) === "Text" && n.props.children === FACTOR_TITLES.A,
@@ -541,8 +560,8 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     const style = flat(title.props.style)
     expect(style.fontFamily).toBe("Sora-SemiBold")
     expect(style.lineHeight as number).toBeLessThanOrEqual(TOTAL_CHIP_HEIGHT)
-    // The row is as tall as its tallest child: the total pill, as before.
-    expect(Math.max(style.lineHeight as number, TOTAL_CHIP_HEIGHT)).toBe(36)
+    // The row is as tall as its tallest child: the score capsule.
+    expect(Math.max(style.lineHeight as number, TOTAL_CHIP_HEIGHT)).toBe(40)
   })
 
   test("the current letter is the inverted neutral pill; complete and error dots use the tokens", () => {

@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native"
-import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
+import { allowedScoresFor, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { brandShadow, brandSpacing4 } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
@@ -27,11 +27,14 @@ import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
 import { AppPressable } from "../../ui/AppPressable"
+import { MaxScoreToast, useMaxScoreToast } from "./MaxScoreToast"
 import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
 
 const t = fr.factorPager
 
 const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
+// F's highest score, read from the package: the toast of the top score is F's only (follow-up 32-26).
+const TOP_F_SCORE = Math.max(...allowedScoresFor("F"))
 
 // The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it. Field
 // sizes (D-05): the bar and the round button stay 46 pt, the total pill 36 pt.
@@ -90,7 +93,7 @@ type FactorPagerProps = {
 
 /**
  * FLOW-04: a horizontal pager A->J replacing the 20 round trips to the factor grid. OA-98: a slim
- * title row (the factor's name and the running total) under the transparent native header, the page,
+ * title row (the factor's name, its score and the running total) under the transparent native header, the page,
  * and a floating bottom bar in Liquid Glass: the A to J letters (each shows its factor's state; a tap
  * or a slide of the finger along the strip goes to a factor, a bubble names it) and a round button
  * for the next factor ("Terminer" on the last). Going back is a letter or a swipe. D-26: on the
@@ -168,6 +171,10 @@ export const FactorPager = memo(function FactorPager({
     () => computeIbpTotalsFromRetainedScores(factorRetainedScores).ibp_total,
     [factorRetainedScores],
   )
+  const maxToast = useMaxScoreToast({
+    active: activeFactor === "F",
+    atTop: factorRetainedScores.F?.score === TOP_F_SCORE,
+  })
   const isLast = activeIndex === lastIndex
   const showFinish = isLast && finishAction !== null
   const barBottom = tabBarClearance + brandSpacing4.sm
@@ -184,7 +191,7 @@ export const FactorPager = memo(function FactorPager({
       <FactorPagerHeader
         factor={activeFactor}
         total={total}
-        retainedClass={factorRetainedScores[activeFactor]?.selected_class ?? null}
+        factorScore={factorRetainedScores[activeFactor]?.score ?? null}
         countedInFull={uncappedFactors.includes(activeFactor)}
       />
 
@@ -256,6 +263,12 @@ export const FactorPager = memo(function FactorPager({
           />
         </Animated.View>
       ) : null}
+
+      <MaxScoreToast
+        visible={maxToast.visible && !keyboardVisible}
+        onDismiss={maxToast.dismiss}
+        bottom={barBottom + BAR_HEIGHT + brandSpacing4.smd}
+      />
 
       <Animated.View
         pointerEvents={keyboardVisible ? "none" : "box-none"}
