@@ -22,7 +22,6 @@ jest.mock("react-native", () => {
       ReactRef.createElement(name, props, children)
   return {
     Pressable: mockComponent("Pressable"),
-    Switch: mockComponent("Switch"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Platform: { OS: "ios", select: (options: { default?: unknown }) => options.default },
@@ -104,35 +103,39 @@ const flat = (style: unknown): Record<string, unknown> =>
     ? style.reduce<Record<string, unknown>>((acc, entry) => ({ ...acc, ...flat(entry) }), {})
     : ((style as Record<string, unknown> | null | undefined) ?? {})
 
-describe("DoubtNoteStrip closed (D-16)", () => {
-  test("shows only the switch row and the note link, no field, no preview", () => {
+const icons = (root: renderer.ReactTestInstance) =>
+  root.findAllByType(Ionicons).map((node) => node.props.name)
+
+describe("DoubtNoteStrip closed (D-16, follow-up 32-27)", () => {
+  test("shows only the two pills, no field, no separate preview", () => {
     const { one, byTestID, texts, root } = render()
     expect(one("factor-doubt-switch")).toBeDefined()
     expect(one("factor-note-link")).toBeDefined()
     expect(byTestID("factor-note-field")).toHaveLength(0)
     expect(byTestID("factor-note-preview")).toHaveLength(0)
-    expect(texts()).toEqual([t.doubt.label, t.note.add])
-    expect(root.findByType("Switch" as unknown as React.ElementType).props.value).toBe(false)
+    expect(texts()).toEqual([t.doubt.label, t.note.label])
+    expect(icons(root)).toEqual(["flag-outline", "create-outline"])
   })
 
-  test("the row is a switch named Douteux with its hint; the Switch itself is not a target", () => {
-    const { one, root } = render({ doubt: true })
-    const row = one("factor-doubt-switch")
-    expect(row.props.accessibilityRole).toBe("switch")
-    expect(row.props.accessibilityState).toEqual({ checked: true })
-    expect(row.props.accessibilityLabel).toBe(t.doubt.label)
-    expect(row.props.accessibilityHint).toBe(t.doubt.hint)
-    const native = root.findByType("Switch" as unknown as React.ElementType)
-    expect(native.props.value).toBe(true)
-    expect(native.props.pointerEvents).toBe("none")
-    expect(native.props.accessible).toBe(false)
-    expect(native.props.trackColor).toEqual({
-      false: defaultTheme.colors.divider,
-      true: defaultTheme.colors.ochre,
-    })
+  test("the pills are 36 pt high with a slop that brings each target to 44", () => {
+    const { one } = render()
+    for (const id of ["factor-doubt-switch", "factor-note-link"]) {
+      const node = one(id)
+      expect(flat(node.props.style).minHeight).toBe(36)
+      expect(node.props.hitSlop).toEqual({ top: 4, bottom: 4, left: 0, right: 0 })
+    }
   })
 
-  test("pressing the row toggles the doubt once, with a selection tick", () => {
+  test("the doubt pill is a switch named Incertitude sur ce facteur with its hint and its state", () => {
+    const { one } = render({ doubt: true })
+    const pill = one("factor-doubt-switch")
+    expect(pill.props.accessibilityRole).toBe("switch")
+    expect(pill.props.accessibilityState).toEqual({ checked: true })
+    expect(pill.props.accessibilityLabel).toBe("Incertitude sur ce facteur")
+    expect(pill.props.accessibilityHint).toBe(t.doubt.hint)
+  })
+
+  test("pressing the pill toggles the doubt once, with a selection tick", () => {
     const { one, props } = render()
     act(() => {
       one("factor-doubt-switch").props.onPress()
@@ -142,7 +145,7 @@ describe("DoubtNoteStrip closed (D-16)", () => {
     expect(feedback.selection).toHaveBeenCalledTimes(1)
   })
 
-  test("pressing the row of a doubt turns it off", () => {
+  test("pressing the pill of a doubt turns it off", () => {
     const { one, props } = render({ doubt: true })
     act(() => {
       one("factor-doubt-switch").props.onPress()
@@ -150,48 +153,45 @@ describe("DoubtNoteStrip closed (D-16)", () => {
     expect(props.onChangeDoubt).toHaveBeenCalledWith(false)
   })
 
-  test("doubt off: no tint at all, 'Sur' is never labelled", () => {
+  test("doubt off: the glass pill, no warning tint, 'Sur' is never labelled", () => {
     const { one, texts } = render()
     const style = flat(one("factor-doubt-switch").props.style)
-    expect(style.backgroundColor).toBeUndefined()
-    expect(style.borderColor).toBe("transparent")
+    expect(style.backgroundColor).toBe(defaultTheme.visual.glass.cardFill)
+    expect(style.borderColor).toBe(defaultTheme.visual.glass.cardBorder)
     expect(texts().join(" ")).not.toMatch(/S[uû]r/)
   })
 })
 
-describe("DoubtNoteStrip warning tint (UI-SPEC Color, plan 27-03 contrast finding)", () => {
-  test("light: hairline and warning label, no soft fill (the ochre track fails 3:1 on it)", () => {
-    const { one, root } = render({ doubt: true })
-    const style = flat(one("factor-doubt-switch").props.style)
-    expect(style.backgroundColor).toBeUndefined()
-    expect(style.borderColor).toBe(defaultTheme.componentColors.notice.warningBorder)
-    expect(style.paddingVertical).toBe(12)
-    expect(style.paddingHorizontal).toBe(16)
+describe("DoubtNoteStrip warning tint (UI-SPEC Color)", () => {
+  const labelColor = (root: renderer.ReactTestInstance, scheme: ReturnType<typeof buildTheme>) => {
     const label = root.findAll(
       (n) => (n.type as unknown) === "Text" && n.props.children === t.doubt.label,
     )[0]
-    expect(flat(label.props.style).color).toBe(defaultTheme.onSurface.warning)
+    expect(flat(label.props.style).color).toBe(scheme.onSurface.warning)
+  }
+
+  test("light: warning-soft fill, warning hairline and ink, flag glyph in the same ink", () => {
+    const { one, root } = render({ doubt: true })
+    const style = flat(one("factor-doubt-switch").props.style)
+    expect(style.backgroundColor).toBe(defaultTheme.colors.warningSoft)
+    expect(style.borderColor).toBe(defaultTheme.componentColors.notice.warningBorder)
+    labelColor(root, defaultTheme)
+    expect(root.findAllByType(Ionicons)[0].props.color).toBe(defaultTheme.onSurface.warning)
   })
 
-  test("dark: the soft fill stays", () => {
+  test("dark: the same tokens of the dark scheme", () => {
     mockScheme = "dark"
     const dark = buildTheme("dark")
     const { one, root } = render({ doubt: true })
     const style = flat(one("factor-doubt-switch").props.style)
     expect(style.backgroundColor).toBe(dark.colors.warningSoft)
     expect(style.borderColor).toBe(dark.componentColors.notice.warningBorder)
-    const label = root.findAll(
-      (n) => (n.type as unknown) === "Text" && n.props.children === t.doubt.label,
-    )[0]
-    expect(flat(label.props.style).color).toBe(dark.onSurface.warning)
-    expect(root.findByType("Switch" as unknown as React.ElementType).props.trackColor.true).toBe(
-      dark.colors.ochre,
-    )
+    labelColor(root, dark)
   })
 })
 
 describe("DoubtNoteStrip note", () => {
-  test("the link opens the field in place with focus, the counter and the visibility helper", () => {
+  test("the pill opens the field in place with focus, the counter and the visibility helper", () => {
     const { one, byTestID } = render()
     const link = one("factor-note-link")
     expect(link.props.accessibilityState).toEqual({ expanded: false })
@@ -215,35 +215,44 @@ describe("DoubtNoteStrip note", () => {
     expect(one("factor-note-link").props.accessibilityLabel).toBe(t.note.closeA11y(TITLE))
   })
 
-  test("open: the link reads 'Fermer la note' with a chevron, and closes the field", () => {
-    const { one, byTestID, texts, root } = render()
+  test("open: the pill shows a chevron up and a tap closes the field", () => {
+    const { one, byTestID, root } = render()
     act(() => {
       one("factor-note-link").props.onPress()
     })
-    expect(texts()).toContain(t.note.close)
-    expect(root.findByType(Ionicons).props.name).toBe("chevron-up-outline")
+    expect(icons(root)).toEqual(["flag-outline", "chevron-up-outline"])
+    expect(flat(one("factor-note-link").props.style).borderColor).toBe(
+      defaultTheme.visual.accentText,
+    )
     act(() => {
       one("factor-note-link").props.onPress()
     })
     expect(byTestID("factor-note-field")).toHaveLength(0)
-    expect(texts()).toContain(t.note.add)
-    expect(root.findByType(Ionicons).props.name).toBe("create-outline")
+    expect(icons(root)).toEqual(["flag-outline", "create-outline"])
   })
 
-  test("a note that exists: 'Modifier la note' and a two-line preview that opens the field", () => {
-    const { one, byTestID, texts } = render({ note: "Un vieux chêne creux" })
-    expect(texts()).toContain(t.note.edit)
-    expect(one("factor-note-link").props.accessibilityLabel).toBe(t.note.editA11y(TITLE))
-    const preview = byTestID("factor-note-preview").find((n) => typeof n.type === "string")!
-    const previewText = preview.findByType("Text" as unknown as React.ElementType)
-    expect(previewText.props.children).toBe("Un vieux chêne creux")
-    expect(previewText.props.numberOfLines).toBe(2)
+  test("a note that exists: 'Note : ' and its text on one line in the pill, which opens the field", () => {
+    const { one, byTestID, root } = render({ note: "Un vieux chêne creux" })
+    const link = one("factor-note-link")
+    expect(link.props.accessibilityLabel).toBe(t.note.editA11y(TITLE))
+    const text = link.findByType("Text" as unknown as React.ElementType)
+    expect(text.props.children).toBe("Note : Un vieux chêne creux")
+    expect(text.props.numberOfLines).toBe(1)
+    expect(flat(link.props.style).flexShrink).toBe(1)
     expect(byTestID("factor-note-field")).toHaveLength(0)
+    expect(byTestID("factor-note-preview")).toHaveLength(0)
     act(() => {
-      preview.props.onPress()
+      link.props.onPress()
     })
     expect(one("factor-note-field").props.value).toBe("Un vieux chêne creux")
-    expect(byTestID("factor-note-preview")).toHaveLength(0)
+    expect(icons(root)).toContain("chevron-up-outline")
+  })
+
+  test("the preview is one line: breaks and runs of spaces collapse", () => {
+    const { one } = render({ note: "Sol\n\n  très   humide " })
+    expect(
+      one("factor-note-link").findByType("Text" as unknown as React.ElementType).props.children,
+    ).toBe("Note : Sol très humide")
   })
 
   test("typing reports the text and writes once, 400 ms after the last keystroke", () => {

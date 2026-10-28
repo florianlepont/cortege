@@ -59,6 +59,7 @@ function flatten(style: unknown): Style {
 function mount(cta: FinishCta, extra: Partial<React.ComponentProps<typeof FinishBar>> = {}) {
   const onFinish = jest.fn()
   const onOpenFactor = jest.fn()
+  const onDefineRoute = jest.fn()
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
@@ -67,6 +68,7 @@ function mount(cta: FinishCta, extra: Partial<React.ComponentProps<typeof Finish
         accessibilityLabel="Terminer le relevé Parcelle A"
         onFinish={onFinish}
         onOpenFactor={onOpenFactor}
+        onDefineRoute={onDefineRoute}
         {...extra}
       />,
     )
@@ -77,7 +79,7 @@ function mount(cta: FinishCta, extra: Partial<React.ComponentProps<typeof Finish
   const button = tree.root.findAll(
     (n) => (n.type as unknown) === "Pressable",
   )[0] as ReactTestInstance
-  return { tree, bar, button, onFinish, onOpenFactor }
+  return { tree, bar, button, onFinish, onOpenFactor, onDefineRoute }
 }
 
 describe("FinishBar", () => {
@@ -124,6 +126,19 @@ describe("FinishBar", () => {
     act(() => (button.props.onPress as () => void)())
     expect(onFinish).toHaveBeenCalledTimes(1)
     expect(onOpenFactor).not.toHaveBeenCalled()
+  })
+
+  test("route opens the route step, with its own label, and neither finishes nor opens a factor", () => {
+    const { button, onFinish, onOpenFactor, onDefineRoute } = mount({
+      kind: "route",
+      label: "Définir le parcours",
+    })
+    expect(button.props.accessibilityLabel).toBe("Définir le parcours")
+    expect(button.props.accessibilityState?.disabled).not.toBe(true)
+    act(() => (button.props.onPress as () => void)())
+    expect(onDefineRoute).toHaveBeenCalledTimes(1)
+    expect(onOpenFactor).not.toHaveBeenCalled()
+    expect(onFinish).not.toHaveBeenCalled()
   })
 
   test("next opens the factor still to fill, with its own label", () => {

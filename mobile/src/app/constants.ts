@@ -63,7 +63,7 @@ export const DEFAULT_SURVEY_FORM = {
     collected_at: "",
   },
   // The native cover belongs to A (CH-1, BUG-1); B keeps the strata count only. `genera` is the
-  // comma-joined FactorGenusListInput value (Phase 5's genus-list data contract, Phase 6's UI).
+  // comma-joined value of the genus choice list (`GenusChoice`) (Phase 5's genus-list data contract, Phase 6's UI).
   factorA: { genera: "", native_cover_percent: "" },
   // Phase 25.1 (D-12): B, I and J keep the options ticked next to their count (null = no selection
   // recorded, as in a draft saved before this phase); F and H keep the optional detail lists.

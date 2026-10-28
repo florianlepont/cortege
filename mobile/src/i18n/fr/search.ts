@@ -13,7 +13,8 @@ export const searchFr = {
   field: {
     placeholder: "Relevé, lieu, parcelle, membre",
     a11yLabel: "Rechercher",
-    a11yHint: "Cherche dans vos relevés, la communauté, les lieux et les parcelles",
+    a11yHint:
+      "Cherche dans vos relevés, la communauté, les lieux, les parcelles et le guide des dendromicrohabitats",
     clear: "Effacer la recherche",
     busy: "Recherche en cours",
   },
@@ -22,6 +23,9 @@ export const searchFr = {
     community: "Communauté",
     places: "Lieux",
     parcels: "Parcelles",
+    // Phase 32 (owner request 2026-10-28): the fifteen groups of the dendromicrohabitat guide,
+    // matched on the phone.
+    guide: "Guide des dendromicrohabitats",
   },
   best: {
     title: "Meilleur résultat",
@@ -64,6 +68,8 @@ export const searchFr = {
     memberMeta: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé terminé", "relevés terminés")}`,
     memberA11y: ({ name, meta }: { name: string; meta: string }) => `Membre : ${name}, ${meta}`,
+    // The meta of a guide row is its official form name (`fr.dmhGuide.forms`).
+    guideA11y: ({ name, meta }: { name: string; meta: string }) => `Guide : ${name}, ${meta}`,
     // Phase 27 (D-07): an own survey found through its note and not its name.
     matchedInNote: "Trouvé dans la note",
     // 27-15: the hint follows the row's date line, and ends the spoken sentence.
@@ -78,7 +84,7 @@ export const searchFr = {
     recentRemoveA11y: (query: string) => `Retirer « ${query} » des recherches récentes`,
     introTitle: "Que cherchez-vous ?",
     introBody:
-      "Un de vos relevés, un relevé de la communauté, un lieu ou une adresse, un numéro de parcelle, ou un membre.",
+      "Un de vos relevés, un relevé de la communauté, un lieu ou une adresse, un numéro de parcelle, un membre, ou un dendromicrohabitat.",
   },
   noResult: {
     title: (query: string) => `Aucun résultat pour « ${query} »`,

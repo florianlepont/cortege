@@ -3,14 +3,19 @@ import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
   allowedScoresFor,
+  DENSITY_COUNT_KEYS,
   canonicalFactorAnnotations,
   casFromRegionStage,
+  densityLowerCountNeeded,
+  floweringPercentFromAreas,
   isIbpCas,
+  readDensityPerHa,
   readFactorAnnotations,
   resolveMethodVersion,
   withFactorAnnotations,
   type BStratumCode,
   type CnpfFactorAGenusCode,
+  type DensityFactor,
   type DmhGroupCode,
   type IbpCas,
   type IbpMethodVersion,
@@ -25,8 +30,10 @@ import {
   parseGenusListValue,
   serializeGenusListValue,
 } from "../app/factor-a-genus-list"
-import { readSelection } from "../app/factor-selections"
+import { readSelection, withSelectionToggled } from "../app/factor-selections"
+import { toFieldText } from "../app/decimal-text"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
+import { toFiniteNumberInRange } from "../app/number-range"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
 import { useFactorAnnotations } from "./useFactorAnnotations"
@@ -69,18 +76,6 @@ const normalizeParcelIds = (value: unknown): string[] => {
     output.push(normalized)
   }
   return output
-}
-
-const toFiniteNumberInRange = (
-  value: string,
-  options?: { min?: number; max?: number; integer?: boolean },
-): number | null => {
-  const parsed = parseFiniteNumberInput(value)
-  if (parsed === null) return null
-  if (options?.integer && !Number.isInteger(parsed)) return null
-  if (typeof options?.min === "number" && parsed < options.min) return null
-  if (typeof options?.max === "number" && parsed > options.max) return null
-  return parsed
 }
 
 type GpsFormValue = typeof DEFAULT_SURVEY_FORM.gpsLocation
@@ -141,6 +136,20 @@ const numberError = (
   return null
 }
 
+/**
+ * What a group count writes in F's trees per hectare: the derived figure; else, when the count went
+ * up and the figure cannot be derived yet (counted in full, no surface), a stored 0 of the "no tree
+ * carries one" row is emptied so it does not stand beside a counted group; else nothing.
+ */
+const treesPerHaAfterCount = (
+  current: string,
+  derived: number | null,
+  raised: boolean,
+): { trees_per_ha?: string } => {
+  if (derived !== null) return { trees_per_ha: String(derived) }
+  return raised && current.trim() === "0" ? { trees_per_ha: "" } : {}
+}
+
 const oneOfError = (value: string, label: string, allowed: readonly number[]): FieldError => {
   const base = numberError(value, label, { integer: true })
   if (base) return base
@@ -150,6 +159,49 @@ const oneOfError = (value: string, label: string, allowed: readonly number[]): F
   }
   return null
 }
+
+type DensityText = { upper: string; lower: string; surface: string }
+const densityText = (upper: string, lower: string, surface: string): DensityText => ({
+  upper,
+  lower,
+  surface,
+})
+
+/** The counts and surface of C, D or E as the payload reads them: null when empty or not storable. */
+function densityRaw(factor: DensityFactor, text: DensityText): Record<string, number | null> {
+  const [upperKey, lowerKey] = DENSITY_COUNT_KEYS[factor]
+  return {
+    [upperKey]: toFiniteNumberInRange(text.upper, { min: 0, integer: true }),
+    [lowerKey]: toFiniteNumberInRange(text.lower, { min: 0, integer: true }),
+    surface_ha: toFiniteNumberInRange(text.surface, { min: 0.000001 }),
+  }
+}
+
+/**
+ * The payload of C, D or E, or undefined while the package cannot read it: the upper count and the
+ * surface are needed, and the lower count too until the upper class reaches 1 per hectare. A lower
+ * count already typed is kept in every case. The package decides; nothing is repeated here.
+ */
+function densityPayload(
+  factor: DensityFactor,
+  text: DensityText,
+): Record<string, number> | undefined {
+  const raw = densityRaw(factor, text)
+  if (readDensityPerHa(factor, raw) === null) return undefined
+  const entries = Object.entries(raw).filter(
+    (entry): entry is [string, number] => entry[1] !== null,
+  )
+  return Object.fromEntries(entries)
+}
+
+/** True while the lower count (BMm, GB) still has to be counted, by the package's rule. */
+function lowerCountNeeded(factor: DensityFactor, text: DensityText): boolean {
+  return densityLowerCountNeeded(factor, densityRaw(factor, text))
+}
+
+/** The lower count's error: nothing for an empty field the package does not need. */
+const lowerCountError = (value: string, label: string, needed: boolean): FieldError =>
+  !needed && value.trim().length === 0 ? null : numberError(value, label, { min: 0, integer: true })
 
 export function useSurveyForm() {
   const [siteName, setSiteName] = useState(DEFAULT_SURVEY_FORM.siteName)
@@ -193,9 +245,16 @@ export function useSurveyForm() {
     strataCoverText,
     dmhCounts,
     fSurfaceText,
+    openAreasHa,
     setStratumCover: storeStratumCover,
     setDmhCount: storeDmhCount,
+    bumpDmhCount: storeBumpDmhCount,
+    clearDmhCounts,
     setFSurface: storeFSurface,
+    addOpenArea: storeAddOpenArea,
+    setOpenArea: storeSetOpenArea,
+    removeOpenArea: storeRemoveOpenArea,
+    clearOpenAreas,
     loadUncapped,
     resetUncapped,
     uncappedPayload,
@@ -203,8 +262,8 @@ export function useSurveyForm() {
 
   // One object per change, so the form context does not renew on an unrelated keystroke.
   const uncapped = useMemo(
-    () => ({ strataCoverText, dmhCounts, fSurfaceText }),
-    [strataCoverText, dmhCounts, fSurfaceText],
+    () => ({ strataCoverText, dmhCounts, fSurfaceText, openAreasHa }),
+    [strataCoverText, dmhCounts, fSurfaceText, openAreasHa],
   )
 
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
@@ -291,23 +350,21 @@ export function useSurveyForm() {
       }
     }
 
-    const cBmg = toFiniteNumberInRange(factorC.bmg_count, { min: 0, integer: true })
-    const cBmm = toFiniteNumberInRange(factorC.bmm_count, { min: 0, integer: true })
-    const cSurface = toFiniteNumberInRange(factorC.surface_ha, { min: 0.000001 })
-    if (cBmg !== null && cBmm !== null && cSurface !== null)
-      payload.C = { bmg_count: cBmg, bmm_count: cBmm, surface_ha: cSurface }
-
-    const dBmg = toFiniteNumberInRange(factorD.bmg_count, { min: 0, integer: true })
-    const dBmm = toFiniteNumberInRange(factorD.bmm_count, { min: 0, integer: true })
-    const dSurface = toFiniteNumberInRange(factorD.surface_ha, { min: 0.000001 })
-    if (dBmg !== null && dBmm !== null && dSurface !== null)
-      payload.D = { bmg_count: dBmg, bmm_count: dBmm, surface_ha: dSurface }
-
-    const eTgb = toFiniteNumberInRange(factorE.tgb_count, { min: 0, integer: true })
-    const eGb = toFiniteNumberInRange(factorE.gb_count, { min: 0, integer: true })
-    const eSurface = toFiniteNumberInRange(factorE.surface_ha, { min: 0.000001 })
-    if (eTgb !== null && eGb !== null && eSurface !== null)
-      payload.E = { tgb_count: eTgb, gb_count: eGb, surface_ha: eSurface }
+    const cPayload = densityPayload(
+      "C",
+      densityText(factorC.bmg_count, factorC.bmm_count, factorC.surface_ha),
+    )
+    if (cPayload !== undefined) payload.C = cPayload
+    const dPayload = densityPayload(
+      "D",
+      densityText(factorD.bmg_count, factorD.bmm_count, factorD.surface_ha),
+    )
+    if (dPayload !== undefined) payload.D = dPayload
+    const ePayload = densityPayload(
+      "E",
+      densityText(factorE.tgb_count, factorE.gb_count, factorE.surface_ha),
+    )
+    if (ePayload !== undefined) payload.E = ePayload
 
     const f = toFiniteNumberInRange(factorF.trees_per_ha, { min: 0 })
     if (f !== null) {
@@ -319,8 +376,14 @@ export function useSurveyForm() {
       }
     }
 
+    // Follow-up 32-35: the zones go out only beside the scored percent, like the other details.
     const g = toFiniteNumberInRange(factorG.open_flowering_percent, { min: 0, max: 100 })
-    if (g !== null) payload.G = { open_flowering_percent: g }
+    if (g !== null) {
+      payload.G = {
+        open_flowering_percent: g,
+        ...(uncapped.open_areas_ha !== undefined ? { open_areas_ha: uncapped.open_areas_ha } : {}),
+      }
+    }
 
     const h = toFiniteNumberInRange(factorH.class_score, { integer: true })
     if (h !== null && H_ALLOWED_SCORES.includes(h)) {
@@ -512,14 +575,102 @@ export function useSurveyForm() {
     if (derived !== null) setFactorF((prev) => ({ ...prev, trees_per_ha: String(derived) }))
   }
 
-  /** A group count (0 or more); the density needs F's own surface, else nothing is written. */
-  const setDmhCount = (code: DmhGroupCode, count: number): void => {
-    writeTreesPerHa(storeDmhCount(code, count))
+  /**
+   * A group count (0 or more). Counted in full the density needs F's own surface, else nothing is
+   * written. With `cap` (the capped survey mode, follow-up of phase 32) the count is trees per
+   * hectare held at `cap` and the sum of the groups replaces the typed `trees_per_ha`, no surface.
+   */
+  const setDmhCount = (code: DmhGroupCode, count: number, cap?: number): void => {
+    const derived = storeDmhCount(code, count, cap)
+    setFactorF((prev) => ({
+      ...prev,
+      ...treesPerHaAfterCount(prev.trees_per_ha, derived, count > 0),
+    }))
+  }
+
+  /**
+   * Phase 32 (D-08, D-10): the first "+" of a group row ticks the group and counts it in one call;
+   * a later "+" or "-" moves the count. A negative delta never unticks (0 stays ticked) and no
+   * count goes below 0 or above 999. Nothing new is stored: the ticks and the counts are the
+   * `dmh_groups` and `dmh_counts` the chips and the counter block wrote before, and the density
+   * is still the package's, derived by the store. With `cap` (the capped survey mode, follow-up
+   * of phase 32) the same call counts trees per hectare up to `cap` and derives the sum instead.
+   */
+  const bumpDmhGroup = (code: DmhGroupCode, delta: number, cap?: number): void => {
+    const derived = storeBumpDmhCount(code, delta, cap)
+    setFactorF((prev) => ({
+      ...prev,
+      dmh_groups:
+        delta > 0
+          ? withSelectionToggled("F", ibpMethodVersion, prev.dmh_groups, code, true)
+          : prev.dmh_groups,
+      ...treesPerHaAfterCount(prev.trees_per_ha, derived, delta > 0),
+    }))
+  }
+
+  /**
+   * Follow-up 32-25: "no tree carries a dendromicrohabitat", the one way to record 0 without
+   * touching a counter. On: stores trees per hectare 0 with no group and no count (counted in full
+   * the typed surface stays; with `cap`, the capped mode, there is none). Off: puts the empty field
+   * back, only while the factor really is in that state, so it never erases a figure. The state is
+   * not stored: the list derives it from these values.
+   */
+  const markNoDmhGroup = (on: boolean, cap?: number): void => {
+    if (on) {
+      clearDmhCounts(cap !== undefined)
+      setFactorF((prev) => ({ ...prev, trees_per_ha: "0", dmh_groups: [] }))
+      return
+    }
+    setFactorF((prev) =>
+      prev.trees_per_ha.trim() === "0" && prev.dmh_groups.length === 0
+        ? { ...prev, trees_per_ha: "" }
+        : prev,
+    )
   }
 
   /** F's own surface (prefilled from the route's surface décrite by the F page, editable). */
   const setFSurface = (text: string): void => {
     writeTreesPerHa(storeFSurface(text))
+  }
+
+  /**
+   * Follow-up 32-35 (owner decision 2026-10-30): G lists its open flowering zones (hectares) and the
+   * percent is derived from them and the survey's described surface, with the package's
+   * `floweringPercentFromAreas` (capped at 100). Every change of a zone writes the list and the
+   * percent together; no zone left clears the percent. Adding a row (at 0 ha) changes no sum, so it
+   * leaves the percent alone (an older G with only a percent keeps it until a zone is filled).
+   */
+  const writeFloweringFromAreas = (areas: readonly number[], zoneSurfaceHa: number): void => {
+    const percent = floweringPercentFromAreas(areas, zoneSurfaceHa)
+    setFactorG({ open_flowering_percent: percent === null ? "" : toFieldText(percent) })
+  }
+
+  const addOpenArea = (): void => {
+    storeAddOpenArea()
+  }
+
+  const setOpenArea = (index: number, hectares: number, zoneSurfaceHa: number): void => {
+    writeFloweringFromAreas(storeSetOpenArea(index, hectares), zoneSurfaceHa)
+  }
+
+  const removeOpenArea = (index: number, zoneSurfaceHa: number): void => {
+    writeFloweringFromAreas(storeRemoveOpenArea(index), zoneSurfaceHa)
+  }
+
+  /**
+   * "No open flowering zone", the way to record 0 % without a zone (as `markNoDmhGroup` does for F).
+   * On: empties the zones and stores 0. Off: puts the empty field back, only while the factor really
+   * is in that state, so it never erases a figure. The state is derived by the page, never stored.
+   */
+  const markNoOpenArea = (on: boolean): void => {
+    if (on) {
+      clearOpenAreas()
+      setFactorG({ open_flowering_percent: "0" })
+      return
+    }
+    setFactorG((prev) =>
+      prev.open_flowering_percent.trim() === "0" ? { open_flowering_percent: "" } : prev,
+    )
   }
 
   // FLOW-02: touched state per field, keyed by "factor:label"; submission-attempted forces every
@@ -532,8 +683,21 @@ export function useSurveyForm() {
     [markFieldTouched, submitAttempted, touchedFields],
   )
 
-  const factorSections = useMemo<Record<FactorKey, FactorField[]>>(
-    () => ({
+  const factorSections = useMemo<Record<FactorKey, FactorField[]>>(() => {
+    // Follow-up 32-32: the lower counter (BMm, GB) is required only while the package needs it.
+    const cLowerNeeded = lowerCountNeeded(
+      "C",
+      densityText(factorC.bmg_count, factorC.bmm_count, factorC.surface_ha),
+    )
+    const dLowerNeeded = lowerCountNeeded(
+      "D",
+      densityText(factorD.bmg_count, factorD.bmm_count, factorD.surface_ha),
+    )
+    const eLowerNeeded = lowerCountNeeded(
+      "E",
+      densityText(factorE.tgb_count, factorE.gb_count, factorE.surface_ha),
+    )
+    return {
       A: [
         {
           label: fields.genera,
@@ -581,8 +745,9 @@ export function useSurveyForm() {
           label: fields.bmm_count,
           value: factorC.bmm_count,
           onChange: (value) => setFactorC((prev) => ({ ...prev, bmm_count: value })),
-          required: true,
-          error: numberError(factorC.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          required: cLowerNeeded,
+          notNeeded: !cLowerNeeded,
+          error: lowerCountError(factorC.bmm_count, fields.bmm_count, cLowerNeeded),
           ...touchState("C", fields.bmm_count),
         },
         {
@@ -607,8 +772,9 @@ export function useSurveyForm() {
           label: fields.bmm_count,
           value: factorD.bmm_count,
           onChange: (value) => setFactorD((prev) => ({ ...prev, bmm_count: value })),
-          required: true,
-          error: numberError(factorD.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          required: dLowerNeeded,
+          notNeeded: !dLowerNeeded,
+          error: lowerCountError(factorD.bmm_count, fields.bmm_count, dLowerNeeded),
           ...touchState("D", fields.bmm_count),
         },
         {
@@ -633,8 +799,9 @@ export function useSurveyForm() {
           label: fields.gb_count,
           value: factorE.gb_count,
           onChange: (value) => setFactorE((prev) => ({ ...prev, gb_count: value })),
-          required: true,
-          error: numberError(factorE.gb_count, fields.gb_count, { min: 0, integer: true }),
+          required: eLowerNeeded,
+          notNeeded: !eLowerNeeded,
+          error: lowerCountError(factorE.gb_count, fields.gb_count, eLowerNeeded),
           ...touchState("E", fields.gb_count),
         },
         {
@@ -715,21 +882,20 @@ export function useSurveyForm() {
           },
         },
       ],
-    }),
-    [
-      factorA,
-      factorB,
-      factorC,
-      factorD,
-      factorE,
-      factorF,
-      factorG,
-      factorH,
-      factorI,
-      factorJ,
-      touchState,
-    ],
-  )
+    }
+  }, [
+    factorA,
+    factorB,
+    factorC,
+    factorD,
+    factorE,
+    factorF,
+    factorG,
+    factorH,
+    factorI,
+    factorJ,
+    touchState,
+  ])
 
   // What the storage writes (01.8-08 rule): the version only when the form has one (a legacy draft
   // edited without switching sends no key and stays untagged), the cas and flag for v3.2, and
@@ -785,7 +951,13 @@ export function useSurveyForm() {
     uncapped,
     setStratumCover,
     setDmhCount,
+    bumpDmhGroup,
+    markNoDmhGroup,
     setFSurface,
+    addOpenArea,
+    setOpenArea,
+    removeOpenArea,
+    markNoOpenArea,
     formErrors,
     draftInput,
     applyDraftToForm,

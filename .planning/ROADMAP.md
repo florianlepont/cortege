@@ -86,7 +86,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list; completed 2026-10-13)
 - [x] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand (completed 2026-10-23; criterion 4, the recorded tester test, is deferred to the field tests)
 - [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
-- [ ] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
+- [x] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
 - [x] **Phase 33: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners (completed 2026-10-26; owner validated both versions on the iPhone)
 - [ ] **Phase 34: Extended Photo Recognition, Factor by Factor** (INSERTED) - Decide, factor by factor, what ships in V1.0 and what waits for V1.x, then build the V1.0 share
 - [ ] **Phase 35: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface once the V1 features are in, update the design system, close the gaps with the "États Sauvages" graphic charter, check global coherence across screens and fix visual bugs; one of the last steps before release (owner decision 2026-10-07)
@@ -1110,15 +1110,15 @@ Plans:
 
 **Goal**: While recording, the observer gets detailed information on dendromicrohabitats (many potential DMH), in a tool or a dedicated page.
 **Depends on**: Phase 25.1 (stored DMH details)
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-DOC-dmh-sources, REQ-C-dmh-guide, REQ-C-dmh-illustrations, REQ-C-dmh-fast-entry, REQ-FT-dmh-speed
 **Source**: seminar 2026-10-10: the card is about more detailed information during the survey, not about changing the data (owner clarification); the IBP typology crossed with the WSL one
 **Success Criteria** (what must be TRUE):
 
   1. A tool or page reachable from the DMH inputs explains each DMH with its identification information, offline.
   2. The content crosses the IBP typology with the WSL one, and its sources and licence for reuse are recorded (WSL already has PDF content).
-  3. Recording a survey with many potential DMH is quicker than before, measured on a real survey.
+  3. Recording a survey with many potential DMH is simpler than before: fewer taps for the same stored data (automated proxy) and confirmed by the owner on their own phone (no timing, owner decision 2026-10-27).
 
-**Plans**: TBD
+**Plans**: 38 plans (16 planned + 22 from the owner's iPhone feedback rounds of 2026-10-28 to 2026-10-30: redesign of the F list and the guide, guide in the global search and on Accueil, capped counters per group, the F look applied to factors A to J, G open-area zones, "Incertitude" wording; see 32-17 to 32-35 summaries); 32-07 skipped by owner decision; complete 2026-10-28 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`)
 **UI hint**: yes
 
 ### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)
@@ -1312,7 +1312,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
 | 30. Route Choice Assistant | 23/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
-| 32. Detailed DMH Information | 0/TBD | Not started | - |
+| 32. Detailed DMH Information | 37/38 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-28; expert reading of the drawings and thresholds not done) | 2026-10-28 |
 | 33. PDF Export, Exhaustive and Simplified | 20/20 | Complete (owner validated both versions on the iPhone 2026-10-26) | 2026-10-26 |
 | 34. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
 | 35. UX/UI Audit & Design System Update | 0/TBD | Not started | - |

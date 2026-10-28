@@ -361,7 +361,7 @@ describe("doubt badge and factor note (phase 27, D-13, D-17)", () => {
     }
   })
 
-  it("a doubt puts the Douteux badge at the end of the head and nowhere else", () => {
+  it("a doubt puts the Incertitude badge at the end of the head and nowhere else", () => {
     const blocks = buildFactorBlocks(
       makeData({ factorEntries: annotatedEntries({ B: { doubt: true } }) }),
       palette,

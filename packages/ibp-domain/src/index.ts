@@ -39,12 +39,20 @@ export {
   B_STRATUM_CODES,
   DMH_GROUP_CODES,
   DMH_GROUP_DENSITY_CAP_PER_HA,
+  OPEN_AREAS_MAX_COUNT,
   STRATUM_MIN_COVER_PERCENT,
   UNCAPPED_DETAIL_KEYS,
+  cappedDmhCounts,
+  cappedDmhTotalPerHa,
+  clampOpenAreaHa,
   dmhDensityPerHa,
+  floweringPercentFromAreas,
+  openAreasExceedSurface,
   readDmhCounts,
+  readOpenAreasHa,
   readStrataCover,
   strataCountFromCover,
+  sumOpenAreasHa,
 } from "./factor-details"
 export type {
   BStratumCode,
@@ -74,6 +82,17 @@ export {
   scoreTreeDensity,
   scoreTypeCount,
 } from "./rules/scales"
+
+// Read-only readers of the raw inputs the scorers use, for the figures the app shows beside a
+// factor (A's genus count, the per-hectare densities of C, D and E). The scorers call the same
+// code, so a displayed figure can never drift from the one the score is read from.
+export {
+  DENSITY_COUNT_KEYS,
+  densityLowerCountNeeded,
+  readDensityPerHa,
+  readFactorAGenusCount,
+} from "./rules/common"
+export type { DensityFactor, DensityPerHa, GenusCountOutcome } from "./rules/common"
 
 export {
   CONTEXT_BAND_CUT_OFFS,

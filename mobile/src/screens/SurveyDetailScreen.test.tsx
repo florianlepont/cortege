@@ -123,12 +123,15 @@ jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeade
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
 jest.mock("./survey-detail/useHistoryRow", () => ({ useHistoryRow: jest.fn() }))
 let mockCtaKind: "hidden" | "next" = "hidden"
+let mockCtaRouteMissing: unknown = null
 jest.mock("./survey-detail/summary-state", () => ({
   resolveStatusLine: () => ({ status: "Brouillon", sync: "x", syncTone: "ok" }),
-  resolveFinishCta: () =>
-    mockCtaKind === "hidden"
+  resolveFinishCta: (...args: unknown[]) => {
+    mockCtaRouteMissing = args[5]
+    return mockCtaKind === "hidden"
       ? { kind: "hidden" }
-      : { kind: "next", label: "Continuer", factor: "A" },
+      : { kind: "next", label: "Continuer", factor: "A" }
+  },
 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("./survey-detail/useSurveyDetailData", () => ({
@@ -173,6 +176,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onDeleteAttachment: jest.fn(),
     onDeleteSurvey: jest.fn(),
     onOpenFinish: jest.fn(),
+    onDefineRoute: jest.fn(),
     onRetrySurvey: jest.fn(),
     onDiscardSurvey: jest.fn(),
     onRenameSurvey: jest.fn(),
@@ -436,6 +440,35 @@ describe("SurveyDetailScreen summary", () => {
     mockRoute = null
     const draftRows = byType(mount("draft"), "AppGroupedList")[0].props.sections[0].rows
     expect(draftRows[1].value).toMatch(/ · Parcours à choisir$/)
+  })
+
+  test("route first: only an editable draft with no route tells the button so, and it opens the route step", () => {
+    mockCtaKind = "next"
+    mockRoute = null
+    const props = makeProps("draft")
+    let tree!: ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    expect(mockCtaRouteMissing).toBe(true)
+    act(() => byType(tree, "FinishBar")[0].props.onDefineRoute())
+    expect(props.onDefineRoute).toHaveBeenCalledWith("survey-1")
+
+    mockCanEdit = false
+    mount("submitted")
+    expect(mockCtaRouteMissing).toBe(false)
+    mockCanEdit = true
+
+    mockRoute = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2,
+      guide: { chosen_by: "observer" },
+    }
+    mount("draft")
+    expect(mockCtaRouteMissing).toBe(false)
+    mockRoute = null
   })
 
   test("the source of the summary no longer imports the chart", () => {

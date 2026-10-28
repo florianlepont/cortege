@@ -179,6 +179,24 @@ export function factorHelpScreenOptions(theme: BrandTheme): NativeStackNavigatio
 }
 
 /**
+ * The dendromicrohabitat guide (phase 32, D-04 and D-05) as a native sheet: a form sheet on iOS
+ * (system grabber and corner radius, swipe down or tap outside to close from any of its three
+ * views), the stack's modal screen on Android. No header: the screen draws its own header row
+ * inside its scroll view. The 0.65 detent shows the rule block of a group page without scrolling
+ * on a 6.1 inch phone; it is checked on the owner iPhone in plan 32-16, and only the number is
+ * adjusted.
+ */
+export function dmhGuideScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    headerShown: false,
+    presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+    sheetAllowedDetents: [0.65, 1],
+    sheetGrabberVisible: true,
+    contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+  }
+}
+
+/**
  * The submission step (phase 29, D-04) as a native sheet: a form sheet on iOS (system grabber and
  * corner radius, swipe down or tap outside to close, which the route switches off while the finish
  * runs), the stack's modal screen on Android. No header: the sheet draws its own title. The 0.65

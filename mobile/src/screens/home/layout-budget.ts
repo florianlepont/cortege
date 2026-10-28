@@ -83,8 +83,27 @@ export const RECENT_LAYOUT = {
   separator: HAIRLINE,
 } as const
 
-/** The "Outils" row: the 40 pt icon tile and 8 pt above and below it. */
-export const TOOL_ROW_MIN_HEIGHT = 56
+/**
+ * The "Outils" tiles (phase 32 redesign, owner request 2026-10-28: the guide "à côté de l'outil
+ * photo"): two half-width glass tiles on one line, photo on the left and guide on the right. A tile
+ * is 12 pt padding, the 40 pt icon tile, 8 pt, a 20 pt title line, a 16 pt body line and 12 pt: 108.
+ * The two tiles are the same height (the row stretches them).
+ */
+export const TOOL_TILE_PADDING = brandSpacing4.smd
+export const TOOL_TILE_ICON = 40
+export const TOOL_TILE_ICON_GAP = brandSpacing4.sm
+export const TOOL_TILE_MIN_HEIGHT =
+  2 * TOOL_TILE_PADDING +
+  TOOL_TILE_ICON +
+  TOOL_TILE_ICON_GAP +
+  brandTypography.button.lineHeight +
+  brandTypography.meta.lineHeight
+
+/** The tiles of "Outils" on their one line: the photo identification and the guide. */
+export const TOOL_TILE_COUNT = 2
+
+/** Between the two tiles. */
+export const TOOL_TILE_GAP = brandSpacing4.sm
 
 /** A plain section header: one line of `brandTypography.sectionHeader`. */
 export const SECTION_HEADER_HEIGHT = brandTypography.sectionHeader.lineHeight
@@ -174,7 +193,7 @@ export function recentSectionHeight(count: number): number {
 }
 
 export function toolsSectionHeight(): number {
-  return HOME_GAPS.section + SECTION_HEADER_HEIGHT + HOME_GAPS.sectionHeader + TOOL_ROW_MIN_HEIGHT
+  return HOME_GAPS.section + SECTION_HEADER_HEIGHT + HOME_GAPS.sectionHeader + TOOL_TILE_MIN_HEIGHT
 }
 
 /**

@@ -195,6 +195,239 @@ describe("useUncappedEntry", () => {
     })
   })
 
+  describe("bumpDmhCount", () => {
+    test("stores 1 on a group with no count and two bumps in one batch store 2", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 1 })
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_02", 1)
+        result.current.bumpDmhCount("dmh_02", 1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 1, dmh_02: 2 })
+    })
+
+    test("going down stops at 0 and 0 stays an entry", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1)
+        result.current.bumpDmhCount("dmh_01", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 0 })
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 0 })
+    })
+
+    test("a group never counted does not store a negative count", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_03", -1)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_03: 0 })
+    })
+
+    test("counts are clamped to 999", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setDmhCount("dmh_01", 997)
+        result.current.bumpDmhCount("dmh_01", 5)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 999 })
+    })
+
+    test("returns the derived trees per hectare, null without a valid surface", async () => {
+      const result = await render()
+      let derived: number | null = 99
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_01", 1)
+      })
+      expect(derived).toBeNull()
+      await act(async () => {
+        result.current.setFSurface("2")
+        derived = result.current.bumpDmhCount("dmh_01", 2)
+      })
+      // 3 trees on 2 ha, capped at 2 per ha for the group: 1.5
+      expect(derived).toBe(1.5)
+    })
+  })
+
+  describe("capped survey mode (cap 2, trees per hectare, follow-up of phase 32)", () => {
+    test("a bump holds a group at the cap and derives the sum with no surface", async () => {
+      const result = await render()
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_01", 1, 2)
+      })
+      expect(derived).toBe(1)
+      await act(async () => {
+        result.current.bumpDmhCount("dmh_01", 1, 2)
+        derived = result.current.bumpDmhCount("dmh_01", 1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2 })
+      expect(derived).toBe(2)
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_05", 1, 2)
+      })
+      expect(derived).toBe(3)
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_05", -1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2, dmh_05: 0 })
+      expect(derived).toBe(2)
+    })
+
+    test("a set count is held at the cap, an emptied field drops the entry", async () => {
+      const result = await render()
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.setDmhCount("dmh_02", 9, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_02: 2 })
+      expect(derived).toBe(2)
+      await act(async () => {
+        derived = result.current.setDmhCount("dmh_02", Number.NaN, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({})
+      expect(derived).toBe(0)
+    })
+
+    test("a touch brings counts left by a counted-in-full survey to the cap and drops the surface", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setFSurface("2.5")
+        result.current.setDmhCount("dmh_01", 7)
+        result.current.setDmhCount("dmh_02", 3)
+      })
+      let derived: number | null = null
+      await act(async () => {
+        derived = result.current.bumpDmhCount("dmh_03", 1, 2)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 2, dmh_02: 2, dmh_03: 1 })
+      expect(result.current.fSurfaceText).toBe("")
+      expect(derived).toBe(5)
+      expect(result.current.uncappedPayload()).toEqual({
+        dmh_counts: { dmh_01: 2, dmh_02: 2, dmh_03: 1 },
+      })
+    })
+
+    test("counted in full is unchanged by the optional cap", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.setDmhCount("dmh_01", 5)
+      })
+      expect(result.current.dmhCounts).toEqual({ dmh_01: 5 })
+      expect(result.current.fSurfaceText).toBe("1")
+    })
+  })
+
+  describe("G zones (follow-up 32-35)", () => {
+    test("starts with no zone and no payload key", async () => {
+      const result = await render()
+      expect(result.current.openAreasHa).toEqual([])
+      expect(result.current.uncappedPayload()).toEqual({})
+    })
+
+    test("adds rows at 0 and returns the new list; two calls in one batch both count", async () => {
+      const result = await render()
+      let list: number[] = []
+      await act(async () => {
+        result.current.addOpenArea()
+        list = result.current.addOpenArea()
+      })
+      expect(list).toEqual([0, 0])
+      expect(result.current.openAreasHa).toEqual([0, 0])
+      expect(result.current.uncappedPayload()).toEqual({ open_areas_ha: [0, 0] })
+    })
+
+    test("holds at most 20 zones", async () => {
+      const result = await render()
+      await act(async () => {
+        for (let i = 0; i < 22; i += 1) result.current.addOpenArea()
+      })
+      expect(result.current.openAreasHa).toHaveLength(20)
+    })
+
+    test("sets a zone brought to the list's bounds and two decimals", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.setOpenArea(1, 0.1 + 0.2)
+      })
+      expect(list).toEqual([0, 0.3])
+      await act(async () => {
+        result.current.setOpenArea(0, -4)
+        result.current.setOpenArea(1, 99999)
+      })
+      expect(result.current.openAreasHa).toEqual([0, 5000])
+    })
+
+    test("a row that is not in the list is left alone", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.setOpenArea(3, 1)
+      })
+      expect(list).toEqual([0])
+      await act(async () => {
+        list = result.current.setOpenArea(-1, 1)
+      })
+      expect(list).toEqual([0])
+    })
+
+    test("removes a row by its place, clearOpenAreas empties the list", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 1)
+        result.current.setOpenArea(1, 2)
+        result.current.setOpenArea(2, 3)
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.removeOpenArea(1)
+      })
+      expect(list).toEqual([1, 3])
+      await act(async () => {
+        result.current.clearOpenAreas()
+      })
+      expect(result.current.openAreasHa).toEqual([])
+      expect(result.current.uncappedPayload()).toEqual({})
+    })
+
+    test("loadUncapped reads the stored zones tolerantly; resetUncapped clears them", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.loadUncapped({
+          G: { open_flowering_percent: 20, open_areas_ha: [0.3, "x", 0.1] },
+        })
+      })
+      expect(result.current.openAreasHa).toEqual([0.3, 0.1])
+      await act(async () => {
+        result.current.loadUncapped({ G: { open_flowering_percent: 20 } })
+      })
+      expect(result.current.openAreasHa).toEqual([])
+      await act(async () => {
+        result.current.loadUncapped({ G: { open_areas_ha: [1] } })
+        result.current.resetUncapped()
+      })
+      expect(result.current.openAreasHa).toEqual([])
+    })
+  })
+
   describe("uncappedPayload", () => {
     test("gives only valid entries, in the package code order", async () => {
       const result = await render()

@@ -62,6 +62,8 @@ type HomeScreenProps = {
   onOpenSurveyList: () => void
   onNavigateToExplorer: () => void
   onNavigateToAccount: () => void
+  /** The Outils row of the dendromicrohabitat guide: opens the guide sheet over Accueil. */
+  onOpenDmhGuide: () => void
   onRefresh: () => Promise<void>
 }
 
@@ -107,6 +109,7 @@ export function HomeScreen({
   onOpenSurveyList,
   onNavigateToExplorer,
   onNavigateToAccount,
+  onOpenDmhGuide,
   onRefresh,
 }: HomeScreenProps) {
   const theme = useBrandTheme()
@@ -324,6 +327,7 @@ export function HomeScreen({
             surveys={surveys}
             onAddGenusToSurvey={onAddGenusToSurvey}
             onStartSurveyWithGenus={onCreateSurveyWithGenus}
+            onOpenDmhGuide={onOpenDmhGuide}
           />
         </EntranceView>
 

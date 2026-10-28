@@ -23,7 +23,7 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 // Pure: the class and the points come from `factorEntries` (the app's single result), the chips
 // from the domain's `allowedScoresFor`. No CSS column and no 1 px filled div (the iOS print engine
 // ignores both, measured in plan 25.1-07); borders and flex rows only. Phase 27 (D-13, D-17) adds the
-// "Douteux" badge at the end of the head and the observer's own note under the body, display only.
+// "Incertitude" badge at the end of the head and the observer's own note under the body, display only.
 
 const t = fr.surveyExport
 

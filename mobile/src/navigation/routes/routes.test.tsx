@@ -151,6 +151,9 @@ jest.mock("../../screens/route-guide/RouteGuideScreen", () => ({
 jest.mock("../../screens/route-guide/RouteChooseScreen", () => ({
   RouteChooseScreen: mockScreen("routeChoose"),
 }))
+jest.mock("../../screens/dmh-guide/DmhGuideScreen", () => ({
+  DmhGuideScreen: mockScreen("dmhGuide"),
+}))
 jest.mock("../../screens/FactorHelpSheet", () => ({
   FactorHelpSheet: mockScreen("factorHelp"),
 }))
@@ -296,6 +299,7 @@ import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { SELECTION_GRACE_MS } from "./SelectedSurveyGate"
 import { AccountRoute } from "./AccountRoute"
 import { FactorDetailRoute } from "./FactorDetailRoute"
+import { DmhGuideRoute } from "./DmhGuideRoute"
 import { FactorHelpRoute } from "./FactorHelpRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
@@ -898,6 +902,11 @@ describe("HomeRoute", () => {
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")
 
+    // Phase 32 (owner request): the guide sheet opens over Accueil, in the Accueil stack, and
+    // carries no group (the catalogue).
+    callback("home", "onOpenDmhGuide")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDmhGuide")
+
     // HOME-06: the avatar navigates to Compte.
     callback("home", "onNavigateToAccount")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
@@ -1218,6 +1227,15 @@ describe("SurveyDetailRoute", () => {
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFinish", { surveyId: "survey-9" })
     expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
+    // Route first: the bottom button of a draft with no route opens the route step in edit mode.
+    await act(async () => {
+      callback("surveyDetail", "onDefineRoute")("survey-9")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteGuide", {
+      surveyId: "survey-9",
+      mode: "edit",
+      surfaceHa: null,
+    })
     await act(async () => {
       callback("surveyDetail", "onOpenConditions")()
     })
@@ -2013,7 +2031,7 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     )
   })
 
-  test("Que relever ? opens the help route with the texts, and the sheet closes by going back", async () => {
+  test("Aide au relevé opens the help route with the texts, and the sheet closes by going back", async () => {
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={makeFixture()}>
@@ -2043,6 +2061,40 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     expect(props("factorHelp").hints).toEqual(["Un"])
     ;(props("factorHelp").onClose as () => void)()
     expect(helpNavigation.goBack).toHaveBeenCalledTimes(1)
+  })
+
+  test("the dendromicrohabitat guide opens the catalogue, a valid group, or the catalogue for an unknown one", async () => {
+    const fixture = makeFixture()
+    const navigation = makeNavigation()
+    const open = async (params: unknown) => {
+      await mount(
+        <Providers fixture={fixture}>
+          <DmhGuideRoute navigation={navigation as never} route={{ params } as never} />
+        </Providers>,
+      )
+      return props("dmhGuide")
+    }
+    expect((await open(undefined)).initialGroup).toBeNull()
+    expect((await open({})).initialGroup).toBeNull()
+    expect((await open({ group: "dmh_12" })).initialGroup).toBe("dmh_12")
+    expect((await open({ group: "dmh_99" })).initialGroup).toBeNull()
+    expect((await open({ group: "dmh_12" })).methodVersion).toBe("cnpf_ibp_fr_v3_2_2026-02-02")
+    ;(props("dmhGuide").onClose as () => void)()
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+  })
+
+  test("the guide reads the method version of the form, null for version 3.0", async () => {
+    const fixture = makeFixture()
+    fixture.form.state = { ...fixture.form.state, ibpMethodVersion: null }
+    await mount(
+      <Providers fixture={fixture}>
+        <DmhGuideRoute
+          navigation={makeNavigation() as never}
+          route={{ params: undefined } as never}
+        />
+      </Providers>,
+    )
+    expect(props("dmhGuide").methodVersion).toBeNull()
   })
 
   test("the native header names the factor on screen, and Terminer on the last one goes back", async () => {

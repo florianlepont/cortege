@@ -85,6 +85,7 @@ describe("French catalogue", () => {
         "communitySurvey",
         "components",
         "conditions",
+        "dmhGuide",
         "factorDetail",
         "factorInput",
         "factorPager",

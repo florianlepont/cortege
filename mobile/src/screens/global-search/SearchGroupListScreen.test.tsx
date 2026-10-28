@@ -13,6 +13,7 @@ import {
   type MineListProps,
   type SearchGroupListScreenProps,
 } from "./SearchGroupListScreen"
+import { guideLabels } from "./result-labels"
 
 const t = fr.search
 const originalConsoleError = console.error
@@ -155,6 +156,7 @@ function makeProps(
     onOpenMember: jest.fn(),
     onOpenPlace: jest.fn(),
     onOpenParcel: jest.fn(),
+    onOpenGuide: jest.fn(),
     ...overrides,
   }
 }
@@ -305,6 +307,28 @@ describe("SearchGroupListScreen rows", () => {
     })
     act(() => row.props.onPress())
     expect(props.onOpenParcel).toHaveBeenCalledWith(parcel)
+  })
+
+  test("Guide: regular rows with the group name and its form that open the guide", () => {
+    const props = mount({ group: "guide", mine: undefined, count: 2, guide: ["dmh_01", "dmh_02"] })
+    const rows = all("SearchResultRow")
+    expect(rows).toHaveLength(2)
+    expect(rows[0].props).toMatchObject({
+      kind: "guide",
+      density: "regular",
+      ...guideLabels("dmh_01"),
+    })
+    expect(all("PageTitle")[0].props.children).toBe(
+      t.list.title({ group: t.groups.guide, count: 2 }),
+    )
+    act(() => rows[1].props.onPress())
+    expect(props.onOpenGuide).toHaveBeenCalledWith("dmh_02")
+  })
+
+  test("Guide with no group is the empty state, never an offline or error line", () => {
+    mount({ group: "guide", mine: undefined, count: 0, guide: [], status: "ready" })
+    expect(byTestId("search-list-empty")).toBeDefined()
+    expect(all("SearchResultRow")).toHaveLength(0)
   })
 
   test("the list leaves the tab bar clear, plus 24, and 24 only under the native large title", () => {

@@ -173,7 +173,7 @@ export const surveyExportFr = {
     aquaticTypes: "Types de milieux aquatiques",
     rockyTypes: "Types de milieux rocheux",
     // Phase 27 (D-13): the doubt badge and the observer's note under a factor card.
-    doubt: "Douteux",
+    doubt: "Incertitude",
     note: "Note",
   },
   // Phase 27 (D-18, D-26): the conditions block, printed only when there is a weather or a note.

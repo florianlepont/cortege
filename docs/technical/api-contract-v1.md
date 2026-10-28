@@ -907,7 +907,10 @@ The factor objects of `factors` may carry detail arrays next to their scored val
 they may also carry the detail of an uncapped count (relevé déplafonné): `B.strata_cover` (object,
 stratum code to percent of cover), `F.dmh_counts` (object, group code `dmh_01` to `dmh_15` to a
 whole number of trees) and `F.surface_ha`; these three are objects or numbers, not arrays, and
-follow the same rules (see `data-contract-v1.md`). They are stored
+follow the same rules (see `data-contract-v1.md`). A capped survey (follow-up of phase 32) also
+writes `F.dmh_counts`, with values 0 to 2 meaning trees per hectare, no `F.surface_ha` and
+`F.trees_per_ha` equal to their sum; the server stores it verbatim like the rest and no scorer
+reads it, so a payload with only the typed `F.trees_per_ha` stays valid. They are stored
 and returned verbatim by `POST /v1/sync`, `POST /v1/surveys`, `GET /v1/sync/changes` and
 `GET /v1/surveys/:id`, are not validated by the server, and are never scored. No endpoint, field
 or wire type is added.
@@ -919,7 +922,7 @@ Example, a v3.2 survey's Factor A:
 
 ### Factor annotations (phase 27)
 
-The observer can flag a doubt ("Douteux") and write a short note on each factor. Both live in one
+The observer can flag a doubt ("Incertitude") and write a short note on each factor. Both live in one
 container, `factors.annotations`, next to the factor keys and never inside a factor object:
 
 ```json
@@ -933,7 +936,7 @@ container, `factors.annotations`, next to the factor keys and never inside a fac
 ```
 
 - Keys of `annotations` are the factor codes `A` to `J`. Each value is `{ doubt?: true, note?: string }`:
-  `doubt` is only ever `true` (the default, "Sûr", is the absence of the key) and `note` is at most
+  `doubt` is only ever `true` (the default, no incertitude, is the absence of the key) and `note` is at most
   300 characters. An entry with neither is not written.
 - The container is validated on `POST /surveys` and on `survey.upsert` payloads by the shared
   package (`factorAnnotationsIssues` in `@cortege/ibp-domain`): an unknown key, a `doubt` other than

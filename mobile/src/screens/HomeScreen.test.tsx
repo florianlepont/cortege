@@ -127,6 +127,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     onOpenSurveyList: jest.fn(),
     onNavigateToExplorer: jest.fn(),
     onNavigateToAccount: jest.fn(),
+    onOpenDmhGuide: jest.fn(),
     onRefresh: jest.fn(async () => undefined),
     ...overrides,
   }
@@ -162,6 +163,7 @@ describe("HomeScreen", () => {
     expect(tools.props.surveys).toBe(surveys)
     expect(tools.props.onAddGenusToSurvey).toBe(props.onAddGenusToSurvey)
     expect(tools.props.onStartSurveyWithGenus).toBe(props.onCreateSurveyWithGenus)
+    expect(tools.props.onOpenDmhGuide).toBe(props.onOpenDmhGuide)
   })
 
   test("refreshing reflects the in-flight state of onRefresh, not a hardcoded false", async () => {

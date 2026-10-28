@@ -8,7 +8,7 @@ import { brandInteraction, brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
-import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
+import { HOME_GAPS, TOOL_TILE_GAP, TOOL_TILE_ICON, TOOL_TILE_MIN_HEIGHT } from "./layout-budget"
 import { openDrafts, ToolsSection } from "./ToolsSection"
 import { pressableLook as look } from "../../../test/pressable-look"
 
@@ -78,30 +78,40 @@ function mount(
 ) {
   const onAddGenusToSurvey = jest.fn(async () => true)
   const onStartSurveyWithGenus = jest.fn()
+  const onOpenDmhGuide = jest.fn()
   act(() => {
     tree = renderer.create(
       <ToolsSection
         surveys={surveys}
         onAddGenusToSurvey={onAddGenusToSurvey}
         onStartSurveyWithGenus={onStartSurveyWithGenus}
+        onOpenDmhGuide={onOpenDmhGuide}
         {...handlers}
       />,
     )
   })
-  return { onAddGenusToSurvey, onStartSurveyWithGenus }
+  return { onAddGenusToSurvey, onStartSurveyWithGenus, onOpenDmhGuide }
 }
 
 const byType = (type: string) =>
   tree.root.find((node) => (node.type as unknown) === type) as ReactTestInstance
 const maybeByType = (type: string) =>
   tree.root.findAll((node) => (node.type as unknown) === type)[0] as ReactTestInstance | undefined
+const identifyCard = () =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "Pressable" && node.props.testID === "tool-identify-tree",
+  ) as ReactTestInstance
+const guideCard = () =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "Pressable" && node.props.testID === "tool-dmh-guide",
+  ) as ReactTestInstance
 const modal = () => byType("GenusRecognitionModal")
 const sheet = () => byType("GenusTargetSheet")
 
 /** Photo tool open, a genus confirmed, the recognition sheet closed, the survey sheet delay run. */
 function confirmFagus() {
   act(() => {
-    byType("Pressable").props.onPress()
+    identifyCard().props.onPress()
   })
   act(() => {
     modal().props.onConfirmGenus("Fagus")
@@ -147,20 +157,20 @@ describe("ToolsSection", () => {
     )
     expect(flat(section).marginTop).toBe(HOME_GAPS.section)
     expect(flat(byType("AppSectionHeader")).marginBottom).toBe(HOME_GAPS.sectionHeader)
-    expect(flat(byType("Pressable")).minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
+    expect(look(identifyCard()).minHeight).toBe(TOOL_TILE_MIN_HEIGHT)
   })
 
   test("shows the Outils section with the photo identification card, the tool closed", () => {
     mount()
     expect(byType("AppSectionHeader").props.title).toBe(t.title)
-    expect(byType("Pressable").props.accessibilityLabel).toBe(t.identify.a11y)
+    expect(identifyCard().props.accessibilityLabel).toBe(t.identify.a11y)
     expect(modal().props.visible).toBe(false)
     expect(sheet().props.visible).toBe(false)
   })
 
   test("the identify card has the glass look and keeps its accessibility contract and hit area", () => {
     mount()
-    const card = byType("Pressable")
+    const card = identifyCard()
     const style = look(card)
     const { glass } = defaultTheme.visual
     expect(style.backgroundColor).toBe(glass.cardFill)
@@ -173,39 +183,95 @@ describe("ToolsSection", () => {
     expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
   })
 
-  test("the identify entry is one slim full-width row of 56 to 64 pt (D-20d)", () => {
+  test("the identify entry is a half-width tile: icon tile on top, then the title and one line", () => {
     mount()
-    const card = byType("Pressable")
+    const card = identifyCard()
     const style = look(card)
-    // A row of icon tile, texts and chevron, not a half-width tile: it spans the page and has no
-    // maximum width.
-    expect(style.flexDirection).toBe("row")
-    expect(style.alignItems).toBe("center")
+    // Half of the line (flex 1 next to the guide tile), not a full-width row: no chevron, the icon
+    // tile above the texts.
+    expect(style.flex).toBe(1)
+    expect(style.flexDirection).toBeUndefined()
     expect(style.maxWidth).toBeUndefined()
-    expect(style.flex).toBeUndefined()
     const minHeight = style.minHeight as number
-    expect(minHeight).toBeGreaterThanOrEqual(56)
-    expect(minHeight).toBeLessThanOrEqual(64)
+    expect(minHeight).toBe(TOOL_TILE_MIN_HEIGHT)
+    expect(minHeight % 4).toBe(0)
     expect(minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
-    // The 40 pt icon tile plus the vertical padding gives that height.
     const icon = card.findAll(
       (node) =>
-        (node.type as unknown) === "View" && (node.props.style as { width?: number })?.width === 40,
+        (node.type as unknown) === "View" &&
+        (node.props.style as { width?: number })?.width === TOOL_TILE_ICON,
     )
     expect(icon).toHaveLength(1)
-    expect((style.paddingVertical as number) * 2 + 40).toBe(minHeight)
-    expect((style.paddingVertical as number) % 4).toBe(0)
-    // The title and the one-line subtitle are both there, and nothing else carries text (no tag).
+    expect(card.findAll((node) => node.props.name === "camera-outline")).toHaveLength(1)
+    expect(card.findAll((node) => node.props.name === "chevron-forward-outline")).toHaveLength(0)
+    // The icon tile comes first (on top), the texts follow it in the same column.
+    const order = card
+      .findAll(
+        (node) =>
+          (node.type as unknown) === "Text" ||
+          ((node.type as unknown) === "View" &&
+            (node.props.style as { width?: number } | undefined)?.width === TOOL_TILE_ICON),
+      )
+      .map((node) => ((node.type as unknown) === "Text" ? "text" : "icon"))
+    expect(order).toEqual(["icon", "text", "text"])
+    // The title and the one short line are both there, and nothing else carries text (no tag).
     const texts = card
       .findAll((node) => (node.type as unknown) === "Text")
       .map((node) => String([node.props.children].flat().join("")))
     expect(texts).toEqual([t.identify.title, t.identify.body])
   })
 
+  test("the guide tile sits right of the photo tool on the same line, in the same glass look", () => {
+    mount()
+    const pressables = tree.root.findAll(
+      (node) => (node.type as unknown) === "Pressable" && node.props.testID !== undefined,
+    )
+    expect(pressables.map((node) => node.props.testID)).toEqual([
+      "tool-identify-tree",
+      "tool-dmh-guide",
+    ])
+    const card = guideCard()
+    const style = look(card)
+    const { glass } = defaultTheme.visual
+    expect(card.props.accessibilityRole).toBe("button")
+    expect(card.props.accessibilityLabel).toBe(t.guide.a11y)
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.flex).toBe(1)
+    expect(style.minHeight).toBe(look(identifyCard()).minHeight)
+    expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    const texts = card
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(texts).toEqual([t.guide.title, t.guide.body])
+    expect(card.findAll((node) => node.props.name === "book-outline")).toHaveLength(1)
+    // The two tiles are one line (a row), TOOL_TILE_GAP apart.
+    const row = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "View" &&
+        (node.props.style as { flexDirection?: string } | undefined)?.flexDirection === "row",
+    )
+    expect((row.props.style as { gap?: number }).gap).toBe(TOOL_TILE_GAP)
+    const inRow = row
+      .findAll((node) => (node.type as unknown) === "Pressable")
+      .map((node) => node.props.testID)
+    expect(inRow).toEqual(["tool-identify-tree", "tool-dmh-guide"])
+  })
+
+  test("the guide row opens the guide and nothing else, with no photo tool", () => {
+    const { onOpenDmhGuide } = mount()
+    act(() => {
+      guideCard().props.onPress()
+    })
+    expect(onOpenDmhGuide).toHaveBeenCalledTimes(1)
+    expect(modal().props.visible).toBe(false)
+    expect(sheet().props.visible).toBe(false)
+  })
+
   test("the card opens the photo tool", () => {
     mount()
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     expect(modal().props.visible).toBe(true)
   })
@@ -213,7 +279,7 @@ describe("ToolsSection", () => {
   test("closing the tool without a genus opens nothing else", () => {
     mount()
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     act(() => {
       modal().props.onClose()
@@ -231,7 +297,7 @@ describe("ToolsSection", () => {
       makeSurvey({ id: "s2", site_name: " " }),
     ])
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     act(() => {
       modal().props.onConfirmGenus("Fagus")

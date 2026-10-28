@@ -296,6 +296,72 @@ describe("Surveys submit (e2e)", () => {
     })
   })
 
+  it("keeps the capped F counts per hectare verbatim and scores from trees_per_ha alone", async () => {
+    const accessToken = await loginTestUser(app, "e2e-capped-counts")
+    const surveyId = uniqueId("e2e-capped-counts")
+    // Follow-up of phase 32: trees per hectare 0 to 2 per group, their sum as trees_per_ha, no surface.
+    const cappedF = {
+      trees_per_ha: 3,
+      dmh_groups: ["dmh_01", "dmh_05"],
+      dmh_counts: { dmh_01: 2, dmh_05: 1 },
+    }
+
+    await request(app.getHttpServer())
+      .post("/v1/surveys")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        id: surveyId,
+        sync_version: 1,
+        site_name: "Capped Counts Forest",
+        status: "draft",
+        visibility: "private",
+        region_version: "ACA",
+        vegetation_stage: "collineen",
+        factors: { F: cappedF },
+        location: { source: "gps", lat: 48.643, lng: 1.829 },
+      })
+      .expect(201)
+
+    const detail = await request(app.getHttpServer())
+      .get(`/v1/surveys/${surveyId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+
+    expect(detail.body.factors.F).toEqual(cappedF)
+    expect(detail.body.factor_results.F).toMatchObject({ factor_id: "factor_f", score_points: 2 })
+  })
+
+  it("keeps the G open_areas_ha zones verbatim and scores from open_flowering_percent alone", async () => {
+    const accessToken = await loginTestUser(app, "e2e-open-areas")
+    const surveyId = uniqueId("e2e-open-areas")
+    // Follow-up 32-35: the zones in hectares beside the derived percent (0.4 ha over 20 ha is 2 %).
+    const zonedG = { open_flowering_percent: 2, open_areas_ha: [0.3, 0.1, 0] }
+
+    await request(app.getHttpServer())
+      .post("/v1/surveys")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        id: surveyId,
+        sync_version: 1,
+        site_name: "Open Areas Forest",
+        status: "draft",
+        visibility: "private",
+        region_version: "ACA",
+        vegetation_stage: "collineen",
+        factors: { G: zonedG },
+        location: { source: "gps", lat: 48.643, lng: 1.829 },
+      })
+      .expect(201)
+
+    const detail = await request(app.getHttpServer())
+      .get(`/v1/surveys/${surveyId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+
+    expect(detail.body.factors.G).toEqual(zonedG)
+    expect(detail.body.factor_results.G).toMatchObject({ factor_id: "factor_g", score_points: 5 })
+  })
+
   it("exposes canonical factor_results on survey detail endpoint", async () => {
     const accessToken = await loginTestUser(app, "e2e-canonical")
     const surveyId = uniqueId("e2e-canonical")

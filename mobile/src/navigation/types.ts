@@ -3,10 +3,12 @@ import type { CompositeScreenProps, NavigatorScreenParams } from "@react-navigat
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
 import type {
   CountingMode,
+  DmhGroupCode,
   RouteMethod,
   SearchPlaceKind,
   UncappableFactor,
 } from "@cortege/ibp-domain"
+import type { SearchGroupKey } from "../app/global-search"
 import type { ExportMode } from "../app/survey-pdf-export"
 import type { FactorKey } from "../app/types"
 import type { RouteDetailsValue } from "../screens/route-guide/RouteDetailsCard"
@@ -29,6 +31,10 @@ export type AccountStackParamList = {
 
 export type HomeStackParamList = AccountStackParamList & {
   homeRoot: undefined
+  // Phase 32 (owner request 2026-10-28): the dendromicrohabitat guide opened from the Outils
+  // section of Accueil, the same sheet and route component as in the survey stack. Closing it goes
+  // back to Accueil.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
 }
 
 /**
@@ -65,6 +71,9 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyFactorHelp: { help: string; hints: string[] }
+  // Phase 32, D-04 and D-05: the dendromicrohabitat guide, a native form sheet on iOS and a modal on
+  // Android. `group` opens that group's page, none (or an unknown one) opens the catalogue.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
   // Phase 29, D-04: the submission step (a native form sheet: who can see the survey, then finish).
   surveyFinish: { surveyId: string }
   // Phase 33, D-14: the export choice sheet (a native form sheet: complete or summary PDF).
@@ -150,10 +159,13 @@ export type SearchStackParamList = {
    * one author (D-04, UI-SPEC U-11).
    */
   searchGroup: {
-    group: "mine" | "community" | "places" | "parcels"
+    group: SearchGroupKey
     query: string
     memberName?: string
   }
+  // Phase 32 (owner request 2026-10-28): a guide result opens the dendromicrohabitat guide as the
+  // same sheet as everywhere else. Closing it goes back to the search.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
 }
 
 export type RootTabParamList = {
@@ -201,6 +213,11 @@ export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "su
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
+/** Mounted by the survey, Accueil and search stacks: it reads only its own params. */
+export type DmhGuideRouteProps =
+  | StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
+  | StackRouteProps<HomeStackParamList, "surveyDmhGuide">
+  | StackRouteProps<SearchStackParamList, "surveyDmhGuide">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ExportChoiceRouteProps = StackRouteProps<SurveysStackParamList, "surveyExportChoice">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">

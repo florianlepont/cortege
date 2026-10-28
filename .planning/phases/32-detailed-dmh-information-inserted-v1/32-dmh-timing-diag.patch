@@ -1,0 +1,183 @@
+diff --git a/mobile/src/diag/dmh-timing.ts b/mobile/src/diag/dmh-timing.ts
+new file mode 100644
+index 00000000..8e9c6753
+--- /dev/null
++++ b/mobile/src/diag/dmh-timing.ts
+@@ -0,0 +1,76 @@
++/**
++ * Phase 32 (plan 32-07, D-08): THROWAWAY measuring aid for the entry time of factor F. It lives in
++ * the patch 32-dmh-timing-diag.patch only, is applied for the timing builds and never merged
++ * (literal strings would break the structure gate).
++ *
++ * Counts, while the F page is the active page: the seconds from the first touch to the last change
++ * of F, every finger contact (touches, a scroll gesture starts with one), the vertical scroll
++ * gestures and the corrections (a count that goes down or a group unticked).
++ */
++import { Alert } from "react-native"
++
++export type DmhTimingChange = "up" | "down" | "tick" | "untick"
++
++export type DmhTimingReport = {
++  seconds: number
++  touches: number
++  scrolls: number
++  corrections: number
++}
++
++let active = false
++let startedAt: number | null = null
++let lastChangeAt: number | null = null
++let touches = 0
++let scrolls = 0
++let corrections = 0
++
++export function dmhTimingReset(): void {
++  startedAt = null
++  lastChangeAt = null
++  touches = 0
++  scrolls = 0
++  corrections = 0
++}
++
++/** The pager tells whether the F page is the one on screen; nothing is counted otherwise. */
++export function dmhTimingSetActive(next: boolean): void {
++  active = next
++}
++
++export function dmhTimingTouch(): void {
++  if (!active) return
++  if (startedAt === null) startedAt = Date.now()
++  touches += 1
++}
++
++export function dmhTimingScroll(): void {
++  if (!active) return
++  scrolls += 1
++}
++
++export function dmhTimingChange(kind: DmhTimingChange): void {
++  if (!active || startedAt === null) return
++  lastChangeAt = Date.now()
++  if (kind === "down" || kind === "untick") corrections += 1
++}
++
++export function dmhTimingReport(): DmhTimingReport {
++  const seconds =
++    startedAt !== null && lastChangeAt !== null
++      ? Math.round(((lastChangeAt - startedAt) / 1000) * 10) / 10
++      : 0
++  return { seconds, touches, scrolls, corrections }
++}
++
++/** Shows the four numbers, then resets for the next run. Does nothing when nothing was touched. */
++export function dmhTimingShowAndReset(): void {
++  if (startedAt === null) return
++  const report = dmhTimingReport()
++  dmhTimingReset()
++  Alert.alert(
++    "dmh-timing",
++    `secondes : ${report.seconds.toFixed(1)}\ntouches : ${report.touches}\n` +
++      `defilements : ${report.scrolls}\ncorrections : ${report.corrections}`,
++  )
++}
+diff --git a/mobile/src/navigation/routes/FactorDetailRoute.tsx b/mobile/src/navigation/routes/FactorDetailRoute.tsx
+index e8403ce0..16171dff 100644
+--- a/mobile/src/navigation/routes/FactorDetailRoute.tsx
++++ b/mobile/src/navigation/routes/FactorDetailRoute.tsx
+@@ -9,6 +9,7 @@ import { useSurveyFormState } from "../../state/survey-form-context"
+ import { useSurveys } from "../../state/surveys-context"
+ import { useLatestCallback } from "../../state/useLatestCallback"
+ import { ScreenFrame } from "../../ui/ScreenFrame"
++import { dmhTimingChange } from "../../diag/dmh-timing"
+ import type { FactorDetailRouteProps } from "../types"
+ 
+ // A stable empty list, so a capped survey does not hand the pager a new array on every render.
+@@ -70,6 +71,30 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
+     [uncapped, setStratumCover, setDmhCount, setFSurface],
+   )
+ 
++  // dmh-timing: every change of factor F (type, tick, count) is a change of the run; a count going
++  // down or a group unticked is a correction. The first render only records the starting values.
++  const fField = state.factorSections.F[0]
++  const fValue = fField?.value ?? ""
++  const fSelected = fField?.selection?.selected ?? null
++  const fCounts = uncapped.dmhCounts
++  const previousF = useRef<{
++    value: string
++    selected: readonly string[] | null
++    sum: number
++  } | null>(null)
++  useEffect(() => {
++    const sum = Object.values(fCounts).reduce<number>((total, n) => total + (n ?? 0), 0)
++    const previous = previousF.current
++    previousF.current = { value: fValue, selected: fSelected, sum }
++    if (previous === null) return
++    const selectedBefore = previous.selected?.length ?? 0
++    const selectedNow = fSelected?.length ?? 0
++    if (sum < previous.sum || selectedNow < selectedBefore) {
++      dmhTimingChange(selectedNow < selectedBefore ? "untick" : "down")
++    } else if (selectedNow > selectedBefore) dmhTimingChange("tick")
++    else if (sum !== previous.sum || fValue !== previous.value) dmhTimingChange("up")
++  }, [fValue, fSelected, fCounts])
++
+   const handleActiveFactorChange = useCallback(
+     (active: FactorKey) => {
+       navigation.setOptions({ title: fr.navigation.headers.factor(active) })
+diff --git a/mobile/src/screens/survey-form/FactorPager.tsx b/mobile/src/screens/survey-form/FactorPager.tsx
+index 6c7bc0d9..788eb56a 100644
+--- a/mobile/src/screens/survey-form/FactorPager.tsx
++++ b/mobile/src/screens/survey-form/FactorPager.tsx
+@@ -36,6 +36,13 @@ import { GlassButton } from "../../ui/GlassButton"
+ import { Ionicons } from "@expo/vector-icons"
+ import { AppPressable } from "../../ui/AppPressable"
+ import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
++import {
++  dmhTimingReset,
++  dmhTimingScroll,
++  dmhTimingSetActive,
++  dmhTimingShowAndReset,
++  dmhTimingTouch,
++} from "../../diag/dmh-timing"
+ 
+ const t = fr.factorPager
+ 
+@@ -169,6 +176,17 @@ export const FactorPager = memo(function FactorPager({
+   useEffect(() => {
+     onActiveFactorChange?.(activeFactor)
+   }, [activeFactor, onActiveFactorChange])
++  // dmh-timing: the aid counts only while factor F is the page on screen; leaving F (or the pager)
++  // shows the four numbers.
++  useEffect(() => {
++    if (activeFactor !== "F") return
++    dmhTimingReset()
++    dmhTimingSetActive(true)
++    return () => {
++      dmhTimingSetActive(false)
++      setTimeout(dmhTimingShowAndReset, 400)
++    }
++  }, [activeFactor])
+   const total = useMemo(
+     () => computeIbpTotalsFromRetainedScores(factorRetainedScores).ibp_total,
+     [factorRetainedScores],
+@@ -185,7 +203,12 @@ export const FactorPager = memo(function FactorPager({
+       2 * brandSpacing4.md +
+       (showFinish ? Math.max(FINISH_ROW_MIN_HEIGHT, finishRowHeight) + brandSpacing4.smd : 0)
+   return (
+-    <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
++    <View
++      style={styles.container}
++      onLayout={handleContainerLayout}
++      onTouchStart={dmhTimingTouch}
++      testID="factor-pager"
++    >
+       <View style={styles.header}>
+         <View style={styles.titleRow}>
+           {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
+@@ -225,6 +248,7 @@ export const FactorPager = memo(function FactorPager({
+             // keyboard away; the page makes room for it (UI-SPEC 2.4).
+             keyboardShouldPersistTaps="handled"
+             keyboardDismissMode="on-drag"
++            onScrollBeginDrag={dmhTimingScroll}
+             automaticallyAdjustKeyboardInsets
+           >
+             {/* Only the active page mounts real content: ten factor screens' worth of hint state

@@ -6,6 +6,9 @@ import {
   INVALID_GENUS,
   incomplete,
   readANativeCover,
+  DENSITY_COUNT_KEYS,
+  DENSITY_LOWER_UNREAD_FROM_PER_HA,
+  densityPerHa,
   readDensityPair,
   readFactorAGenusCount,
   readFloweringPercent,
@@ -31,10 +34,8 @@ function scoreDensityV30(
   upperCap: number,
 ): FactorOutcome {
   if (pair === null) return INVALID
-  const upperPerHa = pair.upper / pair.surfaceHa
-  const lowerPerHa = pair.lower / pair.surfaceHa
-  if (upperPerHa < 1 && lowerPerHa < 1) return scored(0)
-  if (upperPerHa < 1) return scored(1)
+  const { upperPerHa, lowerPerHa } = densityPerHa(pair)
+  if (upperPerHa < DENSITY_LOWER_UNREAD_FROM_PER_HA) return scored(lowerPerHa < 1 ? 0 : 1)
   if (upperPerHa < upperCap) return scored(2)
   return scored(5)
 }
@@ -67,9 +68,9 @@ export const scoreFactorV30: FactorScorer = (key, raw, ctx) => {
       return scoreFactorB(raw)
     case "C":
     case "D":
-      return scoreDensityV30(readDensityPair(raw, "bmg_count", "bmm_count"), 3)
+      return scoreDensityV30(readDensityPair(raw, ...DENSITY_COUNT_KEYS[key]), 3)
     case "E":
-      return scoreDensityV30(readDensityPair(raw, "tgb_count", "gb_count"), 5)
+      return scoreDensityV30(readDensityPair(raw, ...DENSITY_COUNT_KEYS[key]), 5)
     case "F":
       return scoreFactorF(raw, ctx)
     case "G": {

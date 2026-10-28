@@ -51,6 +51,13 @@ jest.mock("../app/number-utils", () => ({
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
+import { withSelectionToggled } from "../app/factor-selections"
+import {
+  DMH_ENTRY_SCENARIOS,
+  DMH_ENTRY_SURFACE_HA,
+  OLD_FLOW_F_PAYLOAD,
+  type DmhEntryScenarioId,
+} from "../screens/factor-detail/dmh-entry-scenarios"
 import { useSurveyForm } from "./useSurveyForm"
 
 const { fields, rules } = fr.validation
@@ -657,6 +664,84 @@ describe("useSurveyForm", () => {
 
   // ─── Factor details stored next to the scored values (phase 25.1, D-12) ───
 
+  describe("lower counter of C, D, E (follow-up 32-32)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    type Density = "C" | "D" | "E"
+    const rules = (): void => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+    const typeAll = async (result: FormResult, factor: Density, values: string[]) => {
+      for (const [index, value] of values.entries()) {
+        await act(async () => {
+          result.current.factorSections[factor][index].onChange(value)
+        })
+      }
+    }
+    const payloadOf = (result: FormResult, factor: Density) =>
+      (result.current.draftInput.factors as Record<string, unknown>)[factor]
+
+    beforeEach(rules)
+
+    test("below 1 upper per hectare the lower counter is required and the factor waits for it", async () => {
+      const result = await renderForm()
+      await typeAll(result, "C", ["1", "", "2"])
+      const lower = result.current.factorSections.C[1]
+      expect(lower.required).toBe(true)
+      expect(lower.notNeeded).toBe(false)
+      expect(lower.error).toBe(fr.validation.rules.required(fields.bmm_count))
+      expect(payloadOf(result, "C")).toBeUndefined()
+      await act(async () => {
+        result.current.factorSections.C[1].onChange("3")
+      })
+      expect(payloadOf(result, "C")).toEqual({ bmg_count: 1, bmm_count: 3, surface_ha: 2 })
+    })
+
+    test("from 1 upper per hectare the lower counter is not needed, not an error, and the factor is stored without it", async () => {
+      const result = await renderForm()
+      await typeAll(result, "D", ["4", "", "2"])
+      const lower = result.current.factorSections.D[1]
+      expect(lower.required).toBe(false)
+      expect(lower.notNeeded).toBe(true)
+      expect(lower.error).toBeNull()
+      expect(payloadOf(result, "D")).toEqual({ bmg_count: 4, surface_ha: 2 })
+      expect(result.current.factorRetainedScores.D?.score).toBe(2)
+    })
+
+    test("a lower count already typed stays in the payload when the upper class passes the line", async () => {
+      const result = await renderForm()
+      await typeAll(result, "E", ["0", "5", "2"])
+      expect(payloadOf(result, "E")).toEqual({ tgb_count: 0, gb_count: 5, surface_ha: 2 })
+      await act(async () => {
+        result.current.factorSections.E[0].onChange("4")
+      })
+      expect(result.current.factorSections.E[1].notNeeded).toBe(true)
+      expect(result.current.factorSections.E[1].value).toBe("5")
+      expect(payloadOf(result, "E")).toEqual({ tgb_count: 4, gb_count: 5, surface_ha: 2 })
+    })
+
+    test("without a surface or an upper count the lower counter is still needed", async () => {
+      const result = await renderForm()
+      expect(result.current.factorSections.C[1].notNeeded).toBe(false)
+      await typeAll(result, "C", ["9", "", ""])
+      expect(result.current.factorSections.C[1].notNeeded).toBe(false)
+      expect(payloadOf(result, "C")).toBeUndefined()
+    })
+
+    test("a lower count that is not a whole number still shows its error", async () => {
+      const result = await renderForm()
+      await typeAll(result, "C", ["9", "1,5", "2"])
+      expect(result.current.factorSections.C[1].error).toBe(
+        fr.validation.rules.integer(fields.bmm_count),
+      )
+      expect(payloadOf(result, "C")).toEqual({ bmg_count: 9, surface_ha: 2 })
+    })
+  })
+
   describe("factor detail arrays (D-12)", () => {
     const useRealRules = () => {
       mockParseFinite.mockImplementation(
@@ -1004,6 +1089,7 @@ describe("useSurveyForm", () => {
         strataCoverText: { very_low: "22.5", high: "60" },
         dmhCounts: { dmh_01: 1, dmh_07: 2 },
         fSurfaceText: "2",
+        openAreasHa: [],
       })
       expect(factors(result).B).toEqual(stored.B)
       expect(factors(result).F).toEqual(stored.F)
@@ -1023,6 +1109,7 @@ describe("useSurveyForm", () => {
         strataCoverText: {},
         dmhCounts: {},
         fSurfaceText: "",
+        openAreasHa: [],
       })
       expect(factors(result).B).toEqual({ strata_count: 1 })
       expect(factors(result)).not.toHaveProperty("F")
@@ -1042,6 +1129,7 @@ describe("useSurveyForm", () => {
         strataCoverText: {},
         dmhCounts: {},
         fSurfaceText: "",
+        openAreasHa: [],
       })
       expect(factors(result)).toEqual({})
     })
@@ -1072,6 +1160,527 @@ describe("useSurveyForm", () => {
   // ─── resetSurveyForm ──────────────────────────────────────────────────────
 
   // ─── Doubt flag and note per factor (phase 27, D-12, D-23) ──────────────────
+
+  describe("bumpDmhGroup (phase 32, D-08 and D-10)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("the first + on an unticked group ticks it in option order and counts 1", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].selection?.onChange(["dmh_12"])
+      })
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_05", "dmh_12"],
+        dmh_counts: { dmh_05: 1 },
+        surface_ha: 1,
+      })
+    })
+
+    test("going down to 0 leaves the group ticked and never goes below 0", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("1")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(factorF(result).dmh_groups).toEqual(["dmh_05"])
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(factorF(result).dmh_groups).toEqual(["dmh_05"])
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+    })
+
+    test("a negative delta on an unticked group does not tick it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", -1)
+      })
+      expect(result.current.factorSections.F[0].selection?.selected ?? []).toEqual([])
+    })
+
+    test("without a valid surface the tick and the count are stored, the density is left alone", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+        result.current.bumpDmhGroup("dmh_02", 1)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("4")
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual(["dmh_02"])
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_02: 1 })
+    })
+
+    describe("writes the old flow's payload", () => {
+      test.each<DmhEntryScenarioId>(["S1", "S2"])("scenario %s", async (id) => {
+        const old = await renderForm()
+        await act(async () => {
+          old.current.setFSurface(DMH_ENTRY_SURFACE_HA)
+        })
+        for (const { code, trees } of DMH_ENTRY_SCENARIOS[id].groups) {
+          // Old actions: tick the chip (next selection in option order), then count by the counter.
+          await act(async () => {
+            const field = old.current.factorSections.F[0]
+            field.selection?.onChange(
+              withSelectionToggled(
+                "F",
+                old.current.ibpMethodVersion,
+                field.selection.selected,
+                code,
+                true,
+              ),
+            )
+          })
+          for (let tree = 1; tree <= trees; tree += 1) {
+            await act(async () => {
+              old.current.setDmhCount(code, tree)
+            })
+          }
+        }
+
+        const next = await renderForm()
+        await act(async () => {
+          next.current.setFSurface(DMH_ENTRY_SURFACE_HA)
+        })
+        for (const { code, trees } of DMH_ENTRY_SCENARIOS[id].groups) {
+          for (let tree = 0; tree < trees; tree += 1) {
+            await act(async () => {
+              next.current.bumpDmhGroup(code, 1)
+            })
+          }
+        }
+
+        expect(factorF(next)).toEqual(factorF(old))
+        expect(factorF(next)).toEqual(OLD_FLOW_F_PAYLOAD[id])
+      })
+    })
+  })
+
+  describe("capped survey mode counters (follow-up of phase 32, owner decision 2026-10-28)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+    const CAP = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("the + ticks the group and counts 1; the total replaces the typed number; no surface", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("7")
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 7 })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+      })
+      expect(factorF(result)).not.toHaveProperty("surface_ha")
+    })
+
+    test("a group stops at 2, the total is the sum of the groups and the score follows it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        for (const code of ["dmh_01", "dmh_01", "dmh_01", "dmh_05", "dmh_05", "dmh_12"] as const) {
+          result.current.bumpDmhGroup(code, 1, CAP)
+        }
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 5,
+        dmh_groups: ["dmh_01", "dmh_05", "dmh_12"],
+        dmh_counts: { dmh_01: 2, dmh_05: 2, dmh_12: 1 },
+      })
+      expect(result.current.factorSections.F[0].value).toBe("5")
+      // 5 trees per hectare is class 2 of F, the same as typing 5.
+      expect(result.current.factorRetainedScores.F?.score).toBe(2)
+      await act(async () => {
+        result.current.setDmhCount("dmh_12", 0, CAP)
+      })
+      expect(factorF(result).trees_per_ha).toBe(4)
+      expect(factorF(result).dmh_counts).toEqual({ dmh_01: 2, dmh_05: 2, dmh_12: 0 })
+    })
+
+    test("all counters back to 0 write 0 and the number can be typed again", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", -1, CAP)
+      })
+      expect(factorF(result).trees_per_ha).toBe(0)
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+      })
+      expect(factorF(result).trees_per_ha).toBe(4)
+      expect(factorF(result).dmh_counts).toEqual({ dmh_05: 0 })
+    })
+
+    test("an old capped payload (typed number and ticks only) opens and stays as it was", async () => {
+      const result = await renderForm()
+      const stored = { F: { trees_per_ha: 5, dmh_groups: ["dmh_01", "dmh_05"] } }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: stored })
+      })
+      expect(result.current.uncapped.dmhCounts).toEqual({})
+      expect(factorF(result)).toEqual(stored.F)
+      // The first touch of a counter takes over from the typed number.
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_01", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_01", "dmh_05"],
+        dmh_counts: { dmh_01: 1 },
+      })
+    })
+
+    test("a capped payload with counts round-trips through applyDraftToForm", async () => {
+      const result = await renderForm()
+      const stored = {
+        F: {
+          trees_per_ha: 3,
+          dmh_groups: ["dmh_01", "dmh_05"],
+          dmh_counts: { dmh_01: 2, dmh_05: 1 },
+        },
+      }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: stored })
+      })
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_01: 2, dmh_05: 1 })
+      expect(result.current.uncapped.fSurfaceText).toBe("")
+      expect(factorF(result)).toEqual(stored.F)
+    })
+  })
+
+  describe("G zones (follow-up 32-35, owner decision 2026-10-30)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorG = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).G
+    const SURFACE = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("a zone writes the list and the percent from the surface décrite in one update", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0])
+      // Adding a row changes no sum: nothing is stored for G yet.
+      expect(factorG(result)).toBeUndefined()
+      await act(async () => {
+        result.current.setOpenArea(0, 0.3, SURFACE)
+      })
+      expect(result.current.factorSections.G[0].value).toBe("15")
+      expect(factorG(result)).toEqual({ open_flowering_percent: 15, open_areas_ha: [0.3] })
+      expect(result.current.factorRetainedScores.G).not.toBeNull()
+    })
+
+    test("zones add up, a zone at 0 is kept and ignored by the sum", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.3, SURFACE)
+        result.current.setOpenArea(1, 0.1, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 20, open_areas_ha: [0.3, 0.1, 0] })
+    })
+
+    test("a sum above the surface is capped at 100 %", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 1.5, SURFACE)
+        result.current.setOpenArea(1, 1, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 100, open_areas_ha: [1.5, 1] })
+    })
+
+    test("a typed surface is brought to two decimals and to the bounds", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, -3, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0])
+      await act(async () => {
+        result.current.setOpenArea(0, 0.126, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0.13])
+    })
+
+    test("at most 20 zones, and a change on a row that is not there changes nothing", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        for (let i = 0; i < 25; i += 1) result.current.addOpenArea()
+      })
+      expect(result.current.uncapped.openAreasHa).toHaveLength(20)
+      await act(async () => {
+        result.current.setOpenArea(20, 1, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual(new Array(20).fill(0))
+    })
+
+    test("removing a zone recomputes the percent; the last one clears it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.4, SURFACE)
+        result.current.setOpenArea(1, 0.2, SURFACE)
+      })
+      expect(factorG(result)?.open_flowering_percent).toBe(30)
+      await act(async () => {
+        result.current.removeOpenArea(0, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 10, open_areas_ha: [0.2] })
+      await act(async () => {
+        result.current.removeOpenArea(0, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(result.current.factorSections.G[0].value).toBe("")
+      expect(factorG(result)).toBeUndefined()
+    })
+
+    test("none stores 0 % with no zone and empties the list", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.3, SURFACE)
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(true)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 0 })
+      expect(result.current.factorRetainedScores.G).not.toBeNull()
+    })
+
+    test("off empties the field again, only while it holds the none state", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoOpenArea(true)
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(false)
+      })
+      expect(result.current.factorSections.G[0].value).toBe("")
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("12")
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(false)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12 })
+    })
+
+    test("an older G with only a percent keeps it until a zone is filled", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "S",
+          factors: { G: { open_flowering_percent: 12 } },
+        })
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12 })
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12, open_areas_ha: [0] })
+    })
+
+    test("a stored list comes back in the form and goes out again, unreadable entries dropped", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "S",
+          factors: { G: { open_flowering_percent: 20, open_areas_ha: [0.3, "x", 0.1] } },
+        })
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0.3, 0.1])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 20, open_areas_ha: [0.3, 0.1] })
+    })
+
+    test("the retained score is the same with and without the zones (parity)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("2")
+      })
+      const without = result.current.factorRetainedScores.G
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 2, open_areas_ha: [0] })
+      expect(result.current.factorRetainedScores.G).toEqual(without)
+    })
+  })
+
+  describe("markNoDmhGroup (follow-up 32-25, no tree carries a dendromicrohabitat)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+    const CAP = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("capped: stores trees per hectare 0 alone (no group, no count, no surface) and F is scored", async () => {
+      const result = await renderForm()
+      expect(result.current.factorRetainedScores.F).toBeNull()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0 })
+      expect(result.current.factorSections.F[0].value).toBe("0")
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual([])
+      expect(result.current.uncapped.dmhCounts).toEqual({})
+      expect(result.current.factorRetainedScores.F).not.toBeNull()
+    })
+
+    test("it replaces ticked groups, counts and a typed number in one update", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_01", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", -1, CAP)
+        result.current.bumpDmhGroup("dmh_01", -1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 0,
+        dmh_groups: ["dmh_01", "dmh_05"],
+        dmh_counts: { dmh_01: 0, dmh_05: 0 },
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0 })
+    })
+
+    test("counted in full the typed surface stays; the counts and groups go", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("2")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 0.5,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+        surface_ha: 2,
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0, surface_ha: 2 })
+      expect(result.current.uncapped.fSurfaceText).toBe("2")
+    })
+
+    test("off empties the field again, only while it holds the none state", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(false, CAP)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+      expect(factorF(result)).toBeUndefined()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(false, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 4 })
+    })
+
+    test("a counter takes over from the none state: the sum replaces the 0", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+      })
+    })
+
+    test("counted in full without a surface, a count empties the 0 instead of standing beside it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_05: 1 })
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      await act(async () => {
+        result.current.setDmhCount("dmh_05", 2)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+    })
+
+    test("a count lowered to 0 with no surface leaves the typed number alone", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("3")
+        result.current.setDmhCount("dmh_05", 0)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("3")
+    })
+  })
 
   describe("factor annotations (D-23)", () => {
     const useRealRules = () => {

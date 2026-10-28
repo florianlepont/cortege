@@ -1,16 +1,18 @@
 import type {
   CommunitySurveyItem,
+  DmhGroupCode,
   SearchMemberItem,
   SearchParcelItem,
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
 import type { LocalSurvey } from "../storage/types"
+import { searchDmhGroups } from "./dmh-guide/search"
 import { foldSearchText, normalizeSearchQuery } from "./search-text"
 
 // Pure rules of the global search (phase 25: D-02, D-03, D-13, D-14). No React, no I/O, no
 // user-facing text: the screens and hooks take their decisions from here.
 
-export type SearchGroupKey = "mine" | "community" | "places" | "parcels"
+export type SearchGroupKey = "mine" | "community" | "places" | "parcels" | "guide"
 
 /** Characters needed before any search runs. */
 export const SEARCH_MIN_LENGTH = 2
@@ -64,6 +66,20 @@ export function matchOwnSurveys(
     }
   }
   return matches
+}
+
+/**
+ * The groups of the dendromicrohabitat guide that match the query (phase 32, owner request
+ * 2026-10-28): the same accent- and case-insensitive match as the guide's own search
+ * (`searchDmhGroups`: label, common-name keywords and counted types), in IBP order, run on the
+ * phone from the bundled catalogue. Nothing under the minimum length, so an empty query never lists
+ * the fifteen groups. The guide is never promoted to the best result: it is reference content, and
+ * the best result must not jump to it while the network groups are still loading.
+ */
+export function matchGuideGroups(query: string): DmhGroupCode[] {
+  const normalized = normalizeSearchQuery(query)
+  if (normalized.length < SEARCH_MIN_LENGTH) return []
+  return searchDmhGroups(normalized)
 }
 
 const COMPACT_IDU = /^\d{5}[0-9A-Z]{3}[0-9A-Z]{2}\d{4}$/
@@ -135,9 +151,9 @@ export function pickBestResult(input: BestResultInput): BestResult | null {
   return null
 }
 
-const GROUP_ORDER: readonly SearchGroupKey[] = ["mine", "community", "places", "parcels"]
+const GROUP_ORDER: readonly SearchGroupKey[] = ["mine", "community", "places", "parcels", "guide"]
 
-/** The four groups in their fixed order, Parcelles first when the best result is a parcel. */
+/** The five groups in their fixed order, Parcelles first when the best result is a parcel. */
 export function groupOrder(parcelFirst: boolean): SearchGroupKey[] {
   if (!parcelFirst) return [...GROUP_ORDER]
   return ["parcels", ...GROUP_ORDER.filter((key) => key !== "parcels")]

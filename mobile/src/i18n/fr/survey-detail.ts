@@ -4,7 +4,7 @@ import { surveyFinishFr } from "./survey-finish"
 // Phase 27: what a screen reader hears after a factor row's title and value (D-13). Nothing is
 // added for a plain row, so the spoken label of an unannotated factor is unchanged.
 function factorFlags({ doubtful, hasNote }: { doubtful?: boolean; hasNote?: boolean }): string {
-  return `${doubtful ? ", douteux" : ""}${hasNote ? ", avec une note" : ""}`
+  return `${doubtful ? ", incertitude signalée" : ""}${hasNote ? ", avec une note" : ""}`
 }
 
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
@@ -61,6 +61,8 @@ export const surveyDetailFr = {
   cta: {
     finish: "Terminer le relevé",
     start: "Commencer la notation",
+    // A draft with no route starts with the route: the button opens the route step (edit mode).
+    defineRoute: "Définir le parcours",
     continue: "Continuer la notation",
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
@@ -207,7 +209,7 @@ export const surveyDetailFr = {
     hasWarning: "Avertissement",
     notLoaded: "Les facteurs ne sont pas encore chargés.",
     // Phase 27 (D-13, D-17): the doubt flag and the folded note on a score row.
-    doubtBadge: "Douteux",
+    doubtBadge: "Incertitude",
     noteMore: "Lire la suite",
     noteMoreA11y: "Lire la suite, développe la note",
     noteLess: "Réduire",

@@ -11,8 +11,21 @@ import { StrataCoverFields } from "./StrataCoverFields"
 export type UncappedEntryProps = {
   state: UncappedState
   setStratumCover: (code: BStratumCode, text: string) => void
-  setDmhCount: (code: DmhGroupCode, count: number) => void
+  /** `cap`: the capped survey mode (follow-up of phase 32), trees per hectare held at `cap`. */
+  setDmhCount: (code: DmhGroupCode, count: number, cap?: number) => void
+  /** Phase 32: the first "+" of a row ticks the group and counts 1. Same `cap`. */
+  bumpDmhGroup: (code: DmhGroupCode, delta: number, cap?: number) => void
+  /** Follow-up 32-25: the "no tree carries one" row; `cap` as above (the capped mode has no surface). */
+  markNoDmhGroup: (on: boolean, cap?: number) => void
   setFSurface: (text: string) => void
+  /**
+   * Follow-up 32-35: G's zones. Adding a row changes no sum; the others take the survey's described
+   * surface (hectares), from which the form recomputes G's percent. `markNoOpenArea` records 0 %.
+   */
+  addOpenArea: () => void
+  setOpenArea: (index: number, hectares: number, zoneSurfaceHa: number) => void
+  removeOpenArea: (index: number, zoneSurfaceHa: number) => void
+  markNoOpenArea: (on: boolean) => void
 }
 
 type UncappedFieldBlockProps = {
@@ -26,8 +39,8 @@ type UncappedFieldBlockProps = {
 
 /**
  * The detail block of a factor counted in full: B's cover per stratum (it replaces the strata
- * chips) or F's counts per group and its surface (it comes under the group chips). Nothing for the
- * other factors, which keep their entry.
+ * chips) or F's own surface (it comes under the group list, which holds the counts since phase 32).
+ * Nothing for the other factors, which keep their entry.
  */
 export function UncappedFieldBlock({
   factor,
@@ -49,12 +62,8 @@ export function UncappedFieldBlock({
   if (factor === "F") {
     return (
       <DmhCountFields
-        methodVersion={methodVersion}
-        selectedGroups={field.selection?.selected ?? []}
-        counts={entry.state.dmhCounts}
         surfaceText={entry.state.fSurfaceText}
         zoneSurfaceHa={zoneSurfaceHa}
-        onChangeCount={entry.setDmhCount}
         onChangeSurface={entry.setFSurface}
       />
     )

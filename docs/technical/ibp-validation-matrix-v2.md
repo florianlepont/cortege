@@ -202,10 +202,55 @@ inside the MAT-SUBMIT-02 set, and expect what the same factors give without the 
 | MAT-B-UNC-03@both | draft | any | `B.strata_cover` only, no `B.strata_count` | `B` not scored, `ok=false` (a detail key without its scored key is unreadable input, as an empty B) | B `factor_invalid_raw` |
 | MAT-F-UNC-01@both | draft; submit (same contexts) | any | `F.trees_per_ha=2.5` plus `F.dmh_counts` (`dmh_01=5`, `dmh_02=1`) and `F.surface_ha=2` | same as `F.trees_per_ha=2.5` alone: `F=1`; in the MAT-SUBMIT-02 set with `F=1`, totals 13 / 7 / 20 | none |
 | MAT-F-UNC-02@both | draft | any | `F.dmh_counts` and `F.surface_ha` only, no `F.trees_per_ha` | `F` not scored, `ok=false` | B `factor_invalid_raw` |
+| MAT-F-CAP-01@both | draft; submit (same contexts) | any | `F.trees_per_ha=3` plus `F.dmh_groups` (`dmh_01`, `dmh_05`) and `F.dmh_counts` (`dmh_01=2`, `dmh_05=1`, trees per hectare, no `F.surface_ha`) | same as `F.trees_per_ha=3` alone: `F=2`; in the MAT-SUBMIT-02 set with `F=2`, totals 14 / 7 / 21 | none |
+| MAT-F-CAP-02@both | draft | any | `F.dmh_groups` and `F.dmh_counts` only (capped shape), no `F.trees_per_ha` | `F` not scored, `ok=false` | B `factor_invalid_raw` |
 
 The derivation helpers of the package are covered by their own unit tests (`factor-details.test.ts`):
 a stratum counts from 20 % (19 does not, 20 does); each group's density is capped at 2 trees per
 hectare, then summed, with no rounding (2.5 for 5 and 1 trees over 2 ha).
+
+Capped survey mode (follow-up of phase 32, owner decision 2026-10-28): F there also carries
+`F.dmh_counts`, but each value is a whole number of trees per hectare (0, 1 or 2 per group), `F.surface_ha`
+is not written and the scored `F.trees_per_ha` is the sum of the counts (`cappedDmhTotalPerHa`, each
+group held at 2). MAT-F-CAP-01 and MAT-F-CAP-02 show the counts are not read by a scorer; the two
+helpers `cappedDmhCounts` and `cappedDmhTotalPerHa` have their own unit tests.
+
+## Follow-up 32-35: several open flowering zones in G
+
+Owner decision 2026-10-30: the observer of G lists the open flowering zones, each a surface in
+hectares, and the app derives the percent from the survey's described surface (the route's
+`zone_surface_ha`). The list is stored as `G.open_areas_ha` (0 to 20 numbers, each from 0 to the
+surface maximum, two decimals; a 0 is a row added and not filled), beside the scored
+`G.open_flowering_percent`, which the app writes as `floweringPercentFromAreas(areas, surface)`
+(sum over surface, capped at 100, two decimals). No scorer reads the list: each case expects what
+the same G gives without it. The three helpers `sumOpenAreasHa`, `floweringPercentFromAreas`,
+`openAreasExceedSurface` and the reader `readOpenAreasHa` have their own unit tests.
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-G-UNC-01@both | draft; submit (v3.0 ACA collineen, v3.2 cas 1) | any | `G.open_flowering_percent=2` plus `G.open_areas_ha=[0.3, 0.1]` | same as `G.open_flowering_percent=2` alone: `G=5`; in the MAT-SUBMIT-02 set with `G=5`, totals 20 / 7 / 27 | none |
+| MAT-G-UNC-02@both | draft (two inputs: `#over`, `#none`) | any | `G.open_flowering_percent=100` plus zones above the surface (`[30, 20]`); `G.open_flowering_percent=0` plus `G.open_areas_ha=[]` | `G=2` (above 5 %, the list is not read); `G=0` | none |
+
+## Follow-up 32-32: lower diameter class not needed from 1 upper per hectare
+
+The lower class of C, D and E (BMm, GB) only decides the score while the upper class (BMg, TGB) is
+under 1 per hectare: v3.0 scores 0 or 1 on the lower class alone, v3.2 on the sum, and from 1 upper
+per hectare the score is 2 or 5 on the upper class alone. So the package reads a lower count that
+is not given at all (absent, `null` or blank) when the upper class per hectare is 1 or more
+(`readDensityPair`); the lower class then reads as 0 and is never looked at. A lower count that is
+present is read as before, whatever the upper class. Below 1 per hectare a missing lower count is
+an unreadable factor, as before, and so is a lower count that is present but not a number. No
+existing case changes. `densityLowerCountNeeded` answers whether the form must still ask for the
+lower count (true until the upper class per hectare is computable and reaches 1). Each case runs
+under both versions; the valid ones also run in submit mode inside the MAT-SUBMIT-02 set.
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-LOW-01@both | draft; submit (v3.0 ACA collineen, v3.2 cas 1) | any | `C.bmg_count=4`, `C.surface_ha=2`, no BMm (2 per hectare); submit with `C.bmg_count=6`, `C.surface_ha=2` (3 per hectare) | draft `C=2`; submit `C=5`, in the MAT-SUBMIT-02 set totals 21 / 7 / 28 | none |
+| MAT-LOW-02@both | draft (without and with `bmm_count=9`); submit | any | `D.bmg_count=1`, `D.surface_ha=1` (exactly 1 per hectare) | `D=2` in all three; in the MAT-SUBMIT-02 set totals 19 / 7 / 26 | none |
+| MAT-LOW-03@both | draft; submit | any | `E.tgb_count=4`, `E.surface_ha=1`, no GB; submit with `E.tgb_count=5` | draft `E=2`; submit `E=5`, in the MAT-SUBMIT-02 set totals 20 / 7 / 27 | none |
+| MAT-LOW-04@both | draft; submit | any | `C.bmg_count=1`, `C.surface_ha=2` (0.5 per hectare), no BMm; submit with `E.tgb_count=1`, `E.surface_ha=2`, no GB | not scored, `ok=false` | B `factor_invalid_raw` |
+| MAT-LOW-05@both | draft | any | `C.bmg_count=3`, `C.bmm_count="many"`, `C.surface_ha=1` | `C` not scored, `ok=false` (a lower count that is present but unreadable) | B `factor_invalid_raw` |
 
 ## Submit readiness (mobile)
 
@@ -279,7 +324,8 @@ Unchanged between versions (GS-1):
   `0 -> 0`, `1 -> 1`, `2 -> 2`, `>=3 -> 5`. G standard: `0 -> 0`, under 1 % or over 5 % `-> 2`,
   1 to 5 % `-> 5`; G subalpine or cas 3: `0 -> 0`, under 1 % `-> 2`, 1 % or more `-> 5`.
 - C, D and E under v3.2 test the sum of the two diameter classes for score 1 (CD-1, E-1); under
-  v3.0 the lower class alone.
+  v3.0 the lower class alone. From 1 upper class per hectare the lower count is not needed (MAT-LOW-01
+  to MAT-LOW-05).
 - Consistency warnings (`consistency_a_b`, `consistency_e_f`, app heuristics, both versions) compare
   two scored factors: they fire only when both factors of the pair are scored. A factor that is
   absent or incomplete is not "very low" (before 01.8 an absent factor counted as 0, so MAT-B-01 or

@@ -13,7 +13,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { RipplePressable } from "../../ui/RipplePressable"
 import { RECENT_LAYOUT } from "../home/layout-budget"
 
-export type SearchResultKind = "member" | "place" | "parcel"
+export type SearchResultKind = "member" | "place" | "parcel" | "guide"
 
 type SearchResultRowProps = {
   kind: SearchResultKind
@@ -30,6 +30,7 @@ const GLYPHS = {
   member: "person-outline",
   place: "location-outline",
   parcel: "grid-outline",
+  guide: "book-outline",
 } as const satisfies Record<SearchResultKind, string>
 
 const TILE_SIZE = 32
@@ -38,7 +39,7 @@ const REGULAR_MIN_HEIGHT = 56
 const CARD_BORDER = 1
 
 /**
- * A member, place or parcel result (25-04, UI-SPEC section 3b and 4): a 32 pt glass tile with the
+ * A member, place, parcel or guide result (25-04, UI-SPEC section 3b and 4): a 32 pt glass tile with the
  * type glyph, a one-line title, a one-line meta and a trailing chevron. "compact" is the flat slim row
  * of a shared summary card (the card clips the wave, so it is drawn square); "regular" is a glass card
  * of its own for the full list. The row is one accessible button and the press is the green wave.

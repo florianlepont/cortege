@@ -298,6 +298,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 - UI validation:
   - blocking: `surface_ha > 0`.
   - blocking: counters >= 0.
+  - lower count (follow-up 32-32, 2026-10-30): `bmm_count` only matters while BMg/ha < 1, so it is
+    required only then (or while BMg/ha cannot be computed yet); from BMg/ha >= 1 it may be absent
+    and, when typed, is stored and not read. The package decides (`densityLowerCountNeeded`).
+  - surface: when the route holds a surface and `surface_ha` equals it, the form shows it as one
+    read-only line ("Surface décrite : 2,0 ha, d'après le parcours") instead of a field.
 - Example:
   - BMg/ha = 2.2 -> score `2`.
 
@@ -323,6 +328,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - `5`: BMg/ha >= 3
 - UI validation:
   - blocking: `surface_ha > 0`.
+  - lower count (follow-up 32-32, 2026-10-30): `bmm_count` only matters while BMg/ha < 1, so it is
+    required only then (or while BMg/ha cannot be computed yet); from BMg/ha >= 1 it may be absent
+    and, when typed, is stored and not read. The package decides (`densityLowerCountNeeded`).
+  - surface: when the route holds a surface and `surface_ha` equals it, the form shows it as one
+    read-only line ("Surface décrite : 2,0 ha, d'après le parcours") instead of a field.
 - Example:
   - BMg/ha = 0.6, BMm/ha = 1.3 -> score `1`.
 
@@ -349,6 +359,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - `5`: TGB/ha >= 5
 - UI validation:
   - blocking: `surface_ha > 0`.
+- UI validation (follow-up 32-32, 2026-10-30):
+  - blocking: `surface_ha > 0`.
+  - `gb_count` only matters while TGB/ha < 1, so it is required only then (or while TGB/ha cannot be
+    computed yet); from TGB/ha >= 1 it may be absent and, when typed, is stored and not read.
+  - surface: shown as one read-only line while it equals the route's surface décrite.
 - Example:
   - TGB/ha = 0.4 and GB/ha = 1.1 -> score `1`.
 
@@ -379,6 +394,32 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   then derived by `dmhDensityPerHa` (each group's count divided by `surface_ha`, capped at 2 per
   hectare, then summed). `dmh_counts` is not the `dmh_group_counts` array of the scorer, is never
   scored and is written only with `trees_per_ha`.
+- Capped count (follow-up of phase 32, owner decision 2026-10-28, after the official sheet: "compter
+  au maximum 2 arbres/ha par groupe de DMH ... total plafonné à 8 arbres/ha"): in the capped mode
+  each group row has the same counter as the full mode (the "+" of an unticked row ticks the group
+  and counts 1, then a stepper), but the value is a whole number of trees **per hectare** from 0 to
+  2 (the stepper stops at 2; the list caption says "au plus 2 par groupe"). No surface field and no
+  division: the counts are already per hectare, and fractions are not allowed. The form stores
+  `dmh_groups` (the ticks), `dmh_counts` (values 0 to 2) and a derived `trees_per_ha` that is the
+  sum of the counts (`cappedDmhTotalPerHa` of the package); `surface_ha` is not written. The total
+  is not limited to 8: the score classes already stop there (8 and above is class `5`), so the
+  sheet's total of 8 is a display matter. The total is shown only as the "Arbres par hectare" hero
+  card under the page's intro paragraph (follow-up 32-27: a read-only card with the big figure, its
+  label and "somme des groupes comptés", not a field; it shows 0 while nothing is counted). From the
+  sum where F's score is the top one (8) a quiet "Maximum" pill with a check closes the card, and a toast ("Score maximal atteint : inutile de
+  compter davantage.") floats above the pager's bottom bar each time the sum crosses to that score
+  (not on opening a page already at it), for 4 seconds or until tapped. Touching a counter takes
+  over from a typed number: the derived total replaces it (existing data is test data). A capped survey saved
+  before (typed number, ticks only) opens as it was and still validates. Counts of a counted-in-full
+  survey (trees on a surface) are brought to the cap on the first touch in the capped mode. The
+  score never reads the counts (parity cases `MAT-F-CAP-*`).
+  A stand where no tree carries a dendromicrohabitat records it with one row after the last
+  section of the list ("Aucun arbre porteur de dendromicrohabitats", both counting modes): it
+  stores `trees_per_ha` 0 with no group and no count (a surface typed in the counted-in-full mode
+  stays), a stored shape the package already scores; the row is ticked exactly when `trees_per_ha`
+  is stored as 0 and no group is ticked or counted (so an older survey with a typed 0 shows it
+  ticked), a press on a ticked row empties the field again, touching a counter takes over, and
+  while a count is above 0 the row is locked like a counted group.
 - Example:
   - total after capping = 8.4 trees/ha -> score `5`.
 
@@ -417,6 +458,14 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
     - `5`: 1 to 5%
 - UI validation:
   - blocking: described area > 0.
+- Several zones (follow-up 32-35, owner decision 2026-10-30): the app does not ask the share directly
+  but a list of zones ("Zones de milieux ouverts fleuris", up to 20), each a surface in hectares, and
+  derives `open_flowering_percent` as their sum over the survey's described surface (the route's
+  `zone_surface_ha`), capped at 100 with a quiet warning when the zones exceed the surface. The
+  list is stored as `open_areas_ha` beside the scored key; no scorer reads it (parity cases
+  `MAT-G-UNC-*`). The row "Aucune zone de milieux ouverts fleuris" records 0 % with no zone. A G
+  with only `open_flowering_percent` (an older survey, or a survey with no route surface) still
+  validates, scores and displays. See `ibp-validation-matrix-v2.md`.
 - Example:
   - 3.2% flowering open habitats (v3.0 M) -> score `5`.
   - 6% flowering open habitats (v3.2 cas 3) -> score `5`; the same under cas 1 -> score `2`.
@@ -511,7 +560,8 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   `factor_a_genus_invalid`) or the legacy `native_genus_count`, plus native cover available; v3.2:
   `ibp_cas` set; v3.0: region_version + stage set.
 - B: at least 1 stratum entered.
-- C/D/E: `surface_ha > 0`; non-negative counters.
+- C/D/E: `surface_ha > 0`; non-negative counters; the lower count (BMm, GB) only while the upper
+  class is under 1 per hectare.
 - F: coherent dmh-group data; computable total.
 - G: computable surfaces and `open_flowering_percent`; v3.2: `ibp_cas` set.
 - H: class selected + evidence source.
@@ -612,7 +662,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `evidence: { notes?: string, photos?: string[], gps?: {lat:number,lng:number,accuracy_m?:number} }`
 - `factors.annotations` (phase 27, D-23): the observer's doubt and note per factor, in one container
   next to the factor entries, keyed by factor code `A` to `J`: `{ doubt?: true, note?: string }`,
-  `doubt` only ever `true` (the default "Sûr" is the absence of the key) and `note` at most 300
+  `doubt` only ever `true` (the default, no incertitude, is the absence of the key) and `note` at most 300
   characters. `evidence.notes` stays the shape of the canonical factor result above; the observer's
   own factor note lives in this container, not in `evidence.notes` and not inside the factor's raw
   value (a factor entry holding only meta would be refused by the scorer as `factor_invalid_raw`).
