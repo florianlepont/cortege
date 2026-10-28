@@ -40,6 +40,6 @@ Only what the owner actually confirmed or reported in the conversation is record
 
 ## Not done
 
-- No expert reading of the 15 drawings and the IBP thresholds.
+- Expert reading of the 15 drawings and the IBP thresholds: DONE, reported by the owner on 2026-10-30 ("L'expert a relu", conclusion "Tout est bon", no correction); the expert's name and the reading date were not given and are to be added to the spec section 12.
 - PDF export not updated for the capped counts (printed without "par hectare") and not for the G zones.
 - Pager bar A-J overlaps the bottom tab bar on factor pages (pre-existing).
