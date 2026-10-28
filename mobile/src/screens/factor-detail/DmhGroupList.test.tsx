@@ -276,6 +276,62 @@ describe("DmhGroupList, modes", () => {
   })
 })
 
+describe("DmhGroupList, capped counters per hectare (follow-up of phase 32)", () => {
+  const perHectare = (counts: DmhListCounting["counts"] = {}) => ({ ...counting(counts), max: 2 })
+
+  test("heading of the capped list, the cap sentence then the guide sentence, a + on unticked rows", () => {
+    const { tree, all, textOf, one } = mount({
+      selected: ["dmh_01", "dmh_05"],
+      counting: perHectare({ dmh_01: 2, dmh_05: 1 }),
+    })
+    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
+    expect(texts).toContain(fr.factorDetail.companionLabels.dmh_groups)
+    expect(texts).toContain(`${t.cappedHelper} ${t.infoHelper}`)
+    expect(texts).not.toContain(fr.factorDetail.countingMode.dmhHelper)
+    expect(all("dmh-add-dmh_03")).toHaveLength(1)
+    expect(all("dmh-add-dmh_01")).toHaveLength(0)
+    // Groups only: the trees are the total below the list, not a count on a surface.
+    expect(textOf(one("dmh-summary"))).toBe(t.summaryCapped({ groups: 2 }))
+  })
+
+  test("the total under the list is the package's sum, each group held at 2", () => {
+    const { textOf, one } = mount({
+      selected: ["dmh_01", "dmh_05", "dmh_12"],
+      counting: perHectare({ dmh_01: 2, dmh_05: 2, dmh_12: 1 }),
+    })
+    expect(textOf(one("dmh-total"))).toBe("Total : 5 arbres par hectare")
+    expect(textOf(one("dmh-total"))).toBe(t.totalPerHa({ trees: 5 }))
+    // A count of 5 left by a counted-in-full survey still counts for 2.
+    const stale = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 5 }) })
+    expect(stale.textOf(stale.one("dmh-total"))).toBe("Total : 2 arbres par hectare")
+  })
+
+  test("one tree reads in the singular; no counter above 0 shows no total", () => {
+    const one1 = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 1 }) })
+    expect(one1.textOf(one1.one("dmh-total"))).toBe("Total : 1 arbre par hectare")
+    const none = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 0 }) })
+    expect(none.all("dmh-total")).toHaveLength(0)
+    expect(mount({ selected: ["dmh_01"] }).all("dmh-total")).toHaveLength(0)
+    expect(
+      mount({ selected: ["dmh_01"], counting: counting({ dmh_01: 3 }) }).all("dmh-total"),
+    ).toHaveLength(0)
+  })
+
+  test("a row steps to 2 at most and the handlers go up with the group", () => {
+    const perHa = perHectare({ dmh_05: 1 })
+    const { open, one, press } = mount({ selected: ["dmh_05"], counting: perHa })
+    open("epiphytic")
+    expect(one("dmh-stepper-dmh_05").props.accessibilityValue).toEqual({
+      text: "1 arbre par hectare, au plus 2",
+    })
+    act(() => one("dmh-stepper-dmh_05-increase").props.onPressIn())
+    act(() => one("dmh-stepper-dmh_05-increase").props.onPressOut())
+    expect(perHa.onSetCount).toHaveBeenCalledWith("dmh_05", 2)
+    press("dmh-add-dmh_13")
+    expect(perHa.onBump).toHaveBeenCalledWith("dmh_13", 1)
+  })
+})
+
 describe("DmhGroupList, handlers", () => {
   test("ticking dmh_01 with dmh_12 selected hands the next selection in option order", () => {
     const { press, open, onChangeSelection } = mount({ selected: ["dmh_12"] })

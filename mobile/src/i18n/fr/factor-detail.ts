@@ -117,6 +117,14 @@ export const factorDetailFr = {
     summaryFull: ({ groups, trees }: { groups: number; trees: number }) =>
       `${groups === 1 ? "1 groupe" : `${groups} groupes`}, ${trees === 1 ? "1 arbre" : `${trees} arbres`}`,
     treesCaption: "Arbres",
+    // Follow-up of phase 32 (owner decision 2026-10-28): in the capped survey mode a group holds a
+    // whole number of trees per hectare, 0 to 2, and the total is the sum of the groups.
+    treesCaptionPerHa: "Arbres par hectare",
+    cappedHelper: "Comptez au plus 2 arbres par hectare pour chaque groupe.",
+    totalPerHa: ({ trees }: { trees: number }) =>
+      `Total : ${trees === 1 ? "1 arbre" : `${trees} arbres`} par hectare`,
+    // Under the trees-per-hectare field once a group counter is above 0 (the field is then derived).
+    derivedFromGroups: "Calculé d'après les groupes ci-dessous.",
     lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
     a11y: {
       info: ({ label }: { label: string }) => `En savoir plus sur ${label}`,
@@ -125,6 +133,8 @@ export const factorDetailFr = {
       tickLockedHint: "Ramenez d'abord le nombre à 0 pour décocher",
       withCount: ({ label, trees }: { label: string; trees: number }) =>
         `${label}, ${trees === 1 ? "1 arbre" : `${trees} arbres`}`,
+      withCountPerHa: ({ label, trees }: { label: string; trees: number }) =>
+        `${label}, ${trees === 1 ? "1 arbre" : `${trees} arbres`} par hectare`,
       add: ({ label }: { label: string }) => `Compter un arbre dans ${label}`,
       addHint: "Coche le groupe et compte 1",
     },
@@ -134,6 +144,11 @@ export const factorDetailFr = {
       increment: "Ajouter un arbre",
       decrement: "Retirer un arbre",
       editHint: "Double-tapez pour saisir le nombre",
+      // The capped survey mode: trees per hectare, held at `max` per group.
+      valueCapped: ({ trees, max }: { trees: number; max: number }) =>
+        `${trees === 1 ? "1 arbre" : `${trees} arbres`} par hectare, au plus ${max}`,
+      editHintCapped: ({ max }: { max: number }) =>
+        `Double-tapez pour saisir le nombre, ${max} au plus`,
     },
   },
 } as const

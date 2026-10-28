@@ -69,6 +69,19 @@ export function FromRouteCaption() {
   )
 }
 
+/**
+ * Follow-up of phase 32: the line under F's trees-per-hectare field once a group counter of the
+ * capped survey mode is above 0. The field is then the sum of the groups and cannot be typed.
+ */
+export function DerivedFromGroupsCaption() {
+  const styles = useStyles()
+  return (
+    <Text style={styles.fromRoute} testID="trees-derived-caption">
+      {fr.factorDetail.dmhList.derivedFromGroups}
+    </Text>
+  )
+}
+
 function useStyles() {
   const theme = useBrandTheme()
   return useMemo(() => createStyles(theme), [theme])

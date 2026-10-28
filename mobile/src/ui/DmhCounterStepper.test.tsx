@@ -333,4 +333,73 @@ describe("DmhCounterStepper", () => {
     expect(outer.props.accessibilityValue).toEqual({ text: "4 arbres" })
     expect(count.props.onPress).toBeUndefined()
   })
+  describe("capped survey mode (max 2 trees per hectare, follow-up of phase 32)", () => {
+    test("+ steps up to the cap, then does nothing: no step, no tick, a disabled dimmed glyph", () => {
+      const { onStep, press, findByTestID } = render({ value: 1, max: 2 })
+      press("s-increase")
+      expect(onStep).toHaveBeenLastCalledWith(2)
+      expect(mockSelection).toHaveBeenCalledTimes(1)
+
+      const full = render({ value: 2, max: 2 })
+      mockSelection.mockClear()
+      full.press("s-increase")
+      act(() => {
+        jest.advanceTimersByTime(1000)
+      })
+      expect(full.onStep).not.toHaveBeenCalled()
+      expect(mockSelection).not.toHaveBeenCalled()
+      const button = full.findByTestID("s-increase")
+      expect(button.props.accessibilityState).toEqual({ disabled: true })
+      const glyph = button.findAll((n) => (n.type as unknown) === "Ionicons")[0]
+      expect(flatten(glyph.props.style).opacity).toBe(0.4)
+      expect(findByTestID("s-increase").props.accessibilityState).toEqual({ disabled: false })
+    })
+
+    test("a hold stops at the cap and the - still steps down from it", () => {
+      const { onStep, findByTestID } = render({ value: 0, max: 2 })
+      act(() => {
+        findByTestID("s-increase").props.onPressIn()
+      })
+      act(() => {
+        jest.advanceTimersByTime(1500)
+      })
+      act(() => {
+        findByTestID("s-increase").props.onPressOut()
+      })
+      expect(Math.max(...onStep.mock.calls.map(([next]) => next as number))).toBe(2)
+
+      const top = render({ value: 2, max: 2 })
+      top.press("s-decrease")
+      expect(top.onStep).toHaveBeenLastCalledWith(1)
+    })
+
+    test("the increment action stops at the cap; value and hint name the unit and the cap", () => {
+      const { onStep, findOuter } = render({ value: 2, max: 2 })
+      act(() => {
+        findOuter().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } })
+      })
+      expect(onStep).not.toHaveBeenCalled()
+      expect(findOuter().props.accessibilityValue).toEqual({
+        text: "2 arbres par hectare, au plus 2",
+      })
+      expect(findOuter().props.accessibilityHint).toBe(
+        "Double-tapez pour saisir le nombre, 2 au plus",
+      )
+      const one = render({ value: 1, max: 2 })
+      expect(one.findOuter().props.accessibilityValue).toEqual({
+        text: "1 arbre par hectare, au plus 2",
+      })
+      act(() => {
+        one.findOuter().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } })
+      })
+      expect(one.onStep).toHaveBeenLastCalledWith(2)
+    })
+
+    test("read-only, the spoken value still names the unit and the cap", () => {
+      const { findOuter } = render({ value: 2, max: 2, editable: false })
+      expect(findOuter().props.accessibilityValue).toEqual({
+        text: "2 arbres par hectare, au plus 2",
+      })
+    })
+  })
 })

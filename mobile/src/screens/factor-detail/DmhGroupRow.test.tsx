@@ -347,4 +347,51 @@ describe("DmhGroupRow", () => {
     const { one } = mount({ full: true, ticked: true, count: 1 })
     expect(one("dmh-row-dmh_05")).toBeDefined()
   })
+  describe("capped survey mode: trees per hectare, at most 2 (follow-up of phase 32)", () => {
+    test("unticked: the + adds, with the same haptic and no toggle", () => {
+      const { handlers, press, all } = mount({ full: true, maxCount: 2 })
+      expect(all("dmh-stepper-dmh_05")).toHaveLength(0)
+      press("dmh-add-dmh_05")
+      expect(handlers.onAdd).toHaveBeenCalledWith("dmh_05")
+      expect(handlers.onToggle).not.toHaveBeenCalled()
+    })
+
+    test("counted: the caption says per hectare and the stepper stops at 2", () => {
+      const { all, one, handlers } = mount({ full: true, maxCount: 2, ticked: true, count: 2 })
+      expect(one("dmh-stepper-dmh_05").props.accessibilityValue).toEqual({
+        text: "2 arbres par hectare, au plus 2",
+      })
+      const caption = all("dmh-row-dmh_05")[0].findAll(
+        (n) => (n.type as unknown) === "Text" && n.props.children === t.treesCaptionPerHa,
+      )
+      expect(caption.length).toBeGreaterThan(0)
+      const increase = one("dmh-stepper-dmh_05-increase")
+      expect(increase.props.accessibilityState).toEqual({ disabled: true })
+      act(() => increase.props.onPressIn())
+      act(() => increase.props.onPressOut())
+      expect(handlers.onStep).not.toHaveBeenCalled()
+    })
+
+    test("a counted group is still locked against unticking, with the per hectare spoken count", () => {
+      const { handlers, press, one } = mount({ full: true, maxCount: 2, ticked: true, count: 1 })
+      press("dmh-tick-dmh_05")
+      expect(handlers.onToggle).not.toHaveBeenCalled()
+      expect(one("dmh-tick-dmh_05").props.accessibilityLabel).toBe(
+        t.a11y.withCountPerHa({ label: LABEL, trees: 1 }),
+      )
+      expect(one("dmh-tick-dmh_05").props.accessibilityLabel).toBe(`${LABEL}, 1 arbre par hectare`)
+    })
+
+    test("counted in full keeps its own caption and no cap", () => {
+      const { all, one } = mount({ full: true, ticked: true, count: 7 })
+      expect(
+        all("dmh-row-dmh_05")[0].findAll(
+          (n) => (n.type as unknown) === "Text" && n.props.children === t.treesCaption,
+        ).length,
+      ).toBeGreaterThan(0)
+      expect(one("dmh-stepper-dmh_05-increase").props.accessibilityState).toEqual({
+        disabled: false,
+      })
+    })
+  })
 })

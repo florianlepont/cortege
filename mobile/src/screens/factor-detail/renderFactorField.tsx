@@ -1,5 +1,9 @@
 import type { ReactElement } from "react"
-import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
+import {
+  DMH_GROUP_DENSITY_CAP_PER_HA,
+  type DmhGroupCode,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 import { parseFiniteNumberInput } from "../../app/number-utils"
 import {
   selectionOptionsFor,
@@ -113,6 +117,11 @@ function renderEvidenceChips(
 export type FactorFieldExtras = {
   /** Phase 30: the detail inputs; F's counting is on only when the route counts F in full. */
   uncappedEntry?: UncappedEntryProps
+  /**
+   * Follow-up of phase 32: the same entry for the capped survey mode. The rows then count trees per
+   * hectare up to the package's cap of 2 per group, and the sum derives `trees_per_ha`.
+   */
+  cappedEntry?: UncappedEntryProps
   /** Phase 32 (D-04): opens the guide on the catalogue (no argument) or on one group. */
   onOpenDmhGuide?: (group: DmhGroupCode) => void
 }
@@ -132,6 +141,7 @@ export function renderDmhGroupList(
   extras: FactorFieldExtras,
 ) {
   const entry = extras.uncappedEntry
+  const capped = extras.cappedEntry
   return (
     <DmhGroupList
       key={`F-${field.label}-companion`}
@@ -145,7 +155,16 @@ export function renderDmhGroupList(
               onBump: entry.bumpDmhGroup,
               onSetCount: entry.setDmhCount,
             }
-          : undefined
+          : capped
+            ? {
+                counts: capped.state.dmhCounts,
+                max: DMH_GROUP_DENSITY_CAP_PER_HA,
+                onBump: (code, delta) =>
+                  capped.bumpDmhGroup(code, delta, DMH_GROUP_DENSITY_CAP_PER_HA),
+                onSetCount: (code, count) =>
+                  capped.setDmhCount(code, count, DMH_GROUP_DENSITY_CAP_PER_HA),
+              }
+            : undefined
       }
       onOpenDmhGuide={extras.onOpenDmhGuide ?? ignoreSelectionChange}
     />
@@ -158,6 +177,8 @@ export function renderFactorField(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   detailStyles: ReturnType<typeof createDetailStyles>,
+  /** `readOnly`: F's trees per hectare while the capped group counters derive it. */
+  options?: { readOnly?: boolean },
 ) {
   const current: FieldVariant = variant ?? { kind: "numeric" }
   const label = field.required
@@ -247,6 +268,7 @@ export function renderFactorField(
           value={field.value}
           onChangeText={field.onChange}
           onBlur={field.onTouch}
+          editable={options?.readOnly !== true}
           keyboardType="numeric"
           placeholder={t.numericPlaceholder}
           error={field.touched ? field.error : null}

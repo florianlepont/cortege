@@ -2,14 +2,18 @@ import { Fragment, useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
+import { cappedDmhTotalPerHa, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
-import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
+import {
+  CountingModeCaption,
+  DerivedFromGroupsCaption,
+  FromRouteCaption,
+} from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import {
   fieldVariantsFor,
@@ -74,7 +78,9 @@ type FactorDetailScreenProps = {
  * entry points. Redesign 32-18 (A-C1): the list is drawn after the input card, straight on the
  * canvas, so the card keeps only the trees per hectare and, counted in full, F's own surface above
  * the list (the detail values are kept, never deleted, when the factor goes back to the capped
- * entry, U-O10).
+ * entry, U-O10). Follow-up of phase 32 (owner decision 2026-10-28): in the capped mode the list
+ * counts too, 0 to 2 trees per hectare per group, and their sum becomes the read-only trees per
+ * hectare while one counter is above 0.
  */
 export function FactorDetailScreen({
   factor,
@@ -101,6 +107,11 @@ export function FactorDetailScreen({
   const variants = useMemo(() => fieldVariantsFor(factor, methodVersion), [factor, methodVersion])
   const countedInFull = uncappedFactors.includes(factor)
   const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
+  // Follow-up of phase 32: F in the capped mode has one counter per group (trees per hectare, at
+  // most 2). Once one is above 0 their sum is the page's trees per hectare and cannot be typed.
+  const cappedEntry = factor === "F" && !countedInFull ? uncappedEntry : undefined
+  const derivedFromGroups =
+    cappedEntry !== undefined && cappedDmhTotalPerHa(cappedEntry.state.dmhCounts) > 0
   // Found by its place (the numeric variant), not by its label: the form hands the French label
   // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).
   const surfaceIndex = SURFACE_FACTORS.includes(factor)
@@ -142,7 +153,16 @@ export function FactorDetailScreen({
               field,
               methodVersion,
               detailStyles,
+              { readOnly: derivedFromGroups && hasDmhListCompanion(variants[index]) },
             )
+            if (derivedFromGroups && hasDmhListCompanion(variants[index])) {
+              return (
+                <Fragment key={`${factor}-${field.label}-derived`}>
+                  {input}
+                  <DerivedFromGroupsCaption />
+                </Fragment>
+              )
+            }
             if (block !== null) {
               return (
                 <Fragment key={`${factor}-${field.label}-detail`}>
@@ -166,6 +186,7 @@ export function FactorDetailScreen({
       {dmhListField
         ? renderDmhGroupList(dmhListField, methodVersion, {
             uncappedEntry: detailEntry,
+            cappedEntry,
             onOpenDmhGuide,
           })
         : null}

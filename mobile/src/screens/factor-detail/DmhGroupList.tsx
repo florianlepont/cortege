@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react"
 import { View } from "react-native"
-import { DMH_GROUP_CODES, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
+import {
+  cappedDmhTotalPerHa,
+  DMH_GROUP_CODES,
+  type DmhGroupCode,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 import { orderDmhRows } from "../../app/dmh-guide/order"
 import { selectionLabel, withSelectionToggled } from "../../app/factor-selections"
 import { useBrandTheme } from "../../app/theme"
@@ -15,9 +20,15 @@ import { DmhGroupRow } from "./DmhGroupRow"
 
 const t = fr.factorDetail.dmhList
 
-/** The counted-in-full mode (D-10): the whole trees per group, and the two ways to change them. */
+/**
+ * The counting rows (D-10): the whole trees per group, and the two ways to change them. Counted in
+ * full the counts are trees on the described surface; with `max` they are the capped survey mode's
+ * trees per hectare (follow-up of phase 32), at most `max` per group.
+ */
 export type DmhListCounting = {
   counts: Partial<Record<DmhGroupCode, number>>
+  /** Present = the capped survey mode: trees per hectare, the highest count of a group (2). */
+  max?: number
   /** Adds `delta` trees to a group, ticking it (the "+" of an unticked row sends 1). */
   onBump: (code: DmhGroupCode, delta: number) => void
   /** Sets a count; NaN (an emptied field) drops it. */
@@ -29,7 +40,7 @@ type DmhGroupListProps = {
   /** The stored group selection of factor F (null when the survey has none). */
   selected: readonly string[] | null
   onChangeSelection: (next: string[]) => void
-  /** Present = counted in full (D-10); absent = the capped mode, the tick alone. */
+  /** Present = the rows count (full or per hectare); absent = the tick alone (no entry wired). */
   counting?: DmhListCounting
   /** Opens the guide on that group's page (D-04), from the row's info button. */
   onOpenDmhGuide: (group: DmhGroupCode) => void
@@ -61,6 +72,8 @@ export function DmhGroupList({
   const counts = counting?.counts
   const [sections] = useState(() => orderDmhRows({ ticked: selected, counts: counts ?? {} }))
   const full = counting !== undefined
+  const maxCount = counting?.max
+  const perHectare = maxCount !== undefined
 
   const onToggle = useLatestCallback((code: DmhGroupCode, next: boolean): void => {
     onChangeSelection(withSelectionToggled("F", methodVersion, selected, code, next))
@@ -83,20 +96,24 @@ export function DmhGroupList({
   const summary =
     tickedSet.size === 0
       ? t.summaryNone
-      : full
+      : full && !perHectare
         ? t.summaryFull({ groups: tickedSet.size, trees })
         : t.summaryCapped({ groups: tickedSet.size })
+  // The capped mode shows the derived total under the list (the package's sum, each group held at 2).
+  const perHectareTotal = perHectare ? cappedDmhTotalPerHa(counts ?? {}) : 0
 
-  // One helper line: the cap sentence of the counted mode (when it applies), then where the guide is.
-  const helper = full
-    ? [fr.factorDetail.countingMode.dmhHelper, t.infoHelper].join(" ")
-    : t.infoHelper
+  // One helper line: the cap sentence of the counting modes, then where the guide is.
+  const helper = perHectare
+    ? [t.cappedHelper, t.infoHelper].join(" ")
+    : full
+      ? [fr.factorDetail.countingMode.dmhHelper, t.infoHelper].join(" ")
+      : t.infoHelper
 
   return (
     <View style={styles.root}>
       <View style={styles.headingBlock}>
         <Text style={styles.heading} accessibilityRole="header">
-          {full
+          {full && !perHectare
             ? fr.factorDetail.countingMode.dmhTitle
             : fr.factorDetail.companionLabels.dmh_groups}
         </Text>
@@ -132,6 +149,7 @@ export function DmhGroupList({
                     ticked={tickedSet.has(code)}
                     count={counts?.[code]}
                     full={full}
+                    maxCount={maxCount}
                     editable={editable}
                     onToggle={onToggle}
                     onAdd={onAdd}
@@ -146,6 +164,11 @@ export function DmhGroupList({
           )
         })}
       </View>
+      {perHectareTotal > 0 ? (
+        <Text style={styles.total} testID="dmh-total">
+          {t.totalPerHa({ trees: perHectareTotal })}
+        </Text>
+      ) : null}
     </View>
   )
 }

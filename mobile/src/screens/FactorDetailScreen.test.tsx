@@ -832,15 +832,51 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(order).toEqual(["AppField", "DmhCountFields", "DmhGroupList"])
   })
 
-  test("F capped, or no route entry: exactly today's entry", () => {
-    for (const extra of [{ uncappedFactors: ["B" as const], uncappedEntry: entry }, {}]) {
-      const { dmh, tree } = mount("F", fFields, extra)
-      expect(dmh()).toHaveLength(0)
-      const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
-      expect(list.props.counting).toBeUndefined()
-    }
+  test("F capped without a route entry keeps the tick-only list; with the entry it counts per hectare", () => {
+    const { dmh, tree } = mount("F", fFields, {})
+    expect(dmh()).toHaveLength(0)
+    const plain = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
+    expect(plain.props.counting).toBeUndefined()
     expect(mount("F", fFields, { uncappedFactors: ["F"] }).dmh()).toHaveLength(0)
     expect(mount("B", bFields, { uncappedFactors: ["B"] }).strata()).toHaveLength(0)
+
+    // Follow-up of phase 32: the capped mode counts trees per hectare, 0 to 2 per group, no surface.
+    const capped = mount("F", fFields, { uncappedFactors: ["B"], uncappedEntry: entry })
+    expect(capped.dmh()).toHaveLength(0)
+    const list = capped.tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
+    expect(list.props.counting.counts).toBe(entry.state.dmhCounts)
+    expect(list.props.counting.max).toBe(2)
+    entry.bumpDmhGroup.mockClear()
+    entry.setDmhCount.mockClear()
+    list.props.counting.onBump("dmh_13", 1)
+    list.props.counting.onSetCount("dmh_13", 2)
+    expect(entry.bumpDmhGroup).toHaveBeenCalledWith("dmh_13", 1, 2)
+    expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2, 2)
+  })
+
+  test("capped F: the trees per hectare field is read-only and captioned once a counter is above 0", () => {
+    const counted = mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry })
+    expect(counted.fields()[0].props.editable).toBe(false)
+    expect(
+      counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption").length,
+    ).toBeGreaterThan(0)
+
+    const zero = {
+      ...entry,
+      state: { ...entry.state, dmhCounts: { dmh_01: 0 } as Partial<Record<DmhGroupCode, number>> },
+    }
+    const none = mount("F", fFields, { uncappedFactors: [], uncappedEntry: zero })
+    expect(none.fields()[0].props.editable).toBe(true)
+    expect(none.tree.root.findAll((n) => n.props.testID === "trees-derived-caption")).toHaveLength(
+      0,
+    )
+
+    // Counted in full, and with no entry at all, the field stays as it was.
+    expect(
+      mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry }).fields()[0].props
+        .editable,
+    ).toBe(true)
+    expect(mount("F", fFields, {}).fields()[0].props.editable).toBe(true)
   })
 
   test("the other factors get no detail block, whatever the route says", () => {

@@ -40,19 +40,26 @@ type DmhCounterStepperProps = {
   /** The text typed in the count field, passed as is (an empty text included). */
   onSubmitText: (text: string) => void
   editable?: boolean
+  /**
+   * The highest count, for the capped survey mode where a group holds at most 2 trees per hectare.
+   * Absent: the counted-in-full bound (999). With it the "+" does nothing at the bound and the
+   * spoken value and hint name the cap and the unit.
+   */
+  max?: number
   testID: string
 }
 
-/** Compact -/+ counter with a typeable count for a ticked dendromicrohabitat row (full counting
- * mode). One accessibility element (adjustable); the buttons and the count are hidden from it. */
+/** Compact -/+ counter with a typeable count for a ticked dendromicrohabitat row (counting modes). One accessibility element (adjustable); the buttons and the count are hidden from it. */
 export function DmhCounterStepper({
   label,
   value,
   onStep,
   onSubmitText,
   editable = true,
+  max,
   testID,
 }: DmhCounterStepperProps) {
+  const upper = max ?? MAX_TREES
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const [editing, setEditing] = useState(false)
@@ -61,7 +68,7 @@ export function DmhCounterStepper({
   const { start, stop } = useHoldRepeat({
     value,
     min: MIN_TREES,
-    max: MAX_TREES,
+    max: upper,
     // A repeat that reaches a bound keeps ticking until release: only a real change goes up.
     onChange: (next) => {
       if (next !== value) onStep(next)
@@ -69,7 +76,10 @@ export function DmhCounterStepper({
   })
 
   const accessibilityLabel = t.label({ label })
-  const accessibilityValue = { text: t.value({ trees: value }) }
+  const accessibilityValue = {
+    text: max === undefined ? t.value({ trees: value }) : t.valueCapped({ trees: value, max }),
+  }
+  const editHint = max === undefined ? t.editHint : t.editHintCapped({ max })
 
   if (!editable) {
     return (
@@ -110,7 +120,7 @@ export function DmhCounterStepper({
   const onAccessibilityAction = (event: AccessibilityActionEvent): void => {
     switch (event.nativeEvent.actionName) {
       case "increment":
-        onStep(Math.min(MAX_TREES, value + 1))
+        if (value < upper) onStep(value + 1)
         break
       case "decrement":
         if (value > MIN_TREES) onStep(value - 1)
@@ -122,6 +132,7 @@ export function DmhCounterStepper({
   }
 
   const atMin = value <= MIN_TREES
+  const atMax = value >= upper
 
   return (
     <View
@@ -129,7 +140,7 @@ export function DmhCounterStepper({
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={accessibilityValue}
-      accessibilityHint={t.editHint}
+      accessibilityHint={editHint}
       accessibilityActions={[
         { name: "increment", label: t.increment },
         { name: "decrement", label: t.decrement },
@@ -207,18 +218,25 @@ export function DmhCounterStepper({
             disableRipple
             accessibilityRole="button"
             accessibilityLabel={t.increment}
+            accessibilityState={{ disabled: atMax }}
             onPressIn={() => {
+              // Like "-" at 0: at the bound a press does nothing.
+              if (atMax) return
               feedback.selection()
               start(1)
             }}
             onPressOut={stop}
-            style={({ pressed }) => [styles.segment, pressed ? styles.segmentPressed : null]}
+            style={({ pressed }) => [
+              styles.segment,
+              pressed && !atMax ? styles.segmentPressed : null,
+            ]}
             testID={`${testID}-increase`}
           >
             <Ionicons
               name="add-outline"
               size={GLYPH_SIZE}
               color={theme.semanticColors.ctaPrimary}
+              style={atMax ? styles.disabledGlyph : undefined}
             />
           </AppPressable>
         </View>
@@ -260,7 +278,7 @@ function createStyles(theme: BrandTheme) {
       height: SEGMENT_DIVIDER_HEIGHT,
       backgroundColor: theme.colors.divider,
     },
-    // The disabled "-" at 0: the glyph alone dims, the capsule keeps its fill.
+    // The disabled "-" at 0 or "+" at the cap: the glyph alone dims, the capsule keeps its fill.
     disabledGlyph: {
       opacity: brandInteraction.disabledOpacity,
     },

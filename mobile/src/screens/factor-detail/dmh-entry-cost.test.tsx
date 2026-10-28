@@ -2,7 +2,8 @@
  * Phase 32 (D-08 as amended on 2026-10-27, ROADMAP criterion 3, part (a)): the interaction cost of
  * the NEW factor F flow, replayed against the recorded OLD flow. In the counted-in-full mode a group
  * costs one "+" press (it ticks the group and counts 1), then one stepper press per further tree; in
- * the capped mode a group costs one tick. The replay goes through the real useSurveyForm, the real
+ * the capped mode (follow-up of 2026-10-28: a counter of 0 to 2 trees per hectare per group, like
+ * the official sheet) a group costs the same "+" and the same steps. The replay goes through the real useSurveyForm, the real
  * FactorDetailScreen and the real group list. Criterion 3 is "simpler than before", not timed: the
  * press counts (new against OLD_FLOW_PRESSES) and the unchanged stored payload are the automated
  * evidence; part (b) is the owner's written confirmation on the phone (plan 32-16). The recorded
@@ -122,7 +123,7 @@ function mount(full: boolean) {
     tree!.root.findAll((n) => n.props.testID === testID && typeof n.props.onPress === "function")[0]
   const stepperIncrease = (code: string) =>
     tree!.root.findAll((n) => n.props.testID === `dmh-stepper-${code}-increase`)[0]
-  return { formRef, byTestID, stepperIncrease }
+  return { formRef, byTestID, stepperIncrease, tree: () => tree! }
 }
 
 const treesOf = (id: DmhEntryScenarioId): number =>
@@ -174,28 +175,52 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
     },
   )
 
-  test("capped flow S1: one tick per group, no more presses than the old chips, groups kept in option order", () => {
-    const { formRef, byTestID } = mount(false)
+  test("capped flow S1: a counter per group (0 to 2 per hectare), as many presses as the full flow, same payload without a surface", () => {
+    const { formRef, byTestID, stepperIncrease } = mount(false)
     const form = (): Form => formRef.current as Form
-    // Setup, not counted: the groups are stored only with their scored key (trees per hectare).
-    act(() => form().factorSections.F[0].onChange("5"))
+    // No setup: the total is derived from the counters, nothing is typed first, no surface.
     let presses = 0
     const opened = new Set<string>()
-    for (const { code } of DMH_ENTRY_SCENARIOS.S1.groups) {
-      // Sections start closed: the first group of a form needs its header pressed (not a tick).
-      const form = formOf(code)
-      if (!opened.has(form)) {
-        opened.add(form)
-        act(() => byTestID(`dmh-section-${form}`).props.onPress())
+    for (const { code, trees } of DMH_ENTRY_SCENARIOS.S1.groups) {
+      // Sections start closed: the first group of a form needs its header pressed.
+      const section = formOf(code)
+      if (!opened.has(section)) {
+        opened.add(section)
+        act(() => byTestID(`dmh-section-${section}`).props.onPress())
+        presses += 1
       }
-      act(() => byTestID(`dmh-tick-${code}`).props.onPress())
+      act(() => byTestID(`dmh-add-${code}`).props.onPress())
       presses += 1
+      for (let tree = 1; tree < trees; tree += 1) {
+        act(() => stepperIncrease(code).props.onPressIn())
+        act(() => stepperIncrease(code).props.onPressOut())
+        presses += 1
+      }
     }
-    expect(presses).toBe(DMH_ENTRY_SCENARIOS.S1.groups.length)
-    expect(presses).toBeLessThanOrEqual(3)
+    // The same 8 presses as the counted-in-full S1 (3 sections + 5 trees), a tie with the old flow.
+    expect(presses).toBe(treesOf("S1") + 3)
+    expect(presses).toBeLessThanOrEqual(OLD_FLOW_PRESSES.S1)
     expect(opened.size).toBe(3)
-    expect((form().draftInput.factors.F as { dmh_groups?: string[] }).dmh_groups).toEqual(
-      DMH_ENTRY_SCENARIOS.S1.groups.map((group) => group.code),
-    )
+    // The groups are kept in option order; the total is the sum of the counters, never a surface.
+    const { surface_ha: _surface, ...cappedPayload } = OLD_FLOW_F_PAYLOAD.S1
+    expect(form().draftInput.factors.F).toEqual(cappedPayload)
+  })
+
+  test("capped flow: the stepper stops at 2 per group, and the total field is derived and read-only", () => {
+    const { formRef, byTestID, stepperIncrease, tree } = mount(false)
+    const form = (): Form => formRef.current as Form
+    act(() => byTestID("dmh-section-cavities").props.onPress())
+    act(() => byTestID("dmh-add-dmh_01").props.onPress())
+    for (let tap = 0; tap < 3; tap += 1) {
+      act(() => stepperIncrease("dmh_01").props.onPressIn())
+      act(() => stepperIncrease("dmh_01").props.onPressOut())
+    }
+    expect(form().uncapped.dmhCounts).toEqual({ dmh_01: 2 })
+    expect((form().draftInput.factors.F as { trees_per_ha: number }).trees_per_ha).toBe(2)
+    // The trees-per-hectare field now shows the sum and cannot be typed.
+    const inputs = tree().root.findAll((n) => (n.type as unknown) === "TextInput")
+    expect(inputs.length).toBeGreaterThan(0)
+    expect(inputs.every((input) => input.props.editable === false)).toBe(true)
+    expect(inputs[0].props.value).toBe("2")
   })
 })

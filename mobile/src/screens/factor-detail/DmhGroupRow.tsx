@@ -25,8 +25,13 @@ export type DmhGroupRowProps = {
   ticked: boolean
   /** Whole trees counted for the group; undefined when none is stored. */
   count: number | undefined
-  /** Counted in full (D-10): the "+" and the stepper exist; false: the tick alone. */
+  /** Counting (D-10): the "+" and the stepper exist; false: the tick alone. */
   full: boolean
+  /**
+   * Capped survey mode (follow-up of phase 32): the count is trees per hectare and a group holds at
+   * most this many (the package's 2). Absent: counted in full, whole trees with no bound but 999.
+   */
+  maxCount?: number
   editable: boolean
   onToggle: (code: DmhGroupCode, next: boolean) => void
   onAdd: (code: DmhGroupCode) => void
@@ -41,8 +46,8 @@ const entering = () => FadeIn.duration(brandMotion.durations.fast).reduceMotion(
 /**
  * One group of the F list (32-UI-SPEC S1.3, redesign 32-18 A-I2). Line 1 is the check zone (a
  * leading circle and the label, the whole zone shows a soft fill while pressed), the 44 pt info
- * button (a 32 pt filled disc holding the glyph, 32-22) and, unticked in full mode, the add button; line 2 (ticked or counted, full mode) is the
- * "Arbres" caption and the stepper. Memoised on its own props, so one stepper tap
+ * button (a 32 pt filled disc holding the glyph, 32-22) and, unticked in counting mode, the add button; line 2 (ticked or counted, counting mode) is the
+ * "Arbres" caption ("Arbres par hectare" in the capped mode, where the stepper stops at 2) and the stepper. Memoised on its own props, so one stepper tap
  * re-renders this row only (research pitfall 8). A counted group cannot be unticked until its count
  * is back to 0 (O-32-3): the tap shows a caption and changes nothing, no tap deletes data.
  */
@@ -52,6 +57,7 @@ export const DmhGroupRow = memo(function DmhGroupRow({
   ticked,
   count,
   full,
+  maxCount,
   editable,
   onToggle,
   onAdd,
@@ -100,7 +106,8 @@ export const DmhGroupRow = memo(function DmhGroupRow({
     feedback.selection()
   }
 
-  const checkLabel = full && counted ? t.a11y.withCount({ label, trees: count ?? 0 }) : label
+  const withCount = maxCount === undefined ? t.a11y.withCount : t.a11y.withCountPerHa
+  const checkLabel = full && counted ? withCount({ label, trees: count ?? 0 }) : label
 
   return (
     <Animated.View
@@ -164,13 +171,16 @@ export const DmhGroupRow = memo(function DmhGroupRow({
       </View>
       {showStepper ? (
         <Animated.View entering={entering()} style={styles.line2}>
-          <Text style={styles.caption}>{t.treesCaption}</Text>
+          <Text style={styles.caption}>
+            {maxCount === undefined ? t.treesCaption : t.treesCaptionPerHa}
+          </Text>
           <DmhCounterStepper
             label={label}
             value={count ?? 0}
             onStep={(next) => onStep(code, next)}
             onSubmitText={(text) => onSubmitText(code, text)}
             editable={editable}
+            max={maxCount}
             testID={`dmh-stepper-${code}`}
           />
         </Animated.View>
