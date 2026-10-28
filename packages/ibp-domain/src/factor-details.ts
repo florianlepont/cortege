@@ -181,6 +181,15 @@ const roundArea = (value: number): number => Math.round(value * AREA_FACTOR) / A
 const isAreaHa = (entry: unknown): entry is number =>
   typeof entry === "number" && Number.isFinite(entry) && entry >= 0 && entry <= ROUTE_SURFACE_MAX_HA
 
+/**
+ * A zone surface the observer typed or stepped to, brought to what the list stores: not a number
+ * counts as 0, below 0 is 0, above `ROUTE_SURFACE_MAX_HA` is the maximum, two decimals.
+ */
+export function clampOpenAreaHa(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return roundArea(Math.min(ROUTE_SURFACE_MAX_HA, Math.max(0, value)))
+}
+
 /** Sum of the zones in hectares, two decimals; an entry that is not a finite number above 0 adds nothing. */
 export function sumOpenAreasHa(areas: readonly number[]): number {
   let total = 0

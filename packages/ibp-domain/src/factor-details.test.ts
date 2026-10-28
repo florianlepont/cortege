@@ -7,6 +7,7 @@ import {
   UNCAPPED_DETAIL_KEYS,
   cappedDmhCounts,
   cappedDmhTotalPerHa,
+  clampOpenAreaHa,
   dmhDensityPerHa,
   floweringPercentFromAreas,
   openAreasExceedSurface,
@@ -269,5 +270,23 @@ describe("readOpenAreasHa", () => {
     expect(readOpenAreasHa(undefined)).toBeNull()
     expect(readOpenAreasHa("0,3")).toBeNull()
     expect(readOpenAreasHa({ 0: 1 })).toBeNull()
+  })
+})
+
+describe("clampOpenAreaHa", () => {
+  it("rounds to two decimals", () => {
+    expect(clampOpenAreaHa(0.3)).toBe(0.3)
+    expect(clampOpenAreaHa(0.1 + 0.2)).toBe(0.3)
+    expect(clampOpenAreaHa(1.236)).toBe(1.24)
+  })
+
+  it("brings a negative value to 0 and a large one to the surface maximum", () => {
+    expect(clampOpenAreaHa(-2)).toBe(0)
+    expect(clampOpenAreaHa(ROUTE_SURFACE_MAX_HA + 10)).toBe(ROUTE_SURFACE_MAX_HA)
+  })
+
+  it("counts a value that is not a finite number as 0", () => {
+    expect(clampOpenAreaHa(Number.NaN)).toBe(0)
+    expect(clampOpenAreaHa(Number.POSITIVE_INFINITY)).toBe(0)
   })
 })

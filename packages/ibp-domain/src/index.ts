@@ -44,6 +44,7 @@ export {
   UNCAPPED_DETAIL_KEYS,
   cappedDmhCounts,
   cappedDmhTotalPerHa,
+  clampOpenAreaHa,
   dmhDensityPerHa,
   floweringPercentFromAreas,
   openAreasExceedSurface,
