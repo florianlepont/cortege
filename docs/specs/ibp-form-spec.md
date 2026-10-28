@@ -388,10 +388,10 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   `dmh_groups` (the ticks), `dmh_counts` (values 0 to 2) and a derived `trees_per_ha` that is the
   sum of the counts (`cappedDmhTotalPerHa` of the package); `surface_ha` is not written. The total
   is not limited to 8: the score classes already stop there (8 and above is class `5`), so the
-  sheet's total of 8 is a display matter. The total is shown only as the "Arbres par hectare : N" line
-  at the top of the list (follow-up 32-26: a plain line, label and value side by side, not a field
-  and not in a card; it shows 0 while nothing is counted). From the sum where F's score is the top
-  one (8) a quiet "maximum" stays beside the figure, and a toast ("Score maximal atteint : inutile de
+  sheet's total of 8 is a display matter. The total is shown only as the "Arbres par hectare" hero
+  card under the page's intro paragraph (follow-up 32-27: a read-only card with the big figure, its
+  label and "somme des groupes comptés", not a field; it shows 0 while nothing is counted). From the
+  sum where F's score is the top one (8) a quiet "Maximum" pill with a check closes the card, and a toast ("Score maximal atteint : inutile de
   compter davantage.") floats above the pager's bottom bar each time the sum crosses to that score
   (not on opening a page already at it), for 4 seconds or until tapped. Touching a counter takes
   over from a typed number: the derived total replaces it (existing data is test data). A capped survey saved

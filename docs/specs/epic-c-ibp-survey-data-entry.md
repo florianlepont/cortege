@@ -249,7 +249,7 @@ As a contributor, I want to flag a factor as "Douteux" so the readers of my surv
 
 Acceptance criteria
 
-- Each factor A to J has a "Douteux" switch in its strip, off ("Sûr") by default; only "Douteux" is set by the observer.
+- Each factor A to J has a "Douteux" toggle, off ("Sûr") by default; only "Douteux" is set by the observer. Since follow-up 32-27 it is a small pill at the top of the factor page, in one row with a "Note" pill, under the "Aide au relevé" link or the intro paragraph.
 
 - The doubt is shown wherever the factor is shown: the score page, another member's view of the submitted survey, and the PDF.
 
