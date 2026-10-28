@@ -158,9 +158,10 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
         act(() => byTestID(`dmh-add-${code}`).props.onPress())
         presses += 1
         for (let tree = 1; tree < trees; tree += 1) {
-          // One "+" press of the stepper: press in then out, so the 120 ms repeat never fires.
+          // One "+" press of the stepper: press in then out, so the repeat never starts.
           act(() => stepperIncrease(code).props.onPressIn())
           act(() => stepperIncrease(code).props.onPressOut())
+          act(() => stepperIncrease(code).props.onPress())
           presses += 1
         }
       }
@@ -195,6 +196,7 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
       for (let tree = 1; tree < trees; tree += 1) {
         act(() => stepperIncrease(code).props.onPressIn())
         act(() => stepperIncrease(code).props.onPressOut())
+        act(() => stepperIncrease(code).props.onPress())
         presses += 1
       }
     }
@@ -215,6 +217,7 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
     for (let tap = 0; tap < 3; tap += 1) {
       act(() => stepperIncrease("dmh_01").props.onPressIn())
       act(() => stepperIncrease("dmh_01").props.onPressOut())
+      act(() => stepperIncrease("dmh_01").props.onPress())
     }
     expect(form().uncapped.dmhCounts).toEqual({ dmh_01: 2 })
     expect((form().draftInput.factors.F as { trees_per_ha: number }).trees_per_ha).toBe(2)

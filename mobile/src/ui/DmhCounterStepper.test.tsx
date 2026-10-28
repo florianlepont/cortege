@@ -3,6 +3,7 @@ import renderer, { act } from "react-test-renderer"
 import { AppText as Text } from "./AppText"
 import { defaultTheme } from "../app/theme"
 import { DMH_STEPPER_SIZE, DmhCounterStepper } from "./DmhCounterStepper"
+import { HOLD_REPEAT_DELAY_MS, HOLD_REPEAT_INTERVAL_MS } from "./useHoldRepeat"
 
 const mockSelection = jest.fn()
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
@@ -89,12 +90,16 @@ function render(props: Partial<React.ComponentProps<typeof DmhCounterStepper>> =
       )
     })
   }
+  // A quick tap as React Native sends it: press in, press out, then the press itself.
   const press = (id: string): void => {
     act(() => {
       findByTestID(id).props.onPressIn()
     })
     act(() => {
       findByTestID(id).props.onPressOut()
+    })
+    act(() => {
+      findByTestID(id).props.onPress()
     })
   }
   return {
@@ -152,14 +157,17 @@ describe("DmhCounterStepper", () => {
     const { press, findByTestID, rerender } = render({ value: 3 })
     press("s-increase")
     expect(mockSelection).toHaveBeenCalledTimes(1)
+    rerender({ value: 4 })
     press("s-decrease")
     expect(mockSelection).toHaveBeenCalledTimes(2)
+    rerender({ value: 3 })
     mockSelection.mockClear()
+    // A deliberate hold: a tick for its first step, none for the repeats after it.
     act(() => {
       findByTestID("s-increase").props.onPressIn()
     })
     act(() => {
-      jest.advanceTimersByTime(120 * 8)
+      jest.advanceTimersByTime(HOLD_REPEAT_DELAY_MS + HOLD_REPEAT_INTERVAL_MS * 8)
     })
     act(() => {
       findByTestID("s-increase").props.onPressOut()
@@ -196,23 +204,50 @@ describe("DmhCounterStepper", () => {
     expect(flatten(button.props.style({ pressed: true })).backgroundColor).toBeUndefined()
   })
 
-  test("holding + repeats and releasing stops", () => {
+  test("a hold repeats only after the delay, and releasing stops it", () => {
     const { onStep, findByTestID } = render({ value: 0 })
     act(() => {
       findByTestID("s-increase").props.onPressIn()
     })
     act(() => {
-      jest.advanceTimersByTime(120 * 3)
+      jest.advanceTimersByTime(HOLD_REPEAT_DELAY_MS - 1)
+    })
+    expect(onStep).not.toHaveBeenCalled()
+    act(() => {
+      jest.advanceTimersByTime(1 + HOLD_REPEAT_INTERVAL_MS * 3)
     })
     act(() => {
       findByTestID("s-increase").props.onPressOut()
     })
-    const calls = onStep.mock.calls.length
-    expect(calls).toBeGreaterThan(3)
+    act(() => {
+      findByTestID("s-increase").props.onPress()
+    })
+    // The hold's step plus three repeats; the release's press is not one more tap.
+    expect(onStep).toHaveBeenCalledTimes(4)
     act(() => {
       jest.advanceTimersByTime(1000)
     })
-    expect(onStep).toHaveBeenCalledTimes(calls)
+    expect(onStep).toHaveBeenCalledTimes(4)
+  })
+
+  test("a press the system cancels (a scroll takes the touch) steps nothing, whatever it lasted", () => {
+    const { onStep, findByTestID } = render({ value: 3 })
+    act(() => {
+      findByTestID("s-increase").props.onPressIn()
+    })
+    act(() => {
+      jest.advanceTimersByTime(HOLD_REPEAT_DELAY_MS - 100)
+    })
+    // No onPress follows: the touch moved out or a scroll gesture took over.
+    act(() => {
+      findByTestID("s-increase").props.onPressOut()
+    })
+    act(() => {
+      jest.advanceTimersByTime(5000)
+    })
+    expect(onStep).not.toHaveBeenCalled()
+    expect(mockSelection).not.toHaveBeenCalled()
+    expect(jest.getTimerCount()).toBe(0)
   })
 
   test("tapping the count opens a numeric field prefilled with the count", () => {
@@ -361,7 +396,7 @@ describe("DmhCounterStepper", () => {
         findByTestID("s-increase").props.onPressIn()
       })
       act(() => {
-        jest.advanceTimersByTime(1500)
+        jest.advanceTimersByTime(HOLD_REPEAT_DELAY_MS + 1500)
       })
       act(() => {
         findByTestID("s-increase").props.onPressOut()

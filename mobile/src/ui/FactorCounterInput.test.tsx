@@ -5,6 +5,7 @@ import { AppText as Text } from "./AppText"
 import { brandColors } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 import { FactorCounterInput } from "./FactorCounterInput"
+import { HOLD_REPEAT_DELAY_MS, HOLD_REPEAT_INTERVAL_MS } from "./useHoldRepeat"
 
 const originalConsoleError = console.error
 
@@ -81,6 +82,9 @@ describe("FactorCounterInput (FLOW-01 counter variant, FLOW-02 error timing)", (
     act(() => {
       findByTestID("c-increase").props.onPressOut()
     })
+    act(() => {
+      findByTestID("c-increase").props.onPress()
+    })
     expect(onChange).toHaveBeenCalledWith("3")
     expect(onTouch).toHaveBeenCalledTimes(1)
   })
@@ -93,23 +97,63 @@ describe("FactorCounterInput (FLOW-01 counter variant, FLOW-02 error timing)", (
     act(() => {
       findByTestID("c-decrease").props.onPressOut()
     })
+    act(() => {
+      findByTestID("c-decrease").props.onPress()
+    })
     expect(onChange).toHaveBeenCalledWith("0")
   })
 
-  test("holding + accelerates via long-press repeat", () => {
-    const { onChange, findByTestID } = render({ value: "0", step: 1, max: 999, testID: "c" })
+  test("a quick tap is one step; the repeat starts only after a deliberate hold, at 5 a second", () => {
+    const { onChange, onTouch, findByTestID } = render({
+      value: "0",
+      step: 1,
+      max: 999,
+      testID: "c",
+    })
     act(() => {
       findByTestID("c-increase").props.onPressIn()
     })
     act(() => {
-      jest.advanceTimersByTime(120 * 20)
+      jest.advanceTimersByTime(HOLD_REPEAT_DELAY_MS - 100)
+    })
+    expect(onChange).not.toHaveBeenCalled()
+    act(() => {
+      jest.advanceTimersByTime(100 + HOLD_REPEAT_INTERVAL_MS * 4)
     })
     act(() => {
       findByTestID("c-increase").props.onPressOut()
     })
-    // 1 immediate tap + 20 ticks, later ticks accelerated: total must exceed 21.
-    const last = onChange.mock.calls.at(-1)?.[0]
-    expect(Number(last)).toBeGreaterThan(21)
+    act(() => {
+      findByTestID("c-increase").props.onPress()
+    })
+    // The hold's step and four repeats: 1 to 5. The release's press is not one more tap.
+    expect(onChange.mock.calls.map(([value]) => value)).toEqual(["1", "2", "3", "4", "5"])
+    expect(onTouch).toHaveBeenCalledTimes(1)
+  })
+
+  test("a press that slides out or is taken by a scroll steps nothing and does not touch the field", () => {
+    const { onChange, onTouch, findByTestID } = render({ value: "2", testID: "c" })
+    act(() => {
+      findByTestID("c-increase").props.onPressIn()
+    })
+    act(() => {
+      jest.advanceTimersByTime(300)
+    })
+    act(() => {
+      findByTestID("c-increase").props.onPressOut()
+    })
+    act(() => {
+      jest.advanceTimersByTime(5000)
+    })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(onTouch).not.toHaveBeenCalled()
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  test("the buttons have no hit slop: the 56 pt button is the whole target", () => {
+    const { findByTestID } = render({ value: "2", testID: "c" })
+    expect(findByTestID("c-increase").props.hitSlop).toBeUndefined()
+    expect(findByTestID("c-decrease").props.hitSlop).toBeUndefined()
   })
 
   test("tapping the number opens a text fallback that commits on blur", () => {

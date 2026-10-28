@@ -65,13 +65,16 @@ export function DmhCounterStepper({
   const [editing, setEditing] = useState(false)
   const [draftText, setDraftText] = useState(String(value))
   const committedRef = useRef(false)
-  const { start, stop } = useHoldRepeat({
+  const { begin, end, tap } = useHoldRepeat({
     value,
     min: MIN_TREES,
     max: upper,
-    // A repeat that reaches a bound keeps ticking until release: only a real change goes up.
-    onChange: (next) => {
-      if (next !== value) onStep(next)
+    // A repeat that reaches a bound keeps ticking until release: only a real change goes up. The
+    // selection haptic is for a tap and the first step of a hold, never for the repeats.
+    onChange: (next, kind) => {
+      if (next === value) return
+      if (kind !== "repeat") feedback.selection()
+      onStep(next)
     },
   })
 
@@ -195,10 +198,10 @@ export function DmhCounterStepper({
               // Not the Pressable `disabled` prop: a button disabled mid-hold would never send its
               // press out and the repeat would run on. At 0 a press simply does nothing.
               if (atMin) return
-              feedback.selection()
-              start(-1)
+              begin(-1)
             }}
-            onPressOut={stop}
+            onPressOut={end}
+            onPress={() => tap(-1)}
             style={({ pressed }) => [
               styles.segment,
               pressed && !atMin ? styles.segmentPressed : null,
@@ -222,10 +225,10 @@ export function DmhCounterStepper({
             onPressIn={() => {
               // Like "-" at 0: at the bound a press does nothing.
               if (atMax) return
-              feedback.selection()
-              start(1)
+              begin(1)
             }}
-            onPressOut={stop}
+            onPressOut={end}
+            onPress={() => tap(1)}
             style={({ pressed }) => [
               styles.segment,
               pressed && !atMax ? styles.segmentPressed : null,

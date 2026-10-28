@@ -1,8 +1,9 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import {
-  HOLD_ACCELERATE_AFTER_TICKS,
-  HOLD_ACCELERATE_FURTHER_AFTER_TICKS,
+  HOLD_ACCELERATE_AFTER_MS,
+  HOLD_REPEAT_DELAY_MS,
+  HOLD_REPEAT_FAST_INTERVAL_MS,
   HOLD_REPEAT_INTERVAL_MS,
   useHoldRepeat,
 } from "./useHoldRepeat"
@@ -12,7 +13,7 @@ type HarnessProps = {
   value: number | null
   min: number
   max: number
-  onChange: (next: number) => void
+  onChange: (next: number, kind: string) => void
 }
 
 beforeAll(() => {
@@ -59,136 +60,203 @@ function mount(initial: Partial<HarnessProps> = {}) {
   }
 }
 
+const advance = (ms: number): void => {
+  act(() => {
+    jest.advanceTimersByTime(ms)
+  })
+}
+
 describe("useHoldRepeat", () => {
-  test("exposes the repeat constants", () => {
-    expect(HOLD_REPEAT_INTERVAL_MS).toBe(120)
-    expect(HOLD_ACCELERATE_AFTER_TICKS).toBe(6)
-    expect(HOLD_ACCELERATE_FURTHER_AFTER_TICKS).toBe(15)
+  test("the timing constants: 600 ms before a repeat, 5 steps a second, 10 after 2 more seconds", () => {
+    expect(HOLD_REPEAT_DELAY_MS).toBe(600)
+    expect(HOLD_REPEAT_INTERVAL_MS).toBe(200)
+    expect(HOLD_REPEAT_FAST_INTERVAL_MS).toBe(100)
+    expect(HOLD_ACCELERATE_AFTER_MS).toBe(2000)
   })
 
-  test("start applies one step at once", () => {
+  test("a quick tap is exactly one step, made by the release, and no timer is left", () => {
     const { result, onChange } = mount({ value: 2 })
-    act(() => result.current.start(1))
+    act(() => result.current.begin(1))
+    expect(onChange).not.toHaveBeenCalled()
+    advance(150)
+    act(() => result.current.end())
+    expect(onChange).not.toHaveBeenCalled()
+    act(() => result.current.tap(1))
     expect(onChange).toHaveBeenCalledTimes(1)
-    expect(onChange).toHaveBeenLastCalledWith(3)
-    act(() => result.current.stop())
+    expect(onChange).toHaveBeenLastCalledWith(3, "tap")
+    expect(jest.getTimerCount()).toBe(0)
+    advance(HOLD_REPEAT_DELAY_MS * 5)
+    expect(onChange).toHaveBeenCalledTimes(1)
   })
 
-  test("holding repeats a step every 120 ms", () => {
+  test("holding for 500 ms is still no step at all (no repeat yet), and the release makes one tap", () => {
     const { result, onChange } = mount({ value: 0 })
-    act(() => result.current.start(1))
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS - 1)
-    })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS - 100)
+    expect(onChange).not.toHaveBeenCalled()
+    act(() => result.current.end())
+    act(() => result.current.tap(1))
+    expect(onChange.mock.calls).toEqual([[1, "tap"]])
+  })
+
+  test("a deliberate hold steps once at 600 ms, then every 200 ms", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS - 1)
+    expect(onChange).not.toHaveBeenCalled()
+    advance(1)
+    expect(onChange.mock.calls).toEqual([[1, "hold"]])
+    advance(HOLD_REPEAT_INTERVAL_MS - 1)
     expect(onChange).toHaveBeenCalledTimes(1)
-    act(() => {
-      jest.advanceTimersByTime(1)
-    })
+    advance(1)
+    expect(onChange).toHaveBeenLastCalledWith(2, "repeat")
+    advance(HOLD_REPEAT_INTERVAL_MS * 3)
+    expect(onChange).toHaveBeenLastCalledWith(5, "repeat")
+    act(() => result.current.end())
+  })
+
+  test("one second of holding gives three steps: 5 per second after the delay", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(1000)
+    // At 600 (hold), 800 and 1000 (repeats).
+    expect(onChange.mock.calls.map((c) => c[0])).toEqual([1, 2, 3])
+    act(() => result.current.end())
+  })
+
+  test("the release of a hold is not a tap, so the hold's last step is the only one", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS)
+    act(() => result.current.end())
+    act(() => result.current.tap(1))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    // The next activation, long after (a screen reader's double tap has no press in), counts.
+    advance(HOLD_REPEAT_DELAY_MS)
+    act(() => result.current.tap(1))
     expect(onChange).toHaveBeenCalledTimes(2)
-    expect(onChange).toHaveBeenLastCalledWith(2)
-    act(() => result.current.stop())
+    expect(onChange).toHaveBeenLastCalledWith(2, "tap")
   })
 
-  test("ticks 7 to 15 add 2 and from tick 16 add 5", () => {
+  test("a new press after a hold taps again", () => {
     const { result, onChange } = mount({ value: 0 })
-    act(() => result.current.start(1))
-    // Tick 1 to 6: +1 each, so the value is 1 (immediate) + 6 = 7.
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS * HOLD_ACCELERATE_AFTER_TICKS)
-    })
-    expect(onChange).toHaveBeenLastCalledWith(7)
-    // Tick 7: +2.
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS)
-    })
-    expect(onChange).toHaveBeenLastCalledWith(9)
-    // Ticks 8 to 15: +2 each (8 ticks).
-    act(() => {
-      jest.advanceTimersByTime(
-        HOLD_REPEAT_INTERVAL_MS *
-          (HOLD_ACCELERATE_FURTHER_AFTER_TICKS - HOLD_ACCELERATE_AFTER_TICKS - 1),
-      )
-    })
-    expect(onChange).toHaveBeenLastCalledWith(7 + 2 * 9)
-    // Tick 16: +5.
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS)
-    })
-    expect(onChange).toHaveBeenLastCalledWith(7 + 2 * 9 + 5)
-    act(() => result.current.stop())
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS)
+    act(() => result.current.end())
+    act(() => result.current.begin(1))
+    act(() => result.current.end())
+    act(() => result.current.tap(1))
+    expect(onChange.mock.calls.map((c) => c[1])).toEqual(["hold", "tap"])
+  })
+
+  test("after 2 more seconds of holding the pace doubles to 10 per second, never faster", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS + HOLD_ACCELERATE_AFTER_MS)
+    // The hold's step plus ten slow repeats.
+    expect(onChange).toHaveBeenCalledTimes(11)
+    expect(onChange).toHaveBeenLastCalledWith(11, "repeat")
+    advance(HOLD_REPEAT_FAST_INTERVAL_MS - 1)
+    expect(onChange).toHaveBeenCalledTimes(11)
+    advance(1)
+    expect(onChange).toHaveBeenCalledTimes(12)
+    advance(1000)
+    expect(onChange).toHaveBeenCalledTimes(22)
+    // One step each time: the multiplier of the old engine is gone.
+    expect(onChange).toHaveBeenLastCalledWith(22, "repeat")
+    act(() => result.current.end())
   })
 
   test("the result is clamped to min and max", () => {
     const down = mount({ value: 1, min: 0, max: 3 })
-    act(() => down.result.current.start(-1))
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS * 3)
-    })
-    expect(down.onChange.mock.calls.map((c) => c[0])).toEqual([0, 0, 0, 0])
-    act(() => down.result.current.stop())
+    act(() => down.result.current.begin(-1))
+    advance(HOLD_REPEAT_DELAY_MS + HOLD_REPEAT_INTERVAL_MS * 2)
+    expect(down.onChange.mock.calls.map((c) => c[0])).toEqual([0, 0, 0])
+    act(() => down.result.current.end())
 
     const up = mount({ value: 2, min: 0, max: 3 })
-    act(() => up.result.current.start(1))
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS * 2)
-    })
-    expect(up.onChange.mock.calls.map((c) => c[0])).toEqual([3, 3, 3])
-    act(() => up.result.current.stop())
+    act(() => up.result.current.tap(1))
+    act(() => up.result.current.tap(1))
+    expect(up.onChange.mock.calls.map((c) => c[0])).toEqual([3, 3])
   })
 
-  test("stop halts the repeat", () => {
+  test("a cancelled press (end with no tap) stops the hold and leaves no timer", () => {
     const { result, onChange } = mount({ value: 0 })
-    act(() => result.current.start(1))
-    act(() => result.current.stop())
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS * 5)
-    })
-    expect(onChange).toHaveBeenCalledTimes(1)
-  })
-
-  test("unmount clears a running interval", () => {
-    const { result, onChange, unmount } = mount({ value: 0 })
-    act(() => result.current.start(1))
-    unmount()
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS * 5)
-    })
-    expect(onChange).toHaveBeenCalledTimes(1)
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS + HOLD_REPEAT_INTERVAL_MS)
+    expect(onChange).toHaveBeenCalledTimes(2)
+    act(() => result.current.end())
     expect(jest.getTimerCount()).toBe(0)
+    advance(HOLD_REPEAT_INTERVAL_MS * 10)
+    expect(onChange).toHaveBeenCalledTimes(2)
   })
 
-  test("a value changed from outside is the new base of the next start", () => {
+  test("a second press in without a press out leaves a single timer", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    act(() => result.current.begin(1))
+    expect(jest.getTimerCount()).toBe(1)
+    advance(HOLD_REPEAT_DELAY_MS)
+    expect(onChange).toHaveBeenCalledTimes(1)
+    act(() => result.current.end())
+  })
+
+  test("a press that ends before the delay never steps", () => {
+    const { result, onChange } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS - 1)
+    act(() => result.current.end())
+    advance(HOLD_REPEAT_DELAY_MS * 3)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test("unmount clears a running hold", () => {
+    const { result, onChange, unmount } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS)
+    unmount()
+    expect(jest.getTimerCount()).toBe(0)
+    advance(HOLD_REPEAT_INTERVAL_MS * 5)
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  test("unmount during the delay clears the timer", () => {
+    const { result, onChange, unmount } = mount({ value: 0 })
+    act(() => result.current.begin(1))
+    unmount()
+    expect(jest.getTimerCount()).toBe(0)
+    advance(HOLD_REPEAT_DELAY_MS * 2)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test("a value changed from outside is the new base of the next step", () => {
     const { result, onChange, rerender } = mount({ value: 2 })
     rerender({ value: 40 })
-    act(() => result.current.start(1))
-    expect(onChange).toHaveBeenLastCalledWith(41)
-    act(() => result.current.stop())
+    act(() => result.current.tap(1))
+    expect(onChange).toHaveBeenLastCalledWith(41, "tap")
   })
 
   test("a null value keeps the last known one, and starts from min at first", () => {
     const fresh = mount({ value: null, min: 0 })
-    act(() => fresh.result.current.start(1))
-    expect(fresh.onChange).toHaveBeenLastCalledWith(1)
-    act(() => fresh.result.current.stop())
+    act(() => fresh.result.current.tap(1))
+    expect(fresh.onChange).toHaveBeenLastCalledWith(1, "tap")
 
     const { result, onChange, rerender } = mount({ value: 7 })
     rerender({ value: null })
-    act(() => result.current.start(1))
-    expect(onChange).toHaveBeenLastCalledWith(8)
-    act(() => result.current.stop())
+    act(() => result.current.tap(1))
+    expect(onChange).toHaveBeenLastCalledWith(8, "tap")
   })
 
-  test("a repeat already running calls the latest onChange", () => {
+  test("a hold already running calls the latest onChange", () => {
     const first = jest.fn()
     const second = jest.fn()
     const { result, rerender } = mount({ onChange: first })
-    act(() => result.current.start(1))
+    act(() => result.current.begin(1))
+    advance(HOLD_REPEAT_DELAY_MS)
     rerender({ onChange: second })
-    act(() => {
-      jest.advanceTimersByTime(HOLD_REPEAT_INTERVAL_MS)
-    })
+    advance(HOLD_REPEAT_INTERVAL_MS)
     expect(first).toHaveBeenCalledTimes(1)
     expect(second).toHaveBeenCalledTimes(1)
-    act(() => result.current.stop())
+    act(() => result.current.end())
   })
 })

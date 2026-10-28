@@ -209,6 +209,7 @@ describe("DmhGroupRow", () => {
     const { handlers, one } = mount({ full: true, ticked: true, count: 3 })
     act(() => one("dmh-stepper-dmh_05-increase").props.onPressIn())
     act(() => one("dmh-stepper-dmh_05-increase").props.onPressOut())
+    act(() => one("dmh-stepper-dmh_05-increase").props.onPress())
     expect(handlers.onStep).toHaveBeenCalledWith("dmh_05", 4)
     act(() => one("dmh-stepper-dmh_05-value").props.onPress())
     act(() => one("dmh-stepper-dmh_05-input").props.onChangeText("7"))
@@ -369,6 +370,7 @@ describe("DmhGroupRow", () => {
       expect(increase.props.accessibilityState).toEqual({ disabled: true })
       act(() => increase.props.onPressIn())
       act(() => increase.props.onPressOut())
+      act(() => increase.props.onPress())
       expect(handlers.onStep).not.toHaveBeenCalled()
     })
 

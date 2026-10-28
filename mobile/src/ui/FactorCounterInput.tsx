@@ -3,7 +3,7 @@ import { useMemo, useState } from "react"
 import { StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandInteraction, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
@@ -46,7 +46,7 @@ export function FactorCounterInput({
   const styles = useMemo(() => createStyles(theme), [theme])
   const [editing, setEditing] = useState(false)
   const [draftText, setDraftText] = useState(value)
-  const { start, stop } = useHoldRepeat({
+  const { begin, end, tap } = useHoldRepeat({
     value: parseFiniteNumberInput(value),
     min,
     max,
@@ -56,11 +56,6 @@ export function FactorCounterInput({
   const hasValue = value.trim().length > 0
   const showError = touched && Boolean(error)
   const state = resolveFactorInputState(hasValue, showError)
-
-  const stopRepeat = (): void => {
-    stop()
-    onTouch()
-  }
 
   const openEdit = (): void => {
     setDraftText(value)
@@ -84,9 +79,12 @@ export function FactorCounterInput({
         <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.decrease({ label })}
-          hitSlop={brandInteraction.hitTarget.min}
-          onPressIn={() => start(-step)}
-          onPressOut={stopRepeat}
+          onPressIn={() => begin(-step)}
+          onPressOut={end}
+          onPress={() => {
+            tap(-step)
+            onTouch()
+          }}
           style={styles.button}
           testID={testID ? `${testID}-decrease` : undefined}
         >
@@ -120,9 +118,12 @@ export function FactorCounterInput({
         <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.increase({ label })}
-          hitSlop={brandInteraction.hitTarget.min}
-          onPressIn={() => start(step)}
-          onPressOut={stopRepeat}
+          onPressIn={() => begin(step)}
+          onPressOut={end}
+          onPress={() => {
+            tap(step)
+            onTouch()
+          }}
           style={styles.button}
           testID={testID ? `${testID}-increase` : undefined}
         >
