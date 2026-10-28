@@ -137,4 +137,18 @@ describe("ValueStepper", () => {
     expect(find("v-value").props.children).toBe("2")
     expect(tree.root.findAll((n) => n.props.accessibilityRole === "text")).not.toHaveLength(0)
   })
+
+  test("without buttons only the value remains: tap to type, the screen reader still adjusts", () => {
+    const { find, onStep, onSubmitText, tree } = render({ showButtons: false, value: 40, max: 100 })
+    expect(tree.root.findAll((n) => n.props.testID === "v-increase")).toHaveLength(0)
+    expect(tree.root.findAll((n) => n.props.testID === "v-decrease")).toHaveLength(0)
+    const root = tree.root.findAll((n) => n.props.accessibilityRole === "adjustable")[0]
+    act(() => root.props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }))
+    expect(onStep).toHaveBeenLastCalledWith(40.1)
+    act(() => find("v-value").props.onPress())
+    const input = find("v-input")
+    act(() => input.props.onChangeText("72"))
+    act(() => input.props.onBlur())
+    expect(onSubmitText).toHaveBeenLastCalledWith("72")
+  })
 })

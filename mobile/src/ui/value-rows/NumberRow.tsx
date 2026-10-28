@@ -33,6 +33,8 @@ export type NumberRowProps = {
   /** What a typed text becomes before it is stored (a percent is held to 100). */
   clampText?: (text: string) => string
   editable?: boolean
+  /** False: the value alone, no -/+ capsule (a percent row, which has its draggable track). */
+  showButtons?: boolean
   testID: string
   inputTestID?: string
 }
@@ -58,6 +60,7 @@ export function NumberRow({
   keyboardType = "numeric",
   clampText,
   editable = true,
+  showButtons = true,
   testID,
   inputTestID,
 }: NumberRowProps) {
@@ -84,6 +87,7 @@ export function NumberRow({
         incrementLabel={t.stepper.increment}
         decrementLabel={t.stepper.decrement}
         editable={editable}
+        showButtons={showButtons}
         min={min}
         max={max}
         step={step}

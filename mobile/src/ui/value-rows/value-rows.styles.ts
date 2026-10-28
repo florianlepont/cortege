@@ -55,9 +55,8 @@ export function createValueRowStyles(theme: BrandTheme) {
       color: theme.fieldState.error.text,
       paddingHorizontal: brandSpacing4.xs,
     },
-    // The slider's track row: its ends named above, the track under them.
+    // The percent row's track, under the label and the value: its ends named above (G only).
     trackRow: {
-      paddingTop: brandSpacing4.smd,
       paddingHorizontal: brandSpacing4.md,
       gap: brandSpacing4.xs,
     },

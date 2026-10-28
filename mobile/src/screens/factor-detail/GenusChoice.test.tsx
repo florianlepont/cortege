@@ -228,7 +228,10 @@ describe("GenusChoice", () => {
       const olea = rows().find((r) => r.props.testID === "choice-row-A-Olea")!
       expect(olea.props.accessibilityState.checked).toBe(true)
       expect(olea.props.accessibilityLabel).toBe(
-        `${fr.genus.latinLabel("Olea")}, ${fr.factorDetail.choice.notCountedCas}`,
+        fr.factorDetail.choice.rowWithNote({
+          label: fr.genus.latinLabel("Olea"),
+          note: fr.factorDetail.choice.notCountedCas,
+        }),
       )
       expect(texts().filter((t) => t === fr.factorDetail.choice.notCountedCas)).toHaveLength(1)
       // The counted genus carries no note.

@@ -1,11 +1,9 @@
 import { useMemo } from "react"
 import type { BStratumCode, IbpMethodVersion } from "@cortege/ibp-domain"
-import { clampPercentText } from "../../app/decimal-text"
 import { selectionOptionsFor } from "../../app/factor-selections"
 import { fr } from "../../i18n"
 import { ValueSection, ValueSectionNote } from "../../ui/value-rows/ValueSection"
-import { NumberRow } from "../../ui/value-rows/NumberRow"
-import { PERCENT_ROW } from "./renderValueFields"
+import { PercentRow } from "../../ui/value-rows/PercentRow"
 
 const t = fr.factorDetail.countingMode
 
@@ -26,9 +24,9 @@ type StrataCoverFieldsProps = {
  * Phase 30 (D-07, spec section 7, UI-SPEC section 11), in the grouped-row look since follow-up
  * 32-31: the entry of factor B when the recorded route counts it in full. A header "Couvert de
  * chaque strate" with the count of strata counted at its right (the only place that count is
- * written besides the key figure), then one row per stratum, a percent from 0 to 100 with a -/+
- * capsule (step 1) and a typeable value, and the 20 % rule as the note under the list. The count is
- * the package's (`strataCountFromCover`, called by the form): this block only types and shows it.
+ * written besides the key figure), then one row per stratum, a percent from 0 to 100 with a
+ * draggable track (step 5, follow-up 32-33) and a typeable value, and the 20 % rule as the note
+ * under the list. The count is the package's (`strataCountFromCover`, called by the form): this block only types and shows it.
  */
 export function StrataCoverFields({
   methodVersion,
@@ -52,17 +50,16 @@ export function StrataCoverFields({
       {options.map((option, index) => {
         const code = option.value as BStratumCode
         return (
-          <NumberRow
+          <PercentRow
             key={code}
             label={option.label}
             value={coverText[code] ?? ""}
             onChange={(text) => onChange(code, text)}
             onTouch={ignoreTouch}
+            step={5}
             editable={editable}
             testID={`strata-stepper-${index}`}
             inputTestID={`strata-cover-${index}`}
-            {...PERCENT_ROW}
-            clampText={clampPercentText}
           />
         )
       })}

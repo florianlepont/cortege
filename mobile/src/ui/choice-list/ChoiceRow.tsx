@@ -1,5 +1,6 @@
 import { memo } from "react"
 import { View } from "react-native"
+import { fr } from "../../i18n"
 import { AppPressable } from "../AppPressable"
 import { AppText as Text } from "../AppText"
 import { feedback } from "../feedback"
@@ -50,7 +51,7 @@ export const ChoiceRow = memo(function ChoiceRow({
       accessibilityState={
         mode === "single" ? { checked: selected, selected } : { checked: selected }
       }
-      accessibilityLabel={note ? `${label}, ${note}` : label}
+      accessibilityLabel={note ? fr.factorDetail.choice.rowWithNote({ label, note }) : label}
       style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
       testID={testID}
     >

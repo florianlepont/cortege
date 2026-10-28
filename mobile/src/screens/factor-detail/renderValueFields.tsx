@@ -1,16 +1,9 @@
 import type { ReactElement } from "react"
-import {
-  clampPercentText,
-  formatDecimalComma,
-  formatHectares,
-  toFieldText,
-  withoutPercentUnit,
-} from "../../app/decimal-text"
-import { parseFiniteNumberInput } from "../../app/number-utils"
+import { formatDecimalComma, formatHectares, withoutPercentUnit } from "../../app/decimal-text"
 import type { FactorField, FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { NumberRow, type NumberRowProps } from "../../ui/value-rows/NumberRow"
-import { PercentTrackRow } from "../../ui/value-rows/PercentTrackRow"
+import { PercentRow } from "../../ui/value-rows/PercentRow"
 import { ValueSection } from "../../ui/value-rows/ValueSection"
 import { SurfaceFromRouteRow } from "./SurfaceFromRouteRow"
 import { humanizeFieldLabel, type FieldVariant } from "./renderFactorField"
@@ -20,11 +13,11 @@ const rows = t.valueRows
 
 // Follow-up 32-31: the bounds and steps of the numeric rows. A count keeps the old counter's 0 to
 // 999 (the form's own rule accepts any whole number, so a larger typed count is still stored); a
-// surface steps by a tenth of a hectare from 0 to 100000; a percent steps by 1 from 0 to 100.
+// surface steps by a tenth of a hectare from 0 to 100000. A percent (follow-up 32-33) has no -/+
+// capsule: a draggable track snapping to 5 (A's cover) or 1 (G) over the typed value, 0 to 100.
 const COUNT_MAX = 999
 const SURFACE_MAX = 100000
 const SURFACE_STEP = 0.1
-const PERCENT_MAX = 100
 
 type RowSpec = Pick<
   NumberRowProps,
@@ -52,16 +45,6 @@ const DENSITY_ROW: RowSpec = {
   step: 1,
   format: formatDecimalComma,
   keyboardType: "numeric",
-}
-
-export const PERCENT_ROW: RowSpec = {
-  max: PERCENT_MAX,
-  step: 1,
-  format: formatDecimalComma,
-  unitSuffix: rows.percentSuffix,
-  spokenValue: (text) => rows.spoken.percent({ text }),
-  keyboardType: "decimal-pad",
-  clampText: clampPercentText,
 }
 
 const labelOf = (field: FactorField): string =>
@@ -181,14 +164,14 @@ function renderNumeric(
         title={rows.headers.cover}
         errors={error ? [error] : []}
       >
-        {rowOf(
-          factor,
-          index,
-          field,
-          PERCENT_ROW,
-          withoutPercentUnit(labelOf(field)),
-          `cover-${factor}`,
-        )}
+        <PercentRow
+          label={withoutPercentUnit(labelOf(field))}
+          value={field.value}
+          onChange={field.onChange}
+          onTouch={field.onTouch}
+          step={5}
+          testID={`cover-${factor}`}
+        />
       </ValueSection>
     )
   }
@@ -227,8 +210,6 @@ function renderNumeric(
 
 function renderSlider(factor: FactorKey, index: number, field: FactorField): ReactElement {
   const error = errorOf(field)
-  const label = withoutPercentUnit(labelOf(field))
-  const percent = Math.min(100, Math.max(0, parseFiniteNumberInput(field.value) ?? 0))
   return (
     <ValueSection
       key={`${factor}-${index}`}
@@ -236,14 +217,15 @@ function renderSlider(factor: FactorKey, index: number, field: FactorField): Rea
       title={rows.headers.percent}
       errors={error ? [error] : []}
     >
-      <PercentTrackRow
-        label={label}
-        percent={percent}
-        onChangePercent={(next) => field.onChange(toFieldText(next))}
+      <PercentRow
+        label={withoutPercentUnit(labelOf(field))}
+        value={field.value}
+        onChange={field.onChange}
         onTouch={field.onTouch}
-        testID={`percent-${factor}-slider`}
+        step={1}
+        showEnds
+        testID={`percent-${factor}`}
       />
-      {rowOf(factor, index, field, PERCENT_ROW, label, `percent-${factor}`)}
     </ValueSection>
   )
 }

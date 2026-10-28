@@ -221,10 +221,13 @@ describe("FactorDetailScreen help per method version", () => {
 describe("FactorDetailScreen fields", () => {
   test("A renders the genus list (not a value row) and the native cover row, without its (%)", () => {
     const { tree, inputs } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
+    // The cover is one percent row: the typed value, then its draggable track (no -/+ capsule).
+    const coverLabel = withoutPercentUnit(
+      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
+    )
     expect(inputs.map((input) => input.props.accessibilityLabel)).toEqual([
-      withoutPercentUnit(
-        fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
-      ),
+      coverLabel,
+      fr.factorDetail.valueRows.slider.a11yLabel({ label: coverLabel, percent: 0 }),
     ])
     const genusLists = tree.root.findAllByType("GenusChoice" as unknown as React.ElementType)
     expect(genusLists).toHaveLength(1)

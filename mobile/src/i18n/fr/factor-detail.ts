@@ -69,6 +69,8 @@ export const factorDetailFr = {
     // A ticked genus the survey's cas (v3.2) or method (v3.0) does not count stays listed, quietly.
     notCountedCas: "Ne compte pas pour ce cas",
     notCountedMethod: "Ne compte pas pour cette version de la méthode",
+    // The spoken name of a row that carries a quiet note: the label, then the note.
+    rowWithNote: ({ label, note }: { label: string; note: string }) => `${label}, ${note}`,
   },
   // Follow-up 32-31: the numeric controls of the other factors as grouped rows (a label, then the
   // value and a -/+ capsule). The row label is the field's own label; a percent row drops the

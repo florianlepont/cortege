@@ -59,18 +59,18 @@ function mount(props: Partial<React.ComponentProps<typeof StrataCoverFields>> = 
     )
   })
   const byId = (id: string) => tree.root.findAll((n) => n.props.testID === id)
-  const press = (id: string): void => {
-    const button = byId(id)[0]
-    act(() => button.props.onPressIn())
-    act(() => button.props.onPressOut())
-    act(() => button.props.onPress())
-  }
   // The typed field exists while the value is being edited: tap the value first.
   const edit = (index: number) => {
     act(() => byId(`strata-stepper-${index}-value`)[0].props.onPress())
     return byId(`strata-cover-${index}`)[0]
   }
-  return { tree, onChange, byId, press, edit }
+  // A track of 200 points: one point is half a percent.
+  const track = (index: number) => {
+    const node = byId(`strata-stepper-${index}-slider-track`)[0]
+    act(() => node.props.onLayout({ nativeEvent: { layout: { width: 200 } } }))
+    return node
+  }
+  return { tree, onChange, byId, edit, track }
 }
 
 describe("StrataCoverFields", () => {
@@ -86,12 +86,14 @@ describe("StrataCoverFields", () => {
     expect(texts).toContain("Une strate compte à partir de 20 %")
   })
 
-  test("a step is one percent, written as the stratum's text", () => {
-    const { press, onChange } = mount({ coverText: { very_low: "25" } })
-    press("strata-stepper-0-increase")
-    expect(onChange).toHaveBeenLastCalledWith("very_low", "26")
-    press("strata-stepper-1-increase")
-    expect(onChange).toHaveBeenLastCalledWith("low", "1")
+  test("each stratum has a draggable track snapping to 5, and no -/+ capsule", () => {
+    const { byId, track, onChange } = mount({ coverText: { very_low: "25" } })
+    expect(byId("strata-stepper-0-increase")).toHaveLength(0)
+    expect(byId("strata-stepper-0-decrease")).toHaveLength(0)
+    act(() => track(0).props.onResponderMove({ nativeEvent: { locationX: 126 } }))
+    expect(onChange).toHaveBeenLastCalledWith("very_low", "65")
+    act(() => track(1).props.onResponderGrant({ nativeEvent: { locationX: 40 } }))
+    expect(onChange).toHaveBeenLastCalledWith("low", "20")
   })
 
   test("typing keeps the old field's test id and calls onChange with the code and the text", () => {
@@ -119,10 +121,12 @@ describe("StrataCoverFields", () => {
     expect(onChange).toHaveBeenLastCalledWith("low", "100")
   })
 
-  test("the + stops at 100", () => {
-    const { press, onChange } = mount({ coverText: { high: "100" } })
-    press("strata-stepper-3-increase")
+  test("the track stops at 100 and does not rewrite the same value", () => {
+    const { track, onChange } = mount({ coverText: { high: "100" } })
+    act(() => track(3).props.onResponderMove({ nativeEvent: { locationX: 400 } }))
     expect(onChange).not.toHaveBeenCalled()
+    act(() => track(2).props.onResponderMove({ nativeEvent: { locationX: 400 } }))
+    expect(onChange).toHaveBeenLastCalledWith("intermediate", "100")
   })
 
   test("shows the count the form derived in the header, only once a cover is typed", () => {
@@ -135,9 +139,9 @@ describe("StrataCoverFields", () => {
     expect(textOf(find(one)[0])).toBe("1 strate comptée")
   })
 
-  test("a locked page is not editable: no capsule", () => {
+  test("a locked page is not editable: no track", () => {
     const { byId } = mount({ editable: false })
-    expect(byId("strata-stepper-0-increase")).toHaveLength(0)
+    expect(byId("strata-stepper-0-slider-track")).toHaveLength(0)
     expect(byId("strata-stepper-0-value")).not.toHaveLength(0)
   })
 

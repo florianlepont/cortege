@@ -24,6 +24,8 @@ import { nudgeValue, useHoldRepeat } from "./useHoldRepeat"
 export const VALUE_STEPPER_SIZE = 48
 const SEGMENT_WIDTH = 56
 const COUNT_MIN_WIDTH = 44
+// Alone (no capsule), the value is the whole control to tap: a wider target.
+const VALUE_ONLY_MIN_WIDTH = 88
 const GLYPH_SIZE = 22
 const SEGMENT_DIVIDER_HEIGHT = 24
 
@@ -53,6 +55,11 @@ export type ValueStepperProps = {
   /** How the value is drawn (a decimal comma, a unit sign); the typed field shows the plain number. */
   format?: (value: number) => string
   keyboardType?: "numeric" | "decimal-pad"
+  /**
+   * False: no -/+ capsule, the value alone (tap to type) and the screen reader's adjustable actions.
+   * A percent row steps with its draggable track and keeps this typed value (follow-up 32-33).
+   */
+  showButtons?: boolean
   testID: string
   /** The test id of the typed field, when an existing id has to be kept (default `<testID>-input`). */
   inputTestID?: string
@@ -74,6 +81,7 @@ export function ValueStepper({
   step = 1,
   format = defaultFormat,
   keyboardType = "numeric",
+  showButtons = true,
   testID,
   inputTestID,
 }: ValueStepperProps) {
@@ -148,6 +156,7 @@ export function ValueStepper({
     }
   }
 
+  const valueCell = showButtons ? null : styles.valueOnly
   const atMin = value <= min
   const atMax = value >= upper
 
@@ -182,7 +191,7 @@ export function ValueStepper({
             inputAccessoryViewButtonLabel={fr.common.actions.keyboardDone}
             maxFontSizeMultiplier={brandFontScaleCaps.input}
             autoFocus
-            style={[styles.countCell, styles.count, styles.input]}
+            style={[styles.countCell, valueCell, styles.count, styles.input]}
             testID={inputTestID ?? `${testID}-input`}
           />
         ) : (
@@ -192,7 +201,7 @@ export function ValueStepper({
             accessibilityRole="button"
             accessibilityLabel={editHint}
             onPress={openEdit}
-            style={styles.countCell}
+            style={[styles.countCell, valueCell]}
             testID={`${testID}-value`}
           >
             <Text maxFontSizeMultiplier={brandFontScaleCaps.label} style={styles.count}>
@@ -201,62 +210,64 @@ export function ValueStepper({
           </AppPressable>
         )}
 
-        <View style={styles.capsule}>
-          <AppPressable
-            disableScale
-            disableRipple
-            accessibilityRole="button"
-            accessibilityLabel={decrementLabel}
-            accessibilityState={{ disabled: atMin }}
-            onPressIn={() => {
-              // Not the Pressable `disabled` prop: a button disabled mid-hold would never send its
-              // press out and the repeat would run on. At 0 a press simply does nothing.
-              if (atMin) return
-              begin(-step)
-            }}
-            onPressOut={end}
-            onPress={() => tap(-step)}
-            style={({ pressed }) => [
-              styles.segment,
-              pressed && !atMin ? styles.segmentPressed : null,
-            ]}
-            testID={`${testID}-decrease`}
-          >
-            <Ionicons
-              name="remove-outline"
-              size={GLYPH_SIZE}
-              color={theme.semanticColors.ctaPrimary}
-              style={atMin ? styles.disabledGlyph : undefined}
-            />
-          </AppPressable>
-          <View style={styles.segmentDivider} />
-          <AppPressable
-            disableScale
-            disableRipple
-            accessibilityRole="button"
-            accessibilityLabel={incrementLabel}
-            accessibilityState={{ disabled: atMax }}
-            onPressIn={() => {
-              // Like "-" at 0: at the bound a press does nothing.
-              if (atMax) return
-              begin(step)
-            }}
-            onPressOut={end}
-            onPress={() => tap(step)}
-            style={({ pressed }) => [
-              styles.segment,
-              pressed && !atMax ? styles.segmentPressed : null,
-            ]}
-            testID={`${testID}-increase`}
-          >
-            <Ionicons
-              name="add-outline"
-              size={GLYPH_SIZE}
-              color={theme.semanticColors.ctaPrimary}
-              style={atMax ? styles.disabledGlyph : undefined}
-            />
-          </AppPressable>
-        </View>
+        {showButtons ? (
+          <View style={styles.capsule}>
+            <AppPressable
+              disableScale
+              disableRipple
+              accessibilityRole="button"
+              accessibilityLabel={decrementLabel}
+              accessibilityState={{ disabled: atMin }}
+              onPressIn={() => {
+                // Not the Pressable `disabled` prop: a button disabled mid-hold would never send its
+                // press out and the repeat would run on. At 0 a press simply does nothing.
+                if (atMin) return
+                begin(-step)
+              }}
+              onPressOut={end}
+              onPress={() => tap(-step)}
+              style={({ pressed }) => [
+                styles.segment,
+                pressed && !atMin ? styles.segmentPressed : null,
+              ]}
+              testID={`${testID}-decrease`}
+            >
+              <Ionicons
+                name="remove-outline"
+                size={GLYPH_SIZE}
+                color={theme.semanticColors.ctaPrimary}
+                style={atMin ? styles.disabledGlyph : undefined}
+              />
+            </AppPressable>
+            <View style={styles.segmentDivider} />
+            <AppPressable
+              disableScale
+              disableRipple
+              accessibilityRole="button"
+              accessibilityLabel={incrementLabel}
+              accessibilityState={{ disabled: atMax }}
+              onPressIn={() => {
+                // Like "-" at 0: at the bound a press does nothing.
+                if (atMax) return
+                begin(step)
+              }}
+              onPressOut={end}
+              onPress={() => tap(step)}
+              style={({ pressed }) => [
+                styles.segment,
+                pressed && !atMax ? styles.segmentPressed : null,
+              ]}
+              testID={`${testID}-increase`}
+            >
+              <Ionicons
+                name="add-outline"
+                size={GLYPH_SIZE}
+                color={theme.semanticColors.ctaPrimary}
+                style={atMax ? styles.disabledGlyph : undefined}
+              />
+            </AppPressable>
+          </View>
+        ) : null}
       </View>
     </View>
   )
@@ -305,6 +316,9 @@ function createStyles(theme: BrandTheme) {
       minHeight: VALUE_STEPPER_SIZE,
       alignItems: "flex-end",
       justifyContent: "center",
+    },
+    valueOnly: {
+      minWidth: VALUE_ONLY_MIN_WIDTH,
     },
     count: {
       ...brandTypeScale.title3,

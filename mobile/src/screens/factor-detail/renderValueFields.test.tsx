@@ -200,12 +200,19 @@ describe("renderValueSections", () => {
 
   test("A: the cover is a percent row without its (%), 0 to 100, typed value held to 100", () => {
     const cover = field(labels.native_cover_percent, { value: "70" })
-    const { any, press, texts, tree } = mount("A", [field("genera"), cover])
+    const { any, texts, tree } = mount("A", [field("genera"), cover])
     expect(texts()).toContain(fr.factorDetail.valueRows.headers.cover)
     expect(texts()).toContain("Couvert des essences autochtones *")
     expect(texts()).toContain("70 %")
-    press("cover-A-increase")
-    expect(cover.onChange).toHaveBeenLastCalledWith("71")
+    // No -/+ capsule on a percent row (follow-up 32-33): the track snaps to 5, the value is typed.
+    expect(any("cover-A-increase")).toHaveLength(0)
+    expect(any("cover-A-decrease")).toHaveLength(0)
+    const track = any("cover-A-slider-track")[0]
+    act(() => track.props.onLayout({ nativeEvent: { layout: { width: 200 } } }))
+    act(() => track.props.onResponderMove({ nativeEvent: { locationX: 130 } }))
+    expect(cover.onChange).toHaveBeenLastCalledWith("65")
+    act(() => track.props.onResponderMove({ nativeEvent: { locationX: 133 } }))
+    expect(cover.onChange).toHaveBeenLastCalledWith("65")
     act(() => any("cover-A-value")[0].props.onPress())
     const input = tree.root.findAll((n) => n.props.testID === "cover-A-input")[0]
     act(() => input.props.onChangeText("250"))
@@ -213,9 +220,9 @@ describe("renderValueSections", () => {
     expect(cover.onChange).toHaveBeenLastCalledWith("100")
   })
 
-  test("G: the track and the value row share one section; both write whole percents", () => {
+  test("G: the track and the typed value share one row; the track writes whole percents", () => {
     const g = field("open_flowering_percent", { value: "3" })
-    const { byId, any, press, texts } = mount("G", [g])
+    const { byId, any, texts } = mount("G", [g])
     expect(byId("percent-G-section")).toHaveLength(1)
     expect(texts()).toContain(fr.factorDetail.valueRows.headers.percent)
     expect(texts()).toContain("3 %")
@@ -224,8 +231,13 @@ describe("renderValueSections", () => {
     act(() => track.props.onResponderGrant({ nativeEvent: { locationX: 2 } }))
     expect(g.onChange).toHaveBeenLastCalledWith("1")
     expect(track.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 3 })
-    press("percent-G-increase")
-    expect(g.onChange).toHaveBeenLastCalledWith("4")
+    expect(any("percent-G-increase")).toHaveLength(0)
+    act(() => track.props.onResponderMove({ nativeEvent: { locationX: 6 } }))
+    expect(g.onChange).toHaveBeenLastCalledWith("3")
+    act(() => any("percent-G-value")[0].props.onPress())
+    act(() => any("percent-G-input")[0].props.onChangeText("42"))
+    act(() => any("percent-G-input")[0].props.onBlur())
+    expect(g.onChange).toHaveBeenLastCalledWith("42")
     act(() => track.props.onResponderRelease())
     expect(g.onTouch).toHaveBeenCalled()
   })
