@@ -98,6 +98,8 @@ const SAMPLES: Record<string, () => string> = {
     `${fr.surveyExport.route.choiceGuide({ answers: "peuplement de 8 ha" })}|${fr.surveyExport.route.choiceGuide({ answers: null })}`,
   "factorDetailCountingMode.zoneLine": () =>
     fr.factorDetail.countingMode.zoneLine({ hectares: "1,2" }),
+  "factorDetailCountingMode.surfaceFromRoute": () =>
+    fr.factorDetail.countingMode.surfaceFromRoute({ hectares: "2,0" }),
   "factorDetailCountingMode.strataCounted": () =>
     `${fr.factorDetail.countingMode.strataCounted({ count: 1 })}|${fr.factorDetail.countingMode.strataCounted({ count: 3 })}`,
 }

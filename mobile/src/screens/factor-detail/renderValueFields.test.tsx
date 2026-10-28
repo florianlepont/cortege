@@ -56,7 +56,11 @@ const field = (label: string, overrides: Partial<FactorField> = {}): FactorField
 function mount(
   factor: FactorKey,
   fields: FactorField[],
-  extra: { fromRoute?: boolean; groupCounters?: boolean } = {},
+  extra: {
+    groupCounters?: boolean
+    surfaceCaptionHa?: number | null
+    countedInFull?: boolean
+  } = {},
 ) {
   const variants = fieldVariantsFor(factor, IBP_METHOD_V3_2)
   let tree!: renderer.ReactTestRenderer
@@ -67,7 +71,8 @@ function mount(
           factor,
           variants,
           fields,
-          fromRoute: extra.fromRoute ?? false,
+          surfaceCaptionHa: extra.surfaceCaptionHa ?? null,
+          countedInFull: extra.countedInFull ?? false,
           groupCounters: extra.groupCounters ?? false,
         })}
       </View>,
@@ -125,10 +130,58 @@ describe("renderValueSections", () => {
     expect(zero.onChange).not.toHaveBeenCalled()
   })
 
-  test("the surface says it comes from the route while it equals the zone", () => {
-    const fields = [field("bmg_count"), field("bmm_count"), field("surface_ha", { value: "1,2" })]
-    expect(mount("C", fields, { fromRoute: true }).any("surface-from-route")).not.toHaveLength(0)
-    expect(mount("C", fields).any("surface-from-route")).toHaveLength(0)
+  test("a surface that is the route's zone gives way to one read-only caption line", () => {
+    const fields = [field("bmg_count"), field("bmm_count"), field("surface_ha", { value: "2" })]
+    const { byId, any, texts } = mount("C", fields, { surfaceCaptionHa: 2 })
+    expect(byId("surface-C-section")).toHaveLength(0)
+    expect(any("surface-C-increase")).toHaveLength(0)
+    expect(any("surface-C-from-route")).not.toHaveLength(0)
+    expect(texts()).toContain(fr.factorDetail.countingMode.surfaceFromRoute({ hectares: "2,0" }))
+    expect(any("surface-C-from-route-modify")).toHaveLength(0)
+    expect(any("surface-C-from-route")[0].props.onPress).toBeUndefined()
+  })
+
+  test("without a caption the surface section stays, even with a zone", () => {
+    const fields = [field("bmg_count"), field("bmm_count"), field("surface_ha", { value: "3" })]
+    const { byId, any } = mount("C", fields, { surfaceCaptionHa: null })
+    expect(byId("surface-C-section")).toHaveLength(1)
+    expect(any("surface-C-from-route")).toHaveLength(0)
+  })
+
+  test("the lower counter is hidden in the capped mode while the package does not need it", () => {
+    const fields = [
+      field("bmg_count", { value: "4" }),
+      field("bmm_count", { value: "7", required: false, notNeeded: true }),
+      field("surface_ha", { value: "2" }),
+    ]
+    const capped = mount("C", fields)
+    expect(capped.any("counter-C-0-row")).not.toHaveLength(0)
+    expect(capped.any("counter-C-1-row")).toHaveLength(0)
+    const hosts = (id: string) => capped.any(id).filter((n) => typeof n.type === "string")
+    expect(hosts("counters-C-error")).toHaveLength(0)
+    // The value typed there is not touched: the field object is not called.
+    expect(fields[1].onChange).not.toHaveBeenCalled()
+  })
+
+  test("counted in full, the lower counter stays on the page, without its required marker", () => {
+    const lower = field("bmm_count", { value: "7", required: false, notNeeded: true })
+    const { any, texts } = mount(
+      "C",
+      [field("bmg_count", { value: "4" }), lower, field("surface_ha", { value: "2" })],
+      { countedInFull: true },
+    )
+    expect(any("counter-C-1-row")).not.toHaveLength(0)
+    expect(texts()).toContain("Nombre de bois morts de dimension moyenne (BMm)")
+  })
+
+  test("a lower counter the package needs shows in the capped mode with its marker", () => {
+    const { any, texts } = mount("E", [
+      field("tgb_count", { value: "1" }),
+      field("gb_count"),
+      field("surface_ha", { value: "4" }),
+    ])
+    expect(any("counter-E-1-row")).not.toHaveLength(0)
+    expect(texts()).toContain("Nombre de gros bois (GB) *")
   })
 
   test("the touched errors are captions under their section, only once touched", () => {

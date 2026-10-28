@@ -50,7 +50,9 @@ export const factorDetailFr = {
       count === 1 ? "1 strate comptée" : `${count} strates comptées`,
     dmhSurfaceLabel: "Surface décrite pour ce comptage (ha)",
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
-    fromRoute: "D'après le parcours",
+    // Follow-up 32-32: while a surface equals the route's, one quiet read-only line stands in for its section.
+    surfaceFromRoute: ({ hectares }: { hectares: string }) =>
+      `Surface décrite : ${hectares} ha, d'après le parcours`,
   },
   // Follow-up 32-30: the choice lists of A, B, H, I and J (a grouped list of circles, as F's). A
   // section header is the field's label unless this catalogue names it; A's list has a search field.

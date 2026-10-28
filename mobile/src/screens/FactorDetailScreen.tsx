@@ -135,7 +135,7 @@ export function FactorDetailScreen({
   // F's group list follows the card, drawn by the screen (A-C1).
   const dmhListIndex = variants.findIndex(hasDmhListCompanion)
   const dmhListField = dmhListIndex >= 0 ? fields[dmhListIndex] : undefined
-  const { fromRoute } = useRouteSurfacePrefill({
+  const { fromRoute, zoneHa } = useRouteSurfacePrefill({
     zoneSurfaceHa,
     surfaceText: surfaceField?.value ?? "",
     onChangeSurface: surfaceField?.onChange ?? ignoreSelectionChange,
@@ -172,7 +172,10 @@ export function FactorDetailScreen({
     factor,
     variants,
     fields,
-    fromRoute,
+    // Follow-up 32-32: while the surface is the route's, a read-only caption line stands in for its
+    // section; a different value, or no route surface, keeps the editable row.
+    surfaceCaptionHa: fromRoute ? zoneHa : null,
+    countedInFull,
     groupCounters: groupEntry !== undefined,
   })
 

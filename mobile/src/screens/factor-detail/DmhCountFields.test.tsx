@@ -71,10 +71,6 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
     surface,
     update: (next: Partial<React.ComponentProps<typeof DmhCountFields>>) =>
       act(() => tree.update(element({ ...props, ...next }))),
-    fromRoute: () =>
-      tree.root.findAll(
-        (n) => typeof n.type === "string" && n.props.testID === "surface-from-route",
-      ),
   }
 }
 
@@ -100,32 +96,28 @@ describe("DmhCountFields", () => {
     expect(onChangeSurface).toHaveBeenLastCalledWith("1,3")
   })
 
-  test("F's surface starts from the route's zone, once, and says where it comes from", () => {
-    const { update, onChangeSurface, surface, fromRoute } = mount({ zoneSurfaceHa: 1.2 })
+  test("F's surface starts from the route's zone, once, and gives way to one read-only caption line", () => {
+    const { update, onChangeSurface, byId, tree } = mount({ zoneSurfaceHa: 1.2 })
     expect(onChangeSurface).toHaveBeenCalledTimes(1)
     expect(onChangeSurface).toHaveBeenCalledWith("1,2")
-    expect(fromRoute()).toHaveLength(0)
     update({ zoneSurfaceHa: 1.2, surfaceText: "1,2" })
     expect(onChangeSurface).toHaveBeenCalledTimes(1)
-    expect(fromRoute()).toHaveLength(1)
-    expect(textOf(fromRoute()[0])).toBe(t.fromRoute)
-    expect(surface().props.value).toBe("1,2")
+    expect(textOf(byId("dmh-surface-block")[0])).toContain(t.surfaceFromRoute({ hectares: "1,2" }))
+    expect(byId("dmh-surface-block-modify")).toHaveLength(0)
+    expect(byId("dmh-surface-stepper-increase")).toHaveLength(0)
+    expect(textOf(tree.root)).not.toContain(t.dmhSurfaceLabel)
   })
 
-  test("F's surface is editable: the caption goes away, the typed value is never replaced", () => {
-    const { update, onChangeSurface, surface, fromRoute } = mount({
+  test("a surface that differs from the route's shows the row, with no caption line", () => {
+    const { update, byId, onChangeSurface, surface } = mount({
       zoneSurfaceHa: 1.2,
       surfaceText: "1,2",
     })
-    expect(onChangeSurface).not.toHaveBeenCalled()
-    const field = surface()
-    act(() => field.props.onChangeText("2"))
-    act(() => field.props.onBlur())
-    expect(onChangeSurface).toHaveBeenCalledWith("2")
     update({ surfaceText: "2" })
-    expect(fromRoute()).toHaveLength(0)
+    expect(surface().props.value).toBe("2")
     update({ surfaceText: "" })
-    expect(onChangeSurface).toHaveBeenCalledTimes(1)
+    expect(onChangeSurface).not.toHaveBeenCalled()
+    expect(byId("dmh-surface-stepper-increase")).not.toHaveLength(0)
   })
 
   test("a value already there is not overwritten, and no zone means no prefill", () => {

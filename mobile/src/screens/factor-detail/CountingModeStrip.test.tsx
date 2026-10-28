@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { fr } from "../../i18n"
-import { CountingModeChip, FromRouteCaption } from "./CountingModeStrip"
+import { CountingModeChip } from "./CountingModeStrip"
 
 const t = fr.factorDetail.countingMode
 
@@ -54,13 +54,5 @@ describe("CountingModeChip", () => {
     expect(textOf(chip)).toBe("Relevé déplafonné")
     expect(textOf(chip)).toBe(t.chip)
     expect(tree.root.findAllByType("Pressable" as unknown as React.ElementType)).toHaveLength(0)
-  })
-})
-
-describe("FromRouteCaption", () => {
-  test("says the value comes from the route", () => {
-    const tree = render(<FromRouteCaption />)
-    const note = tree.root.findAll((n) => n.props.testID === "surface-from-route")[0]
-    expect(textOf(note)).toBe("D'après le parcours")
   })
 })

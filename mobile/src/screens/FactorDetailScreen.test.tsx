@@ -630,10 +630,8 @@ describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", 
         tree.root.findAll(
           (n) => typeof n.type === "string" && n.props.testID === "counting-caption",
         ),
-      fromRoute: () =>
-        tree.root.findAll(
-          (n) => typeof n.type === "string" && n.props.testID === "surface-from-route",
-        ),
+      byId: (id: string) =>
+        tree.root.findAll((n) => typeof n.type === "string" && n.props.testID === id),
     }
   }
   const cFields = (surface: Partial<FactorField> = {}) => [
@@ -673,16 +671,36 @@ describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", 
     expect(textsIn(intro).startsWith(fr.factorDetail.intro.H)).toBe(true)
   })
 
-  test("C starts from the zone: the empty field is filled once and says where it comes from", () => {
+  test("C starts from the zone: the empty field is filled once and one caption line replaces its section", () => {
     const onChange = jest.fn()
-    const { update, fromRoute } = mount("C", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
+    const { update, byId } = mount("C", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange).toHaveBeenCalledWith("1,2")
-    expect(fromRoute()).toHaveLength(0)
     update(cFields({ onChange, value: "1,2" }))
     expect(onChange).toHaveBeenCalledTimes(1)
-    expect(fromRoute()).toHaveLength(1)
-    expect(textsIn(fromRoute()[0])).toBe("D'après le parcours")
+    expect(byId("surface-C-section")).toHaveLength(0)
+    expect(byId("surface-C-increase")).toHaveLength(0)
+    const row = byId("surface-C-from-route")
+    expect(row).toHaveLength(1)
+    expect(textsIn(row[0])).toContain("Surface décrite : 1,2 ha, d'après le parcours")
+    expect(row[0].props.onPress).toBeUndefined()
+    expect(byId("surface-C-from-route-modify")).toHaveLength(0)
+  })
+
+  test("a surface that differs from the route's keeps its row, with no caption line", () => {
+    const onChange = jest.fn()
+    const { byId } = mount("E", cFields({ onChange, value: "3" }), {
+      zoneSurfaceHa: 1.2,
+    })
+    expect(byId("surface-E-section")).toHaveLength(1)
+    expect(byId("surface-E-from-route")).toHaveLength(0)
+  })
+
+  test("without a route surface the row stays and keeps its error", () => {
+    const { byId } = mount("C", cFields({ value: "", error: "Surface requise", touched: true }))
+    expect(byId("surface-C-section")).toHaveLength(1)
+    expect(byId("surface-C-from-route")).toHaveLength(0)
+    expect(byId("surface-C-section-error")).toHaveLength(1)
   })
 
   test("the surface field is found by its place, whatever its label (the form hands French labels)", () => {
@@ -696,21 +714,37 @@ describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", 
     expect(onChange).toHaveBeenCalledWith("1")
   })
 
-  test("the note goes away once the observer types another value, and the value is kept", () => {
+  test("the caption line goes away once the value differs from the route's, and is never refilled", () => {
     const onChange = jest.fn()
-    const { update, fromRoute } = mount("D", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
+    const { update, byId } = mount("D", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
     update(cFields({ onChange, value: "1,2" }))
+    expect(byId("surface-D-from-route")).toHaveLength(1)
     update(cFields({ onChange, value: "2" }))
-    expect(fromRoute()).toHaveLength(0)
+    expect(byId("surface-D-from-route")).toHaveLength(0)
+    expect(byId("surface-D-section")).toHaveLength(1)
     update(cFields({ onChange, value: "" }))
     expect(onChange).toHaveBeenCalledTimes(1)
   })
 
   test("a field that already has a value is never overwritten", () => {
     const onChange = jest.fn()
-    const { fromRoute } = mount("E", cFields({ onChange, value: "3" }), { zoneSurfaceHa: 1.2 })
+    const { byId } = mount("E", cFields({ onChange, value: "3" }), { zoneSurfaceHa: 1.2 })
     expect(onChange).not.toHaveBeenCalled()
-    expect(fromRoute()).toHaveLength(0)
+    expect(byId("surface-E-from-route")).toHaveLength(0)
+  })
+
+  test("the lower counter is left off the capped page while not needed, and kept on the counted-in-full one", () => {
+    const lower = { notNeeded: true, required: false, value: "7" }
+    const fieldsFor = () => [
+      field("bmg_count", { value: "4" }),
+      field("bmm_count", lower),
+      field("surface_ha", { value: "2" }),
+    ]
+    const capped = mount("C", fieldsFor(), { zoneSurfaceHa: 2 })
+    expect(capped.byId("counter-C-0-row")).not.toHaveLength(0)
+    expect(capped.byId("counter-C-1-row")).toHaveLength(0)
+    const full = mount("C", fieldsFor(), { zoneSurfaceHa: 2, uncappedFactors: ["C"] })
+    expect(full.byId("counter-C-1-row")).not.toHaveLength(0)
   })
 
   test("no route zone, no prefill; and other factors are untouched", () => {

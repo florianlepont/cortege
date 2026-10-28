@@ -12,7 +12,7 @@ import { fr } from "../../i18n"
 import { NumberRow, type NumberRowProps } from "../../ui/value-rows/NumberRow"
 import { PercentTrackRow } from "../../ui/value-rows/PercentTrackRow"
 import { ValueSection } from "../../ui/value-rows/ValueSection"
-import { FromRouteCaption } from "./CountingModeStrip"
+import { SurfaceFromRouteRow } from "./SurfaceFromRouteRow"
 import { humanizeFieldLabel, type FieldVariant } from "./renderFactorField"
 
 const t = fr.factorDetail
@@ -97,8 +97,16 @@ type ValueSectionsInput = {
   factor: FactorKey
   variants: readonly FieldVariant[]
   fields: readonly FactorField[]
-  /** True while the surface field of C, D or E still equals the route's zone. */
-  fromRoute: boolean
+  /**
+   * Follow-up 32-32: the surface of C, D or E is the route's zone (in hectares): a read-only caption
+   * line stands in for the "Surface" section. Null: the section is drawn.
+   */
+  surfaceCaptionHa: number | null
+  /**
+   * The factor is counted in full: both counters stay on the page. In the capped mode the lower
+   * counter (BMm, GB) is hidden while the package does not need it (`FactorField.notNeeded`).
+   */
+  countedInFull: boolean
   /**
    * True when F's group list counts (either mode): the trees per hectare is then its sum line and
    * not a row. False (a page given no counting entry): it stays a typed row.
@@ -118,7 +126,8 @@ export function renderValueSections({
   factor,
   variants,
   fields,
-  fromRoute,
+  surfaceCaptionHa,
+  countedInFull,
   groupCounters,
 }: ValueSectionsInput): ReactElement[] {
   const nodes: ReactElement[] = []
@@ -126,7 +135,9 @@ export function renderValueSections({
   fields.forEach((field, index) => {
     const variant = variants[index]
     if (variant?.kind === "counter") {
-      counters.push({ field, index })
+      // A lower counter the package does not need is hidden in the capped mode; what was typed in
+      // it stays in the form and in the draft.
+      if (!(field.notNeeded === true && !countedInFull)) counters.push({ field, index })
       return
     }
     if (variant?.kind === "slider") {
@@ -134,7 +145,7 @@ export function renderValueSections({
       return
     }
     if (variant?.kind === "numeric" && (variant.companion === undefined || !groupCounters)) {
-      nodes.push(renderNumeric(factor, index, field, fromRoute))
+      nodes.push(renderNumeric(factor, index, field, surfaceCaptionHa))
     }
   })
   if (counters.length > 0) {
@@ -158,7 +169,8 @@ function renderNumeric(
   factor: FactorKey,
   index: number,
   field: FactorField,
-  fromRoute: boolean,
+  /** The route's zone (ha) when the caption line replaces the surface section, else null. */
+  surfaceCaptionHa: number | null,
 ): ReactElement {
   const error = errorOf(field)
   if (factor === "A") {
@@ -192,13 +204,21 @@ function renderNumeric(
       </ValueSection>
     )
   }
+  if (surfaceCaptionHa !== null) {
+    return (
+      <SurfaceFromRouteRow
+        key={`${factor}-${index}`}
+        hectares={surfaceCaptionHa}
+        testID={`surface-${factor}-from-route`}
+      />
+    )
+  }
   return (
     <ValueSection
       key={`${factor}-${index}`}
       testID={`surface-${factor}-section`}
       title={rows.headers.surface}
       errors={error ? [error] : []}
-      note={fromRoute ? <FromRouteCaption /> : undefined}
     >
       {rowOf(factor, index, field, SURFACE_ROW, labelOf(field), `surface-${factor}`)}
     </ValueSection>
