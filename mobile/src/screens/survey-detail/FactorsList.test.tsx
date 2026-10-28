@@ -241,9 +241,9 @@ describe("FactorsList doubt chip and note (phase 27, D-13, D-17)", () => {
         hasNote: true,
       }),
     )
-    expect(draftLabels.some((label) => String(label).endsWith(", incertitude signalée, avec une note"))).toBe(
-      true,
-    )
+    expect(
+      draftLabels.some((label) => String(label).endsWith(", incertitude signalée, avec une note")),
+    ).toBe(true)
 
     const readOnly = render({ factorEntries: annotated, canEditSurvey: false })
     const readOnlyLabels = rows(readOnly.tree).map((node) => node.props.accessibilityLabel)

@@ -69,7 +69,9 @@ describe("fr.surveyDetail factor rows", () => {
 
   test("factorReadOnly has the same four combinations and no Ouvrir", () => {
     expect(a11y.factorReadOnly(base)).toBe("Bois morts, 3 sur 5")
-    expect(a11y.factorReadOnly({ ...base, doubtful: true })).toBe("Bois morts, 3 sur 5, incertitude signalée")
+    expect(a11y.factorReadOnly({ ...base, doubtful: true })).toBe(
+      "Bois morts, 3 sur 5, incertitude signalée",
+    )
     expect(a11y.factorReadOnly({ ...base, hasNote: true })).toBe(
       "Bois morts, 3 sur 5, avec une note",
     )
