@@ -59,7 +59,8 @@ export const factorDetailFr = {
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
     fromRoute: "D'après le parcours",
   },
-  // Phase 27 (D-13, D-18): the strip under each factor, a "Douteux" flag and a short note.
+  // Phase 27 (D-13, D-18), follow-up 32-27: the two small pills at the top of each factor page, a
+  // "Douteux" toggle and a "Note" that opens the field in place.
   // Neither changes the score. The note is visible to the members who can read the survey (D-06).
   strip: {
     doubt: {
@@ -67,9 +68,9 @@ export const factorDetailFr = {
       hint: "Signale un doute sur ce facteur. Le score ne change pas.",
     },
     note: {
-      add: "Ajouter une note",
-      edit: "Modifier la note",
-      close: "Fermer la note",
+      // The pill: "Note", or "Note : " and the start of the text once there is one (follow-up 32-27).
+      label: "Note",
+      withPreview: (preview: string) => `Note : ${preview}`,
       addA11y: (title: string) => `Ajouter une note au facteur ${title}`,
       editA11y: (title: string) => `Modifier la note du facteur ${title}`,
       closeA11y: (title: string) => `Fermer la note du facteur ${title}`,

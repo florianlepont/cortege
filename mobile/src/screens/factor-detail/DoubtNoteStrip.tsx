@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet, Switch, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, { FadeIn, LinearTransition, ReduceMotion } from "react-native-reanimated"
 import { FACTOR_NOTE_MAX_LENGTH } from "@cortege/ibp-domain"
 import {
-  brandDefaultFontFamily,
   brandMotion,
   brandRadius,
   brandSpacing4,
@@ -22,11 +21,10 @@ import { NoteField } from "../../ui/NoteField"
 
 const t = fr.factorDetail.strip
 
-// Field sizes (UI-SPEC "Spacing", fixed sizes): the strip row, its switch group and the note link
-// keep their touch targets; the note field grows from 96 to 144 before it scrolls inside.
-const STRIP_ROW_MIN_HEIGHT = 52
-const SWITCH_ROW_MIN_HEIGHT = 48
-const NOTE_LINK_MIN_HEIGHT = 44
+// The pills are drawn 36 pt high; a 4 pt slop above and below brings each touch target to 44.
+const PILL_HEIGHT = 36
+const PILL_SLOP = { top: 4, bottom: 4, left: 0, right: 0 } as const
+const PILL_GLYPH_SIZE = 18
 const NOTE_FIELD_MIN_HEIGHT = 96
 const NOTE_FIELD_MAX_HEIGHT = 144
 // The note is written to the draft this long after the last keystroke (D-05).
@@ -44,10 +42,12 @@ type DoubtNoteStripProps = {
 }
 
 /**
- * Phase 27 (D-16): the flat strip under a factor's score line. A "Douteux" switch row and a note
- * link, closed by default so an observer who never touches it performs exactly the same taps as
- * before. The doubt and the note never change the score (D-13, D-14). The note opens in place and
- * closes only with "Fermer la note" or when the page changes, never on blur (U-06).
+ * Phase 27 (D-16), follow-up 32-27: two small pills in one row at the top of a factor's page, under
+ * its intro or help link. "Douteux" toggles the observer's doubt (warning-soft fill when on); "Note"
+ * opens the 300-character note field in place, and shows a one-line preview of an existing note
+ * ("Note : ..."). Both stay closed and quiet by default, so an observer who never touches them
+ * performs exactly the same taps as before. The doubt and the note never change the score (D-13,
+ * D-14). The note closes only with a tap on its pill or when the page changes, never on blur (U-06).
  */
 export function DoubtNoteStrip({
   factor,
@@ -98,12 +98,14 @@ export function DoubtNoteStrip({
     onChangeDoubt(!doubt)
   }
 
-  const linkLabel = open ? t.note.close : hasNote ? t.note.edit : t.note.add
-  const linkA11y = open
+  const noteA11y = open
     ? t.note.closeA11y(title)
     : hasNote
       ? t.note.editA11y(title)
       : t.note.addA11y(title)
+  // One line in the pill: line breaks and runs of spaces become a single space.
+  const noteLabel = hasNote ? t.note.withPreview(note.replace(/\s+/g, " ").trim()) : t.note.label
+  const doubtInk = doubt ? theme.onSurface.warning : theme.colors.textPrimary
 
   return (
     <Animated.View
@@ -116,53 +118,39 @@ export function DoubtNoteStrip({
           disableScale
           disableRipple
           onPress={handleToggleDoubt}
-          style={[styles.switchRow, doubt ? styles.switchRowOn : null]}
+          hitSlop={PILL_SLOP}
+          style={[styles.pill, doubt ? styles.pillDoubtOn : null]}
           accessibilityRole="switch"
           accessibilityState={{ checked: doubt }}
           accessibilityLabel={t.doubt.label}
           accessibilityHint={t.doubt.hint}
           testID="factor-doubt-switch"
         >
-          <Text style={[styles.switchLabel, doubt ? styles.switchLabelOn : null]}>
-            {t.doubt.label}
-          </Text>
-          <Switch
-            value={doubt}
-            pointerEvents="none"
-            accessible={false}
-            trackColor={{ false: theme.colors.divider, true: theme.colors.ochre }}
-          />
+          <Ionicons name="flag-outline" size={PILL_GLYPH_SIZE} color={doubtInk} />
+          <Text style={[styles.pillText, { color: doubtInk }]}>{t.doubt.label}</Text>
         </AppPressable>
 
         <AppPressable
+          disableScale
+          disableRipple
           onPress={() => setOpen((current) => !current)}
-          style={styles.noteLink}
+          hitSlop={PILL_SLOP}
+          style={[styles.pill, styles.notePill, open ? styles.pillNoteOpen : null]}
           accessibilityRole="button"
           accessibilityState={{ expanded: open }}
-          accessibilityLabel={linkA11y}
+          accessibilityLabel={noteA11y}
           testID="factor-note-link"
         >
           <Ionicons
             name={open ? "chevron-up-outline" : "create-outline"}
-            size={18}
-            color={theme.visual.accentText}
+            size={PILL_GLYPH_SIZE}
+            color={theme.colors.textPrimary}
           />
-          <Text style={styles.noteLinkText}>{linkLabel}</Text>
-        </AppPressable>
-      </View>
-
-      {hasNote && !open ? (
-        <AppPressable
-          onPress={() => setOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t.note.editA11y(title)}
-          testID="factor-note-preview"
-        >
-          <Text style={styles.preview} numberOfLines={2}>
-            {note}
+          <Text style={[styles.pillText, styles.noteText]} numberOfLines={1}>
+            {noteLabel}
           </Text>
         </AppPressable>
-      ) : null}
+      </View>
 
       {open ? (
         <Animated.View
@@ -192,61 +180,46 @@ export function DoubtNoteStrip({
 }
 
 function createStyles(theme: BrandTheme) {
-  // Contrast (plan 27-03): the ochre switch track reaches 2.90:1 on warningSoft in the light
-  // scheme, below the 3:1 of a non-text pair. There the ON row keeps its hairline and its label
-  // colour but drops the soft fill; the word, the thumb and the switch state carry the meaning.
-  const softFill = theme.scheme === "dark" ? theme.colors.warningSoft : undefined
   return StyleSheet.create({
     container: {
-      gap: brandSpacing4.xs,
+      gap: brandSpacing4.sm,
     },
     row: {
-      minHeight: STRIP_ROW_MIN_HEIGHT,
-      flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "center",
-      justifyContent: "space-between",
-      rowGap: brandSpacing4.xs,
-      paddingHorizontal: brandSpacing4.xs,
-    },
-    switchRow: {
-      minHeight: SWITCH_ROW_MIN_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.sm,
-      borderRadius: brandRadius.card,
-      borderWidth: 1,
-      borderColor: "transparent",
     },
-    switchRowOn: {
-      backgroundColor: softFill,
-      borderColor: theme.componentColors.notice.warningBorder,
-      paddingVertical: brandSpacing4.smd,
-      paddingHorizontal: brandSpacing4.md,
-    },
-    switchLabel: {
-      ...brandTypeScale.subhead,
-      fontFamily: brandTypography.input.fontFamily,
-      color: theme.colors.textPrimary,
-    },
-    switchLabelOn: {
-      color: theme.onSurface.warning,
-    },
-    noteLink: {
-      minHeight: NOTE_LINK_MIN_HEIGHT,
+    // A glass pill: the card fill and hairline of the redesign, no blur.
+    pill: {
+      minHeight: PILL_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.xs,
+      paddingHorizontal: brandSpacing4.smd,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      backgroundColor: theme.visual.glass.cardFill,
+      borderColor: theme.visual.glass.cardBorder,
     },
-    noteLinkText: {
-      ...brandTypography.sectionHeader,
-      color: theme.visual.accentText,
+    // The doubt, on: the warning-soft fill with the warning hairline and ink.
+    pillDoubtOn: {
+      backgroundColor: theme.colors.warningSoft,
+      borderColor: theme.componentColors.notice.warningBorder,
     },
-    preview: {
-      ...brandTypeScale.footnote,
-      fontFamily: brandDefaultFontFamily,
-      color: theme.colors.textSecondary,
-      paddingHorizontal: brandSpacing4.xs,
+    // The note pill shrinks first, so a long note shows as one line ending in an ellipsis.
+    notePill: {
+      flexShrink: 1,
+    },
+    pillNoteOpen: {
+      borderColor: theme.visual.accentText,
+    },
+    pillText: {
+      ...brandTypeScale.subhead,
+      fontFamily: brandTypography.input.fontFamily,
+    },
+    noteText: {
+      flexShrink: 1,
+      color: theme.colors.textPrimary,
     },
   })
 }

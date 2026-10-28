@@ -5,15 +5,14 @@ import { fr } from "../index"
 describe("fr.factorDetail.strip", () => {
   const { doubt, note } = fr.factorDetail.strip
 
-  test("the doubt switch states that the score does not change", () => {
+  test("the doubt pill states that the score does not change", () => {
     expect(doubt.label).toBe("Douteux")
     expect(doubt.hint).toBe("Signale un doute sur ce facteur. Le score ne change pas.")
   })
 
-  test("the note links name the factor for a screen reader", () => {
-    expect(note.add).toBe("Ajouter une note")
-    expect(note.edit).toBe("Modifier la note")
-    expect(note.close).toBe("Fermer la note")
+  test("the note pill names the factor for a screen reader", () => {
+    expect(note.label).toBe("Note")
+    expect(note.withPreview("Sol humide")).toBe("Note : Sol humide")
     expect(note.addA11y("Genres")).toBe("Ajouter une note au facteur Genres")
     expect(note.editA11y("Genres")).toBe("Modifier la note du facteur Genres")
     expect(note.closeA11y("Genres")).toBe("Fermer la note du facteur Genres")
