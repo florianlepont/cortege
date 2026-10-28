@@ -11,7 +11,7 @@ import {
 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { parseGenusListValue } from "./factor-a-genus-list"
-import { toFiniteNumberInRange } from "./number-utils"
+import { toFiniteNumberInRange } from "./number-range"
 import type { FactorField, FactorKey, FactorRetainedScore } from "./types"
 
 // The key figure of a factor page (follow-up 32-29): the one number the observer cares about,
@@ -94,14 +94,11 @@ function genusFigure(input: KeyFigureInput): string | null {
 /** C, D and E: the figure of the upper class per hectare, only with both counts and a surface. */
 function densityFigure(input: KeyFigureInput, factor: "C" | "D" | "E"): string | null {
   const [upperKey, lowerKey] = DENSITY_COUNT_KEYS[factor]
-  const upper = countOf(fieldValue(input.fields, 0))
-  const lower = countOf(fieldValue(input.fields, 1))
-  const surface = toFiniteNumberInRange(fieldValue(input.fields, 2), { min: 0.000001 })
-  if (upper === null || lower === null || surface === null) return null
+  // A count or a surface the form would not store is null here, so the package reads no density.
   const density = readDensityPerHa(factor, {
-    [upperKey]: upper,
-    [lowerKey]: lower,
-    surface_ha: surface,
+    [upperKey]: countOf(fieldValue(input.fields, 0)),
+    [lowerKey]: countOf(fieldValue(input.fields, 1)),
+    surface_ha: toFiniteNumberInRange(fieldValue(input.fields, 2), { min: 0.000001 }),
   })
   return density === null ? null : formatDecimal(density.upperPerHa, 1)
 }
