@@ -43,7 +43,7 @@ const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
  * the pager hands it to the factor page, which shows it only for B or F counted in full.
  *
  * Phase 32 (D-04): the group list of factor F opens the dendromicrohabitat guide sheet
- * (`surveyDmhGuide`): on the catalogue with no group, on that group's page with one.
+ * (`surveyDmhGuide`), on that group's page, from the info button of a row.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -106,7 +106,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
     [navigation],
   )
   const handleOpenDmhGuide = useCallback(
-    (group?: DmhGroupCode) => navigation.navigate("surveyDmhGuide", { group }),
+    (group: DmhGroupCode) => navigation.navigate("surveyDmhGuide", { group }),
     [navigation],
   )
   // Back to the summary, also when the pager was opened from the Score page.

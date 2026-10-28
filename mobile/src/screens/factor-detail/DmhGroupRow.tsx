@@ -41,7 +41,7 @@ const entering = () => FadeIn.duration(brandMotion.durations.fast).reduceMotion(
 /**
  * One group of the F list (32-UI-SPEC S1.3, redesign 32-18 A-I2). Line 1 is the check zone (a
  * leading circle and the label, the whole zone shows a soft fill while pressed), the 44 pt info
- * button and, unticked in full mode, the add button; line 2 (ticked or counted, full mode) is the
+ * button (a 32 pt filled disc holding the glyph, 32-22) and, unticked in full mode, the add button; line 2 (ticked or counted, full mode) is the
  * "Arbres" caption and the stepper. Memoised on its own props, so one stepper tap
  * re-renders this row only (research pitfall 8). A counted group cannot be unticked until its count
  * is back to 0 (O-32-3): the tap shows a caption and changes nothing, no tap deletes data.
@@ -137,11 +137,13 @@ export const DmhGroupRow = memo(function DmhGroupRow({
           style={styles.infoButton}
           testID={`dmh-info-${code}`}
         >
-          <Ionicons
-            name="information-circle-outline"
-            size={DMH_INFO_GLYPH_SIZE}
-            color={theme.visual.accentText}
-          />
+          <View style={styles.infoDisc}>
+            <Ionicons
+              name="information-circle-outline"
+              size={DMH_INFO_GLYPH_SIZE}
+              color={theme.visual.accentText}
+            />
+          </View>
         </AppPressable>
         {showAdd ? (
           <AppPressable

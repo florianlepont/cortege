@@ -89,6 +89,8 @@ export const factorDetailFr = {
   // Phase 32: the dendromicrohabitat group list of factor F
   // Texts verbatim from section 8.1 of docs/specs/dmh-guide-content-v1.md (validated 2026-10-27).
   dmhList: {
+    // The one helper line under the heading: where the guide is (32-22).
+    infoHelper: "Touchez l'icône i d'un groupe pour apprendre à le reconnaître, même sans réseau.",
     entry: {
       title: "Guide des dendromicrohabitats",
       caption: "Reconnaître chaque groupe, sans réseau.",

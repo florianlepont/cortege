@@ -114,7 +114,7 @@ export type FactorFieldExtras = {
   /** Phase 30: the detail inputs; F's counting is on only when the route counts F in full. */
   uncappedEntry?: UncappedEntryProps
   /** Phase 32 (D-04): opens the guide on the catalogue (no argument) or on one group. */
-  onOpenDmhGuide?: (group?: DmhGroupCode) => void
+  onOpenDmhGuide?: (group: DmhGroupCode) => void
 }
 
 /** True when the variant's companion is F's group list, which the screen draws after its card. */

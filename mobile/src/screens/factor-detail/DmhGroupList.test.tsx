@@ -217,9 +217,9 @@ describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", 
     const containers = tree.root.findAll(
       (n) => (n.type as unknown) === "View" && flat(n.props.style).borderRadius === 22,
     )
-    // The guide entry row and the open section.
-    expect(containers).toHaveLength(2)
-    const section = containers[1]
+    // The open section only.
+    expect(containers).toHaveLength(1)
+    const section = containers[0]
     const dividers = section.findAll(
       (n) => (n.type as unknown) === "View" && flat(n.props.style).height === 1,
     )
@@ -227,15 +227,9 @@ describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", 
     for (const divider of dividers) expect(flat(divider.props.style).marginLeft).toBe(52)
   })
 
-  test("the guide entry is one grouped row: tile, title, caption under it, chevron", () => {
-    const { one, tree, textOf } = mount()
-    const entry = one("dmh-guide-entry")
-    expect(entry.props.accessibilityLabel).toBe(t.entry.label)
-    expect(entry.props.accessibilityRole).toBe("button")
-    expect(textOf(entry)).toBe(`${t.entry.title}${t.entry.caption}`)
-    const glyphs = entry.findAll((n) => (n.type as unknown) === "Ionicons").map((n) => n.props.name)
-    expect(glyphs).toEqual(["book-outline", "chevron-forward-outline"])
-    expect(tree).toBeDefined()
+  test("there is no guide entry card: the guide opens from the rows' info buttons", () => {
+    const { all } = mount()
+    expect(all("dmh-guide-entry")).toHaveLength(0)
   })
 
   test("the summary sits with the heading block, under the helper, in the meta style", () => {
@@ -260,6 +254,10 @@ describe("DmhGroupList, modes", () => {
     )[0]
     expect(textOf(heading)).toBe(fr.factorDetail.companionLabels.dmh_groups)
     expect(all("dmh-add-dmh_03")).toHaveLength(0)
+    // One helper line only, the one that says where the guide is.
+    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
+    expect(texts).toContain(t.infoHelper)
+    expect(texts).not.toContain(fr.factorDetail.countingMode.dmhHelper)
     expect(textOf(one("dmh-summary"))).toBe(t.summaryCapped({ groups: 2 }))
   })
 
@@ -270,7 +268,8 @@ describe("DmhGroupList, modes", () => {
     })
     const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
     expect(texts).toContain(fr.factorDetail.countingMode.dmhTitle)
-    expect(texts).toContain(fr.factorDetail.countingMode.dmhHelper)
+    // The cap sentence and the guide sentence are merged in one helper line.
+    expect(texts).toContain(`${fr.factorDetail.countingMode.dmhHelper} ${t.infoHelper}`)
     expect(all("dmh-add-dmh_03")).toHaveLength(1)
     expect(all("dmh-add-dmh_01")).toHaveLength(0)
     expect(textOf(one("dmh-summary"))).toBe(t.summaryFull({ groups: 2, trees: 14 }))
@@ -301,15 +300,6 @@ describe("DmhGroupList, handlers", () => {
       expect(one("dmh-tick-dmh_06").props.accessibilityLabel).toBe(
         selectionLabel("F", "dmh_06", version),
       )
-    }
-  })
-
-  test("the guide entry opens the catalogue with no argument, also when read-only", () => {
-    for (const editable of [true, false]) {
-      const { press, onOpenDmhGuide } = mount({ editable })
-      press("dmh-guide-entry")
-      expect(onOpenDmhGuide).toHaveBeenCalledTimes(1)
-      expect(onOpenDmhGuide.mock.calls[0]).toEqual([])
     }
   })
 

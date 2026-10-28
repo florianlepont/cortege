@@ -229,7 +229,7 @@ describe("DmhGroupRow", () => {
     }
   })
 
-  test("the info button is a 44 x 44 target holding the 22 pt outline glyph in the accent ink", () => {
+  test("the info button is a 44 x 44 target holding a 32 pt control disc and the 22 pt outline glyph in the accent ink", () => {
     const { one, tree } = mount()
     const style = flatten(one("dmh-info-dmh_05").props.style)
     expect(style.width).toBe(44)
@@ -238,6 +238,12 @@ describe("DmhGroupRow", () => {
       (n) => (n.type as unknown) === "Ionicons" && n.props.name === "information-circle-outline",
     )[0]
     expect(glyph.props.size).toBe(22)
+    const disc = glyph.parent
+    const discStyle = flatten(disc?.props.style)
+    expect(discStyle.width).toBe(32)
+    expect(discStyle.height).toBe(32)
+    expect(discStyle.borderRadius).toBe(16)
+    expect(discStyle.backgroundColor).toBe(defaultTheme.visual.control.fill)
     // visual.accentText (8.5:1 light, 9:1 dark), not the moss accent (2.6:1 on the light card).
     expect(glyph.props.color).toBe(defaultTheme.visual.accentText)
   })

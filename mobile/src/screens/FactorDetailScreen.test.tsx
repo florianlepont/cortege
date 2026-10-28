@@ -458,7 +458,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
     expect(list.props.selected).toBeNull()
     expect(() => list.props.onChangeSelection(["dmh_01"])).not.toThrow()
-    expect(() => list.props.onOpenDmhGuide()).not.toThrow()
+    expect(() => list.props.onOpenDmhGuide("dmh_05")).not.toThrow()
   })
 })
 

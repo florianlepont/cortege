@@ -19,6 +19,7 @@ const ROW_SIDE_PADDING = brandSpacing4.md
 const CIRCLE_SIZE = SELECTION_CIRCLE_SIZE
 const INFO_SIZE = brandInteraction.hitTarget.min
 const ADD_DISC_SIZE = 36
+const INFO_DISC_SIZE = 32
 /** The second line of a row is indented to the label: padding 16, circle 24 and the 12 gap. */
 export const DMH_LABEL_INSET = ROW_SIDE_PADDING + CIRCLE_SIZE + brandSpacing4.smd
 
@@ -78,6 +79,14 @@ export function createDmhListStyles(theme: BrandTheme) {
       height: INFO_SIZE,
       alignItems: "center",
       justifyContent: "center",
+    },
+    infoDisc: {
+      width: INFO_DISC_SIZE,
+      height: INFO_DISC_SIZE,
+      borderRadius: INFO_DISC_SIZE / 2,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.visual.control.fill,
     },
     addButton: {
       width: DMH_STEPPER_SIZE,

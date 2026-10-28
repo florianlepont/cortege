@@ -72,7 +72,7 @@ type FactorPagerProps = {
   /** "Que relever ?": opens the help sheet route with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
   /** Phase 32 (D-04): opens the dendromicrohabitat guide sheet, on a group or on the catalogue. */
-  onOpenDmhGuide: (group?: DmhGroupCode) => void
+  onOpenDmhGuide: (group: DmhGroupCode) => void
   /**
    * D-26: on the last factor, a labelled "Terminer le relevé" pill above the bar that finishes the
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".

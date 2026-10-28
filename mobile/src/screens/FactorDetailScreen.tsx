@@ -59,7 +59,7 @@ type FactorDetailScreenProps = {
    */
   uncappedEntry?: UncappedEntryProps
   /** Phase 32 (D-04): opens the guide sheet; a group opens its page, none the catalogue. */
-  onOpenDmhGuide?: (group?: DmhGroupCode) => void
+  onOpenDmhGuide?: (group: DmhGroupCode) => void
 }
 
 /**
