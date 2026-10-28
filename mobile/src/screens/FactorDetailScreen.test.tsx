@@ -126,6 +126,16 @@ jest.mock("./factor-detail/DmhCountFields", () => {
   }
 })
 
+// Follow-up 32-35: G's zone list is under test in factor-detail/OpenAreasSection.test.tsx; here it
+// is a probe that keeps its props.
+jest.mock("./factor-detail/OpenAreasSection", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    OpenAreasSection: (props: Record<string, unknown>) =>
+      ReactRef.createElement("OpenAreasSection", props),
+  }
+})
+
 // Phase 32 (plan 32-14): the group list is under test in factor-detail/DmhGroupList.test.tsx; here it
 // is a probe that keeps its props.
 jest.mock("./factor-detail/DmhGroupList", () => {
@@ -784,12 +794,17 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
       strataCoverText: { very_low: "25" } as Partial<Record<BStratumCode, string>>,
       dmhCounts: { dmh_01: 3 } as Partial<Record<DmhGroupCode, number>>,
       fSurfaceText: "1,2",
+      openAreasHa: [] as number[],
     },
     setStratumCover: jest.fn(),
     setDmhCount: jest.fn(),
     bumpDmhGroup: jest.fn(),
     markNoDmhGroup: jest.fn(),
     setFSurface: jest.fn(),
+    addOpenArea: jest.fn(),
+    setOpenArea: jest.fn(),
+    removeOpenArea: jest.fn(),
+    markNoOpenArea: jest.fn(),
   }
   const mount = (
     factor: FactorKey,
@@ -1151,3 +1166,105 @@ describe("FactorDetailScreen key figure hero (follow-up 32-29)", () => {
 
 const textsIn = (node: renderer.ReactTestInstance): string =>
   node.children.map((child) => (typeof child === "string" ? child : textsIn(child))).join("")
+
+describe("FactorDetailScreen G zones (follow-up 32-35)", () => {
+  const entry = {
+    state: { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "", openAreasHa: [0.3, 0.1] },
+    setStratumCover: jest.fn(),
+    setDmhCount: jest.fn(),
+    bumpDmhGroup: jest.fn(),
+    markNoDmhGroup: jest.fn(),
+    setFSurface: jest.fn(),
+    addOpenArea: jest.fn(),
+    setOpenArea: jest.fn(),
+    removeOpenArea: jest.fn(),
+    markNoOpenArea: jest.fn(),
+  }
+  const mount = (
+    factor: FactorKey,
+    extra: Partial<React.ComponentProps<typeof FactorDetailScreen>> = {},
+    value = "20",
+  ) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor={factor}
+          fields={[field("open_flowering_percent", { value })]}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+          {...extra}
+        />,
+      )
+    })
+    const byType = (type: string) => tree.root.findAll((n) => (n.type as unknown) === type)
+    const byId = (id: string) =>
+      tree.root.findAll((n) => typeof n.type === "string" && n.props.testID === id)
+    return {
+      zones: () => byType("OpenAreasSection"),
+      percent: () => byId("percent-G-section"),
+      hero: () => byId("factor-hero-value"),
+    }
+  }
+  const textsOf = (node: renderer.ReactTestInstance) =>
+    node.findAll((n) => (n.type as unknown) === "Text").map(textsIn)
+
+  test("G with a described surface lists its zones instead of the percent track", () => {
+    const { zones, percent } = mount("G", { uncappedEntry: entry, zoneSurfaceHa: 2 })
+    expect(zones()).toHaveLength(1)
+    expect(percent()).toHaveLength(0)
+    const props = zones()[0].props
+    expect(props.areas).toEqual([0.3, 0.1])
+    expect(props.zoneSurfaceHa).toBe(2)
+    expect(props.percentText).toBe("20")
+  })
+
+  test("the section hands the survey surface to the form with every change", () => {
+    const { zones } = mount("G", { uncappedEntry: entry, zoneSurfaceHa: 2 })
+    const props = zones()[0].props
+    props.onAdd()
+    expect(entry.addOpenArea).toHaveBeenCalledTimes(1)
+    props.onChangeArea(1, 0.4)
+    expect(entry.setOpenArea).toHaveBeenCalledWith(1, 0.4, 2)
+    props.onRemove(0)
+    expect(entry.removeOpenArea).toHaveBeenCalledWith(0, 2)
+    props.onMarkNone(true)
+    expect(entry.markNoOpenArea).toHaveBeenCalledWith(true)
+  })
+
+  test("the hero keeps the percent and says it is computed from the zones", () => {
+    const { hero } = mount("G", { uncappedEntry: entry, zoneSurfaceHa: 2 })
+    expect(textsOf(hero()[0])).toEqual([
+      "20\u00A0%",
+      "milieux ouverts fleuris",
+      "calculé d'après les zones et la surface décrite",
+    ])
+  })
+
+  test("an older G with only a percent shows it in the hero and starts with no zone", () => {
+    const empty = { ...entry, state: { ...entry.state, openAreasHa: [] as number[] } }
+    const { zones, hero } = mount("G", { uncappedEntry: empty, zoneSurfaceHa: 2 }, "12")
+    expect(zones()[0].props.areas).toEqual([])
+    expect(textsOf(hero()[0])[0]).toBe("12\u00A0%")
+  })
+
+  test("without a described surface, or without the form entry, the plain percent row stays", () => {
+    for (const extra of [
+      { uncappedEntry: entry },
+      { uncappedEntry: entry, zoneSurfaceHa: null },
+      { uncappedEntry: entry, zoneSurfaceHa: 0 },
+      { zoneSurfaceHa: 2 },
+    ]) {
+      const { zones, percent, hero } = mount("G", extra)
+      expect(zones()).toHaveLength(0)
+      expect(percent()).toHaveLength(1)
+      expect(textsOf(hero()[0])[2]).toBe("part de la surface")
+    }
+  })
+
+  test("the other factors never get the zone list", () => {
+    expect(mount("A", { uncappedEntry: entry, zoneSurfaceHa: 2 }).zones()).toHaveLength(0)
+  })
+})

@@ -18,6 +18,14 @@ export type UncappedEntryProps = {
   /** Follow-up 32-25: the "no tree carries one" row; `cap` as above (the capped mode has no surface). */
   markNoDmhGroup: (on: boolean, cap?: number) => void
   setFSurface: (text: string) => void
+  /**
+   * Follow-up 32-35: G's zones. Adding a row changes no sum; the others take the survey's described
+   * surface (hectares), from which the form recomputes G's percent. `markNoOpenArea` records 0 %.
+   */
+  addOpenArea: () => void
+  setOpenArea: (index: number, hectares: number, zoneSurfaceHa: number) => void
+  removeOpenArea: (index: number, zoneSurfaceHa: number) => void
+  markNoOpenArea: (on: boolean) => void
 }
 
 type UncappedFieldBlockProps = {

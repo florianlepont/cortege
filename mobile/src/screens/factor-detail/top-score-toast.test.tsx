@@ -168,6 +168,10 @@ function Harness({ formRef, full }: { formRef: { current: Form | null }; full: b
         bumpDmhGroup: form.bumpDmhGroup,
         markNoDmhGroup: form.markNoDmhGroup,
         setFSurface: form.setFSurface,
+        addOpenArea: form.addOpenArea,
+        setOpenArea: form.setOpenArea,
+        removeOpenArea: form.removeOpenArea,
+        markNoOpenArea: form.markNoOpenArea,
       }}
     />
   )

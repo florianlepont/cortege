@@ -2,10 +2,13 @@ import { useCallback, useRef, useState } from "react"
 import {
   B_STRATUM_CODES,
   DMH_GROUP_CODES,
+  OPEN_AREAS_MAX_COUNT,
   cappedDmhCounts,
   cappedDmhTotalPerHa,
+  clampOpenAreaHa,
   dmhDensityPerHa,
   readDmhCounts,
+  readOpenAreasHa,
   readStrataCover,
   strataCountFromCover,
   type BStratumCode,
@@ -29,6 +32,11 @@ export type UncappedState = {
   dmhCounts: Partial<Record<DmhGroupCode, number>>
   /** F's own surface in hectares, as typed. */
   fSurfaceText: string
+  /**
+   * Follow-up 32-35: G's open flowering zones in hectares, in the observer's order (a 0 is a row
+   * added and not filled yet). The percent G scores is derived from them by the form.
+   */
+  openAreasHa: number[]
 }
 
 /** What the form writes beside the scored keys, only valid entries, in package code order. */
@@ -36,12 +44,18 @@ export type UncappedPayload = {
   strata_cover?: StrataCover
   dmh_counts?: DmhCounts
   f_surface_ha?: number
+  open_areas_ha?: number[]
 }
 
 /** The most trees a group row counts (a field survey never reaches it; it only bounds the taps). */
 const MAX_DMH_COUNT = 999
 
-const EMPTY_STATE: UncappedState = { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "" }
+const EMPTY_STATE: UncappedState = {
+  strataCoverText: {},
+  dmhCounts: {},
+  fSurfaceText: "",
+  openAreasHa: [],
+}
 
 /** Covers are stored to one decimal (spec section 7). */
 const roundToTenth = (value: number): number => Math.round(value * 10) / 10
@@ -188,11 +202,48 @@ export function useUncappedEntry() {
     [commit],
   )
 
+  /**
+   * Follow-up 32-35: the zones of G. Each setter returns the new list (the form derives the percent
+   * from it) and reads the latest state, so two quick calls in one batch both count. A zone is
+   * brought to what the list stores (`clampOpenAreaHa`); the list holds at most
+   * `OPEN_AREAS_MAX_COUNT` zones.
+   */
+  const addOpenArea = useCallback((): number[] => {
+    const current = latest.current.openAreasHa
+    if (current.length >= OPEN_AREAS_MAX_COUNT) return current
+    return commit({ ...latest.current, openAreasHa: [...current, 0] }).openAreasHa
+  }, [commit])
+
+  const setOpenArea = useCallback(
+    (index: number, hectares: number): number[] => {
+      const current = latest.current.openAreasHa
+      if (index < 0 || index >= current.length) return current
+      const openAreasHa = current.map((area, at) =>
+        at === index ? clampOpenAreaHa(hectares) : area,
+      )
+      return commit({ ...latest.current, openAreasHa }).openAreasHa
+    },
+    [commit],
+  )
+
+  const removeOpenArea = useCallback(
+    (index: number): number[] => {
+      const openAreasHa = latest.current.openAreasHa.filter((_area, at) => at !== index)
+      return commit({ ...latest.current, openAreasHa }).openAreasHa
+    },
+    [commit],
+  )
+
+  const clearOpenAreas = useCallback((): void => {
+    commit({ ...latest.current, openAreasHa: [] })
+  }, [commit])
+
   /** Puts the stored detail keys back in the form (research Pitfall 5); unreadable ones are dropped. */
   const loadUncapped = useCallback(
     (factors: Record<string, unknown> | undefined): void => {
       const factorB = (factors?.B ?? null) as Record<string, unknown> | null
       const factorF = (factors?.F ?? null) as Record<string, unknown> | null
+      const factorG = (factors?.G ?? null) as Record<string, unknown> | null
       const covers = readStrataCover(factorB?.strata_cover)
       const counts = readDmhCounts(factorF?.dmh_counts)
       const surface = typeof factorF?.surface_ha === "number" ? factorF.surface_ha : null
@@ -207,6 +258,7 @@ export function useUncappedEntry() {
         dmhCounts: counts ?? {},
         fSurfaceText:
           surface !== null && Number.isFinite(surface) && surface > 0 ? String(surface) : "",
+        openAreasHa: readOpenAreasHa(factorG?.open_areas_ha) ?? [],
       })
     },
     [commit],
@@ -225,6 +277,7 @@ export function useUncappedEntry() {
     if (hasEntries(counts)) payload.dmh_counts = counts
     const surface = parseSurface(state.fSurfaceText)
     if (surface !== null) payload.f_surface_ha = surface
+    if (state.openAreasHa.length > 0) payload.open_areas_ha = state.openAreasHa
     return payload
   }, [state])
 
@@ -232,11 +285,16 @@ export function useUncappedEntry() {
     strataCoverText: state.strataCoverText,
     dmhCounts: state.dmhCounts,
     fSurfaceText: state.fSurfaceText,
+    openAreasHa: state.openAreasHa,
     setStratumCover,
     setDmhCount,
     bumpDmhCount,
     clearDmhCounts,
     setFSurface,
+    addOpenArea,
+    setOpenArea,
+    removeOpenArea,
+    clearOpenAreas,
     loadUncapped,
     resetUncapped,
     uncappedPayload,

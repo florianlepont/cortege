@@ -902,12 +902,16 @@ describe("FactorPager counting mode (Phase 30, D-07)", () => {
 
   test("the page receives the detail inputs of B and F as one object (plan 30-19)", () => {
     const uncappedEntry = {
-      state: { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "" },
+      state: { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "", openAreasHa: [] },
       setStratumCover: jest.fn(),
       setDmhCount: jest.fn(),
       bumpDmhGroup: jest.fn(),
       markNoDmhGroup: jest.fn(),
       setFSurface: jest.fn(),
+      addOpenArea: jest.fn(),
+      setOpenArea: jest.fn(),
+      removeOpenArea: jest.fn(),
+      markNoOpenArea: jest.fn(),
     }
     const { tree } = render("B", {}, null, {}, { uncappedFactors: ["B"], uncappedEntry })
     const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]

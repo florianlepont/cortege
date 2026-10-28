@@ -70,6 +70,10 @@ export type SurveyFormActions = {
   /** Follow-up 32-25: "no tree carries a dendromicrohabitat" stores 0 with no group and no count. */
   markNoDmhGroup: SurveyForm["markNoDmhGroup"]
   setFSurface: SurveyForm["setFSurface"]
+  addOpenArea: SurveyForm["addOpenArea"]
+  setOpenArea: SurveyForm["setOpenArea"]
+  removeOpenArea: SurveyForm["removeOpenArea"]
+  markNoOpenArea: SurveyForm["markNoOpenArea"]
 }
 
 export type SurveyFormContextValue = {

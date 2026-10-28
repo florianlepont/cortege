@@ -7,6 +7,7 @@ import {
   canonicalFactorAnnotations,
   casFromRegionStage,
   densityLowerCountNeeded,
+  floweringPercentFromAreas,
   isIbpCas,
   readDensityPerHa,
   readFactorAnnotations,
@@ -30,6 +31,7 @@ import {
   serializeGenusListValue,
 } from "../app/factor-a-genus-list"
 import { readSelection, withSelectionToggled } from "../app/factor-selections"
+import { toFieldText } from "../app/decimal-text"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { toFiniteNumberInRange } from "../app/number-range"
 import { parseFiniteNumberInput } from "../app/number-utils"
@@ -243,11 +245,16 @@ export function useSurveyForm() {
     strataCoverText,
     dmhCounts,
     fSurfaceText,
+    openAreasHa,
     setStratumCover: storeStratumCover,
     setDmhCount: storeDmhCount,
     bumpDmhCount: storeBumpDmhCount,
     clearDmhCounts,
     setFSurface: storeFSurface,
+    addOpenArea: storeAddOpenArea,
+    setOpenArea: storeSetOpenArea,
+    removeOpenArea: storeRemoveOpenArea,
+    clearOpenAreas,
     loadUncapped,
     resetUncapped,
     uncappedPayload,
@@ -255,8 +262,8 @@ export function useSurveyForm() {
 
   // One object per change, so the form context does not renew on an unrelated keystroke.
   const uncapped = useMemo(
-    () => ({ strataCoverText, dmhCounts, fSurfaceText }),
-    [strataCoverText, dmhCounts, fSurfaceText],
+    () => ({ strataCoverText, dmhCounts, fSurfaceText, openAreasHa }),
+    [strataCoverText, dmhCounts, fSurfaceText, openAreasHa],
   )
 
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
@@ -369,8 +376,14 @@ export function useSurveyForm() {
       }
     }
 
+    // Follow-up 32-35: the zones go out only beside the scored percent, like the other details.
     const g = toFiniteNumberInRange(factorG.open_flowering_percent, { min: 0, max: 100 })
-    if (g !== null) payload.G = { open_flowering_percent: g }
+    if (g !== null) {
+      payload.G = {
+        open_flowering_percent: g,
+        ...(uncapped.open_areas_ha !== undefined ? { open_areas_ha: uncapped.open_areas_ha } : {}),
+      }
+    }
 
     const h = toFiniteNumberInRange(factorH.class_score, { integer: true })
     if (h !== null && H_ALLOWED_SCORES.includes(h)) {
@@ -618,6 +631,46 @@ export function useSurveyForm() {
   /** F's own surface (prefilled from the route's surface décrite by the F page, editable). */
   const setFSurface = (text: string): void => {
     writeTreesPerHa(storeFSurface(text))
+  }
+
+  /**
+   * Follow-up 32-35 (owner decision 2026-10-30): G lists its open flowering zones (hectares) and the
+   * percent is derived from them and the survey's described surface, with the package's
+   * `floweringPercentFromAreas` (capped at 100). Every change of a zone writes the list and the
+   * percent together; no zone left clears the percent. Adding a row (at 0 ha) changes no sum, so it
+   * leaves the percent alone (an older G with only a percent keeps it until a zone is filled).
+   */
+  const writeFloweringFromAreas = (areas: readonly number[], zoneSurfaceHa: number): void => {
+    const percent = floweringPercentFromAreas(areas, zoneSurfaceHa)
+    setFactorG({ open_flowering_percent: percent === null ? "" : toFieldText(percent) })
+  }
+
+  const addOpenArea = (): void => {
+    storeAddOpenArea()
+  }
+
+  const setOpenArea = (index: number, hectares: number, zoneSurfaceHa: number): void => {
+    writeFloweringFromAreas(storeSetOpenArea(index, hectares), zoneSurfaceHa)
+  }
+
+  const removeOpenArea = (index: number, zoneSurfaceHa: number): void => {
+    writeFloweringFromAreas(storeRemoveOpenArea(index), zoneSurfaceHa)
+  }
+
+  /**
+   * "No open flowering zone", the way to record 0 % without a zone (as `markNoDmhGroup` does for F).
+   * On: empties the zones and stores 0. Off: puts the empty field back, only while the factor really
+   * is in that state, so it never erases a figure. The state is derived by the page, never stored.
+   */
+  const markNoOpenArea = (on: boolean): void => {
+    if (on) {
+      clearOpenAreas()
+      setFactorG({ open_flowering_percent: "0" })
+      return
+    }
+    setFactorG((prev) =>
+      prev.open_flowering_percent.trim() === "0" ? { open_flowering_percent: "" } : prev,
+    )
   }
 
   // FLOW-02: touched state per field, keyed by "factor:label"; submission-attempted forces every
@@ -901,6 +954,10 @@ export function useSurveyForm() {
     bumpDmhGroup,
     markNoDmhGroup,
     setFSurface,
+    addOpenArea,
+    setOpenArea,
+    removeOpenArea,
+    markNoOpenArea,
     formErrors,
     draftInput,
     applyDraftToForm,

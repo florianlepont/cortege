@@ -348,6 +348,10 @@ function useAppController() {
     bumpDmhGroup: surveyForm.bumpDmhGroup,
     markNoDmhGroup: surveyForm.markNoDmhGroup,
     setFSurface: surveyForm.setFSurface,
+    addOpenArea: surveyForm.addOpenArea,
+    setOpenArea: surveyForm.setOpenArea,
+    removeOpenArea: surveyForm.removeOpenArea,
+    markNoOpenArea: surveyForm.markNoOpenArea,
   })
 
   const {

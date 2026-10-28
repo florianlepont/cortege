@@ -325,6 +325,109 @@ describe("useUncappedEntry", () => {
     })
   })
 
+  describe("G zones (follow-up 32-35)", () => {
+    test("starts with no zone and no payload key", async () => {
+      const result = await render()
+      expect(result.current.openAreasHa).toEqual([])
+      expect(result.current.uncappedPayload()).toEqual({})
+    })
+
+    test("adds rows at 0 and returns the new list; two calls in one batch both count", async () => {
+      const result = await render()
+      let list: number[] = []
+      await act(async () => {
+        result.current.addOpenArea()
+        list = result.current.addOpenArea()
+      })
+      expect(list).toEqual([0, 0])
+      expect(result.current.openAreasHa).toEqual([0, 0])
+      expect(result.current.uncappedPayload()).toEqual({ open_areas_ha: [0, 0] })
+    })
+
+    test("holds at most 20 zones", async () => {
+      const result = await render()
+      await act(async () => {
+        for (let i = 0; i < 22; i += 1) result.current.addOpenArea()
+      })
+      expect(result.current.openAreasHa).toHaveLength(20)
+    })
+
+    test("sets a zone brought to the list's bounds and two decimals", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.setOpenArea(1, 0.1 + 0.2)
+      })
+      expect(list).toEqual([0, 0.3])
+      await act(async () => {
+        result.current.setOpenArea(0, -4)
+        result.current.setOpenArea(1, 99999)
+      })
+      expect(result.current.openAreasHa).toEqual([0, 5000])
+    })
+
+    test("a row that is not in the list is left alone", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.setOpenArea(3, 1)
+      })
+      expect(list).toEqual([0])
+      await act(async () => {
+        list = result.current.setOpenArea(-1, 1)
+      })
+      expect(list).toEqual([0])
+    })
+
+    test("removes a row by its place, clearOpenAreas empties the list", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 1)
+        result.current.setOpenArea(1, 2)
+        result.current.setOpenArea(2, 3)
+      })
+      let list: number[] = []
+      await act(async () => {
+        list = result.current.removeOpenArea(1)
+      })
+      expect(list).toEqual([1, 3])
+      await act(async () => {
+        result.current.clearOpenAreas()
+      })
+      expect(result.current.openAreasHa).toEqual([])
+      expect(result.current.uncappedPayload()).toEqual({})
+    })
+
+    test("loadUncapped reads the stored zones tolerantly; resetUncapped clears them", async () => {
+      const result = await render()
+      await act(async () => {
+        result.current.loadUncapped({
+          G: { open_flowering_percent: 20, open_areas_ha: [0.3, "x", 0.1] },
+        })
+      })
+      expect(result.current.openAreasHa).toEqual([0.3, 0.1])
+      await act(async () => {
+        result.current.loadUncapped({ G: { open_flowering_percent: 20 } })
+      })
+      expect(result.current.openAreasHa).toEqual([])
+      await act(async () => {
+        result.current.loadUncapped({ G: { open_areas_ha: [1] } })
+        result.current.resetUncapped()
+      })
+      expect(result.current.openAreasHa).toEqual([])
+    })
+  })
+
   describe("uncappedPayload", () => {
     test("gives only valid entries, in the package code order", async () => {
       const result = await render()

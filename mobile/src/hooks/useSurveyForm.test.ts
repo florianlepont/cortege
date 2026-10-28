@@ -1089,6 +1089,7 @@ describe("useSurveyForm", () => {
         strataCoverText: { very_low: "22.5", high: "60" },
         dmhCounts: { dmh_01: 1, dmh_07: 2 },
         fSurfaceText: "2",
+        openAreasHa: [],
       })
       expect(factors(result).B).toEqual(stored.B)
       expect(factors(result).F).toEqual(stored.F)
@@ -1108,6 +1109,7 @@ describe("useSurveyForm", () => {
         strataCoverText: {},
         dmhCounts: {},
         fSurfaceText: "",
+        openAreasHa: [],
       })
       expect(factors(result).B).toEqual({ strata_count: 1 })
       expect(factors(result)).not.toHaveProperty("F")
@@ -1127,6 +1129,7 @@ describe("useSurveyForm", () => {
         strataCoverText: {},
         dmhCounts: {},
         fSurfaceText: "",
+        openAreasHa: [],
       })
       expect(factors(result)).toEqual({})
     })
@@ -1373,6 +1376,180 @@ describe("useSurveyForm", () => {
       expect(result.current.uncapped.dmhCounts).toEqual({ dmh_01: 2, dmh_05: 1 })
       expect(result.current.uncapped.fSurfaceText).toBe("")
       expect(factorF(result)).toEqual(stored.F)
+    })
+  })
+
+  describe("G zones (follow-up 32-35, owner decision 2026-10-30)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorG = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).G
+    const SURFACE = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("a zone writes the list and the percent from the surface décrite in one update", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0])
+      // Adding a row changes no sum: nothing is stored for G yet.
+      expect(factorG(result)).toBeUndefined()
+      await act(async () => {
+        result.current.setOpenArea(0, 0.3, SURFACE)
+      })
+      expect(result.current.factorSections.G[0].value).toBe("15")
+      expect(factorG(result)).toEqual({ open_flowering_percent: 15, open_areas_ha: [0.3] })
+      expect(result.current.factorRetainedScores.G).not.toBeNull()
+    })
+
+    test("zones add up, a zone at 0 is kept and ignored by the sum", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.3, SURFACE)
+        result.current.setOpenArea(1, 0.1, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 20, open_areas_ha: [0.3, 0.1, 0] })
+    })
+
+    test("a sum above the surface is capped at 100 %", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 1.5, SURFACE)
+        result.current.setOpenArea(1, 1, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 100, open_areas_ha: [1.5, 1] })
+    })
+
+    test("a typed surface is brought to two decimals and to the bounds", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, -3, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0])
+      await act(async () => {
+        result.current.setOpenArea(0, 0.126, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0.13])
+    })
+
+    test("at most 20 zones, and a change on a row that is not there changes nothing", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        for (let i = 0; i < 25; i += 1) result.current.addOpenArea()
+      })
+      expect(result.current.uncapped.openAreasHa).toHaveLength(20)
+      await act(async () => {
+        result.current.setOpenArea(20, 1, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual(new Array(20).fill(0))
+    })
+
+    test("removing a zone recomputes the percent; the last one clears it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.4, SURFACE)
+        result.current.setOpenArea(1, 0.2, SURFACE)
+      })
+      expect(factorG(result)?.open_flowering_percent).toBe(30)
+      await act(async () => {
+        result.current.removeOpenArea(0, SURFACE)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 10, open_areas_ha: [0.2] })
+      await act(async () => {
+        result.current.removeOpenArea(0, SURFACE)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(result.current.factorSections.G[0].value).toBe("")
+      expect(factorG(result)).toBeUndefined()
+    })
+
+    test("none stores 0 % with no zone and empties the list", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addOpenArea()
+        result.current.setOpenArea(0, 0.3, SURFACE)
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(true)
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 0 })
+      expect(result.current.factorRetainedScores.G).not.toBeNull()
+    })
+
+    test("off empties the field again, only while it holds the none state", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoOpenArea(true)
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(false)
+      })
+      expect(result.current.factorSections.G[0].value).toBe("")
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("12")
+      })
+      await act(async () => {
+        result.current.markNoOpenArea(false)
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12 })
+    })
+
+    test("an older G with only a percent keeps it until a zone is filled", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "S",
+          factors: { G: { open_flowering_percent: 12 } },
+        })
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12 })
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 12, open_areas_ha: [0] })
+    })
+
+    test("a stored list comes back in the form and goes out again, unreadable entries dropped", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "S",
+          factors: { G: { open_flowering_percent: 20, open_areas_ha: [0.3, "x", 0.1] } },
+        })
+      })
+      expect(result.current.uncapped.openAreasHa).toEqual([0.3, 0.1])
+      expect(factorG(result)).toEqual({ open_flowering_percent: 20, open_areas_ha: [0.3, 0.1] })
+    })
+
+    test("the retained score is the same with and without the zones (parity)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("2")
+      })
+      const without = result.current.factorRetainedScores.G
+      await act(async () => {
+        result.current.addOpenArea()
+      })
+      expect(factorG(result)).toEqual({ open_flowering_percent: 2, open_areas_ha: [0] })
+      expect(result.current.factorRetainedScores.G).toEqual(without)
     })
   })
 

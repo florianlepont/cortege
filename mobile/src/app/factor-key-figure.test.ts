@@ -22,6 +22,7 @@ type Overrides = {
   ibpCas?: IbpCas | null
   countedInFull?: boolean
   retainedScore?: FactorRetainedScore | null
+  openAreasMode?: boolean
 }
 
 const figure = (factor: KeyFigureFactor, values: string[], overrides: Overrides = {}) =>
@@ -163,6 +164,17 @@ describe("G: open flowering habitats", () => {
     })
     expect(figure("G", ["2,5"]).value).toBe("2,5 %")
     expect(figure("G", ["0"]).value).toBe("0 %")
+  })
+
+  it("says where the percent comes from when G lists its zones (follow-up 32-35)", () => {
+    expect(figure("G", ["15"], { openAreasMode: true })).toMatchObject({
+      value: "15\u00A0%",
+      subLabelKind: "fromZones",
+      pending: "compute",
+    })
+    expect(fr.factorDetail.keyFigure.sub.fromZones).toBe(
+      "calculé d'après les zones et la surface décrite",
+    )
   })
 
   it("is null when empty or outside 0 to 100", () => {

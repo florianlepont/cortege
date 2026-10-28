@@ -56,6 +56,8 @@ export type KeyFigureInput = {
   countedInFull: boolean
   /** The form evaluation's retained score for the factor (the pager already holds it). */
   retainedScore: FactorRetainedScore | null
+  /** G lists its zones (follow-up 32-35): its percent is computed from them and the surface. */
+  openAreasMode?: boolean
 }
 
 export function hasKeyFigure(factor: FactorKey): factor is KeyFigureFactor {
@@ -161,8 +163,8 @@ export function computeFactorKeyFigure(input: KeyFigureInput): FactorKeyFigure {
         ...base,
         value: floweringFigure(input),
         unitKey: "floweringOpen",
-        subLabelKind: "shareOfSurface",
-        pending: "estimate",
+        subLabelKind: input.openAreasMode === true ? "fromZones" : "shareOfSurface",
+        pending: input.openAreasMode === true ? "compute" : "estimate",
       }
     case "H":
       return {

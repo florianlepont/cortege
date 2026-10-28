@@ -68,7 +68,17 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
   )
   const zoneSurfaceHa = surveyRoute?.zone_surface_ha ?? null
   const { uncapped } = state
-  const { setStratumCover, setDmhCount, bumpDmhGroup, markNoDmhGroup, setFSurface } = actions
+  const {
+    setStratumCover,
+    setDmhCount,
+    bumpDmhGroup,
+    markNoDmhGroup,
+    setFSurface,
+    addOpenArea,
+    setOpenArea,
+    removeOpenArea,
+    markNoOpenArea,
+  } = actions
   const uncappedEntry = useMemo<UncappedEntryProps>(
     () => ({
       state: uncapped,
@@ -77,8 +87,23 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
       bumpDmhGroup,
       markNoDmhGroup,
       setFSurface,
+      addOpenArea,
+      setOpenArea,
+      removeOpenArea,
+      markNoOpenArea,
     }),
-    [uncapped, setStratumCover, setDmhCount, bumpDmhGroup, markNoDmhGroup, setFSurface],
+    [
+      uncapped,
+      setStratumCover,
+      setDmhCount,
+      bumpDmhGroup,
+      markNoDmhGroup,
+      setFSurface,
+      addOpenArea,
+      setOpenArea,
+      removeOpenArea,
+      markNoOpenArea,
+    ],
   )
 
   const handleActiveFactorChange = useCallback(

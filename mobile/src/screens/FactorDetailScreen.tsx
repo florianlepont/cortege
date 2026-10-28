@@ -30,6 +30,7 @@ import {
   type UncappedEntryProps,
 } from "./factor-detail/UncappedFieldBlock"
 import { anyDmhCount } from "./factor-detail/no-dmh-group"
+import { OpenAreasSection } from "./factor-detail/OpenAreasSection"
 import { useRouteSurfacePrefill } from "./factor-detail/useRouteSurfacePrefill"
 
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
@@ -168,16 +169,36 @@ export function FactorDetailScreen({
       choiceNodes.push(renderChoiceField(factor, variant, field, methodVersion, ibpCas))
     }
   })
-  const valueNodes = renderValueSections({
-    factor,
-    variants,
-    fields,
-    // Follow-up 32-32: while the surface is the route's, a read-only caption line stands in for its
-    // section; a different value, or no route surface, keeps the editable row.
-    surfaceCaptionHa: fromRoute ? zoneHa : null,
-    countedInFull,
-    groupCounters: groupEntry !== undefined,
-  })
+  // Follow-up 32-35: G lists its zones when the survey has a described surface; without one (an old
+  // draft with no route) the plain percent row stays.
+  const zones =
+    factor === "G" && uncappedEntry !== undefined && zoneSurfaceHa !== null && zoneSurfaceHa > 0
+      ? { entry: uncappedEntry, surfaceHa: zoneSurfaceHa }
+      : null
+  const zonesNode = zones ? (
+    <OpenAreasSection
+      key="G-open-areas"
+      areas={zones.entry.state.openAreasHa}
+      zoneSurfaceHa={zones.surfaceHa}
+      percentText={fields[0]?.value ?? ""}
+      onAdd={zones.entry.addOpenArea}
+      onChangeArea={(index, hectares) => zones.entry.setOpenArea(index, hectares, zones.surfaceHa)}
+      onRemove={(index) => zones.entry.removeOpenArea(index, zones.surfaceHa)}
+      onMarkNone={zones.entry.markNoOpenArea}
+    />
+  ) : null
+  const valueNodes =
+    zonesNode ??
+    renderValueSections({
+      factor,
+      variants,
+      fields,
+      // Follow-up 32-32: while the surface is the route's, a read-only caption line stands in for its
+      // section; a different value, or no route surface, keeps the editable row.
+      surfaceCaptionHa: fromRoute ? zoneHa : null,
+      countedInFull,
+      groupCounters: groupEntry !== undefined,
+    })
 
   return (
     <View style={detailStyles.screen}>
@@ -204,6 +225,7 @@ export function FactorDetailScreen({
             ibpCas,
             countedInFull,
             retainedScore,
+            openAreasMode: zones !== null,
           })}
         />
       ) : null}

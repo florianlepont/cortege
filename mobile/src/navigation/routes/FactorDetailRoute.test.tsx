@@ -52,6 +52,7 @@ const mockForm = {
       strataCoverText: { very_low: "25" },
       dmhCounts: { dmh_01: 2 },
       fSurfaceText: "1,2",
+      openAreasHa: [0.3],
     },
   },
   actions: {
@@ -63,6 +64,10 @@ const mockForm = {
     bumpDmhGroup: jest.fn(),
     markNoDmhGroup: jest.fn(),
     setFSurface: jest.fn(),
+    addOpenArea: jest.fn(),
+    setOpenArea: jest.fn(),
+    removeOpenArea: jest.fn(),
+    markNoOpenArea: jest.fn(),
   },
 }
 jest.mock("../../state/survey-form-context", () => ({ useSurveyFormState: () => mockForm }))
@@ -276,6 +281,10 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
       bumpDmhGroup: unknown
       markNoDmhGroup: unknown
       setFSurface: unknown
+      addOpenArea: unknown
+      setOpenArea: unknown
+      removeOpenArea: unknown
+      markNoOpenArea: unknown
     }
     expect(entry.state).toBe(mockForm.state.uncapped)
     expect(entry.setStratumCover).toBe(mockForm.actions.setStratumCover)
@@ -283,6 +292,10 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
     expect(entry.bumpDmhGroup).toBe(mockForm.actions.bumpDmhGroup)
     expect(entry.markNoDmhGroup).toBe(mockForm.actions.markNoDmhGroup)
     expect(entry.setFSurface).toBe(mockForm.actions.setFSurface)
+    expect(entry.addOpenArea).toBe(mockForm.actions.addOpenArea)
+    expect(entry.setOpenArea).toBe(mockForm.actions.setOpenArea)
+    expect(entry.removeOpenArea).toBe(mockForm.actions.removeOpenArea)
+    expect(entry.markNoOpenArea).toBe(mockForm.actions.markNoOpenArea)
   })
 
   test("the object is stable while the form's details do not change", () => {
