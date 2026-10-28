@@ -5,9 +5,11 @@ import {
   findNodeHandle,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Animated, { Keyframe, ReduceMotion } from "react-native-reanimated"
 import type { DmhGroupCode, IbpMethodVersion } from "@cortege/ibp-domain"
 import { brandMotion } from "../../app/brand-tokens"
@@ -82,6 +84,7 @@ export function DmhGuideScreen({ initialGroup, methodVersion, onClose }: DmhGuid
   const [query, setQuery] = useState("")
   const [direction, setDirection] = useState<Direction>("none")
   const [scrolled, setScrolled] = useState(false)
+  const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
   const titleRef = useRef<View>(null)
 
@@ -139,7 +142,9 @@ export function DmhGuideScreen({ initialGroup, methodVersion, onClose }: DmhGuid
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.sheet}
+      // The Android modal draws under the status bar: keep the sticky bar below it (the iOS form sheet
+      // has its own frame).
+      style={[styles.sheet, Platform.OS === "android" ? { paddingTop: insets.top } : null]}
       contentContainerStyle={styles.sheetContent}
       contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
