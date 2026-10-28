@@ -1,33 +1,40 @@
 import { StyleSheet } from "react-native"
-import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import {
+  brandDefaultFontFamily,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import type { BrandTheme } from "../../app/theme"
+import { DMH_PLATE_PADDING } from "../../ui/DmhDrawing"
 
-// Phase 32 (32-UI-SPEC "Spacing Scale" and "Typography"): the styles of the guide sheet, shared by
-// the group page, the sources page (plan 32-12) and the shell and catalogue (plan 32-13). Sizes
-// are on the 4-grid; every pressable target is at least 44 high. Colours come from the theme only.
+// Phase 32 (32-UI-SPEC "Spacing Scale" and "Typography", redesign brief B-C2 and B-I1): the styles
+// of the guide sheet, shared by the shell, the catalogue, the group page and the sources page. Sizes
+// are on the 4-grid; every pressable target is at least 44 high. Colours come from the theme only
+// and fonts from the brand tokens, in two weights: Sora-SemiBold for titles and headings, Sora-Medium
+// for links and list labels, Jost-Regular for the text itself and Jost-SemiBold for captions.
 
-export const DMH_GUIDE_HEADER_HEIGHT = 56
 export const DMH_GUIDE_TARGET = 44
 export const DMH_GUIDE_ROW_MIN_HEIGHT = 56
 export const DMH_GUIDE_SEARCH_MIN_HEIGHT = 48
-const BULLET_DOT = 6
+/** The hero plate of a group page is 168 pt tall at most: the drawing plus its padding. */
+export const DMH_GUIDE_HERO_PLATE_HEIGHT = 168
+export const DMH_GUIDE_HERO_DRAWING_HEIGHT = DMH_GUIDE_HERO_PLATE_HEIGHT - 2 * DMH_PLATE_PADDING
+/** Where the hairlines of a list of icon rows start: 16 padding, an 18 pt glyph, a 12 gap. */
+export const DMH_GUIDE_ICON_ROW_INSET = brandSpacing4.md + 18 + brandSpacing4.smd
 
 export function createDmhGuideStyles(theme: BrandTheme) {
-  const headline = {
-    fontSize: brandTypeScale.headline.fontSize,
-    lineHeight: brandTypeScale.headline.lineHeight,
-    fontFamily: "Sora-SemiBold",
-  }
+  const headingFamily = brandTypography.sectionHeader.fontFamily
   const body = {
     fontSize: brandTypeScale.subhead.fontSize,
     lineHeight: brandTypeScale.subhead.lineHeight,
-    fontFamily: "Jost-Regular",
+    fontFamily: brandDefaultFontFamily,
   }
   return StyleSheet.create({
-    // The sheet and its one scroll view (the header is its first item, as the help sheet, and
-    // sticks to the top: owner review, the close button scrolled away with the content). The
-    // side padding lives on the header and on the body, not on the scroll content, so the sticky
-    // header spans the full width with an opaque canvas background and no text shows beside it.
+    // The sheet and its one scroll view (the nav bar is its first item and sticks to the top). The
+    // side padding lives on the body, not on the scroll content, so the sticky bar spans the full
+    // width with an opaque canvas background and no text shows beside it.
     sheet: {
       flex: 1,
       backgroundColor: theme.semanticColors.backgroundCanvas,
@@ -35,61 +42,29 @@ export function createDmhGuideStyles(theme: BrandTheme) {
     sheetContent: {
       paddingBottom: brandSpacing4.xl,
     },
-    headerSticky: {
-      paddingHorizontal: brandSpacing4.lg,
-      paddingTop: brandSpacing4.md,
-      backgroundColor: theme.semanticColors.backgroundCanvas,
-      zIndex: 1,
-    },
     body: {
       paddingHorizontal: brandSpacing4.lg,
       paddingTop: brandSpacing4.md,
-      gap: brandSpacing4.md,
     },
-    // Header row: 56 high, back (or title) on the left, close on the right.
-    headerRow: {
-      minHeight: DMH_GUIDE_HEADER_HEIGHT,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: brandSpacing4.smd,
-    },
-    sheetTitleBox: {
-      flex: 1,
-    },
-    sheetTitle: {
-      ...headline,
-      color: theme.semanticColors.textStrong,
-    },
-    backButton: {
-      minHeight: DMH_GUIDE_TARGET,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.xs,
-    },
-    backText: {
-      ...headline,
-      color: theme.visual.accentText,
-    },
-    closeButton: {
-      width: DMH_GUIDE_TARGET,
-      height: DMH_GUIDE_TARGET,
-      borderRadius: DMH_GUIDE_TARGET / 2,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
-    },
-    // The pages: a column of blocks, 16 apart.
+    // The catalogue and the sources page: a column of blocks, 16 apart.
     page: {
       gap: brandSpacing4.md,
     },
+    // 16 pt Jost: the lead paragraph of a page (the word defined, the definition of a group).
     lead: {
-      ...body,
+      fontSize: brandTypeScale.callout.fontSize,
+      lineHeight: brandTypeScale.callout.lineHeight,
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
-    // Group page title block (no card): the form caption, then the group label.
+    // Group page, top to bottom: the hero plate, the title block, the definition, the callout, then
+    // headed sections. The spacing is explicit (16 / 16 / 24 / 24 above a heading, 8 below).
+    hero: {
+      marginBottom: brandSpacing4.md,
+    },
     titleBlock: {
       gap: brandSpacing4.xs,
+      marginBottom: brandSpacing4.md,
     },
     formCaption: {
       ...brandTypography.meta,
@@ -99,23 +74,16 @@ export function createDmhGuideStyles(theme: BrandTheme) {
       ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
     },
-    // One glass block of a page.
-    block: {
-      gap: brandSpacing4.smd,
+    definition: {
+      marginBottom: brandSpacing4.lg,
     },
-    blockTitleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
-    blockTitle: {
-      flexShrink: 1,
-      ...headline,
+    guideHeading: {
+      marginTop: brandSpacing4.lg,
+      marginBottom: brandSpacing4.sm,
+      fontSize: brandTypeScale.headline.fontSize,
+      lineHeight: brandTypeScale.headline.lineHeight,
+      fontFamily: headingFamily,
       color: theme.semanticColors.textStrong,
-    },
-    subTitle: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
     },
     bodyText: {
       ...body,
@@ -125,97 +93,120 @@ export function createDmhGuideStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
-    // The drawing sits above the recognition text, 12 apart.
-    recogniseBlock: {
-      gap: brandSpacing4.smd,
-    },
-    // Confusion bullets: a 6 pt dot, 12 apart, one element per bullet.
-    bulletList: {
-      gap: brandSpacing4.smd,
-    },
-    bulletRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: brandSpacing4.smd,
-    },
-    bulletDot: {
-      width: BULLET_DOT,
-      height: BULLET_DOT,
-      marginTop: 7,
-      borderRadius: BULLET_DOT / 2,
-      backgroundColor: theme.colors.textSecondary,
-    },
-    bulletText: {
-      flex: 1,
-      ...body,
-      color: theme.colors.textPrimary,
-    },
-    typeGroup: {
+    // The one tinted block of a group page: the rule that counts for the IBP (and, merged in, the
+    // pocket guide's different threshold). Fill and inks are an AA pair (dmh-guide.contrast.test).
+    callout: {
+      borderRadius: brandRadius.field,
+      padding: brandSpacing4.md,
+      backgroundColor: theme.componentColors.statusChip.successBackground,
       gap: brandSpacing4.sm,
     },
-    typeRow: {
-      ...body,
-      color: theme.colors.textPrimary,
-    },
-    // The foot of a page: the source line, then the accent link 32 below the last card.
-    footer: {
-      marginTop: brandSpacing4.md,
-      gap: brandSpacing4.xs,
-    },
-    link: {
-      minHeight: DMH_GUIDE_TARGET,
-      justifyContent: "center",
-      alignSelf: "flex-start",
-    },
-    linkText: {
-      ...headline,
-      color: theme.visual.accentText,
-    },
-    // Sources page: a document card.
-    documentLine: {
-      ...body,
-      color: theme.colors.textPrimary,
-    },
-    // Catalogue (plan 32-13): a row, its caption under the label, the empty card.
-    row: {
-      minHeight: DMH_GUIDE_ROW_MIN_HEIGHT,
+    calloutHeader: {
       flexDirection: "row",
       alignItems: "center",
+      gap: brandSpacing4.sm,
+    },
+    calloutTitle: {
+      flexShrink: 1,
+      ...brandTypography.sectionHeader,
+      color: theme.onSurface.success,
+    },
+    calloutBlock: {
+      gap: brandSpacing4.xs,
+    },
+    calloutRule: {
+      fontSize: brandTypeScale.body.fontSize,
+      lineHeight: brandTypeScale.body.lineHeight,
+      fontFamily: brandDefaultFontFamily,
+      color: theme.colors.textPrimary,
+    },
+    calloutDivider: {
+      height: 1,
+      marginVertical: brandSpacing4.smd,
+      backgroundColor: theme.colors.divider,
+    },
+    calloutNote: {
+      gap: brandSpacing4.xs,
+    },
+    // A row of a grouped list: a leading 18 pt glyph and the text (confusions and types).
+    listRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
       gap: brandSpacing4.smd,
       paddingHorizontal: brandSpacing4.md,
       paddingVertical: brandSpacing4.smd,
     },
-    rowCopy: {
-      flex: 1,
-      gap: brandSpacing4.xs,
+    listIcon: {
+      marginTop: 1,
     },
-    rowLabel: {
+    listText: {
+      flex: 1,
       ...body,
       color: theme.colors.textPrimary,
     },
-    rowDivider: {
-      height: 1,
-      marginLeft: brandSpacing4.md,
-      backgroundColor: theme.colors.divider,
+    // Types: up to two lists, each under a grouped header.
+    typeLists: {
+      gap: brandSpacing4.md,
     },
-    // The card of rows has no padding of its own: the rows run edge to edge.
-    rowsCard: {
-      overflow: "hidden",
-    },
-    // A form header over its card, 8 apart.
-    formSection: {
+    typeList: {
       gap: brandSpacing4.sm,
     },
-    formHeader: {
-      ...brandTypography.meta,
+    groupedHeader: {
+      ...brandTypography.sectionHeader,
       color: theme.colors.textSecondary,
+      paddingHorizontal: brandSpacing4.xs,
     },
+    // The foot of a group page: the source line, then the "Sources et licence" row.
+    footer: {
+      marginTop: brandSpacing4.lg,
+      gap: brandSpacing4.smd,
+    },
+    // Sources page: a document container, the label as a caption over the value.
+    documentTitle: {
+      ...brandTypography.input,
+      color: theme.semanticColors.textStrong,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.smd,
+    },
+    documentRow: {
+      gap: brandSpacing4.xxs,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.smd,
+    },
+    sourcesFoot: {
+      gap: brandSpacing4.xs,
+    },
+    // Catalogue: the search field's row, and the empty state (no card, centred).
     searchRow: {
       minHeight: DMH_GUIDE_SEARCH_MIN_HEIGHT,
     },
-    // The sources link, 32 below the last card (the page gap is 16).
-    catalogueFoot: {
-      marginTop: brandSpacing4.md,
+    empty: {
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      paddingVertical: brandSpacing4.lg,
+    },
+    emptyTitle: {
+      textAlign: "center",
+      fontSize: brandTypeScale.headline.fontSize,
+      lineHeight: brandTypeScale.headline.lineHeight,
+      fontFamily: headingFamily,
+      color: theme.semanticColors.textStrong,
+    },
+    emptyBody: {
+      ...body,
+      textAlign: "center",
+      color: theme.colors.textSecondary,
+    },
+    link: {
+      minHeight: DMH_GUIDE_TARGET,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    linkText: {
+      fontSize: brandTypeScale.body.fontSize,
+      lineHeight: brandTypeScale.body.lineHeight,
+      fontFamily: brandTypography.heroBody.fontFamily,
+      color: theme.visual.accentText,
     },
   })
 }

@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { DmhSourcesPage } from "./DmhSourcesPage"
 
@@ -12,10 +13,12 @@ jest.mock("react-native", () => {
   return {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
+    ActivityIndicator: mockComponent("ActivityIndicator"),
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {} },
     useColorScheme: () => "light",
   }
 })
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 
 jest.mock("../../ui/AppPressable", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -48,6 +51,8 @@ beforeEach(() => {
   mockDrawingState.empty = false
 })
 
+const flat = (style: unknown) => Object.assign({}, ...[style].flat(3))
+
 const textOf = (node: renderer.ReactTestInstance): string =>
   node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("")
 
@@ -68,7 +73,7 @@ const allTexts = (tree: renderer.ReactTestRenderer) =>
     .filter(Boolean)
 
 describe("DmhSourcesPage", () => {
-  test("shows the title, the lead, three documents with four labelled lines, and the closing lines", () => {
+  test("shows the title, the lead, three documents with four labelled rows, and the closing lines", () => {
     const tree = render()
     const texts = allTexts(tree)
     expect(tree.root.findAll((n) => n.props.testID === "dmh-sources-page").length).toBeGreaterThan(
@@ -77,16 +82,55 @@ describe("DmhSourcesPage", () => {
     expect(texts).toContain(s.title)
     expect(texts).toContain(s.lead)
     expect(s.documents).toHaveLength(3)
+    // Each row is one accessible element reading "label : value", a caption over its value.
+    const rowLabels = tree.root
+      .findAll((n) => typeof n.type === "string" && n.props.accessible === true)
+      .map((n) => n.props.accessibilityLabel)
     for (const doc of s.documents) {
       expect(texts).toContain(doc.title)
-      expect(texts).toContain(`${s.authors} : ${doc.authors}`)
-      expect(texts).toContain(`${s.publisher} : ${doc.publisher}`)
-      expect(texts).toContain(`${s.year} : ${doc.year}`)
-      expect(texts).toContain(`${s.usedFor} : ${doc.usedFor}`)
+      for (const [label, value] of [
+        [s.authors, doc.authors],
+        [s.publisher, doc.publisher],
+        [s.year, doc.year],
+        [s.usedFor, doc.usedFor],
+      ]) {
+        expect(rowLabels).toContain(`${label} : ${value}`)
+        expect(texts).toContain(label)
+        expect(texts).toContain(value)
+      }
     }
     expect(texts.some((text) => text.includes(s.precedence))).toBe(true)
     expect(texts).toContain(s.offline)
     expect(texts).toContain(s.consulted)
+  })
+
+  test("a document is one container: the title row, then the caption rows with hairlines", () => {
+    const tree = render()
+    const containers = tree.root.findAll(
+      (n) => typeof n.type === "string" && flat(n.props.style).borderRadius === 22,
+    )
+    expect(containers).toHaveLength(3)
+    const first = containers[0]
+    const dividers = first.findAll(
+      (n) => typeof n.type === "string" && flat(n.props.style).height === 1,
+    )
+    expect(dividers).toHaveLength(4)
+    const title = first.find(
+      (n) => (n.type as unknown) === "Text" && textOf(n) === s.documents[0].title,
+    )
+    expect(flat(title.props.style)).toMatchObject({ fontFamily: "Sora-SemiBold", fontSize: 16 })
+  })
+
+  test("the precedence sentence is in the tinted callout, not in a notice", () => {
+    const tree = render()
+    const callout = tree.root.find(
+      (n) =>
+        typeof n.type === "string" &&
+        flat(n.props.style).backgroundColor ===
+          defaultTheme.componentColors.statusChip.successBackground,
+    )
+    expect(textOf(callout)).toBe(s.precedence)
+    expect(flat(callout.props.style).borderWidth).toBeUndefined()
   })
 
   test("the title is a header and the ref lands on the title", () => {
@@ -99,9 +143,9 @@ describe("DmhSourcesPage", () => {
     expect(titleRef.current).toEqual({ node: "title" })
   })
 
-  test("the precedence notice comes after the documents", () => {
+  test("the precedence callout comes after the documents", () => {
     const texts = allTexts(render())
-    const last = texts.indexOf(`${s.usedFor} : ${s.documents[2].usedFor}`)
+    const last = texts.lastIndexOf(s.documents[2].usedFor)
     const notice = texts.findIndex((text) => text.includes(s.precedence))
     expect(notice).toBeGreaterThan(last)
   })

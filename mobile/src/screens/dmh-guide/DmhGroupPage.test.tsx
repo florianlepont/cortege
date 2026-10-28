@@ -1,7 +1,10 @@
 import React, { createRef } from "react"
 import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_2, type DmhGroupCode } from "@cortege/ibp-domain"
+import { defaultTheme } from "../../app/theme"
+import { selectionLabel } from "../../app/factor-selections"
 import { fr } from "../../i18n"
+import { DmhDrawing } from "../../ui/DmhDrawing"
 import { DmhGroupPage } from "./DmhGroupPage"
 
 jest.mock("react-native", () => {
@@ -13,10 +16,12 @@ jest.mock("react-native", () => {
   return {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
+    ActivityIndicator: mockComponent("ActivityIndicator"),
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {} },
     useColorScheme: () => "light",
   }
 })
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 
 jest.mock("../../ui/AppPressable", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -75,6 +80,8 @@ const allTexts = (tree: renderer.ReactTestRenderer) =>
     .map((n) => textOf(n))
     .filter(Boolean)
 
+const flat = (style: unknown) => Object.assign({}, ...[style].flat(3))
+
 const byTestId = (tree: renderer.ReactTestRenderer, id: string) =>
   tree.root.findAll((n) => n.props.testID === id && typeof n.type === "string")
 
@@ -85,12 +92,12 @@ describe("DmhGroupPage", () => {
     const at = (needle: string) => texts.findIndex((text) => text === needle)
     const order = [
       t.group.form({ form: t.forms.wounds }),
-      t.group.definitionTitle,
+      t.groups.dmh_05.definition,
       t.group.ibpTitle,
+      t.group.differenceTitle,
       t.group.recogniseTitle,
       t.group.confusionsTitle,
       t.group.typesTitle,
-      t.group.differenceTitle,
       t.sheet.sourcesLink,
     ].map(at)
     expect(order.every((index) => index >= 0)).toBe(true)
@@ -116,6 +123,8 @@ describe("DmhGroupPage", () => {
     const notice = textOf(byTestId(tree, "dmh-difference")[0])
     expect(notice).toContain(t.group.differenceTitle)
     expect(notice).toContain(`${t.group.differenceLead} ${content.difference}`)
+    // The definition has no heading of its own any more.
+    expect(texts).not.toContain(t.group.definitionTitle)
     // The footer is plain text above the link.
     expect(texts).toContain(t.group.footer)
     // No type number and no group code is rendered.
@@ -178,12 +187,14 @@ describe("DmhGroupPage", () => {
     expect(outside[0].props.accessibilityLabel).toMatch(/Non compté par l'IBP$/)
   })
 
-  test("the recognise block opens with the drawing of the group, labelled by its alt sentence", () => {
+  test("the drawing is the hero plate at the top, above the title, at most 168 pt tall", () => {
     const tree = render("dmh_05", IBP_METHOD_V3_2)
     const [drawing] = byTestId(tree, "dmh-drawing")
     expect(drawing).toBeDefined()
     expect(drawing.props.accessibilityLabel).toBe(t.groups.dmh_05.illustrationAlt)
-    // The drawing sits after the recognise title and before the recognise text.
+    // The drawing and its plate padding (2 x 16) make 168; the drawing frame is capped at 136.
+    expect(tree.root.findByType(DmhDrawing).props.maxHeight).toBe(136)
+    // Document order: drawing, form caption, group title, definition, then the rule.
     const flat: string[] = []
     const walk = (node: renderer.ReactTestInstance | string) => {
       if (typeof node === "string") return
@@ -198,13 +209,14 @@ describe("DmhGroupPage", () => {
       node.children.forEach(walk)
     }
     walk(tree.root)
-    const title = flat.indexOf(t.group.recogniseTitle)
     const drawingAt = flat.indexOf("DRAWING")
-    const text = flat.indexOf(t.groups.dmh_05.recognise)
-    expect(title).toBeLessThan(drawingAt)
-    expect(drawingAt).toBeLessThan(text)
-    // And after the rule block, so blocks 1 to 3 stay visible at the low detent.
-    expect(flat.indexOf(t.groups.dmh_05.ibpRule)).toBeLessThan(drawingAt)
+    expect(drawingAt).toBe(0)
+    const title = flat.indexOf(selectionLabel("F", "dmh_05", IBP_METHOD_V3_2) ?? "")
+    expect(flat.indexOf(t.group.form({ form: t.forms.wounds }))).toBe(1)
+    expect(title).toBe(2)
+    expect(flat[3]).toBe(t.groups.dmh_05.definition)
+    // The recognise text follows its heading, with no drawing between them.
+    expect(flat.indexOf(t.groups.dmh_05.recognise)).toBe(flat.indexOf(t.group.recogniseTitle) + 1)
   })
 
   test("the real drawing module holds a drawing for the group", () => {
@@ -212,10 +224,11 @@ describe("DmhGroupPage", () => {
     expect(mockDrawingFor).toHaveBeenCalledWith("dmh_05")
   })
 
-  test("a group without drawing data shows no slot and the text opens the block", () => {
+  test("a group without drawing data shows no plate and the title block opens the page", () => {
     mockDrawingFor.mockReturnValue(null)
     const tree = render("dmh_05", IBP_METHOD_V3_2)
     expect(byTestId(tree, "dmh-drawing")).toHaveLength(0)
+    expect(allTexts(tree)[0]).toBe(t.group.form({ form: t.forms.wounds }))
     expect(allTexts(tree)).toContain(t.groups.dmh_05.recognise)
   })
 
@@ -237,12 +250,83 @@ describe("DmhGroupPage", () => {
     const texts = headers.map((n) => textOf(n))
     expect(texts).toEqual(
       expect.arrayContaining([
-        t.group.definitionTitle,
         t.group.ibpTitle,
         t.group.recogniseTitle,
         t.group.confusionsTitle,
         t.group.typesTitle,
       ]),
     )
+  })
+
+  test("the rule and the different threshold share one tinted callout, divided by a hairline", () => {
+    const tree = render("dmh_05", IBP_METHOD_V3_2)
+    const rule = byTestId(tree, "dmh-ibp-rule")[0]
+    const note = byTestId(tree, "dmh-difference")[0]
+    const callout = tree.root.find(
+      (n) =>
+        typeof n.type === "string" &&
+        flat(n.props.style).backgroundColor ===
+          defaultTheme.componentColors.statusChip.successBackground,
+    )
+    expect(callout.findAll((n) => n === rule)).toHaveLength(1)
+    expect(callout.findAll((n) => n === note)).toHaveLength(1)
+    expect(flat(callout.props.style)).toMatchObject({ borderRadius: 18, padding: 16 })
+    expect(flat(callout.props.style).borderWidth).toBeUndefined()
+    const dividers = callout.findAll(
+      (n) => typeof n.type === "string" && flat(n.props.style).height === 1,
+    )
+    expect(dividers).toHaveLength(1)
+    expect(note.props.accessible).toBe(true)
+    // The callout is the only block with the success fill on the page.
+    const tinted = tree.root.findAll(
+      (n) =>
+        typeof n.type === "string" &&
+        flat(n.props.style).backgroundColor ===
+          defaultTheme.componentColors.statusChip.successBackground,
+    )
+    expect(tinted).toHaveLength(1)
+  })
+
+  test("a group without a different threshold has no hairline and no note in the callout", () => {
+    const tree = render("dmh_01", IBP_METHOD_V3_2)
+    expect(byTestId(tree, "dmh-difference")).toHaveLength(0)
+    const dividers = tree.root.findAll(
+      (n) =>
+        typeof n.type === "string" &&
+        flat(n.props.style).height === 1 &&
+        flat(n.props.style).marginVertical === 12,
+    )
+    expect(dividers).toHaveLength(0)
+  })
+
+  test("a confusion is one accessible row with a swap glyph; types show a shape beside the name", () => {
+    const tree = render("dmh_11", IBP_METHOD_V3_2)
+    const content = t.groups.dmh_11
+    const confusion = tree.root.find(
+      (n) =>
+        typeof n.type === "string" &&
+        n.props.accessible === true &&
+        textOf(n) === content.confusions[0],
+    )
+    expect(confusion.find((n) => (n.type as unknown) === "Ionicons").props.name).toBe(
+      "swap-horizontal-outline",
+    )
+    const glyphs = (id: string) =>
+      byTestId(tree, id)[0]
+        .findAll((n) => (n.type as unknown) === "Ionicons")
+        .map((n) => n.props.name)
+    expect(new Set(glyphs("dmh-types-counted"))).toEqual(new Set(["checkmark-outline"]))
+    expect(new Set(glyphs("dmh-types-not-counted"))).toEqual(new Set(["remove-circle-outline"]))
+  })
+
+  test("the foot is the source line, then a one-row group with the document tile", () => {
+    const tree = render("dmh_05", IBP_METHOD_V3_2)
+    const link = byTestId(tree, "dmh-sources-link")[0]
+    expect(link.props.accessibilityLabel).toBe(t.sheet.sourcesLink)
+    expect(
+      link.findAll((n) => (n.type as unknown) === "Ionicons").map((n) => n.props.name),
+    ).toEqual(expect.arrayContaining(["document-text-outline", "chevron-forward-outline"]))
+    const texts = allTexts(tree)
+    expect(texts.indexOf(t.group.footer)).toBeLessThan(texts.indexOf(t.sheet.sourcesLink))
   })
 })

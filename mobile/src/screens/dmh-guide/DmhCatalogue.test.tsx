@@ -98,11 +98,39 @@ describe("DmhCatalogue", () => {
     const row = byTestId(tree, "dmh-catalogue-row-dmh_05")[0]
     expect(row.props.accessibilityRole).toBe("button")
     expect(row.props.accessibilityHint).toBe(t.sheet.rowHint)
-    expect([row.props.style].flat().some((s: { minHeight?: number }) => s?.minHeight === 56)).toBe(
-      true,
-    )
+    const style = typeof row.props.style === "function" ? row.props.style({ pressed: false }) : []
+    expect([style].flat(2).some((s: { minHeight?: number }) => s?.minHeight === 56)).toBe(true)
     act(() => row.props.onPress())
     expect(handlers.onOpenGroup).toHaveBeenCalledWith("dmh_05")
+  })
+
+  test("a row label is the medium 15 face, up to three lines, with no subtitle outside a search", () => {
+    const { tree } = render()
+    const row = byTestId(tree, "dmh-catalogue-row-dmh_05")[0]
+    const label = row.findAll((n) => (n.type as unknown) === "Text")[0]
+    expect(label.props.numberOfLines).toBe(3)
+    expect([label.props.style].flat(2)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ fontFamily: "Sora-Medium", fontSize: 15 }),
+      ]),
+    )
+    expect(row.findAll((n) => (n.type as unknown) === "Text")).toHaveLength(1)
+  })
+
+  test("a search result shows its form as a subtitle under the label", () => {
+    const { tree } = render("gui")
+    const row = byTestId(tree, "dmh-catalogue-row-dmh_12")[0]
+    const texts = row.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
+    expect(texts[1]).toBe(t.forms.epiphytic)
+  })
+
+  test("the sources link is a one-row group with the document tile", () => {
+    const { tree } = render()
+    const link = byTestId(tree, "dmh-sources-link")[0]
+    expect(link.props.accessibilityLabel).toBe(t.sheet.sourcesLink)
+    expect(
+      link.findAll((n) => (n.type as unknown) === "Ionicons").map((n) => n.props.name),
+    ).toContain("document-text-outline")
   })
 
   test("the sources link opens the sources page", () => {
@@ -158,9 +186,14 @@ describe("DmhCatalogue", () => {
     expect(ids(accented)).toEqual(ids(plain))
   })
 
-  test("a query with no match shows the empty card, announces zero and its action clears the query", () => {
+  test("a query with no match shows the empty state, announces zero and its action clears the query", () => {
     const { tree, handlers } = render("zzzz")
     expect(byTestId(tree, "dmh-search-empty")).toHaveLength(1)
+    // No card: the empty state has no fill, border or radius of its own.
+    const empty = byTestId(tree, "dmh-search-empty")[0]
+    expect(Object.keys(Object.assign({}, ...[empty.props.style].flat()))).not.toEqual(
+      expect.arrayContaining(["backgroundColor"]),
+    )
     const texts = allTexts(tree)
     expect(texts).toContain(t.search.emptyTitle)
     expect(texts).toContain(t.search.emptyBody)
