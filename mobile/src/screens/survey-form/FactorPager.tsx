@@ -193,8 +193,15 @@ export const FactorPager = memo(function FactorPager({
         <View style={styles.titleRow}>
           {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
            * instead of ending in an ellipsis. */}
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {FACTOR_TITLES[activeFactor]}
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            accessibilityRole="header"
+            accessibilityLabel={FACTOR_TITLES[activeFactor]}
+          >
+            {t.pageTitles[activeFactor]}
           </Text>
           <View
             style={styles.totalChip}

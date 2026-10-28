@@ -207,6 +207,21 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
     expect(onActiveFactorChange).toHaveBeenLastCalledWith("D")
   })
 
+  test("the F page header reads DMH but speaks the full title; the other factors keep theirs", () => {
+    const { tree, texts } = render("F")
+    const headers = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.accessibilityRole === "header",
+    )
+    expect(headers).toHaveLength(1)
+    expect(headers[0].props.children).toBe("DMH")
+    expect(headers[0].props.accessibilityLabel).toBe(FACTOR_TITLES.F)
+    expect(fr.factorPager.pageTitles.F).toBe("DMH")
+    expect(texts()).not.toContain(FACTOR_TITLES.F)
+    for (const factor of ["A", "B", "C", "D", "E", "G", "H", "I", "J"] as const) {
+      expect(fr.factorPager.pageTitles[factor]).toBe(FACTOR_TITLES[factor])
+    }
+  })
+
   test("the header shows the running total out of 50", () => {
     const { byTestID, texts } = render("A")
     expect(texts()).toContain(fr.factorPager.total(0))
