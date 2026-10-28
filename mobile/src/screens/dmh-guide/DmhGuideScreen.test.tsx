@@ -135,6 +135,34 @@ describe("DmhGuideScreen", () => {
     expect(sheet.props.automaticallyAdjustKeyboardInsets).toBe(true)
   })
 
+  test("the header row is the first child of the scroll view and sticks to the top", () => {
+    const { tree } = render()
+    const sheet = byTestId(tree, "dmh-guide-screen")[0]
+    expect(sheet.props.stickyHeaderIndices).toEqual([0])
+    const children = sheet.children.filter(
+      (child): child is renderer.ReactTestInstance => typeof child !== "string",
+    )
+    const header = byTestId(tree, "dmh-guide-header")[0]
+    // Index 0 of the scroll view holds the header (a wrapper of the host View), the body is next.
+    expect(children[0].findAll((n) => n === header)).toHaveLength(1)
+    expect(children[1].findAll((n) => n === header)).toHaveLength(0)
+    // The close control and the title are inside the sticky header, never in the scrolled body.
+    expect(header.findAll((n) => n.props.testID === "dmh-close").length).toBeGreaterThan(0)
+    expect(header.findAll((n) => n.props.testID === "dmh-catalogue").length).toBe(0)
+    // Opaque canvas background so scrolled text never shows through, above the content.
+    const style = header.props.style as { backgroundColor?: string; zIndex?: number }
+    expect(style.backgroundColor).toEqual(expect.any(String))
+    expect(style.zIndex).toBe(1)
+  })
+
+  test("the header keeps its sticky place on a group page, with the back control", () => {
+    const { tree } = render("dmh_05")
+    const header = byTestId(tree, "dmh-guide-header")[0]
+    expect(header.findAll((n) => n.props.testID === "dmh-back").length).toBeGreaterThan(0)
+    expect(header.findAll((n) => n.props.testID === "dmh-close").length).toBeGreaterThan(0)
+    expect(byTestId(tree, "dmh-guide-screen")[0].props.stickyHeaderIndices).toEqual([0])
+  })
+
   test("with a group it opens that page with the back control, and says nothing on opening", () => {
     const { tree } = render("dmh_05")
     expect(onGroup(tree)).toBe(true)

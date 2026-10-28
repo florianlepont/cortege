@@ -24,15 +24,26 @@ export function createDmhGuideStyles(theme: BrandTheme) {
     fontFamily: "Jost-Regular",
   }
   return StyleSheet.create({
-    // The sheet and its one scroll view (the header row is its first item, as the help sheet).
+    // The sheet and its one scroll view (the header is its first item, as the help sheet, and
+    // sticks to the top: owner review, the close button scrolled away with the content). The
+    // side padding lives on the header and on the body, not on the scroll content, so the sticky
+    // header spans the full width with an opaque canvas background and no text shows beside it.
     sheet: {
       flex: 1,
       backgroundColor: theme.semanticColors.backgroundCanvas,
     },
     sheetContent: {
+      paddingBottom: brandSpacing4.xl,
+    },
+    headerSticky: {
       paddingHorizontal: brandSpacing4.lg,
       paddingTop: brandSpacing4.md,
-      paddingBottom: brandSpacing4.xl,
+      backgroundColor: theme.semanticColors.backgroundCanvas,
+      zIndex: 1,
+    },
+    body: {
+      paddingHorizontal: brandSpacing4.lg,
+      paddingTop: brandSpacing4.md,
       gap: brandSpacing4.md,
     },
     // Header row: 56 high, back (or title) on the left, close on the right.

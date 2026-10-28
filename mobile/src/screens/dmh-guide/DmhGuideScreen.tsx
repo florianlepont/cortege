@@ -40,8 +40,11 @@ function viewKey(view: GuideView): string {
 /**
  * The guide sheet (32-UI-SPEC S2, D-04, D-05): ONE sheet with three internal views, the catalogue,
  * a group page and the sources page, so a second sheet is never stacked on the first (research
- * pitfall 9). The header row is the first item of the one scroll view (the help sheet finding): the
- * title on the catalogue, the back control elsewhere, the close button always. A view change
+ * pitfall 9). The header row is the first item of the one scroll view (the help sheet finding: a
+ * header outside it was drawn under scrolled text in the iOS form sheet) and a sticky one
+ * (`stickyHeaderIndices={[0]}` with an opaque canvas background), so the close button stays at the
+ * top while the content scrolls (owner review): the title on the catalogue, the back control
+ * elsewhere, the close button always. A view change
  * cross-fades (instant under Reduce Motion), scrolls back to the top, moves the screen reader focus
  * to the new title and announces it once. The query typed in the catalogue is kept in this state
  * while a group page is open. The in-sheet back goes to the catalogue, or from the sources page to
@@ -110,46 +113,50 @@ export function DmhGuideScreen({ initialGroup, methodVersion, onClose }: DmhGuid
       contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
+      stickyHeaderIndices={[0]}
       testID="dmh-guide-screen"
     >
-      <View style={styles.headerRow}>
-        {view.kind === "catalogue" ? (
-          <View ref={titleRef} accessible accessibilityRole="header" style={styles.sheetTitleBox}>
-            <Text style={styles.sheetTitle}>{t.sheet.title}</Text>
-          </View>
-        ) : (
+      <View style={styles.headerSticky} testID="dmh-guide-header">
+        <View style={styles.headerRow}>
+          {view.kind === "catalogue" ? (
+            <View ref={titleRef} accessible accessibilityRole="header" style={styles.sheetTitleBox}>
+              <Text style={styles.sheetTitle}>{t.sheet.title}</Text>
+            </View>
+          ) : (
+            <AppPressable
+              testID="dmh-back"
+              style={styles.backButton}
+              onPress={goBack}
+              accessibilityRole="button"
+              accessibilityLabel={t.sheet.backA11y}
+            >
+              <Ionicons
+                name="chevron-back-outline"
+                size={BACK_GLYPH_SIZE}
+                color={theme.visual.accentText}
+              />
+              <Text style={styles.backText}>{t.sheet.back}</Text>
+            </AppPressable>
+          )}
           <AppPressable
-            testID="dmh-back"
-            style={styles.backButton}
-            onPress={goBack}
+            testID="dmh-close"
+            style={styles.closeButton}
+            onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel={t.sheet.backA11y}
+            accessibilityLabel={t.sheet.close}
           >
             <Ionicons
-              name="chevron-back-outline"
-              size={BACK_GLYPH_SIZE}
-              color={theme.visual.accentText}
+              name="close-outline"
+              size={CLOSE_GLYPH_SIZE}
+              color={theme.semanticColors.textStrong}
             />
-            <Text style={styles.backText}>{t.sheet.back}</Text>
           </AppPressable>
-        )}
-        <AppPressable
-          testID="dmh-close"
-          style={styles.closeButton}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel={t.sheet.close}
-        >
-          <Ionicons
-            name="close-outline"
-            size={CLOSE_GLYPH_SIZE}
-            color={theme.semanticColors.textStrong}
-          />
-        </AppPressable>
+        </View>
       </View>
 
       <Animated.View
         key={key}
+        style={styles.body}
         entering={FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
         exiting={FadeOut.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
       >
