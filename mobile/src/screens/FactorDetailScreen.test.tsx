@@ -1,10 +1,8 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import {
-  allowedScoresFor,
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
-  scoreTreeDensity,
   type BStratumCode,
   type DmhGroupCode,
   type IbpMethodVersion,
@@ -14,11 +12,7 @@ import { FACTOR_TITLES } from "../app/constants"
 import { fr } from "../i18n"
 import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
-import {
-  createDetailStyles,
-  HELP_LINK_MIN_HEIGHT,
-  SCORE_LINE_MIN_HEIGHT,
-} from "./factor-detail.styles"
+import { createDetailStyles, HELP_LINK_MIN_HEIGHT } from "./factor-detail.styles"
 
 const originalConsoleError = console.error
 
@@ -487,32 +481,22 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
     })
     return tree
   }
-  const scoreLine = (tree: renderer.ReactTestRenderer) =>
-    flat(
-      tree.root.findAll(
-        (n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line",
-      )[0].props.style,
-    )
-
   test("the input card is the glass card, padding 16 kept", () => {
     const card = renderPlain(null).root.findAllByType("AppCard" as unknown as React.ElementType)[0]
     expect(card.props.variant).toBe("glass")
     expect(card.props.padding).toBe(16)
   })
 
-  test("the pending score line is glass at the card radius and keeps its 52 pt", () => {
-    const style = scoreLine(renderPlain(null))
-    expect(style.backgroundColor).toBe(glass.cardFill)
-    expect(style.borderColor).toBe(glass.cardBorder)
-    expect(style.borderRadius).toBe(22)
-    expect(SCORE_LINE_MIN_HEIGHT).toBe(52)
-    expect(style.minHeight).toBe(52)
-  })
-
-  test("a scored factor keeps its soft green line", () => {
-    const style = scoreLine(renderPlain({ selected_class: "S2", score: 2 }))
-    expect(style.backgroundColor).toBe(defaultTheme.colors.successSoft)
-    expect(style.minHeight).toBe(52)
+  test("the page has no score line any more: the score is in the pager header (follow-up 32-26)", () => {
+    for (const retained of [null, { selected_class: "S2", score: 2 }]) {
+      const tree = renderPlain(retained)
+      expect(tree.root.findAll((n) => n.props.testID === "factor-score-line")).toHaveLength(0)
+      const texts = tree.root
+        .findAll((n) => (n.type as unknown) === "Text")
+        .map((n) => String(n.props.children))
+        .join("|")
+      expect(texts).not.toMatch(/Score du facteur|Classe|En attente/)
+    }
   })
 
   test("the help link keeps its 44 pt target", () => {
@@ -571,15 +555,7 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
   }
   const stripOf = (tree: renderer.ReactTestRenderer) =>
     tree.root.findByType("DoubtNoteStrip" as unknown as React.ElementType)
-  const scoreText = (tree: renderer.ReactTestRenderer) =>
-    JSON.stringify(
-      tree.root
-        .findAll((n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line")[0]
-        .findAll((n) => (n.type as unknown) === "Text")
-        .map((n) => n.props.children),
-    )
-
-  test("sits between the score line and the help link", () => {
+  test("sits right above the help link", () => {
     const tree = renderWith()
     const screen = tree.root
       .findByType(FactorDetailScreen)
@@ -593,12 +569,9 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
           ? "strip"
           : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
       )
-    const scoreIndex = names.indexOf("factor-score-line")
-    const helpIndex = names.indexOf(fr.factorDetail.helpLink)
     const stripIndex = names.indexOf("strip")
-    expect(scoreIndex).toBeGreaterThanOrEqual(0)
-    expect(stripIndex).toBe(scoreIndex + 1)
-    expect(helpIndex).toBe(stripIndex + 1)
+    expect(stripIndex).toBeGreaterThanOrEqual(0)
+    expect(names.indexOf(fr.factorDetail.helpLink)).toBe(stripIndex + 1)
   })
 
   test("hands the factor, its title, the doubt, the note and the callbacks to the strip", () => {
@@ -615,44 +588,6 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
     expect(strip.props.onChangeDoubt).toBe(callbacks.onChangeDoubt)
     expect(strip.props.onChangeNote).toBe(callbacks.onChangeNote)
     expect(strip.props.onCommitNote).toBe(callbacks.onCommitNote)
-  })
-
-  test("the score line reads the same with and without a doubt or a note (D-14)", () => {
-    const plain = scoreText(renderWith())
-    const doubtful = scoreText(renderWith({ doubt: true, note: "Un doute" }))
-    expect(doubtful).toBe(plain)
-    expect(plain).toContain(fr.factorDetail.pending)
-    const scored = { selected_class: "S2", score: 2 }
-    expect(scoreText(renderWith({ doubt: true }, scored))).toBe(scoreText(renderWith({}, scored)))
-  })
-})
-
-describe("FactorDetailScreen score line (follow-up 32-24)", () => {
-  test("the class is in the pager header, so the line holds its label and the points only", () => {
-    const line = (retained: { selected_class: string; score: number } | null) => {
-      let tree!: renderer.ReactTestRenderer
-      act(() => {
-        tree = renderer.create(
-          <FactorDetailScreen
-            factor="G"
-            fields={[field("open_flowering_percent")]}
-            retainedScore={retained as never}
-            methodVersion={IBP_METHOD_V3_2}
-            onOpenHelp={jest.fn()}
-            {...STRIP_PROPS}
-          />,
-        )
-      })
-      return tree.root
-        .find((n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line")
-        .findAll((n) => (n.type as unknown) === "Text")
-        .map((n) => String(n.props.children))
-    }
-    expect(line({ selected_class: "S5", score: 5 })).toEqual([
-      fr.factorDetail.scoreLabel,
-      fr.factorDetail.scorePoints({ scoreCount: 5 }),
-    ])
-    expect(line(null)).toEqual([fr.factorDetail.scoreHint, fr.factorDetail.pending])
   })
 })
 
@@ -796,13 +731,11 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
       dmh: () => byType("DmhCountFields"),
       chips: () => byType("FactorChipsInput"),
       fields: () => byType("AppField"),
-      // Follow-up 32-24: F's trees per hectare is a value block (a host View), never an input.
-      valueBlock: () => byType("View").filter((n) => n.props.testID === "trees-per-ha-value"),
-      note: () => byType("Text").filter((n) => n.props.testID === "trees-top-class-note"),
+      list: () => byType("DmhGroupList"),
+      // Follow-up 32-26: the card exists only when something is left in it.
+      card: () => byType("AppCard"),
     }
   }
-  const textsOf = (node: renderer.ReactTestInstance): string[] =>
-    node.findAll((n) => (n.type as unknown) === "Text").map((n) => String(n.props.children))
   const bFields = [
     field("strata_count", { value: "2", selection: { selected: null, onChange: jest.fn() } }),
   ]
@@ -842,14 +775,13 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
   })
 
   test("F counted in full gives the list the counting entry; the surface block sits above the list", () => {
-    const { dmh, fields, valueBlock, tree } = mount("F", fFields, {
+    const { dmh, fields, tree } = mount("F", fFields, {
       uncappedFactors: ["F"],
       uncappedEntry: entry,
       zoneSurfaceHa: 1.2,
     })
-    // The trees per hectare is derived from the counts and the surface: a value, not an input.
+    // The trees per hectare is derived from the counts and the surface: the list's sum line.
     expect(fields()).toHaveLength(0)
-    expect(valueBlock()).toHaveLength(1)
     const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
     expect(list.props.counting.counts).toBe(entry.state.dmhCounts)
     list.props.counting.onBump("dmh_13", 1)
@@ -865,14 +797,10 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     props.onChangeSurface("2")
     expect(entry.setFSurface).toHaveBeenCalledWith("2")
     const order = tree.root
-      .findAll(
-        (n) =>
-          ["DmhGroupList", "DmhCountFields"].includes(n.type as never) ||
-          ((n.type as unknown) === "View" && n.props.testID === "trees-per-ha-value"),
-      )
-      .map((n) => ((n.type as unknown) === "View" ? "ValueBlock" : (n.type as unknown as string)))
-    // The surface field sits with the density value in the card, above the list (A-C1).
-    expect(order).toEqual(["ValueBlock", "DmhCountFields", "DmhGroupList"])
+      .findAll((n) => ["DmhGroupList", "DmhCountFields"].includes(n.type as never))
+      .map((n) => n.type as unknown as string)
+    // The surface field sits in the card, above the list (A-C1).
+    expect(order).toEqual(["DmhCountFields", "DmhGroupList"])
   })
 
   test("F capped without a route entry keeps the tick-only list; with the entry it counts per hectare", () => {
@@ -897,76 +825,48 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2, 2)
   })
 
-  test("F with the group counters: the trees per hectare is a value, never an input, in both modes", () => {
+  test("F with the group counters: the trees per hectare is the list's sum line, never an input or a card, in both modes", () => {
     for (const uncappedFactors of [[], ["F"]] as FactorKey[][]) {
       const counted = mount("F", fFields, { uncappedFactors, uncappedEntry: entry })
       expect(counted.fields()).toHaveLength(0)
       expect(counted.tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
-      const block = counted.valueBlock()[0]
-      expect(block.props.accessible).toBe(true)
-      expect(block.props.accessibilityLabel).toBe("Arbres par hectare, 3")
-      expect(textsOf(block)).toEqual([fr.factorDetail.fieldLabels.trees_per_ha, "3"])
+      // The stored figure goes to the list as text, which draws the line.
+      expect(counted.list()[0].props.treesPerHaText).toBe("3")
       expect(
-        counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption").length,
-      ).toBeGreaterThan(0)
+        counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption"),
+      ).toHaveLength(0)
     }
-  })
-
-  test("capped F with nothing counted shows 0, read as a value; counted in full it says it is to compute", () => {
-    const emptyField = [
-      field("trees_per_ha", { value: "", selection: { selected: null, onChange: jest.fn() } }),
-    ]
-    const none = {
-      ...entry,
-      state: { ...entry.state, dmhCounts: {} as Partial<Record<DmhGroupCode, number>> },
-    }
-    const zero = mount("F", emptyField, { uncappedFactors: [], uncappedEntry: none })
-    expect(zero.fields()).toHaveLength(0)
-    expect(textsOf(zero.valueBlock()[0])).toContain("0")
-    expect(zero.valueBlock()[0].props.accessibilityLabel).toBe("Arbres par hectare, 0")
-    // Groups counted in full but no surface yet: no figure, and the page says so.
-    const pending = mount("F", emptyField, { uncappedFactors: ["F"], uncappedEntry: entry })
-    expect(pending.valueBlock()[0].props.accessibilityLabel).toBe(
-      `Arbres par hectare, ${fr.factorDetail.dmhList.treesPerHaPending}`,
+    // Capped: nothing is left for the input card, so there is no empty glass card; counted in full
+    // the card keeps the caption and the surface field.
+    expect(mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry }).card()).toHaveLength(
+      0,
     )
-    // A typed number kept by an older survey is shown as it is until a counter replaces it.
-    const kept = mount("F", fFields, { uncappedFactors: [], uncappedEntry: none })
-    expect(kept.valueBlock()[0].props.accessibilityLabel).toBe("Arbres par hectare, 3")
+    expect(
+      mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry }).card(),
+    ).toHaveLength(1)
   })
 
-  test("without the counting entry the field stays a typed input", () => {
+  test("without the counting entry the field stays a typed input, in its card, with no sum line", () => {
     const plain = mount("F", fFields, {})
     expect(plain.fields()).toHaveLength(1)
-    expect(plain.valueBlock()).toHaveLength(0)
-    expect(plain.note()).toHaveLength(0)
+    expect(plain.card()).toHaveLength(1)
+    expect(plain.list()[0].props.topScoreReached).toBe(false)
   })
 
-  test("F: the top-class note shows once the evaluation retains the highest class, both modes", () => {
+  test("F: the list is told when the evaluation retains the top score, both modes, and only for F", () => {
     const top = { selected_class: "S5", score: 5 } as never
     const low = { selected_class: "S2", score: 2 } as never
     for (const uncappedFactors of [[], ["F"]] as FactorKey[][]) {
-      const shown = mount("F", fFields, {
-        uncappedFactors,
-        uncappedEntry: entry,
-        retainedScore: top,
-      })
-      expect(shown.note()).toHaveLength(1)
-      expect(textsOf(shown.note()[0])).toEqual([fr.factorDetail.dmhList.topClassNote])
-      expect(
-        mount("F", fFields, { uncappedFactors, uncappedEntry: entry, retainedScore: low }).note(),
-      ).toHaveLength(0)
-      expect(mount("F", fFields, { uncappedFactors, uncappedEntry: entry }).note()).toHaveLength(0)
+      const reached = (retainedScore: never | null) =>
+        mount("F", fFields, { uncappedFactors, uncappedEntry: entry, retainedScore }).list()[0]
+          .props.topScoreReached
+      expect(reached(top)).toBe(true)
+      expect(reached(low)).toBe(false)
+      expect(reached(null)).toBe(false)
     }
-    // Only F carries the note.
     expect(
-      mount("G", [field("open_flowering_percent")], { retainedScore: top }).note(),
+      mount("G", [field("open_flowering_percent")], { retainedScore: top }).list(),
     ).toHaveLength(0)
-  })
-
-  test("the note's 8 is the package's threshold for the highest class", () => {
-    expect(fr.factorDetail.dmhList.topClassNote).toContain(" 8 arbres par hectare")
-    expect(scoreTreeDensity(8)).toBe(Math.max(...allowedScoresFor("F")))
-    expect(scoreTreeDensity(7.99)).toBeLessThan(scoreTreeDensity(8))
   })
 
   test("the other factors get no detail block, whatever the route says", () => {

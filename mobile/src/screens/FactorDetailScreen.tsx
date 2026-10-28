@@ -9,14 +9,8 @@ import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
-import {
-  CountingModeCaption,
-  DerivedFromGroupsCaption,
-  FromRouteCaption,
-  TopClassNote,
-} from "./factor-detail/CountingModeStrip"
+import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
-import { anyDmhCount } from "./factor-detail/no-dmh-group"
 import {
   fieldVariantsFor,
   hasDmhListCompanion,
@@ -38,8 +32,8 @@ const t = fr.factorDetail
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
 const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
 const NO_FACTORS: readonly FactorKey[] = []
-// F's highest class, read from the package's allowed scores so no second copy of its threshold lives
-// here: the note under the trees per hectare shows once the evaluation retains that class.
+// F's highest score, read from the package's allowed scores so no second copy of its threshold lives
+// here: the note under the sum of the trees per hectare shows once the evaluation retains it.
 const TOP_F_SCORE = Math.max(...allowedScoresFor("F"))
 
 type FactorDetailScreenProps = {
@@ -72,10 +66,10 @@ type FactorDetailScreenProps = {
 }
 
 /**
- * One factor's entry (OA-30): the input first, then the factor's score on one line, then a link to
- * the help. The factor's name and the running total are in the pager's header, not here. Factor A
+ * One factor's entry (OA-30): the input first, then a link to the help. The factor's name, its score
+ * and the running total are in the pager's header, not here (follow-up 32-26). Factor A
  * opens with the photo identification (OA-31). Phase 27 (D-16): the flat doubt and note strip sits
- * between the score line and the help link; it never changes the score line. Phase 30 (D-07): a
+ * above the help link; it never changes the score. Phase 30 (D-07): a
  * factor counted in full opens with its one-line caption, and the surface field of C, D and E starts
  * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
  * B counted in full swaps its strata chips for a cover per stratum. Phase 32 (D-08): F shows the
@@ -85,8 +79,8 @@ type FactorDetailScreenProps = {
  * the list (the detail values are kept, never deleted, when the factor goes back to the capped
  * entry, U-O10). Follow-up of phase 32 (owner decision 2026-10-28): in the capped mode the list
  * counts too, 0 to 2 trees per hectare per group, and their sum is the trees per hectare. Follow-up
- * 32-24: that figure is always a read-only value (both modes), with a note under it once F's
- * highest class is retained, and the factor's class is in the pager's header, not on the score line.
+ * 32-26: that sum is a plain line of the list (both modes), with a note under it once F's top
+ * score is retained, so the page has no input card at all in the capped mode: it is the list alone.
  */
 export function FactorDetailScreen({
   factor,
@@ -114,12 +108,11 @@ export function FactorDetailScreen({
   const countedInFull = uncappedFactors.includes(factor)
   const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
   // Follow-up of phase 32: F in the capped mode has one counter per group (trees per hectare, at
-  // most 2). Follow-up 32-24: with the group counters on the page (either mode) the trees per
-  // hectare is only ever their derived figure, a value and not an input.
+  // most 2). Follow-up 32-26: with the group counters on the page (either mode) the trees per
+  // hectare is only ever their sum, a line of the list and not an input.
   const cappedEntry = factor === "F" && !countedInFull ? uncappedEntry : undefined
   const groupEntry = detailEntry ?? cappedEntry
-  const anyGroupCounted = anyDmhCount(groupEntry?.state.dmhCounts)
-  const topClassReached = factor === "F" && retainedScore?.score === TOP_F_SCORE
+  const topScoreReached = factor === "F" && retainedScore?.score === TOP_F_SCORE
   // Found by its place (the numeric variant), not by its label: the form hands the French label
   // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).
   const surfaceIndex = SURFACE_FACTORS.includes(factor)
@@ -136,87 +129,60 @@ export function FactorDetailScreen({
     enabled: surfaceField !== undefined,
   })
 
+  const fieldNodes = fields.map((field, index) => {
+    const block = detailEntry ? (
+      <UncappedFieldBlock
+        key={`${factor}-${field.label}-uncapped`}
+        factor={factor}
+        field={field}
+        methodVersion={methodVersion}
+        entry={detailEntry}
+        zoneSurfaceHa={zoneSurfaceHa}
+      />
+    ) : null
+    // B: the cover per stratum replaces the strata chips.
+    if (block !== null && factor === "B") return block
+    // F with the group counters: the trees per hectare is the list's sum line, not a field here.
+    if (groupEntry !== undefined && hasDmhListCompanion(variants[index])) return block
+    const input = renderFactorField(factor, variants[index], field, methodVersion, detailStyles)
+    if (block !== null) {
+      return (
+        <Fragment key={`${factor}-${field.label}-detail`}>
+          {input}
+          {block}
+        </Fragment>
+      )
+    }
+    return fromRoute && field === surfaceField ? (
+      <Fragment key={`${factor}-${field.label}-from-route`}>
+        {input}
+        <FromRouteCaption />
+      </Fragment>
+    ) : (
+      input
+    )
+  })
+  // Capped F has nothing left for the card (the list holds it all): no empty glass card.
+  const showPanel = countedInFull || genusListField !== null || fieldNodes.some((node) => node)
+
   return (
     <View style={detailStyles.screen}>
-      <AppCard variant="glass" padding={16} style={detailStyles.panel}>
-        {countedInFull ? <CountingModeCaption factor={factor} /> : null}
-        {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
-        <View style={detailStyles.fieldsList}>
-          {fields.map((field, index) => {
-            const block = detailEntry ? (
-              <UncappedFieldBlock
-                key={`${factor}-${field.label}-uncapped`}
-                factor={factor}
-                field={field}
-                methodVersion={methodVersion}
-                entry={detailEntry}
-                zoneSurfaceHa={zoneSurfaceHa}
-              />
-            ) : null
-            // B: the cover per stratum replaces the strata chips.
-            if (block !== null && factor === "B") return block
-            const derivedTrees = groupEntry !== undefined && hasDmhListCompanion(variants[index])
-            const input = renderFactorField(
-              factor,
-              variants[index],
-              field,
-              methodVersion,
-              detailStyles,
-              {
-                readOnly: derivedTrees,
-                readOnlyEmpty: anyGroupCounted ? t.dmhList.treesPerHaPending : "0",
-              },
-            )
-            if (derivedTrees) {
-              return (
-                <Fragment key={`${factor}-${field.label}-derived`}>
-                  {input}
-                  <DerivedFromGroupsCaption />
-                  {topClassReached ? <TopClassNote /> : null}
-                  {block}
-                </Fragment>
-              )
-            }
-            if (block !== null) {
-              return (
-                <Fragment key={`${factor}-${field.label}-detail`}>
-                  {input}
-                  {block}
-                </Fragment>
-              )
-            }
-            return fromRoute && field === surfaceField ? (
-              <Fragment key={`${factor}-${field.label}-from-route`}>
-                {input}
-                <FromRouteCaption />
-              </Fragment>
-            ) : (
-              input
-            )
-          })}
-        </View>
-      </AppCard>
+      {showPanel ? (
+        <AppCard variant="glass" padding={16} style={detailStyles.panel}>
+          {countedInFull ? <CountingModeCaption factor={factor} /> : null}
+          {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
+          <View style={detailStyles.fieldsList}>{fieldNodes}</View>
+        </AppCard>
+      ) : null}
 
       {dmhListField
         ? renderDmhGroupList(dmhListField, methodVersion, {
             uncappedEntry: detailEntry,
             cappedEntry,
             onOpenDmhGuide,
+            topScoreReached,
           })
         : null}
-
-      <View
-        testID="factor-score-line"
-        style={[
-          detailStyles.scoreLine,
-          retainedScore ? detailStyles.scoreLineFilled : detailStyles.scoreLinePending,
-        ]}
-      >
-        <Text style={detailStyles.scoreLineText}>{retainedScore ? t.scoreLabel : t.scoreHint}</Text>
-        <Text style={detailStyles.scoreLinePoints}>
-          {retainedScore ? t.scorePoints({ scoreCount: retainedScore.score }) : t.pending}
-        </Text>
-      </View>
 
       <DoubtNoteStrip
         factor={factor}

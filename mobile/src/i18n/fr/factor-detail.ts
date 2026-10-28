@@ -2,11 +2,6 @@
 export const factorDetailFr = {
   fieldsProgress: ({ filledCount, totalCount }: { filledCount: number; totalCount: number }) =>
     `${filledCount}/${totalCount} champs`,
-  scorePoints: ({ scoreCount }: { scoreCount: number }) => `${scoreCount} pts`,
-  // The factor's class is in the pager header (follow-up 32-24); the line keeps the label of its points.
-  scoreLabel: "Score du facteur",
-  pending: "En attente",
-  scoreHint: "Remplissez tous les champs obligatoires pour calculer le score",
   requiredField: ({ label }: { label: string }) => `${label} *`,
   numericPlaceholder: "Saisissez une valeur numérique",
   // OA-30: the help is behind a link, not a card open by default; the sheet closes with its button.
@@ -15,8 +10,8 @@ export const factorDetailFr = {
   helpClose: "Fermer l'aide",
   // Phase 25.1 (D-12): labels of the optional detail lists that sit next to a scored value.
   companionLabels: {
-    dmh_groups: "Groupes de dendromicrohabitats observés (facultatif)",
-    evidence: "Sources de la continuité (facultatif)",
+    dmh_groups: "Groupes de dendromicrohabitats observés",
+    evidence: "Sources de la continuité",
   },
   // Keyed by the factor field label the form passes in (see useSurveyForm).
   fieldLabels: {
@@ -121,16 +116,19 @@ export const factorDetailFr = {
     // Follow-up of phase 32 (owner decision 2026-10-28): in the capped survey mode a group holds a
     // whole number of trees per hectare, 0 to 2, and the total is the sum of the groups.
     treesCaptionPerHa: "Arbres par hectare",
-    cappedHelper: "Comptez au plus 2 arbres par hectare pour chaque groupe.",
-    // Under the trees-per-hectare field, which is always derived and never typed (follow-up 32-24).
-    derivedFromGroups: "Calculé d'après les groupes ci-dessous.",
-    // The read-only value stands in for the field while the groups give no figure yet (counted in
-    // full without a surface), and its spoken form reads "label, value".
+    // The sum of the groups is the figure of the sum line below it (follow-up 32-26).
+    cappedHelper:
+      "Comptez au plus 2 arbres par hectare pour chaque groupe : la somme donne le total.",
+    // The sum line of the counting modes (follow-up 32-26): a plain line, not a field. It shows
+    // "À calculer" while the groups give no figure yet (counted in full without a surface), and its
+    // spoken form reads "label, value".
+    sumLabel: "Arbres par hectare :",
     treesPerHaPending: "À calculer",
     treesPerHaA11y: ({ value }: { value: string }) => `Arbres par hectare, ${value}`,
-    // Under the field once the class is the highest: the 8 is pinned to the package by a test.
-    topClassNote:
-      "À partir de 8 arbres par hectare, la classe est 5. Inutile de compter davantage.",
+    // Beside the sum once the evaluation retains F's top score; the toast that announces it is the
+    // pager's (`fr.factorPager.maxScoreToast`).
+    topScoreTrace: "maximum",
+    topScoreHint: "Score maximal atteint",
     lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
     // Follow-up 32-25: the row above the sections that records "no group observed" (0 per hectare).
     none: {

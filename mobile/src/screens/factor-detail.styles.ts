@@ -8,14 +8,14 @@ import {
 } from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
-// Field sizes (D-05): the score line and the help link keep their heights.
-export const SCORE_LINE_MIN_HEIGHT = 52
+// Field sizes (D-05): the help link keeps its height.
 export const HELP_LINK_MIN_HEIGHT = 44
 
 /**
- * OA-30: the factor screen is the input first. No hero, the score on one line, the help behind a
- * link. Phase 12.2 (variant I): the input card (AppCard `glass`), the pending score line and the
- * help hints are glass without blur (D-12) at the card radius, block gaps on the 4-grid. The input
+ * OA-30: the factor screen is the input first. No hero, the help behind a link; the factor's score
+ * is in the pager's header (follow-up 32-26). Phase 12.2 (variant I): the input card (AppCard
+ * `glass`) and the help hints are glass without blur (D-12) at the card radius, block gaps on the
+ * 4-grid. The input
  * chrome (`fieldBlock`, `fieldLabel`, `input`) keeps its legacy roles (UI-SPEC Typography exception).
  */
 export function createDetailStyles(theme: BrandTheme) {
@@ -25,35 +25,6 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     panel: {
       gap: brandSpacing4.smd,
-    },
-    scoreLine: {
-      minHeight: SCORE_LINE_MIN_HEIGHT,
-      borderRadius: brandRadius.card,
-      borderWidth: 1,
-      paddingHorizontal: brandSpacing4.md,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: brandSpacing4.smd,
-    },
-    // A scored factor keeps its soft green (the state reads at a glance); the hairline melts in.
-    scoreLineFilled: {
-      backgroundColor: theme.colors.successSoft,
-      borderColor: theme.colors.successSoft,
-    },
-    scoreLinePending: {
-      backgroundColor: theme.visual.glass.cardFill,
-      borderColor: theme.visual.glass.cardBorder,
-    },
-    scoreLineText: {
-      flex: 1,
-      ...brandTypography.sectionBody,
-      color: theme.colors.textPrimary,
-    },
-    scoreLinePoints: {
-      ...brandTypography.sectionTitle,
-      fontSize: brandTypeScale.headline.fontSize,
-      color: theme.semanticColors.textStrong,
     },
     helpLink: {
       minHeight: HELP_LINK_MIN_HEIGHT,

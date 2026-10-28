@@ -21,7 +21,6 @@ import { FactorSegmentedInput } from "../../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../../ui/FactorSliderInput"
 import { fr } from "../../i18n"
 import { DmhGroupList } from "./DmhGroupList"
-import { ReadOnlyValueField } from "./ReadOnlyValueField"
 import type { UncappedEntryProps } from "./UncappedFieldBlock"
 
 const t = fr.factorDetail
@@ -125,6 +124,8 @@ export type FactorFieldExtras = {
   cappedEntry?: UncappedEntryProps
   /** Phase 32 (D-04): opens the guide on the catalogue (no argument) or on one group. */
   onOpenDmhGuide?: (group: DmhGroupCode) => void
+  /** Follow-up 32-26: the evaluation retains F's top score, the sum line says no need to count more. */
+  topScoreReached?: boolean
 }
 
 /** True when the variant's companion is F's group list, which the screen draws after its card. */
@@ -148,6 +149,7 @@ export function renderDmhGroupList(
       key={`F-${field.label}-companion`}
       methodVersion={methodVersion}
       treesPerHaText={field.value}
+      topScoreReached={extras.topScoreReached === true}
       selected={field.selection?.selected ?? null}
       onChangeSelection={field.selection?.onChange ?? ignoreSelectionChange}
       counting={
@@ -181,12 +183,6 @@ export function renderFactorField(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   detailStyles: ReturnType<typeof createDetailStyles>,
-  /**
-   * `readOnly`: F's trees per hectare, which the group counters derive and nobody types (follow-up
-   * 32-24): a value block instead of an input. `readOnlyEmpty` is shown while the field holds no
-   * figure yet.
-   */
-  options?: { readOnly?: boolean; readOnlyEmpty?: string },
 ) {
   const current: FieldVariant = variant ?? { kind: "numeric" }
   const label = field.required
@@ -269,21 +265,6 @@ export function renderFactorField(
       )
     case "numeric":
     default:
-      if (options?.readOnly === true) {
-        const shown = field.value.trim() === "" ? (options.readOnlyEmpty ?? "") : field.value
-        return withCompanion(
-          <ReadOnlyValueField
-            key={key}
-            label={humanizeFieldLabel(field.label)}
-            value={shown}
-            accessibilityLabel={t.dmhList.treesPerHaA11y({ value: shown })}
-            error={field.touched ? field.error : null}
-            containerStyle={detailStyles.fieldBlock}
-            labelStyle={detailStyles.fieldLabel}
-            testID="trees-per-ha-value"
-          />,
-        )
-      }
       return withCompanion(
         <AppField
           key={key}

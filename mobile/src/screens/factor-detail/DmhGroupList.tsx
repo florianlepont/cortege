@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { View } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 import { DMH_GROUP_CODES, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { orderDmhRows } from "../../app/dmh-guide/order"
 import { selectionLabel, withSelectionToggled } from "../../app/factor-selections"
@@ -16,6 +17,8 @@ import { DmhNoneRow } from "./DmhNoneRow"
 import { anyDmhCount, isNoDmhGroup } from "./no-dmh-group"
 
 const t = fr.factorDetail.dmhList
+
+const TRACE_GLYPH_SIZE = 16
 
 /**
  * The counting rows (D-10): the whole trees per group, and the two ways to change them. Counted in
@@ -36,8 +39,13 @@ export type DmhListCounting = {
 
 type DmhGroupListProps = {
   methodVersion: IbpMethodVersion | null
-  /** F's stored trees per hectare as text: the "no tree carries one" row reads it (32-25). */
+  /**
+   * F's stored trees per hectare as text: the sum line shows it (follow-up 32-26) and the "no tree
+   * carries one" row reads it (32-25).
+   */
   treesPerHaText: string
+  /** The evaluation retains F's highest score: a quiet "maximum" stays beside the sum (the toast is the pager's). */
+  topScoreReached?: boolean
   /** The stored group selection of factor F (null when the survey has none). */
   selected: readonly string[] | null
   onChangeSelection: (next: string[]) => void
@@ -58,12 +66,15 @@ const KNOWN_CODES: ReadonlySet<string> = new Set(DMH_GROUP_CODES)
  * card (A-C1): one container level, as in an iOS inset grouped list. The order and the open sections are computed once, when the list mounts (D-08 levers
  * b and c): ticking, counting or unticking never moves a row or a section, so a thumb never meets
  * a row that has jumped (research pitfall 5). The info buttons stay active when the list is
- * read-only. With the counters on the page, one row sits above the first section: "no tree carries
- * a dendromicrohabitat" (follow-up 32-25), the way to record 0 without touching a counter.
+ * read-only. With the counters on the page the list reads as one grouped page (follow-up 32-26):
+ * the sum line "Arbres par hectare" under the helper, with a quiet "maximum" once the top score is reached,
+ * then the sections, then one last row in its own container: "no tree carries a dendromicrohabitat"
+ * (follow-up 32-25), the way to record 0 without touching a counter.
  */
 export function DmhGroupList({
   methodVersion,
   treesPerHaText,
+  topScoreReached = false,
   selected,
   onChangeSelection,
   counting,
@@ -106,6 +117,16 @@ export function DmhGroupList({
         ? t.summaryFull({ groups: tickedSet.size, trees })
         : t.summaryCapped({ groups: tickedSet.size })
 
+  // The sum is read from the stored figure, so an older typed number shows until a counter replaces
+  // it; with nothing stored it is 0, or "À calculer" once a count exists but no figure can be derived
+  // (counted in full without a surface).
+  const treesShown =
+    treesPerHaText.trim() === ""
+      ? anyDmhCount(counts)
+        ? t.treesPerHaPending
+        : "0"
+      : treesPerHaText
+
   // One helper line: the cap sentence of the counting modes, then where the guide is.
   const helper = perHectare
     ? [t.cappedHelper, t.infoHelper].join(" ")
@@ -122,22 +143,37 @@ export function DmhGroupList({
             : fr.factorDetail.companionLabels.dmh_groups}
         </Text>
         <Text style={styles.helper}>{helper}</Text>
+        {full ? (
+          // Follow-up 32-26: the figure is only the sum of the counted trees, so it is a plain line
+          // of the page and not a field: the label and its value side by side, nothing to focus.
+          // At the top score a quiet "maximum" stays beside it once the toast is gone.
+          <View
+            style={styles.sumLine}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={t.treesPerHaA11y({ value: treesShown })}
+            accessibilityHint={topScoreReached ? t.topScoreHint : undefined}
+            testID="trees-per-ha-value"
+          >
+            <Text style={styles.sumLabel}>{t.sumLabel}</Text>
+            <Text style={styles.sumValue}>{treesShown}</Text>
+            {topScoreReached ? (
+              <View style={styles.sumTrace} testID="trees-top-score-trace">
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={TRACE_GLYPH_SIZE}
+                  color={theme.colors.textSecondary}
+                />
+                <Text style={styles.sumTraceText}>{t.topScoreTrace}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
         <Text style={styles.summary} testID="dmh-summary">
           {summary}
         </Text>
       </View>
       <View style={styles.sections}>
-        {full ? (
-          <AppGroupedContainer dividerInset={DMH_LABEL_INSET}>
-            <DmhNoneRow
-              chosen={isNoDmhGroup({ treesPerHaText, selected, counts })}
-              locked={anyDmhCount(counts)}
-              editable={editable}
-              onChange={onMarkNone}
-              styles={styles}
-            />
-          </AppGroupedContainer>
-        ) : null}
         {sections.map((section) => {
           const total = section.codes.length
           const tickedHere = section.codes.filter((code) => tickedSet.has(code)).length
@@ -178,6 +214,18 @@ export function DmhGroupList({
             </AppCollapsibleSection>
           )
         })}
+        {full ? (
+          // The way to record 0 closes the list (owner, 2026-10-29), in its own grouped container.
+          <AppGroupedContainer dividerInset={DMH_LABEL_INSET}>
+            <DmhNoneRow
+              chosen={isNoDmhGroup({ treesPerHaText, selected, counts })}
+              locked={anyDmhCount(counts)}
+              editable={editable}
+              onChange={onMarkNone}
+              styles={styles}
+            />
+          </AppGroupedContainer>
+        ) : null}
       </View>
     </View>
   )

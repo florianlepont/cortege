@@ -44,6 +44,35 @@ export function createDmhListStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
+    // The sum line of the counting modes: the label and its figure hugging each other, left
+    // aligned, no box (a figure at the far right would read as detached from its label).
+    sumLine: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      columnGap: brandSpacing4.sm,
+      paddingTop: brandSpacing4.sm,
+    },
+    sumLabel: {
+      ...brandTypeScale.headline,
+      color: theme.colors.textPrimary,
+    },
+    sumValue: {
+      ...brandTypeScale.headline,
+      fontFamily: brandTypography.screenTitle.fontFamily,
+      fontVariant: ["tabular-nums"],
+      color: theme.colors.textPrimary,
+    },
+    // The quiet trace of the top score: a check and the word, in the secondary ink.
+    sumTrace: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.xs,
+    },
+    sumTraceText: {
+      ...brandTypeScale.footnote,
+      color: theme.colors.textSecondary,
+    },
     sections: {
       gap: brandSpacing4.md,
     },

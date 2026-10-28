@@ -114,6 +114,14 @@ function counting(counts: DmhListCounting["counts"] = {}) {
   } satisfies DmhListCounting
 }
 
+type Style = Record<string, unknown>
+const flat = (style: unknown): Style =>
+  Array.isArray(style)
+    ? style.reduce<Style>((acc, item) => ({ ...acc, ...flat(item) }), {})
+    : typeof style === "function"
+      ? flat(style({ pressed: false }))
+      : ((style as Style | null | undefined) ?? {})
+
 const FORM_ORDER = [
   "cavities",
   "wounds",
@@ -191,14 +199,6 @@ describe("DmhGroupList, structure", () => {
 })
 
 describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", () => {
-  type Style = Record<string, unknown>
-  const flat = (style: unknown): Style =>
-    Array.isArray(style)
-      ? style.reduce<Style>((acc, item) => ({ ...acc, ...flat(item) }), {})
-      : typeof style === "function"
-        ? flat(style({ pressed: false }))
-        : ((style as Style | null | undefined) ?? {})
-
   test("draws no card of its own: no AppCard, no bordered box around a section", () => {
     const { tree, open } = mount({ selected: ["dmh_01"] })
     open("cavities")
@@ -247,8 +247,91 @@ describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", 
         flat(n.props.style).gap === 4,
     )
     const texts = block.findAll((n) => (n.type as unknown) === "Text").map((n) => n.props.testID)
-    expect(texts).toEqual([undefined, undefined, "dmh-summary"])
+    // Heading, helper, the sum line's label and figure, then the meta summary.
+    expect(texts).toEqual([undefined, undefined, undefined, undefined, "dmh-summary"])
     expect(flat(one("dmh-summary").props.style).fontSize).toBe(12)
+  })
+
+  test("without the counters there is no sum line and no note", () => {
+    const { all, tree } = mount({ topScoreReached: true })
+    expect(all("trees-per-ha-value")).toHaveLength(0)
+    expect(all("trees-top-score-note")).toHaveLength(0)
+    const block = tree.root.find(
+      (n) =>
+        (n.type as unknown) === "View" &&
+        n.findAll((m) => m.props.testID === "dmh-summary").length > 0 &&
+        flat(n.props.style).gap === 4,
+    )
+    expect(block.findAll((n) => (n.type as unknown) === "Text")).toHaveLength(3)
+  })
+})
+
+describe("DmhGroupList, the sum line (follow-up 32-26)", () => {
+  test("the companion labels carry no '(facultatif)'", () => {
+    expect(JSON.stringify(fr.factorDetail.companionLabels)).not.toMatch(/facultatif/i)
+    expect(fr.factorDetail.companionLabels.dmh_groups).toBe(
+      "Groupes de dendromicrohabitats observés",
+    )
+  })
+
+  const sum = (m: ReturnType<typeof mount>) => m.one("trees-per-ha-value")
+
+  test("a plain line, not a field: label and figure, no box, no input, spoken as one text", () => {
+    const m = mount({ counting: counting(), treesPerHaText: "6" })
+    const line = sum(m)
+    expect(line.props.accessible).toBe(true)
+    expect(line.props.accessibilityRole).toBe("text")
+    expect(line.props.accessibilityLabel).toBe(t.treesPerHaA11y({ value: "6" }))
+    expect(line.props.accessibilityLabel).toBe("Arbres par hectare, 6")
+    expect(m.textOf(line)).toBe("Arbres par hectare :6")
+    const style = flat(line.props.style)
+    expect(style.flexDirection).toBe("row")
+    for (const key of ["backgroundColor", "borderWidth", "borderRadius", "minHeight"]) {
+      expect(style[key]).toBeUndefined()
+    }
+    const figure = line.findAll((n) => (n.type as unknown) === "Text")[1]
+    expect(flat(figure.props.style).fontVariant).toEqual(["tabular-nums"])
+    expect(m.tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
+  })
+
+  test("empty figure: 0 while nothing is counted, 'À calculer' once a count has no figure", () => {
+    expect(m0().textOf(sum(m0()))).toContain("0")
+    function m0() {
+      return mount({ counting: counting(), treesPerHaText: "" })
+    }
+    const pending = mount({ counting: counting({ dmh_01: 2 }), treesPerHaText: "" })
+    expect(pending.one("trees-per-ha-value").props.accessibilityLabel).toBe(
+      `Arbres par hectare, ${t.treesPerHaPending}`,
+    )
+  })
+
+  test("the label and its figure sit side by side, left aligned, not apart", () => {
+    const m = mount({ counting: counting(), treesPerHaText: "9" })
+    const style = flat(m.one("trees-per-ha-value").props.style)
+    expect(style.flexDirection).toBe("row")
+    expect(style.justifyContent).toBeUndefined()
+    expect(style.alignItems).toBe("baseline")
+  })
+
+  test("a quiet 'maximum' trace sits beside the sum only at the top score, in both modes", () => {
+    for (const max of [undefined, 2]) {
+      const top = mount({
+        counting: { ...counting({ dmh_01: 2 }), max },
+        treesPerHaText: "8",
+        topScoreReached: true,
+      })
+      const trace = top.one("trees-top-score-trace")
+      expect(top.textOf(trace)).toBe(t.topScoreTrace)
+      expect(top.one("trees-per-ha-value").props.accessibilityHint).toBe(t.topScoreHint)
+      const below = mount({ counting: { ...counting({ dmh_01: 2 }), max }, treesPerHaText: "7" })
+      expect(below.all("trees-top-score-trace")).toHaveLength(0)
+      expect(below.one("trees-per-ha-value").props.accessibilityHint).toBeUndefined()
+    }
+  })
+
+  test("no note block is left in the page flow", () => {
+    const m = mount({ counting: counting(), treesPerHaText: "9", topScoreReached: true })
+    expect(m.all("trees-top-score-note")).toHaveLength(0)
   })
 })
 
@@ -421,7 +504,7 @@ describe("DmhGroupList, the row 'no tree carries a dendromicrohabitat' (follow-u
   // The checked state of the row, read from the circle the screen draws: the checkbox says it.
   const checked = (node: Node): boolean => node.props.accessibilityState.checked
 
-  test("is the first thing of the list, above the first section, with the catalogue label", () => {
+  test("is the last thing of the list, after the last section, with the catalogue label", () => {
     const { tree, one, textOf } = mount({ counting: counting() })
     const row = one("dmh-none-row")
     expect(row.props.accessibilityRole).toBe("checkbox")
@@ -432,10 +515,10 @@ describe("DmhGroupList, the row 'no tree carries a dendromicrohabitat' (follow-u
       .findAll(
         (n) =>
           typeof n.type === "string" &&
-          (n.props.testID === "dmh-none-row" || n.props.testID === "dmh-section-cavities"),
+          (n.props.testID === "dmh-none-row" || n.props.testID === "dmh-section-exudates"),
       )
       .map((n) => n.props.testID)
-    expect(order).toEqual(["dmh-none-row", "dmh-section-cavities"])
+    expect(order).toEqual(["dmh-section-exudates", "dmh-none-row"])
   })
 
   test("is not on the page when the counters are not (no counting entry wired)", () => {

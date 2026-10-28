@@ -69,32 +69,6 @@ export function FromRouteCaption() {
   )
 }
 
-/**
- * Follow-up of phase 32 (and 32-24): the line under F's trees-per-hectare field. The field is always
- * the figure the group counters give and cannot be typed.
- */
-export function DerivedFromGroupsCaption() {
-  const styles = useStyles()
-  return (
-    <Text style={styles.fromRoute} testID="trees-derived-caption">
-      {fr.factorDetail.dmhList.derivedFromGroups}
-    </Text>
-  )
-}
-
-/**
- * Follow-up 32-24: under F's trees-per-hectare field once the evaluation retains the highest class,
- * so the observer sees why the score stopped rising. The page decides when to show it.
- */
-export function TopClassNote() {
-  const styles = useStyles()
-  return (
-    <Text style={styles.fromRoute} testID="trees-top-class-note">
-      {fr.factorDetail.dmhList.topClassNote}
-    </Text>
-  )
-}
-
 function useStyles() {
   const theme = useBrandTheme()
   return useMemo(() => createStyles(theme), [theme])
