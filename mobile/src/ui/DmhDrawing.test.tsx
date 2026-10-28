@@ -42,10 +42,12 @@ const FIXTURE: DmhDrawingData = {
   ],
 }
 
-function render(drawing: DmhDrawingData | null, label = "Un dessin") {
+function render(drawing: DmhDrawingData | null, label = "Un dessin", maxHeight?: number) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<DmhDrawing drawing={drawing} accessibilityLabel={label} />)
+    tree = renderer.create(
+      <DmhDrawing drawing={drawing} accessibilityLabel={label} maxHeight={maxHeight} />,
+    )
   })
   return tree!
 }
@@ -79,11 +81,16 @@ describe("DmhDrawing", () => {
 
   test("the drawing inside the plate is 4:3 and at most 200 pt tall", () => {
     const [, frame] = byType(render(FIXTURE), "View")
-    expect(frame.props.style).toMatchObject({
+    expect(Object.assign({}, ...[frame.props.style].flat())).toMatchObject({
       width: "100%",
       aspectRatio: 800 / 600,
       maxHeight: 200,
     })
+  })
+
+  test("a maxHeight prop lowers the cap of the drawing (the hero plate of the group page)", () => {
+    const [, frame] = byType(render(FIXTURE, "Un dessin", 136), "View")
+    expect(Object.assign({}, ...[frame.props.style].flat())).toMatchObject({ maxHeight: 136 })
   })
 
   test("the Svg keeps the frame and hides its strokes from assistive tech", () => {

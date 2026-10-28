@@ -37,6 +37,10 @@ type AppGroupedListNavRow = {
   labelLines?: number
   /** Phase 32: a second line under the label (13/18, secondary ink), e.g. a guide entry's caption. */
   subtitle?: string
+  /** Phase 32: the label in the medium 15/21 body face (a choice list) instead of 16 SemiBold. */
+  medium?: boolean
+  /** Phase 32: a taller row than the default 48 (a 56 pt target for a list of choices). */
+  minHeight?: number
   testID?: string
 }
 
@@ -103,7 +107,11 @@ export function AppGroupedList({ sections }: AppGroupedListProps) {
     <View style={styles.list}>
       {sections.map((section) => (
         <View key={section.key} style={styles.section}>
-          {section.title ? <Text style={styles.sectionTitle}>{section.title}</Text> : null}
+          {section.title ? (
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              {section.title}
+            </Text>
+          ) : null}
           <AppGroupedContainer
             dividerInset={(index) =>
               hasIcon(section.rows[index]) ? ICON_DIVIDER_INSET : DEFAULT_DIVIDER_INSET
@@ -186,6 +194,7 @@ function NavRow({
   const isInteractive = Boolean(row.onPress) && !row.disabled && !row.loading
   const labelStyle = [
     styles.label,
+    row.medium ? styles.labelMedium : null,
     row.destructive ? styles.labelDestructive : null,
     row.centered ? styles.labelCentered : null,
     row.valueLines ? styles.valueFixed : null,
@@ -199,6 +208,7 @@ function NavRow({
       style={({ pressed }) => [
         styles.row,
         row.centered ? styles.rowCentered : null,
+        row.minHeight ? { minHeight: row.minHeight } : null,
         pressed && isInteractive ? styles.rowPressed : null,
       ]}
       onPress={row.onPress}
@@ -318,6 +328,9 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.input,
       flexShrink: 1,
       color: theme.colors.textPrimary,
+    },
+    labelMedium: {
+      ...brandTypography.heroBody,
     },
     // A label with a subtitle under it.
     labelColumn: {

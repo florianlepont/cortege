@@ -10,6 +10,11 @@ type DmhDrawingProps = {
   /** The group's alt sentence from the catalogue: the drawing is one image for assistive tech. */
   accessibilityLabel: string
   testID?: string
+  /**
+   * The tallest the drawing may be inside its plate, in pt (default `DMH_DRAWING_MAX_HEIGHT`, 200).
+   * The group page passes less for its hero plate (plate height = this + 2 x `DMH_PLATE_PADDING`).
+   */
+  maxHeight?: number
 }
 
 /**
@@ -38,6 +43,7 @@ export function DmhDrawing({
   drawing,
   accessibilityLabel,
   testID = "dmh-drawing",
+  maxHeight = DMH_DRAWING_MAX_HEIGHT,
 }: DmhDrawingProps) {
   const theme = useBrandTheme()
   if (!drawing) return null
@@ -58,7 +64,7 @@ export function DmhDrawing({
       testID={testID}
       style={[styles.plate, { backgroundColor: theme.visual.glass.iconTile }]}
     >
-      <View style={styles.frame}>
+      <View style={[styles.frame, { maxHeight }]}>
         <Svg
           width="100%"
           height="100%"
@@ -112,6 +118,5 @@ const styles = StyleSheet.create({
   frame: {
     width: "100%",
     aspectRatio: DMH_DRAWING_FRAME.width / DMH_DRAWING_FRAME.height,
-    maxHeight: DMH_DRAWING_MAX_HEIGHT,
   },
 })

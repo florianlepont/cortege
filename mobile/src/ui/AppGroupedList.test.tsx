@@ -361,6 +361,46 @@ describe("AppGroupedList (ACC-03)", () => {
     })
   })
 
+  test("medium sets the label in the 15/21 medium face and minHeight raises the row", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [{ key: "row", label: "Cavités", medium: true, minHeight: 56, onPress: jest.fn() }],
+      },
+    ])
+    const label = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Cavités")
+    expect(flattenStyle(label?.props.style)).toMatchObject({
+      fontFamily: "Sora-Medium",
+      fontSize: 15,
+      lineHeight: 21,
+    })
+    const pressable = root.find((node: ReactTestInstance) => (node.type as unknown) === "Pressable")
+    expect(flattenStyle(pressable.props.style).minHeight).toBe(56)
+  })
+
+  test("a row without those props keeps the 48 pt row and the 16 SemiBold label", () => {
+    const { root } = render([{ key: "s", rows: [{ key: "row", label: "Profil" }] }])
+    const label = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Profil")
+    expect(flattenStyle(label?.props.style)).toMatchObject({
+      fontFamily: "Sora-SemiBold",
+      fontSize: 16,
+    })
+    const pressable = root.find((node: ReactTestInstance) => (node.type as unknown) === "Pressable")
+    expect(flattenStyle(pressable.props.style).minHeight).toBe(48)
+  })
+
+  test("a section title is a header for assistive technology", () => {
+    const { root } = render([{ key: "s", title: "Cavités", rows: [{ key: "row", label: "Pic" }] }])
+    const title = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Cavités")
+    expect(title?.props.accessibilityRole).toBe("header")
+  })
+
   test("the hairline of a row after the first starts under the label of a row with an icon", () => {
     const { root } = render([
       {
