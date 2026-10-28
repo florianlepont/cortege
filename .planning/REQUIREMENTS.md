@@ -244,11 +244,11 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 - [x] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
 - [x] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
 - [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4. Deferred to the field tests by the owner on 2026-10-23: the protocol and the scenario sheets are ready, no tester is available before them.)*
-- [ ] **REQ-DOC-dmh-sources** — The sources, authors, licence status, retrieval date and SHA-256 of every document the DMH guide draws on are recorded in `docs/references/README.md`; the IBP-to-WSL crosswalk and the group texts are written as a French spec (`docs/specs/dmh-guide-content-v1.md`) and validated in writing by the owner before any screen uses them. *(New - Phase 32)*
-- [ ] **REQ-C-dmh-guide** — From the factor F screen the observer opens, offline, a sheet per DMH group (what counts for the IBP, how to recognise it, frequent confusions, the types of the pocket guide) and a searchable catalogue of the 15 groups, with sources shown. *(New - Phase 32)*
-- [ ] **REQ-C-dmh-illustrations** — Each of the 15 groups shows an original drawing owned by the association, shown static (no animation), offline, checked for accuracy by a domain expert. *(New - Phase 32)*
-- [ ] **REQ-C-dmh-fast-entry** — Entering factor F with many groups is simpler than before (fewer taps and less scrolling); the stored payload and every score are unchanged. *(New - Phase 32)*
-- [ ] **REQ-FT-dmh-speed** — Simplicity is confirmed by the owner on their own phone with the new F list (no timing: owner decision 2026-10-27), next to the automated press-count proxy. *(New - Phase 32)*
+- [x] **REQ-DOC-dmh-sources** — The sources, authors, licence status, retrieval date and SHA-256 of every document the DMH guide draws on are recorded in `docs/references/README.md`; the IBP-to-WSL crosswalk and the group texts are written as a French spec (`docs/specs/dmh-guide-content-v1.md`) and validated in writing by the owner before any screen uses them. *(New - Phase 32)*
+- [x] **REQ-C-dmh-guide** — From the factor F screen the observer opens, offline, a sheet per DMH group (what counts for the IBP, how to recognise it, frequent confusions, the types of the pocket guide) and a searchable catalogue of the 15 groups, with sources shown. *(New - Phase 32)*
+- [x] **REQ-C-dmh-illustrations** — Each of the 15 groups shows an original drawing owned by the association, shown static (no animation), offline, checked for accuracy by a domain expert. *(New - Phase 32)*
+- [x] **REQ-C-dmh-fast-entry** — Entering factor F with many groups is simpler than before (fewer taps and less scrolling); the stored payload and every score are unchanged. *(New - Phase 32)*
+- [x] **REQ-FT-dmh-speed** — Simplicity is confirmed by the owner on their own phone with the new F list (no timing: owner decision 2026-10-27), next to the automated press-count proxy. *(New - Phase 32)*
 
 - [x] **REQ-C-pdf-two-versions** — At export time the member chooses between a complete PDF and a one-page summary through a choice sheet; nothing is remembered; the summary is disabled on a draft with one explanatory sentence. *(New — Phase 33, built and validated 2026-10-26)*
 - [x] **REQ-C-pdf-summary-page** — The summary is one A4 page for patrons and partners: logo, site name, date, score /50, parcel map, the CNPF-like plane of context against stand and management, and the trend; offline first, no photo, submitted surveys only. *(New — Phase 33, built and validated by the owner on the iPhone 2026-10-26; the plane replaced the ten-factor chart by owner decision D-28)*
@@ -317,7 +317,7 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-C-dmh-guide | New | Phase 32 | Build |
 | REQ-C-dmh-illustrations | New | Phase 32 | Build |
 | REQ-C-dmh-fast-entry | New | Phase 32 | Build |
-| REQ-FT-dmh-speed | New | Phase 32 | Verify |
+| REQ-FT-dmh-speed | New | Phase 32 | Verify (simplicity confirmed by the owner, no timing) |
 | REQ-C-pdf-export | New | Phase 19 | Build |
 | REQ-C-pdf-two-versions | New | Phase 33 | Build |
 | REQ-C-pdf-summary-page | New | Phase 33 | Build |

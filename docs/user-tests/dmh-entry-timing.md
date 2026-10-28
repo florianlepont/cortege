@@ -53,7 +53,7 @@ Brouillon dont le parcours **plafonne** F : taper « 5 » dans le champ « arbre
 
 Rempli par le plan 32-16, en une seule ligne, d'après la réponse écrite du propriétaire.
 
-Résultat : _à remplir par le plan 32-16._
+Résultat : le propriétaire a essayé la liste finale sur son iPhone le 2026-10-27 et a répondu « plus simple » ; confirmé après la refonte du 2026-10-28. Aucun temps mesuré.
 
 ## 5. Trace
 
