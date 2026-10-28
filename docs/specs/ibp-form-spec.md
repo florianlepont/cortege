@@ -298,6 +298,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 - UI validation:
   - blocking: `surface_ha > 0`.
   - blocking: counters >= 0.
+  - lower count (follow-up 32-32, 2026-10-30): `bmm_count` only matters while BMg/ha < 1, so it is
+    required only then (or while BMg/ha cannot be computed yet); from BMg/ha >= 1 it may be absent
+    and, when typed, is stored and not read. The package decides (`densityLowerCountNeeded`).
+  - surface: when the route holds a surface and `surface_ha` equals it, the form shows it as one
+    read-only line ("Surface décrite : 2,0 ha, d'après le parcours") instead of a field.
 - Example:
   - BMg/ha = 2.2 -> score `2`.
 
@@ -323,6 +328,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - `5`: BMg/ha >= 3
 - UI validation:
   - blocking: `surface_ha > 0`.
+  - lower count (follow-up 32-32, 2026-10-30): `bmm_count` only matters while BMg/ha < 1, so it is
+    required only then (or while BMg/ha cannot be computed yet); from BMg/ha >= 1 it may be absent
+    and, when typed, is stored and not read. The package decides (`densityLowerCountNeeded`).
+  - surface: when the route holds a surface and `surface_ha` equals it, the form shows it as one
+    read-only line ("Surface décrite : 2,0 ha, d'après le parcours") instead of a field.
 - Example:
   - BMg/ha = 0.6, BMm/ha = 1.3 -> score `1`.
 
@@ -349,6 +359,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - `5`: TGB/ha >= 5
 - UI validation:
   - blocking: `surface_ha > 0`.
+- UI validation (follow-up 32-32, 2026-10-30):
+  - blocking: `surface_ha > 0`.
+  - `gb_count` only matters while TGB/ha < 1, so it is required only then (or while TGB/ha cannot be
+    computed yet); from TGB/ha >= 1 it may be absent and, when typed, is stored and not read.
+  - surface: shown as one read-only line while it equals the route's surface décrite.
 - Example:
   - TGB/ha = 0.4 and GB/ha = 1.1 -> score `1`.
 
@@ -537,7 +552,8 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   `factor_a_genus_invalid`) or the legacy `native_genus_count`, plus native cover available; v3.2:
   `ibp_cas` set; v3.0: region_version + stage set.
 - B: at least 1 stratum entered.
-- C/D/E: `surface_ha > 0`; non-negative counters.
+- C/D/E: `surface_ha > 0`; non-negative counters; the lower count (BMm, GB) only while the upper
+  class is under 1 per hectare.
 - F: coherent dmh-group data; computable total.
 - G: computable surfaces and `open_flowering_percent`; v3.2: `ibp_cas` set.
 - H: class selected + evidence source.

@@ -215,6 +215,27 @@ is not written and the scored `F.trees_per_ha` is the sum of the counts (`capped
 group held at 2). MAT-F-CAP-01 and MAT-F-CAP-02 show the counts are not read by a scorer; the two
 helpers `cappedDmhCounts` and `cappedDmhTotalPerHa` have their own unit tests.
 
+## Follow-up 32-32: lower diameter class not needed from 1 upper per hectare
+
+The lower class of C, D and E (BMm, GB) only decides the score while the upper class (BMg, TGB) is
+under 1 per hectare: v3.0 scores 0 or 1 on the lower class alone, v3.2 on the sum, and from 1 upper
+per hectare the score is 2 or 5 on the upper class alone. So the package reads a lower count that
+is not given at all (absent, `null` or blank) when the upper class per hectare is 1 or more
+(`readDensityPair`); the lower class then reads as 0 and is never looked at. A lower count that is
+present is read as before, whatever the upper class. Below 1 per hectare a missing lower count is
+an unreadable factor, as before, and so is a lower count that is present but not a number. No
+existing case changes. `densityLowerCountNeeded` answers whether the form must still ask for the
+lower count (true until the upper class per hectare is computable and reaches 1). Each case runs
+under both versions; the valid ones also run in submit mode inside the MAT-SUBMIT-02 set.
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-LOW-01@both | draft; submit (v3.0 ACA collineen, v3.2 cas 1) | any | `C.bmg_count=4`, `C.surface_ha=2`, no BMm (2 per hectare); submit with `C.bmg_count=6`, `C.surface_ha=2` (3 per hectare) | draft `C=2`; submit `C=5`, in the MAT-SUBMIT-02 set totals 21 / 7 / 28 | none |
+| MAT-LOW-02@both | draft (without and with `bmm_count=9`); submit | any | `D.bmg_count=1`, `D.surface_ha=1` (exactly 1 per hectare) | `D=2` in all three; in the MAT-SUBMIT-02 set totals 19 / 7 / 26 | none |
+| MAT-LOW-03@both | draft; submit | any | `E.tgb_count=4`, `E.surface_ha=1`, no GB; submit with `E.tgb_count=5` | draft `E=2`; submit `E=5`, in the MAT-SUBMIT-02 set totals 20 / 7 / 27 | none |
+| MAT-LOW-04@both | draft; submit | any | `C.bmg_count=1`, `C.surface_ha=2` (0.5 per hectare), no BMm; submit with `E.tgb_count=1`, `E.surface_ha=2`, no GB | not scored, `ok=false` | B `factor_invalid_raw` |
+| MAT-LOW-05@both | draft | any | `C.bmg_count=3`, `C.bmm_count="many"`, `C.surface_ha=1` | `C` not scored, `ok=false` (a lower count that is present but unreadable) | B `factor_invalid_raw` |
+
 ## Submit readiness (mobile)
 
 Run by the mobile adapter test from `IBP_READINESS_CASES`. The row labels are descriptive; the
@@ -287,7 +308,8 @@ Unchanged between versions (GS-1):
   `0 -> 0`, `1 -> 1`, `2 -> 2`, `>=3 -> 5`. G standard: `0 -> 0`, under 1 % or over 5 % `-> 2`,
   1 to 5 % `-> 5`; G subalpine or cas 3: `0 -> 0`, under 1 % `-> 2`, 1 % or more `-> 5`.
 - C, D and E under v3.2 test the sum of the two diameter classes for score 1 (CD-1, E-1); under
-  v3.0 the lower class alone.
+  v3.0 the lower class alone. From 1 upper class per hectare the lower count is not needed (MAT-LOW-01
+  to MAT-LOW-05).
 - Consistency warnings (`consistency_a_b`, `consistency_e_f`, app heuristics, both versions) compare
   two scored factors: they fire only when both factors of the pair are scored. A factor that is
   absent or incomplete is not "very low" (before 01.8 an absent factor counted as 0, so MAT-B-01 or
