@@ -5,6 +5,7 @@ import {
   HOLD_REPEAT_DELAY_MS,
   HOLD_REPEAT_FAST_INTERVAL_MS,
   HOLD_REPEAT_INTERVAL_MS,
+  nudgeValue,
   useHoldRepeat,
 } from "./useHoldRepeat"
 
@@ -258,5 +259,15 @@ describe("useHoldRepeat", () => {
     expect(first).toHaveBeenCalledTimes(1)
     expect(second).toHaveBeenCalledTimes(1)
     act(() => result.current.end())
+  })
+})
+
+describe("nudgeValue", () => {
+  test("holds the result to the bounds and cleans float drift", () => {
+    expect(nudgeValue(0.1, 0.2, 0, 10)).toBe(0.3)
+    expect(nudgeValue(1.1, 2.2, 0, 10)).toBe(3.3)
+    expect(nudgeValue(5, -1, 0, 10)).toBe(4)
+    expect(nudgeValue(0, -0.1, 0, 10)).toBe(0)
+    expect(nudgeValue(9.95, 0.1, 0, 10)).toBe(10)
   })
 })

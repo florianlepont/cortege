@@ -17,6 +17,16 @@ const SLOW_TICKS = HOLD_ACCELERATE_AFTER_MS / HOLD_REPEAT_INTERVAL_MS
 const HOLD_RELEASE_WINDOW_MS = 250
 
 /**
+ * `current + delta` held to [min, max] and cleaned of float drift (0.1 + 0.2 reads 0.3, not
+ * 0.30000000000000004): a surface counted in tenths of a hectare steps exactly. Whole numbers pass
+ * through unchanged.
+ */
+export function nudgeValue(current: number, delta: number, min: number, max: number): number {
+  const sum = Math.round((current + delta) * 1e6) / 1e6
+  return Math.min(max, Math.max(min, sum))
+}
+
+/**
  * Where a step comes from: a `tap` (press and release), the first step of a deliberate `hold`, or
  * a later `repeat` of that hold. A control gives its haptic for the first two only.
  */
@@ -31,7 +41,7 @@ type HoldRepeatOptions = {
 }
 
 /**
- * The press-and-hold engine shared by FactorCounterInput and DmhCounterStepper. Wire it to a
+ * The press-and-hold engine shared by every -/+ stepper (`ValueStepper`). Wire it to a
  * Pressable like this: `onPressIn={() => begin(delta)}`, `onPressOut={end}`, `onPress={() =>
  * tap(delta)}`. The step of a quick tap is made by `onPress`, which React Native sends only when
  * the finger is released inside the target: a touch that slides out, a press the system cancels
@@ -73,7 +83,7 @@ export function useHoldRepeat({ value, min, max, onChange }: HoldRepeatOptions):
 
   const apply = useCallback(
     (delta: number, kind: HoldStepKind): void => {
-      const next = Math.min(max, Math.max(min, currentRef.current + delta))
+      const next = nudgeValue(currentRef.current, delta, min, max)
       currentRef.current = next
       onChangeRef.current(next, kind)
     },
