@@ -2,7 +2,6 @@ import { StyleSheet } from "react-native"
 import {
   brandInteraction,
   brandSpacing4,
-  brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
 import type { BrandTheme } from "../../app/theme"
