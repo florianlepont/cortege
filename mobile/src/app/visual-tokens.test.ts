@@ -303,14 +303,14 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
   })
 
   test("ochre switch track of the doubt row on the glass card and on the warning fill (3:1)", () => {
-    // Phase 27 (UI-SPEC Color): the "Douteux" switch is ON in ochre, over the glass card fill
+    // Phase 27 (UI-SPEC Color): the "Incertitude" switch is ON in ochre, over the glass card fill
     // and, where the row keeps its tint, over warningSoft. Non-text contrast, so 3:1.
     const card = compositeOver(visual.glass.cardFill, colors.canvas)
     expect(contrastRatio(colors.ochre, card)).toBeGreaterThanOrEqual(3)
     if (scheme === "light") {
       // Measured 2.90:1 in the light scheme: the ON row drops its soft fill there (UI-SPEC
       // fallback, plan 27-14) and keeps the hairline and the label colour. The state is carried
-      // by the word "Douteux", the thumb position and the switch state, never by the fill; the
+      // by the word "Incertitude", the thumb position and the switch state, never by the fill; the
       // label must then read on the glass card instead of on warningSoft.
       expect(contrastRatio(colors.ochre, colors.warningSoft)).toBeLessThan(3)
       expect(contrastRatio(theme.onSurface.warning, card)).toBeGreaterThanOrEqual(4.5)

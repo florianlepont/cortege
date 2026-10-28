@@ -146,12 +146,13 @@ export const factorDetailFr = {
     // The quiet pill and its spoken hint are F's (`dmhList.topScoreTrace`, `topScoreHint`).
   },
   // Phase 27 (D-13, D-18), follow-up 32-27: the two small pills at the top of each factor page, a
-  // "Douteux" toggle and a "Note" that opens the field in place.
+  // "Incertitude" toggle and a "Note" that opens the field in place.
   // Neither changes the score. The note is visible to the members who can read the survey (D-06).
   strip: {
     doubt: {
-      label: "Douteux",
-      hint: "Signale un doute sur ce facteur. Le score ne change pas.",
+      label: "Incertitude",
+      a11yLabel: "Incertitude sur ce facteur",
+      hint: "Signale une incertitude sur ce facteur. Le score ne change pas.",
     },
     note: {
       // The pill: "Note", or "Note : " and the start of the text once there is one (follow-up 32-27).
@@ -161,7 +162,7 @@ export const factorDetailFr = {
       editA11y: (title: string) => `Modifier la note du facteur ${title}`,
       closeA11y: (title: string) => `Fermer la note du facteur ${title}`,
       fieldLabel: (title: string) => `Note du facteur ${title}`,
-      placeholder: "Ce que vous avez vu, pourquoi ce doute…",
+      placeholder: "Ce que vous avez vu, pourquoi cette incertitude…",
       visibility: "Visible par les membres qui peuvent lire le relevé.",
       hint: "300 caractères au plus. Visible par les membres qui peuvent lire le relevé.",
       counter: ({ count, max }: { count: number; max: number }) => `${count} / ${max}`,

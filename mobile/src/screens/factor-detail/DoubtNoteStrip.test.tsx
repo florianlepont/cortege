@@ -126,12 +126,12 @@ describe("DoubtNoteStrip closed (D-16, follow-up 32-27)", () => {
     }
   })
 
-  test("the doubt pill is a switch named Douteux with its hint and its state", () => {
+  test("the doubt pill is a switch named Incertitude sur ce facteur with its hint and its state", () => {
     const { one } = render({ doubt: true })
     const pill = one("factor-doubt-switch")
     expect(pill.props.accessibilityRole).toBe("switch")
     expect(pill.props.accessibilityState).toEqual({ checked: true })
-    expect(pill.props.accessibilityLabel).toBe(t.doubt.label)
+    expect(pill.props.accessibilityLabel).toBe("Incertitude sur ce facteur")
     expect(pill.props.accessibilityHint).toBe(t.doubt.hint)
   })
 

@@ -6,8 +6,8 @@ describe("fr.factorDetail.strip", () => {
   const { doubt, note } = fr.factorDetail.strip
 
   test("the doubt pill states that the score does not change", () => {
-    expect(doubt.label).toBe("Douteux")
-    expect(doubt.hint).toBe("Signale un doute sur ce facteur. Le score ne change pas.")
+    expect(doubt.label).toBe("Incertitude")
+    expect(doubt.hint).toBe("Signale une incertitude sur ce facteur. Le score ne change pas.")
   })
 
   test("the note pill names the factor for a screen reader", () => {
@@ -24,7 +24,7 @@ describe("fr.factorDetail.strip", () => {
     expect(note.hint).toBe(
       "300 caractères au plus. Visible par les membres qui peuvent lire le relevé.",
     )
-    expect(note.placeholder).toBe("Ce que vous avez vu, pourquoi ce doute…")
+    expect(note.placeholder).toBe("Ce que vous avez vu, pourquoi cette incertitude…")
   })
 
   test("the counter and its spoken twin share the shape of the survey note", () => {
@@ -41,7 +41,7 @@ describe("fr.surveyDetail factor rows", () => {
   const base = { title: "Bois morts", value: "3 sur 5" }
 
   test("the row texts of the doubt badge and the folded note", () => {
-    expect(factors.doubtBadge).toBe("Douteux")
+    expect(factors.doubtBadge).toBe("Incertitude")
     expect(factors.noteMore).toBe("Lire la suite")
     expect(factors.noteMoreA11y).toBe("Lire la suite, développe la note")
     expect(factors.noteLess).toBe("Réduire")
@@ -57,24 +57,24 @@ describe("fr.surveyDetail factor rows", () => {
 
   test("openFactor appends the doubt, then the note", () => {
     expect(a11y.openFactor({ ...base, doubtful: true })).toBe(
-      "Ouvrir le facteur Bois morts, 3 sur 5, douteux",
+      "Ouvrir le facteur Bois morts, 3 sur 5, incertitude signalée",
     )
     expect(a11y.openFactor({ ...base, hasNote: true })).toBe(
       "Ouvrir le facteur Bois morts, 3 sur 5, avec une note",
     )
     expect(a11y.openFactor({ ...base, doubtful: true, hasNote: true })).toBe(
-      "Ouvrir le facteur Bois morts, 3 sur 5, douteux, avec une note",
+      "Ouvrir le facteur Bois morts, 3 sur 5, incertitude signalée, avec une note",
     )
   })
 
   test("factorReadOnly has the same four combinations and no Ouvrir", () => {
     expect(a11y.factorReadOnly(base)).toBe("Bois morts, 3 sur 5")
-    expect(a11y.factorReadOnly({ ...base, doubtful: true })).toBe("Bois morts, 3 sur 5, douteux")
+    expect(a11y.factorReadOnly({ ...base, doubtful: true })).toBe("Bois morts, 3 sur 5, incertitude signalée")
     expect(a11y.factorReadOnly({ ...base, hasNote: true })).toBe(
       "Bois morts, 3 sur 5, avec une note",
     )
     expect(a11y.factorReadOnly({ ...base, doubtful: true, hasNote: true })).toBe(
-      "Bois morts, 3 sur 5, douteux, avec une note",
+      "Bois morts, 3 sur 5, incertitude signalée, avec une note",
     )
   })
 })
@@ -87,7 +87,7 @@ describe("fr.surveyExport conditions", () => {
     expect(conditions.weather).toBe("Météo")
     expect(conditions.source).toBe("Source de la météo")
     expect(conditions.note).toBe("Note du relevé")
-    expect(factors.doubt).toBe("Douteux")
+    expect(factors.doubt).toBe("Incertitude")
     expect(factors.note).toBe("Note")
   })
 

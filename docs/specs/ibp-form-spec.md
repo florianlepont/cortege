@@ -654,7 +654,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `evidence: { notes?: string, photos?: string[], gps?: {lat:number,lng:number,accuracy_m?:number} }`
 - `factors.annotations` (phase 27, D-23): the observer's doubt and note per factor, in one container
   next to the factor entries, keyed by factor code `A` to `J`: `{ doubt?: true, note?: string }`,
-  `doubt` only ever `true` (the default "Sûr" is the absence of the key) and `note` at most 300
+  `doubt` only ever `true` (the default, no incertitude, is the absence of the key) and `note` at most 300
   characters. `evidence.notes` stays the shape of the canonical factor result above; the observer's
   own factor note lives in this container, not in `evidence.notes` and not inside the factor's raw
   value (a factor entry holding only meta would be refused by the scorer as `factor_invalid_raw`).

@@ -151,7 +151,7 @@ describe("FactorsList doubt chip and note (phase 27, D-13, D-17)", () => {
   const byTestId = (tree: ReactTestRenderer, id: string) =>
     tree.root.findAll((node) => node.props.testID === id)
 
-  test("a row with a doubt shows the chip 'Douteux', a row without has none", () => {
+  test("a row with a doubt shows the chip 'Incertitude', a row without has none", () => {
     const { tree } = render({ factorEntries: annotated })
 
     expect(byTestId(tree, "factor-doubt-badge-A").length).toBeGreaterThan(0)
@@ -241,7 +241,7 @@ describe("FactorsList doubt chip and note (phase 27, D-13, D-17)", () => {
         hasNote: true,
       }),
     )
-    expect(draftLabels.some((label) => String(label).endsWith(", douteux, avec une note"))).toBe(
+    expect(draftLabels.some((label) => String(label).endsWith(", incertitude signalée, avec une note"))).toBe(
       true,
     )
 

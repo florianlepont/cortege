@@ -43,7 +43,7 @@ type DoubtNoteStripProps = {
 
 /**
  * Phase 27 (D-16), follow-up 32-27: two small pills in one row at the top of a factor's page, under
- * its intro or help link. "Douteux" toggles the observer's doubt (warning-soft fill when on); "Note"
+ * its intro or help link. "Incertitude" toggles the observer's doubt (warning-soft fill when on); "Note"
  * opens the 300-character note field in place, and shows a one-line preview of an existing note
  * ("Note : ..."). Both stay closed and quiet by default, so an observer who never touches them
  * performs exactly the same taps as before. The doubt and the note never change the score (D-13,
@@ -122,7 +122,7 @@ export function DoubtNoteStrip({
           style={[styles.pill, doubt ? styles.pillDoubtOn : null]}
           accessibilityRole="switch"
           accessibilityState={{ checked: doubt }}
-          accessibilityLabel={t.doubt.label}
+          accessibilityLabel={t.doubt.a11yLabel}
           accessibilityHint={t.doubt.hint}
           testID="factor-doubt-switch"
         >

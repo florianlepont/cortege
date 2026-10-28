@@ -922,7 +922,7 @@ Example, a v3.2 survey's Factor A:
 
 ### Factor annotations (phase 27)
 
-The observer can flag a doubt ("Douteux") and write a short note on each factor. Both live in one
+The observer can flag a doubt ("Incertitude") and write a short note on each factor. Both live in one
 container, `factors.annotations`, next to the factor keys and never inside a factor object:
 
 ```json
@@ -936,7 +936,7 @@ container, `factors.annotations`, next to the factor keys and never inside a fac
 ```
 
 - Keys of `annotations` are the factor codes `A` to `J`. Each value is `{ doubt?: true, note?: string }`:
-  `doubt` is only ever `true` (the default, "Sûr", is the absence of the key) and `note` is at most
+  `doubt` is only ever `true` (the default, no incertitude, is the absence of the key) and `note` is at most
   300 characters. An entry with neither is not written.
 - The container is validated on `POST /surveys` and on `survey.upsert` payloads by the shared
   package (`factorAnnotationsIssues` in `@cortege/ibp-domain`): an unknown key, a `doubt` other than
