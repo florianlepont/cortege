@@ -896,5 +896,5 @@ spécification.
 Relecture par un expert (ajout du 2026-10-30) : le propriétaire a rapporté que l'expert a relu le
 document et conclu « tout est bon », sans correction de texte, de seuil ni de dessin. Les points de la
 section « Points à faire vérifier par l'expert » sont donc considérés comme confirmés par cette
-relecture. Nom de l'expert : non communiqué. Date de la relecture : non communiquée (rapportée le
-2026-10-30). À compléter.
+relecture. Nom de l'expert : Florian Lepont. Date de la relecture : 28 octobre 2026 (rapportée le
+2026-10-30).
