@@ -902,6 +902,11 @@ describe("HomeRoute", () => {
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")
 
+    // Phase 32 (owner request): the guide sheet opens over Accueil, in the Accueil stack, and
+    // carries no group (the catalogue).
+    callback("home", "onOpenDmhGuide")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDmhGuide")
+
     // HOME-06: the avatar navigates to Compte.
     callback("home", "onNavigateToAccount")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")

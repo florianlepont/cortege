@@ -30,6 +30,10 @@ export type AccountStackParamList = {
 
 export type HomeStackParamList = AccountStackParamList & {
   homeRoot: undefined
+  // Phase 32 (owner request 2026-10-28): the dendromicrohabitat guide opened from the Outils
+  // section of Accueil, the same sheet and route component as in the survey stack. Closing it goes
+  // back to Accueil.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
 }
 
 /**
@@ -205,7 +209,10 @@ export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "su
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
-export type DmhGuideRouteProps = StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
+/** Mounted by the survey stack and by the Accueil stack: it reads only its own params. */
+export type DmhGuideRouteProps =
+  | StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
+  | StackRouteProps<HomeStackParamList, "surveyDmhGuide">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ExportChoiceRouteProps = StackRouteProps<SurveysStackParamList, "surveyExportChoice">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">

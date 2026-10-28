@@ -11,7 +11,7 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
 import { GenusTargetSheet } from "./GenusTargetSheet"
-import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
+import { HOME_GAPS, TOOL_ROW_GAP, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.tools
@@ -40,17 +40,21 @@ type ToolsSectionProps = {
   /** False when the genus could not be added (a submitted survey, one that no longer exists). */
   onAddGenusToSurvey: (surveyId: string, genus: CnpfFactorAGenusCode) => Promise<boolean>
   onStartSurveyWithGenus: (genus: CnpfFactorAGenusCode) => void
+  /** Opens the dendromicrohabitat guide sheet over Accueil (phase 32, owner request). */
+  onOpenDmhGuide: () => void
 }
 
 /**
  * OA-107: the tools that help fill in the factors, launched from Accueil. The photo identification
  * (the same tool as in factor A) opens the camera at once; its confirmed genus is not kept as an
- * object of its own: it goes into a survey in progress, or starts a survey with it.
+ * object of its own: it goes into a survey in progress, or starts a survey with it. Under it, the
+ * dendromicrohabitat guide (phase 32): the same sheet as in factor F, read offline.
  */
 export function ToolsSection({
   surveys,
   onAddGenusToSurvey,
   onStartSurveyWithGenus,
+  onOpenDmhGuide,
 }: ToolsSectionProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -118,22 +122,24 @@ export function ToolsSection({
         />
       ) : null}
       <View style={styles.row}>
-        <AppPressable
-          style={styles.card}
-          onPress={() => setIdentifying(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t.identify.a11y}
+        <ToolCard
+          styles={styles}
+          iconName="camera-outline"
+          title={t.identify.title}
+          body={t.identify.body}
+          a11y={t.identify.a11y}
           testID="tool-identify-tree"
-        >
-          <View style={styles.icon}>
-            <Ionicons name="camera-outline" size={22} color={theme.semanticColors.onCtaPrimary} />
-          </View>
-          <View style={styles.copy}>
-            <Text style={styles.cardTitle}>{t.identify.title}</Text>
-            <Text style={styles.cardBody}>{t.identify.body}</Text>
-          </View>
-          <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
-        </AppPressable>
+          onPress={() => setIdentifying(true)}
+        />
+        <ToolCard
+          styles={styles}
+          iconName="book-outline"
+          title={t.guide.title}
+          body={t.guide.body}
+          a11y={t.guide.a11y}
+          testID="tool-dmh-guide"
+          onPress={onOpenDmhGuide}
+        />
       </View>
 
       <GenusRecognitionModal
@@ -156,6 +162,39 @@ export function ToolsSection({
   )
 }
 
+type ToolCardProps = {
+  styles: ReturnType<typeof createStyles>
+  iconName: "camera-outline" | "book-outline"
+  title: string
+  body: string
+  a11y: string
+  testID: string
+  onPress: () => void
+}
+
+/** One slim full-width tool row: icon tile, title and one-line subtitle, chevron. */
+function ToolCard({ styles, iconName, title, body, a11y, testID, onPress }: ToolCardProps) {
+  const theme = useBrandTheme()
+  return (
+    <AppPressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      testID={testID}
+    >
+      <View style={styles.icon}>
+        <Ionicons name={iconName} size={22} color={theme.semanticColors.onCtaPrimary} />
+      </View>
+      <View style={styles.copy}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardBody}>{body}</Text>
+      </View>
+      <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
+    </AppPressable>
+  )
+}
+
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     section: {
@@ -172,6 +211,7 @@ function createStyles(theme: BrandTheme) {
     // D-20d: one slim full-width row (40 pt icon tile, 8 pt around it: 56 pt), not a half-width tile.
     row: {
       paddingHorizontal: PAGE_H,
+      gap: TOOL_ROW_GAP,
     },
     card: {
       flexDirection: "row",

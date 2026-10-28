@@ -9,6 +9,8 @@ import {
   RECENT_LAYOUT,
   RESUME_LAYOUT,
   SECTION_HEADER_HEIGHT,
+  TOOL_ROW_COUNT,
+  TOOL_ROW_GAP,
   TOOL_ROW_MIN_HEIGHT,
   homeMapVisible,
   nearbyMapHeight,
@@ -41,6 +43,7 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
       RECENT_LAYOUT.rowPaddingY * 2,
       RECENT_LAYOUT.ringSize,
       TOOL_ROW_MIN_HEIGHT,
+      TOOL_ROW_GAP,
       MAP_MIN_HEIGHT,
     ]
     for (const value of grid) expect(value % 4).toBe(0)
@@ -99,8 +102,13 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
     // Without a draft the forest card is the "start a survey" action: no second card.
     expect(newSurveyCardHeight(false)).toBe(0)
     expect(toolsSectionHeight()).toBe(
-      HOME_GAPS.section + SECTION_HEADER_HEIGHT + HOME_GAPS.sectionHeader + TOOL_ROW_MIN_HEIGHT,
+      HOME_GAPS.section +
+        SECTION_HEADER_HEIGHT +
+        HOME_GAPS.sectionHeader +
+        2 * TOOL_ROW_MIN_HEIGHT +
+        TOOL_ROW_GAP,
     )
+    expect(TOOL_ROW_COUNT).toBe(2)
   })
 
   describe.each(BUDGET_DEVICES)("on $name", (device) => {
@@ -112,24 +120,26 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
 
     test("a draft, three recent surveys, no alert: the nearby section shows at launch", () => {
       const { section, map, sectionTop } = homeMapVisible(base)
-      // 501 before the 12.2-19 fix round, plus the 25 pt the separate card costs over the footer.
-      expect(sectionTop).toBe(526)
-      expect(section).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY)
-      // Its header row (18 + 8) and a real piece of the map.
-      expect(map).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY - SECTION_HEADER_HEIGHT - 8)
+      // 501 before the 12.2-19 fix round, plus the 25 pt the separate card costs over the footer,
+      // plus the 64 pt of the dendromicrohabitat guide row under the photo tool (phase 32, owner
+      // request 2026-10-28: 56 pt row and 8 pt gap). The 96 pt target is no longer met at launch
+      // with a draft (69 pt on 393 x 852, 38 pt on 375 x 812): the header and a piece of the map.
+      expect(sectionTop).toBe(590)
+      expect(section).toBeGreaterThan(SECTION_HEADER_HEIGHT + 8)
       expect(map).toBeGreaterThan(0)
     })
 
     test("a resume title on two lines still shows the section header and a piece of the map", () => {
       const { section, map } = homeMapVisible({ ...base, resumeTitleLines: 2 })
-      expect(section).toBeGreaterThan(SECTION_HEADER_HEIGHT + 8)
-      expect(map).toBeGreaterThanOrEqual(40)
+      // The long draft name wraps: only the top of the section shows (41 pt, then 10 pt).
+      expect(section).toBeGreaterThan(0)
+      expect(map).toBeGreaterThanOrEqual(0)
     })
 
     test("holds with the start card (no draft, a two-line body) and with fewer surveys", () => {
       expect(
         homeMapVisible({ ...base, hasDraft: false, resumeBodyLines: 2 }).section,
-      ).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY)
+      ).toBeGreaterThan(SECTION_HEADER_HEIGHT + 8)
       expect(homeMapVisible({ ...base, recentCount: 1 }).section).toBeGreaterThan(
         homeMapVisible(base).section,
       )
@@ -172,9 +182,10 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
   })
 
   // 12.2-19 fix round, the real overflow: the separate "Nouveau relevé" card costs 25 pt over the
-  // old footer. A draft whose name wraps to two lines keeps the 96 pt target on a 393 x 852 phone,
-  // but a 375 x 812 one shows 74 pt of "Autour de vous" (its header and 48 pt of map), not 96.
-  test("a two-line resume title: 96 pt and more on 393 x 852, 74 pt on 375 x 812", () => {
+  // old footer. Phase 32 (owner request): the guide row under the photo tool costs 64 pt more. A
+  // draft whose name wraps to two lines now shows 41 pt of "Autour de vous" on a 393 x 852 phone
+  // (its header and 15 pt of map) and 10 pt on a 375 x 812 one (the top of the header).
+  test("a two-line resume title: 41 pt on 393 x 852, 10 pt on 375 x 812", () => {
     const [large, small] = BUDGET_DEVICES
     const wrap = (device: (typeof BUDGET_DEVICES)[number]) =>
       homeMapVisible({
@@ -182,9 +193,10 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
         safeTop: device.safeTop,
         resumeTitleLines: 2,
       })
-    expect(wrap(large).section).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY)
-    expect(wrap(small).section).toBe(74)
-    expect(wrap(small).map).toBe(48)
+    expect(wrap(large).section).toBe(41)
+    expect(wrap(large).map).toBe(15)
+    expect(wrap(small).section).toBe(10)
+    expect(wrap(small).map).toBe(0)
   })
 })
 

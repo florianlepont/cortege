@@ -86,6 +86,12 @@ export const RECENT_LAYOUT = {
 /** The "Outils" row: the 40 pt icon tile and 8 pt above and below it. */
 export const TOOL_ROW_MIN_HEIGHT = 56
 
+/** The rows of "Outils": the photo identification and the dendromicrohabitat guide (phase 32). */
+export const TOOL_ROW_COUNT = 2
+
+/** Between two rows of "Outils". */
+export const TOOL_ROW_GAP = brandSpacing4.sm
+
 /** A plain section header: one line of `brandTypography.sectionHeader`. */
 export const SECTION_HEADER_HEIGHT = brandTypography.sectionHeader.lineHeight
 
@@ -174,7 +180,13 @@ export function recentSectionHeight(count: number): number {
 }
 
 export function toolsSectionHeight(): number {
-  return HOME_GAPS.section + SECTION_HEADER_HEIGHT + HOME_GAPS.sectionHeader + TOOL_ROW_MIN_HEIGHT
+  return (
+    HOME_GAPS.section +
+    SECTION_HEADER_HEIGHT +
+    HOME_GAPS.sectionHeader +
+    TOOL_ROW_COUNT * TOOL_ROW_MIN_HEIGHT +
+    (TOOL_ROW_COUNT - 1) * TOOL_ROW_GAP
+  )
 }
 
 /**

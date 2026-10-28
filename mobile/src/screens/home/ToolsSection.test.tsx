@@ -8,7 +8,7 @@ import { brandInteraction, brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
-import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
+import { HOME_GAPS, TOOL_ROW_GAP, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 import { openDrafts, ToolsSection } from "./ToolsSection"
 import { pressableLook as look } from "../../../test/pressable-look"
 
@@ -78,30 +78,40 @@ function mount(
 ) {
   const onAddGenusToSurvey = jest.fn(async () => true)
   const onStartSurveyWithGenus = jest.fn()
+  const onOpenDmhGuide = jest.fn()
   act(() => {
     tree = renderer.create(
       <ToolsSection
         surveys={surveys}
         onAddGenusToSurvey={onAddGenusToSurvey}
         onStartSurveyWithGenus={onStartSurveyWithGenus}
+        onOpenDmhGuide={onOpenDmhGuide}
         {...handlers}
       />,
     )
   })
-  return { onAddGenusToSurvey, onStartSurveyWithGenus }
+  return { onAddGenusToSurvey, onStartSurveyWithGenus, onOpenDmhGuide }
 }
 
 const byType = (type: string) =>
   tree.root.find((node) => (node.type as unknown) === type) as ReactTestInstance
 const maybeByType = (type: string) =>
   tree.root.findAll((node) => (node.type as unknown) === type)[0] as ReactTestInstance | undefined
+const identifyCard = () =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "Pressable" && node.props.testID === "tool-identify-tree",
+  ) as ReactTestInstance
+const guideCard = () =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "Pressable" && node.props.testID === "tool-dmh-guide",
+  ) as ReactTestInstance
 const modal = () => byType("GenusRecognitionModal")
 const sheet = () => byType("GenusTargetSheet")
 
 /** Photo tool open, a genus confirmed, the recognition sheet closed, the survey sheet delay run. */
 function confirmFagus() {
   act(() => {
-    byType("Pressable").props.onPress()
+    identifyCard().props.onPress()
   })
   act(() => {
     modal().props.onConfirmGenus("Fagus")
@@ -147,20 +157,20 @@ describe("ToolsSection", () => {
     )
     expect(flat(section).marginTop).toBe(HOME_GAPS.section)
     expect(flat(byType("AppSectionHeader")).marginBottom).toBe(HOME_GAPS.sectionHeader)
-    expect(flat(byType("Pressable")).minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
+    expect(flat(identifyCard()).minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
   })
 
   test("shows the Outils section with the photo identification card, the tool closed", () => {
     mount()
     expect(byType("AppSectionHeader").props.title).toBe(t.title)
-    expect(byType("Pressable").props.accessibilityLabel).toBe(t.identify.a11y)
+    expect(identifyCard().props.accessibilityLabel).toBe(t.identify.a11y)
     expect(modal().props.visible).toBe(false)
     expect(sheet().props.visible).toBe(false)
   })
 
   test("the identify card has the glass look and keeps its accessibility contract and hit area", () => {
     mount()
-    const card = byType("Pressable")
+    const card = identifyCard()
     const style = look(card)
     const { glass } = defaultTheme.visual
     expect(style.backgroundColor).toBe(glass.cardFill)
@@ -175,7 +185,7 @@ describe("ToolsSection", () => {
 
   test("the identify entry is one slim full-width row of 56 to 64 pt (D-20d)", () => {
     mount()
-    const card = byType("Pressable")
+    const card = identifyCard()
     const style = look(card)
     // A row of icon tile, texts and chevron, not a half-width tile: it spans the page and has no
     // maximum width.
@@ -202,10 +212,55 @@ describe("ToolsSection", () => {
     expect(texts).toEqual([t.identify.title, t.identify.body])
   })
 
+  test("the guide row sits right under the photo identification, in the same glass look", () => {
+    mount()
+    const pressables = tree.root.findAll(
+      (node) => (node.type as unknown) === "Pressable" && node.props.testID !== undefined,
+    )
+    expect(pressables.map((node) => node.props.testID)).toEqual([
+      "tool-identify-tree",
+      "tool-dmh-guide",
+    ])
+    const card = guideCard()
+    const style = look(card)
+    const { glass } = defaultTheme.visual
+    expect(card.props.accessibilityRole).toBe("button")
+    expect(card.props.accessibilityLabel).toBe(t.guide.a11y)
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
+    expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    const texts = card
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(texts).toEqual([t.guide.title, t.guide.body])
+    expect(card.findAll((node) => node.props.name === "book-outline")).toHaveLength(1)
+    // The two rows are one stack, TOOL_ROW_GAP apart.
+    const row = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "View" &&
+        (node.props.style as { gap?: number } | undefined)?.gap === TOOL_ROW_GAP,
+    )
+    const inRow = row
+      .findAll((node) => (node.type as unknown) === "Pressable")
+      .map((node) => node.props.testID)
+    expect(inRow).toEqual(["tool-identify-tree", "tool-dmh-guide"])
+  })
+
+  test("the guide row opens the guide and nothing else, with no photo tool", () => {
+    const { onOpenDmhGuide } = mount()
+    act(() => {
+      guideCard().props.onPress()
+    })
+    expect(onOpenDmhGuide).toHaveBeenCalledTimes(1)
+    expect(modal().props.visible).toBe(false)
+    expect(sheet().props.visible).toBe(false)
+  })
+
   test("the card opens the photo tool", () => {
     mount()
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     expect(modal().props.visible).toBe(true)
   })
@@ -213,7 +268,7 @@ describe("ToolsSection", () => {
   test("closing the tool without a genus opens nothing else", () => {
     mount()
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     act(() => {
       modal().props.onClose()
@@ -231,7 +286,7 @@ describe("ToolsSection", () => {
       makeSurvey({ id: "s2", site_name: " " }),
     ])
     act(() => {
-      byType("Pressable").props.onPress()
+      identifyCard().props.onPress()
     })
     act(() => {
       modal().props.onConfirmGenus("Fagus")

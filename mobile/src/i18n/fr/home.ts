@@ -55,6 +55,13 @@ export const homeFr = {
       // The button of a result says where it leads: a survey is chosen next (OA-114).
       confirm: "Utiliser dans un relevé",
     },
+    // Phase 32 (owner request): the dendromicrohabitat guide, next to the photo tool. The wording is
+    // the one of the guide entry in factor F (fr.factorDetail.dmhList.entry).
+    guide: {
+      title: "Guide des dendromicrohabitats",
+      body: "Reconnaître chaque groupe, sans réseau.",
+      a11y: "Ouvrir le guide des dendromicrohabitats",
+    },
     // OA-114: the native sheet that follows. Starting a survey is the main action, adding to a
     // survey in progress the alternative.
     chooseSurveyTitle: ({ genus }: { genus: string }) => genus,

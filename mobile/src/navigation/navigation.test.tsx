@@ -879,6 +879,12 @@ describe("stack options and listeners", () => {
     expect(android.presentation).toBe("modal")
     expect(android.headerShown).toBe(false)
     expect(shouldHideTabBar("surveyDmhGuide")).toBe(false)
+    // Owner request 2026-10-28: Accueil opens the same sheet, so the Accueil stack registers it
+    // too, with the same options and the same route component (closing returns to Accueil).
+    const guides = mockRegistrations.filter((record) => record.name === "surveyDmhGuide")
+    expect(guides).toHaveLength(2)
+    expect(guides[0].options).toEqual(guides[1].options)
+    expect(guides[0].component).toBe(guides[1].component)
     mockPlatform.OS = "ios"
     const { dmhGuideScreenOptions } = jest.requireActual("./stacks/stack-options") as {
       dmhGuideScreenOptions: (theme: unknown) => Options
