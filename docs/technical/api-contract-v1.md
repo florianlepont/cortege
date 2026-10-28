@@ -907,7 +907,10 @@ The factor objects of `factors` may carry detail arrays next to their scored val
 they may also carry the detail of an uncapped count (relevé déplafonné): `B.strata_cover` (object,
 stratum code to percent of cover), `F.dmh_counts` (object, group code `dmh_01` to `dmh_15` to a
 whole number of trees) and `F.surface_ha`; these three are objects or numbers, not arrays, and
-follow the same rules (see `data-contract-v1.md`). They are stored
+follow the same rules (see `data-contract-v1.md`). A capped survey (follow-up of phase 32) also
+writes `F.dmh_counts`, with values 0 to 2 meaning trees per hectare, no `F.surface_ha` and
+`F.trees_per_ha` equal to their sum; the server stores it verbatim like the rest and no scorer
+reads it, so a payload with only the typed `F.trees_per_ha` stays valid. They are stored
 and returned verbatim by `POST /v1/sync`, `POST /v1/surveys`, `GET /v1/sync/changes` and
 `GET /v1/surveys/:id`, are not validated by the server, and are never scored. No endpoint, field
 or wire type is added.

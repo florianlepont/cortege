@@ -379,6 +379,22 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   then derived by `dmhDensityPerHa` (each group's count divided by `surface_ha`, capped at 2 per
   hectare, then summed). `dmh_counts` is not the `dmh_group_counts` array of the scorer, is never
   scored and is written only with `trees_per_ha`.
+- Capped count (follow-up of phase 32, owner decision 2026-10-28, after the official sheet: "compter
+  au maximum 2 arbres/ha par groupe de DMH ... total plafonné à 8 arbres/ha"): in the capped mode
+  each group row has the same counter as the full mode (the "+" of an unticked row ticks the group
+  and counts 1, then a stepper), but the value is a whole number of trees **per hectare** from 0 to
+  2 (the stepper stops at 2; the list caption says "au plus 2 par groupe"). No surface field and no
+  division: the counts are already per hectare, and fractions are not allowed. The form stores
+  `dmh_groups` (the ticks), `dmh_counts` (values 0 to 2) and a derived `trees_per_ha` that is the
+  sum of the counts (`cappedDmhTotalPerHa` of the package); `surface_ha` is not written. The total
+  is shown under the list ("Total : N arbres par hectare") and is not limited to 8: the score
+  classes already stop there (8 and above is class `5`), so the sheet's total of 8 is a display
+  matter. The "Arbres par ha" field becomes read-only and derived as soon as one counter is above 0;
+  while every counter is 0 the typed number stays editable. Touching a counter takes over from a
+  typed number: the derived total replaces it (existing data is test data). A capped survey saved
+  before (typed number, ticks only) opens as it was and still validates. Counts of a counted-in-full
+  survey (trees on a surface) are brought to the cap on the first touch in the capped mode. The
+  score never reads the counts (parity cases `MAT-F-CAP-*`).
 - Example:
   - total after capping = 8.4 trees/ha -> score `5`.
 
