@@ -165,6 +165,22 @@ export function useUncappedEntry() {
     [commit, commitCapped],
   )
 
+  /**
+   * "No tree carries a dendromicrohabitat" (follow-up 32-25): empties every group count. The capped
+   * mode (`dropSurface`) also drops F's surface, which it never stores; counted in full the typed
+   * surface is kept as it is.
+   */
+  const clearDmhCounts = useCallback(
+    (dropSurface: boolean): void => {
+      commit({
+        ...latest.current,
+        dmhCounts: {},
+        ...(dropSurface ? { fSurfaceText: "" } : {}),
+      })
+    },
+    [commit],
+  )
+
   /** Stores F's surface text; returns the derived trees per hectare (null without a valid one). */
   const setFSurface = useCallback(
     (text: string): number | null =>
@@ -219,6 +235,7 @@ export function useUncappedEntry() {
     setStratumCover,
     setDmhCount,
     bumpDmhCount,
+    clearDmhCounts,
     setFSurface,
     loadUncapped,
     resetUncapped,

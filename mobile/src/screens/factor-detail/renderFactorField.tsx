@@ -147,6 +147,7 @@ export function renderDmhGroupList(
     <DmhGroupList
       key={`F-${field.label}-companion`}
       methodVersion={methodVersion}
+      treesPerHaText={field.value}
       selected={field.selection?.selected ?? null}
       onChangeSelection={field.selection?.onChange ?? ignoreSelectionChange}
       counting={
@@ -155,6 +156,7 @@ export function renderDmhGroupList(
               counts: entry.state.dmhCounts,
               onBump: entry.bumpDmhGroup,
               onSetCount: entry.setDmhCount,
+              onMarkNone: (next) => entry.markNoDmhGroup(next),
             }
           : capped
             ? {
@@ -164,6 +166,7 @@ export function renderDmhGroupList(
                   capped.bumpDmhGroup(code, delta, DMH_GROUP_DENSITY_CAP_PER_HA),
                 onSetCount: (code, count) =>
                   capped.setDmhCount(code, count, DMH_GROUP_DENSITY_CAP_PER_HA),
+                onMarkNone: (next) => capped.markNoDmhGroup(next, DMH_GROUP_DENSITY_CAP_PER_HA),
               }
             : undefined
       }

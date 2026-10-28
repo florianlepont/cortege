@@ -12,6 +12,8 @@ import { AppText as Text } from "../../ui/AppText"
 import { countFromText } from "./count-from-text"
 import { createDmhListStyles, DMH_LABEL_INSET } from "./dmh-group-list.styles"
 import { DmhGroupRow } from "./DmhGroupRow"
+import { DmhNoneRow } from "./DmhNoneRow"
+import { anyDmhCount, isNoDmhGroup } from "./no-dmh-group"
 
 const t = fr.factorDetail.dmhList
 
@@ -28,10 +30,14 @@ export type DmhListCounting = {
   onBump: (code: DmhGroupCode, delta: number) => void
   /** Sets a count; NaN (an emptied field) drops it. */
   onSetCount: (code: DmhGroupCode, count: number) => void
+  /** The "no tree carries one" row (follow-up 32-25): true records 0 with no group, false undoes it. */
+  onMarkNone: (next: boolean) => void
 }
 
 type DmhGroupListProps = {
   methodVersion: IbpMethodVersion | null
+  /** F's stored trees per hectare as text: the "no tree carries one" row reads it (32-25). */
+  treesPerHaText: string
   /** The stored group selection of factor F (null when the survey has none). */
   selected: readonly string[] | null
   onChangeSelection: (next: string[]) => void
@@ -52,10 +58,12 @@ const KNOWN_CODES: ReadonlySet<string> = new Set(DMH_GROUP_CODES)
  * card (A-C1): one container level, as in an iOS inset grouped list. The order and the open sections are computed once, when the list mounts (D-08 levers
  * b and c): ticking, counting or unticking never moves a row or a section, so a thumb never meets
  * a row that has jumped (research pitfall 5). The info buttons stay active when the list is
- * read-only.
+ * read-only. With the counters on the page, one row sits above the first section: "no tree carries
+ * a dendromicrohabitat" (follow-up 32-25), the way to record 0 without touching a counter.
  */
 export function DmhGroupList({
   methodVersion,
+  treesPerHaText,
   selected,
   onChangeSelection,
   counting,
@@ -81,6 +89,9 @@ export function DmhGroupList({
   })
   const onSubmitText = useLatestCallback((code: DmhGroupCode, text: string): void => {
     counting?.onSetCount(code, countFromText(text))
+  })
+  const onMarkNone = useLatestCallback((next: boolean): void => {
+    counting?.onMarkNone(next)
   })
   const onOpenInfo = useLatestCallback((code: DmhGroupCode): void => {
     onOpenDmhGuide(code)
@@ -116,6 +127,17 @@ export function DmhGroupList({
         </Text>
       </View>
       <View style={styles.sections}>
+        {full ? (
+          <AppGroupedContainer dividerInset={DMH_LABEL_INSET}>
+            <DmhNoneRow
+              chosen={isNoDmhGroup({ treesPerHaText, selected, counts })}
+              locked={anyDmhCount(counts)}
+              editable={editable}
+              onChange={onMarkNone}
+              styles={styles}
+            />
+          </AppGroupedContainer>
+        ) : null}
         {sections.map((section) => {
           const total = section.codes.length
           const tickedHere = section.codes.filter((code) => tickedSet.has(code)).length

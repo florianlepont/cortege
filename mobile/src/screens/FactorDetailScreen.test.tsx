@@ -767,6 +767,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     setStratumCover: jest.fn(),
     setDmhCount: jest.fn(),
     bumpDmhGroup: jest.fn(),
+    markNoDmhGroup: jest.fn(),
     setFSurface: jest.fn(),
   }
   const mount = (

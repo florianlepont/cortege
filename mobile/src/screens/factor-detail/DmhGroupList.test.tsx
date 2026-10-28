@@ -57,6 +57,7 @@ function mount(props: Partial<Props> = {}) {
   const element = (next: Partial<Props>) => (
     <DmhGroupList
       methodVersion={IBP_METHOD_V3_2}
+      treesPerHaText=""
       selected={null}
       onChangeSelection={onChangeSelection}
       onOpenDmhGuide={onOpenDmhGuide}
@@ -105,7 +106,12 @@ function mount(props: Partial<Props> = {}) {
 }
 
 function counting(counts: DmhListCounting["counts"] = {}) {
-  return { counts, onBump: jest.fn(), onSetCount: jest.fn() } satisfies DmhListCounting
+  return {
+    counts,
+    onBump: jest.fn(),
+    onSetCount: jest.fn(),
+    onMarkNone: jest.fn(),
+  } satisfies DmhListCounting
 }
 
 const FORM_ORDER = [
@@ -405,5 +411,108 @@ describe("DmhGroupList, handlers", () => {
     const before = handlers()
     update({ selected: ["dmh_02"], counting: counting({ dmh_02: 1 }) })
     expect(handlers()).toEqual(before)
+  })
+})
+
+describe("DmhGroupList, the row 'no tree carries a dendromicrohabitat' (follow-up 32-25)", () => {
+  const none = fr.factorDetail.dmhList.none
+  // The checked state of the row, read from the circle the screen draws: the checkbox says it.
+  const checked = (node: Node): boolean => node.props.accessibilityState.checked
+
+  test("is the first thing of the list, above the first section, with the catalogue label", () => {
+    const { tree, one, textOf } = mount({ counting: counting() })
+    const row = one("dmh-none-row")
+    expect(row.props.accessibilityRole).toBe("checkbox")
+    expect(row.props.accessibilityLabel).toBe(none.label)
+    expect(textOf(row)).toBe(none.label)
+    expect(none.label).toBe("Aucun arbre porteur de dendromicrohabitats")
+    const order = tree.root
+      .findAll(
+        (n) =>
+          typeof n.type === "string" &&
+          (n.props.testID === "dmh-none-row" || n.props.testID === "dmh-section-cavities"),
+      )
+      .map((n) => n.props.testID)
+    expect(order).toEqual(["dmh-none-row", "dmh-section-cavities"])
+  })
+
+  test("is not on the page when the counters are not (no counting entry wired)", () => {
+    expect(mount().all("dmh-none-row")).toHaveLength(0)
+  })
+
+  test("nothing stored: unticked; trees per hectare 0 with no group: ticked", () => {
+    expect(checked(mount({ counting: counting() }).one("dmh-none-row"))).toBe(false)
+    expect(checked(mount({ counting: counting(), treesPerHaText: "0" }).one("dmh-none-row"))).toBe(
+      true,
+    )
+    expect(checked(mount({ counting: counting(), treesPerHaText: "5" }).one("dmh-none-row"))).toBe(
+      false,
+    )
+  })
+
+  test("an older capped survey with a typed 0 and no groups shows it ticked (max set, no counts)", () => {
+    const capped = { ...counting(), max: 2 }
+    const { one } = mount({ counting: capped, treesPerHaText: "0", selected: null })
+    expect(checked(one("dmh-none-row"))).toBe(true)
+    expect(
+      checked(mount({ counting: capped, treesPerHaText: "0", selected: [] }).one("dmh-none-row")),
+    ).toBe(true)
+  })
+
+  test("the state is derived: a ticked or a counted group unticks it, unticking all brings it back", () => {
+    const { one, update } = mount({ counting: counting(), treesPerHaText: "0" })
+    expect(checked(one("dmh-none-row"))).toBe(true)
+    update({ selected: ["dmh_05"] })
+    expect(checked(one("dmh-none-row"))).toBe(false)
+    update({ selected: [], counting: counting({ dmh_05: 1 }) })
+    expect(checked(one("dmh-none-row"))).toBe(false)
+    // Counters back to 0 and unticked: the stored 0 reads as "none" again.
+    update({ selected: [], counting: counting({ dmh_05: 0 }) })
+    expect(checked(one("dmh-none-row"))).toBe(true)
+  })
+
+  test("a press records 'none' (true), a press on the ticked row undoes it (false), with a haptic", () => {
+    const c = counting()
+    const { press, update } = mount({ counting: c })
+    press("dmh-none-row")
+    expect(c.onMarkNone).toHaveBeenLastCalledWith(true)
+    update({ treesPerHaText: "0" })
+    press("dmh-none-row")
+    expect(c.onMarkNone).toHaveBeenLastCalledWith(false)
+    expect(c.onMarkNone).toHaveBeenCalledTimes(2)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    expect(jest.requireMock("../../ui/feedback").feedback.selection).toHaveBeenCalled()
+  })
+
+  test("with ticked groups all at 0 the press asks nothing and clears them (true)", () => {
+    const c = counting({ dmh_05: 0 })
+    const { press, one } = mount({ counting: c, selected: ["dmh_05"] })
+    expect(checked(one("dmh-none-row"))).toBe(false)
+    press("dmh-none-row")
+    expect(c.onMarkNone).toHaveBeenCalledWith(true)
+  })
+
+  test("with a count above 0 the press changes nothing and the locked caption shows", () => {
+    jest.useFakeTimers()
+    const c = counting({ dmh_05: 2 })
+    const { press, all, one, textOf } = mount({ counting: c, selected: ["dmh_05"] })
+    expect(one("dmh-none-row").props.accessibilityHint).toBe(none.lockedHint)
+    expect(all("dmh-none-locked")).toHaveLength(0)
+    press("dmh-none-row")
+    expect(c.onMarkNone).not.toHaveBeenCalled()
+    expect(textOf(one("dmh-none-locked"))).toBe(none.locked)
+    act(() => {
+      jest.advanceTimersByTime(4000)
+    })
+    expect(all("dmh-none-locked")).toHaveLength(0)
+    jest.useRealTimers()
+  })
+
+  test("a read-only list disables the row", () => {
+    const { one } = mount({ counting: counting(), editable: false })
+    expect(one("dmh-none-row").props.accessibilityState).toEqual({
+      checked: false,
+      disabled: true,
+    })
   })
 })

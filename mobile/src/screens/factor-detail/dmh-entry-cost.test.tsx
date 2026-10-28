@@ -106,6 +106,7 @@ function Harness({ formRef, full }: { formRef: { current: Form | null }; full: b
         setStratumCover: form.setStratumCover,
         setDmhCount: form.setDmhCount,
         bumpDmhGroup: form.bumpDmhGroup,
+        markNoDmhGroup: form.markNoDmhGroup,
         setFSurface: form.setFSurface,
       }}
     />
@@ -224,5 +225,75 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
       (n) => (n.type as unknown) === "View" && n.props.testID === "trees-per-ha-value",
     )
     expect(block.props.accessibilityLabel).toBe("Arbres par hectare, 2")
+  })
+})
+
+// Follow-up 32-25: the row that records "no group observed". Not part of the S1/S2 press counts
+// (they never press it); this walks the real form through it in both modes.
+describe("the 'no tree carries a dendromicrohabitat' row, on the real form", () => {
+  const checkedOf = (tree: renderer.ReactTestRenderer): boolean =>
+    tree.root.findAll((n) => n.props.testID === "dmh-none-row" && typeof n.type === "string")[0]
+      .props.accessibilityState.checked
+
+  test.each([false, true])(
+    "full=%s: one press stores 0, the field shows 0, a second press empties it",
+    (full) => {
+      const { formRef, byTestID, tree } = mount(full)
+      const form = (): Form => formRef.current as Form
+      expect(form().draftInput.factors.F).toBeUndefined()
+      expect(checkedOf(tree())).toBe(false)
+
+      act(() => byTestID("dmh-none-row").props.onPress())
+      expect(form().draftInput.factors.F).toEqual({ trees_per_ha: 0 })
+      expect(form().factorRetainedScores.F).not.toBeNull()
+      expect(checkedOf(tree())).toBe(true)
+      const value = tree().root.find(
+        (n) => (n.type as unknown) === "View" && n.props.testID === "trees-per-ha-value",
+      )
+      expect(value.props.accessibilityLabel).toBe("Arbres par hectare, 0")
+
+      act(() => byTestID("dmh-none-row").props.onPress())
+      expect(form().draftInput.factors.F).toBeUndefined()
+      expect(checkedOf(tree())).toBe(false)
+    },
+  )
+
+  test("a group's + takes over (the row unticks, the sum replaces the 0); counters back to 0 and unticked give it back", () => {
+    const { formRef, byTestID, tree } = mount(false)
+    const form = (): Form => formRef.current as Form
+    act(() => byTestID("dmh-none-row").props.onPress())
+    act(() => byTestID("dmh-section-cavities").props.onPress())
+    act(() => byTestID("dmh-add-dmh_01").props.onPress())
+    expect(checkedOf(tree())).toBe(false)
+    expect(form().draftInput.factors.F).toEqual({
+      trees_per_ha: 1,
+      dmh_groups: ["dmh_01"],
+      dmh_counts: { dmh_01: 1 },
+    })
+    // Counted: the row is locked and a press changes nothing.
+    act(() => byTestID("dmh-none-row").props.onPress())
+    expect(form().uncapped.dmhCounts).toEqual({ dmh_01: 1 })
+    expect(checkedOf(tree())).toBe(false)
+    // The hard way still works and ends in the same state.
+    act(() => form().bumpDmhGroup("dmh_01", -1, 2))
+    act(() => byTestID("dmh-tick-dmh_01").props.onPress())
+    expect(form().draftInput.factors.F).toEqual({ trees_per_ha: 0, dmh_counts: { dmh_01: 0 } })
+    expect(checkedOf(tree())).toBe(true)
+  })
+
+  test("with groups ticked at 0, pressing it clears them in one update", () => {
+    const { formRef, byTestID, tree } = mount(false)
+    const form = (): Form => formRef.current as Form
+    act(() => byTestID("dmh-section-cavities").props.onPress())
+    act(() => byTestID("dmh-add-dmh_01").props.onPress())
+    act(() => form().bumpDmhGroup("dmh_01", -1, 2))
+    expect(form().draftInput.factors.F).toEqual({
+      trees_per_ha: 0,
+      dmh_groups: ["dmh_01"],
+      dmh_counts: { dmh_01: 0 },
+    })
+    act(() => byTestID("dmh-none-row").props.onPress())
+    expect(form().draftInput.factors.F).toEqual({ trees_per_ha: 0 })
+    expect(checkedOf(tree())).toBe(true)
   })
 })

@@ -141,6 +141,20 @@ const numberError = (
   return null
 }
 
+/**
+ * What a group count writes in F's trees per hectare: the derived figure; else, when the count went
+ * up and the figure cannot be derived yet (counted in full, no surface), a stored 0 of the "no tree
+ * carries one" row is emptied so it does not stand beside a counted group; else nothing.
+ */
+const treesPerHaAfterCount = (
+  current: string,
+  derived: number | null,
+  raised: boolean,
+): { trees_per_ha?: string } => {
+  if (derived !== null) return { trees_per_ha: String(derived) }
+  return raised && current.trim() === "0" ? { trees_per_ha: "" } : {}
+}
+
 const oneOfError = (value: string, label: string, allowed: readonly number[]): FieldError => {
   const base = numberError(value, label, { integer: true })
   if (base) return base
@@ -196,6 +210,7 @@ export function useSurveyForm() {
     setStratumCover: storeStratumCover,
     setDmhCount: storeDmhCount,
     bumpDmhCount: storeBumpDmhCount,
+    clearDmhCounts,
     setFSurface: storeFSurface,
     loadUncapped,
     resetUncapped,
@@ -519,7 +534,11 @@ export function useSurveyForm() {
    * hectare held at `cap` and the sum of the groups replaces the typed `trees_per_ha`, no surface.
    */
   const setDmhCount = (code: DmhGroupCode, count: number, cap?: number): void => {
-    writeTreesPerHa(storeDmhCount(code, count, cap))
+    const derived = storeDmhCount(code, count, cap)
+    setFactorF((prev) => ({
+      ...prev,
+      ...treesPerHaAfterCount(prev.trees_per_ha, derived, count > 0),
+    }))
   }
 
   /**
@@ -538,8 +557,28 @@ export function useSurveyForm() {
         delta > 0
           ? withSelectionToggled("F", ibpMethodVersion, prev.dmh_groups, code, true)
           : prev.dmh_groups,
-      ...(derived !== null ? { trees_per_ha: String(derived) } : {}),
+      ...treesPerHaAfterCount(prev.trees_per_ha, derived, delta > 0),
     }))
+  }
+
+  /**
+   * Follow-up 32-25: "no tree carries a dendromicrohabitat", the one way to record 0 without
+   * touching a counter. On: stores trees per hectare 0 with no group and no count (counted in full
+   * the typed surface stays; with `cap`, the capped mode, there is none). Off: puts the empty field
+   * back, only while the factor really is in that state, so it never erases a figure. The state is
+   * not stored: the list derives it from these values.
+   */
+  const markNoDmhGroup = (on: boolean, cap?: number): void => {
+    if (on) {
+      clearDmhCounts(cap !== undefined)
+      setFactorF((prev) => ({ ...prev, trees_per_ha: "0", dmh_groups: [] }))
+      return
+    }
+    setFactorF((prev) =>
+      prev.trees_per_ha.trim() === "0" && prev.dmh_groups.length === 0
+        ? { ...prev, trees_per_ha: "" }
+        : prev,
+    )
   }
 
   /** F's own surface (prefilled from the route's surface décrite by the F page, editable). */
@@ -811,6 +850,7 @@ export function useSurveyForm() {
     setStratumCover,
     setDmhCount,
     bumpDmhGroup,
+    markNoDmhGroup,
     setFSurface,
     formErrors,
     draftInput,

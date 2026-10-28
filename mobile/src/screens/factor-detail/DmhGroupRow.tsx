@@ -1,5 +1,5 @@
-import { memo, useEffect, useRef, useState } from "react"
-import { AccessibilityInfo, Platform, View } from "react-native"
+import { memo } from "react"
+import { View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, { FadeIn, LinearTransition, ReduceMotion } from "react-native-reanimated"
 import type { DmhGroupCode } from "@cortege/ibp-domain"
@@ -12,11 +12,10 @@ import { DmhCounterStepper } from "../../ui/DmhCounterStepper"
 import { feedback } from "../../ui/feedback"
 import { SelectionCircle } from "../../ui/SelectionCircle"
 import type { DmhListStyles } from "./dmh-group-list.styles"
+import { useLockedCaption } from "./useLockedCaption"
 
 const t = fr.factorDetail.dmhList
 
-/** How long the "bring the count back to 0" caption stays under a locked row (O-32-3). */
-const LOCKED_CAPTION_MS = 4000
 export const DMH_INFO_GLYPH_SIZE = 22
 
 export type DmhGroupRowProps = {
@@ -67,14 +66,7 @@ export const DmhGroupRow = memo(function DmhGroupRow({
   styles,
 }: DmhGroupRowProps) {
   const theme = useBrandTheme()
-  const [lockedShown, setLockedShown] = useState(false)
-  const lockedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(
-    () => () => {
-      if (lockedTimer.current !== null) clearTimeout(lockedTimer.current)
-    },
-    [],
-  )
+  const { shown: lockedShown, show: showLocked } = useLockedCaption(t.lockedUntick)
 
   const counted = (count ?? 0) > 0
   const locked = full && ticked && counted
@@ -88,13 +80,7 @@ export const DmhGroupRow = memo(function DmhGroupRow({
       return
     }
     if (locked) {
-      if (lockedTimer.current !== null) clearTimeout(lockedTimer.current)
-      setLockedShown(true)
-      lockedTimer.current = setTimeout(() => {
-        lockedTimer.current = null
-        setLockedShown(false)
-      }, LOCKED_CAPTION_MS)
-      if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(t.lockedUntick)
+      showLocked()
       return
     }
     onToggle(code, false)

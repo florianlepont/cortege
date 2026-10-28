@@ -67,6 +67,8 @@ export type SurveyFormActions = {
   setDmhCount: SurveyForm["setDmhCount"]
   /** Phase 32 (D-08, D-10): first "+" of a dendromicrohabitat row ticks and counts; never unticks. */
   bumpDmhGroup: SurveyForm["bumpDmhGroup"]
+  /** Follow-up 32-25: "no tree carries a dendromicrohabitat" stores 0 with no group and no count. */
+  markNoDmhGroup: SurveyForm["markNoDmhGroup"]
   setFSurface: SurveyForm["setFSurface"]
 }
 

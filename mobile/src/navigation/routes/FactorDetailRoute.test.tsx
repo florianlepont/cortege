@@ -60,6 +60,7 @@ const mockForm = {
     setStratumCover: jest.fn(),
     setDmhCount: jest.fn(),
     bumpDmhGroup: jest.fn(),
+    markNoDmhGroup: jest.fn(),
     setFSurface: jest.fn(),
   },
 }
@@ -265,12 +266,14 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
       setStratumCover: unknown
       setDmhCount: unknown
       bumpDmhGroup: unknown
+      markNoDmhGroup: unknown
       setFSurface: unknown
     }
     expect(entry.state).toBe(mockForm.state.uncapped)
     expect(entry.setStratumCover).toBe(mockForm.actions.setStratumCover)
     expect(entry.setDmhCount).toBe(mockForm.actions.setDmhCount)
     expect(entry.bumpDmhGroup).toBe(mockForm.actions.bumpDmhGroup)
+    expect(entry.markNoDmhGroup).toBe(mockForm.actions.markNoDmhGroup)
     expect(entry.setFSurface).toBe(mockForm.actions.setFSurface)
   })
 

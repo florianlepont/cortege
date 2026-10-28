@@ -346,6 +346,7 @@ function useAppController() {
     setStratumCover: surveyForm.setStratumCover,
     setDmhCount: surveyForm.setDmhCount,
     bumpDmhGroup: surveyForm.bumpDmhGroup,
+    markNoDmhGroup: surveyForm.markNoDmhGroup,
     setFSurface: surveyForm.setFSurface,
   })
 

@@ -862,6 +862,7 @@ describe("FactorPager counting mode (Phase 30, D-07)", () => {
       setStratumCover: jest.fn(),
       setDmhCount: jest.fn(),
       bumpDmhGroup: jest.fn(),
+      markNoDmhGroup: jest.fn(),
       setFSurface: jest.fn(),
     }
     const { tree } = render("B", {}, null, {}, { uncappedFactors: ["B"], uncappedEntry })

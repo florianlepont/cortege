@@ -1298,6 +1298,135 @@ describe("useSurveyForm", () => {
     })
   })
 
+  describe("markNoDmhGroup (follow-up 32-25, no tree carries a dendromicrohabitat)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factorF = (result: FormResult) =>
+      (result.current.draftInput.factors as Record<string, Record<string, unknown>>).F
+    const CAP = 2
+
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    })
+
+    test("capped: stores trees per hectare 0 alone (no group, no count, no surface) and F is scored", async () => {
+      const result = await renderForm()
+      expect(result.current.factorRetainedScores.F).toBeNull()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0 })
+      expect(result.current.factorSections.F[0].value).toBe("0")
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual([])
+      expect(result.current.uncapped.dmhCounts).toEqual({})
+      expect(result.current.factorRetainedScores.F).not.toBeNull()
+    })
+
+    test("it replaces ticked groups, counts and a typed number in one update", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_01", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+        result.current.bumpDmhGroup("dmh_05", -1, CAP)
+        result.current.bumpDmhGroup("dmh_01", -1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 0,
+        dmh_groups: ["dmh_01", "dmh_05"],
+        dmh_counts: { dmh_01: 0, dmh_05: 0 },
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0 })
+    })
+
+    test("counted in full the typed surface stays; the counts and groups go", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setFSurface("2")
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 0.5,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+        surface_ha: 2,
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 0, surface_ha: 2 })
+      expect(result.current.uncapped.fSurfaceText).toBe("2")
+    })
+
+    test("off empties the field again, only while it holds the none state", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(false, CAP)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+      expect(factorF(result)).toBeUndefined()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("4")
+      })
+      await act(async () => {
+        result.current.markNoDmhGroup(false, CAP)
+      })
+      expect(factorF(result)).toEqual({ trees_per_ha: 4 })
+    })
+
+    test("a counter takes over from the none state: the sum replaces the 0", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true, CAP)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1, CAP)
+      })
+      expect(factorF(result)).toEqual({
+        trees_per_ha: 1,
+        dmh_groups: ["dmh_05"],
+        dmh_counts: { dmh_05: 1 },
+      })
+    })
+
+    test("counted in full without a surface, a count empties the 0 instead of standing beside it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      await act(async () => {
+        result.current.bumpDmhGroup("dmh_05", 1)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+      expect(result.current.uncapped.dmhCounts).toEqual({ dmh_05: 1 })
+      await act(async () => {
+        result.current.markNoDmhGroup(true)
+      })
+      await act(async () => {
+        result.current.setDmhCount("dmh_05", 2)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("")
+    })
+
+    test("a count lowered to 0 with no surface leaves the typed number alone", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.F[0].onChange("3")
+        result.current.setDmhCount("dmh_05", 0)
+      })
+      expect(result.current.factorSections.F[0].value).toBe("3")
+    })
+  })
+
   describe("factor annotations (D-23)", () => {
     const useRealRules = () => {
       mockParseFinite.mockImplementation(

@@ -15,6 +15,8 @@ export type UncappedEntryProps = {
   setDmhCount: (code: DmhGroupCode, count: number, cap?: number) => void
   /** Phase 32: the first "+" of a row ticks the group and counts 1. Same `cap`. */
   bumpDmhGroup: (code: DmhGroupCode, delta: number, cap?: number) => void
+  /** Follow-up 32-25: the "no tree carries one" row; `cap` as above (the capped mode has no surface). */
+  markNoDmhGroup: (on: boolean, cap?: number) => void
   setFSurface: (text: string) => void
 }
 

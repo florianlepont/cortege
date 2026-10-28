@@ -16,6 +16,7 @@ import {
   TopClassNote,
 } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
+import { anyDmhCount } from "./factor-detail/no-dmh-group"
 import {
   fieldVariantsFor,
   hasDmhListCompanion,
@@ -117,9 +118,7 @@ export function FactorDetailScreen({
   // hectare is only ever their derived figure, a value and not an input.
   const cappedEntry = factor === "F" && !countedInFull ? uncappedEntry : undefined
   const groupEntry = detailEntry ?? cappedEntry
-  const anyGroupCounted = Object.values(groupEntry?.state.dmhCounts ?? {}).some(
-    (count) => (count ?? 0) > 0,
-  )
+  const anyGroupCounted = anyDmhCount(groupEntry?.state.dmhCounts)
   const topClassReached = factor === "F" && retainedScore?.score === TOP_F_SCORE
   // Found by its place (the numeric variant), not by its label: the form hands the French label
   // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).

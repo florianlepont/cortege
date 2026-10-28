@@ -132,6 +132,13 @@ export const factorDetailFr = {
     topClassNote:
       "À partir de 8 arbres par hectare, la classe est 5. Inutile de compter davantage.",
     lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
+    // Follow-up 32-25: the row above the sections that records "no group observed" (0 per hectare).
+    none: {
+      label: "Aucun arbre porteur de dendromicrohabitats",
+      hint: "Enregistre 0 arbre par hectare et décoche les groupes",
+      locked: "Ramenez d'abord les nombres des groupes à 0 pour choisir cette ligne.",
+      lockedHint: "Ramenez d'abord les nombres des groupes à 0",
+    },
     a11y: {
       info: ({ label }: { label: string }) => `En savoir plus sur ${label}`,
       infoHint: "Ouvre le guide à ce groupe",
