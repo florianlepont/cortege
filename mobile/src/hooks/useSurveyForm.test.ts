@@ -664,6 +664,84 @@ describe("useSurveyForm", () => {
 
   // ─── Factor details stored next to the scored values (phase 25.1, D-12) ───
 
+  describe("lower counter of C, D, E (follow-up 32-32)", () => {
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    type Density = "C" | "D" | "E"
+    const rules = (): void => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+    const typeAll = async (result: FormResult, factor: Density, values: string[]) => {
+      for (const [index, value] of values.entries()) {
+        await act(async () => {
+          result.current.factorSections[factor][index].onChange(value)
+        })
+      }
+    }
+    const payloadOf = (result: FormResult, factor: Density) =>
+      (result.current.draftInput.factors as Record<string, unknown>)[factor]
+
+    beforeEach(rules)
+
+    test("below 1 upper per hectare the lower counter is required and the factor waits for it", async () => {
+      const result = await renderForm()
+      await typeAll(result, "C", ["1", "", "2"])
+      const lower = result.current.factorSections.C[1]
+      expect(lower.required).toBe(true)
+      expect(lower.notNeeded).toBe(false)
+      expect(lower.error).toBe(fr.validation.rules.required(fields.bmm_count))
+      expect(payloadOf(result, "C")).toBeUndefined()
+      await act(async () => {
+        result.current.factorSections.C[1].onChange("3")
+      })
+      expect(payloadOf(result, "C")).toEqual({ bmg_count: 1, bmm_count: 3, surface_ha: 2 })
+    })
+
+    test("from 1 upper per hectare the lower counter is not needed, not an error, and the factor is stored without it", async () => {
+      const result = await renderForm()
+      await typeAll(result, "D", ["4", "", "2"])
+      const lower = result.current.factorSections.D[1]
+      expect(lower.required).toBe(false)
+      expect(lower.notNeeded).toBe(true)
+      expect(lower.error).toBeNull()
+      expect(payloadOf(result, "D")).toEqual({ bmg_count: 4, surface_ha: 2 })
+      expect(result.current.factorRetainedScores.D?.score).toBe(2)
+    })
+
+    test("a lower count already typed stays in the payload when the upper class passes the line", async () => {
+      const result = await renderForm()
+      await typeAll(result, "E", ["0", "5", "2"])
+      expect(payloadOf(result, "E")).toEqual({ tgb_count: 0, gb_count: 5, surface_ha: 2 })
+      await act(async () => {
+        result.current.factorSections.E[0].onChange("4")
+      })
+      expect(result.current.factorSections.E[1].notNeeded).toBe(true)
+      expect(result.current.factorSections.E[1].value).toBe("5")
+      expect(payloadOf(result, "E")).toEqual({ tgb_count: 4, gb_count: 5, surface_ha: 2 })
+    })
+
+    test("without a surface or an upper count the lower counter is still needed", async () => {
+      const result = await renderForm()
+      expect(result.current.factorSections.C[1].notNeeded).toBe(false)
+      await typeAll(result, "C", ["9", "", ""])
+      expect(result.current.factorSections.C[1].notNeeded).toBe(false)
+      expect(payloadOf(result, "C")).toBeUndefined()
+    })
+
+    test("a lower count that is not a whole number still shows its error", async () => {
+      const result = await renderForm()
+      await typeAll(result, "C", ["9", "1,5", "2"])
+      expect(result.current.factorSections.C[1].error).toBe(
+        fr.validation.rules.integer(fields.bmm_count),
+      )
+      expect(payloadOf(result, "C")).toEqual({ bmg_count: 9, surface_ha: 2 })
+    })
+  })
+
   describe("factor detail arrays (D-12)", () => {
     const useRealRules = () => {
       mockParseFinite.mockImplementation(

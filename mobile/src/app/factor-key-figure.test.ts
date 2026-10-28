@@ -136,9 +136,15 @@ describe("C, D, E: per hectare", () => {
     expect(figure("E", ["0", "0", "2"]).value).toBe("0")
   })
 
+  it("needs no lower count from 1 upper per hectare, where the package does not read it", () => {
+    expect(figure("C", ["3", "", "2"]).value).toBe("1,5")
+    expect(figure("E", ["2", "", "2"]).value).toBe("1")
+    expect(figure("D", ["1", "", "2"]).value).toBeNull()
+  })
+
   it("is null without a count, with an unreadable count, or without a positive surface", () => {
     expect(figure("C", ["", "4", "2"]).value).toBeNull()
-    expect(figure("C", ["3", "", "2"]).value).toBeNull()
+    expect(figure("C", ["1", "", "2"]).value).toBeNull()
     expect(figure("C", ["3", "4", ""]).value).toBeNull()
     expect(figure("C", ["3", "4", "0"]).value).toBeNull()
     expect(figure("C", ["1,5", "4", "2"]).value).toBeNull()

@@ -108,6 +108,11 @@ export type FactorField = {
   value: string
   onChange: (value: string) => void
   required?: boolean
+  /**
+   * Follow-up 32-32: the package does not need this field now (the lower counter of C, D and E from
+   * 1 upper per hectare). It is left out of the factor's progress, and the capped entry hides it.
+   */
+  notNeeded?: boolean
   error?: string | null
   /** FLOW-02: whether the field was left once or submission was attempted — gates error display. */
   touched: boolean

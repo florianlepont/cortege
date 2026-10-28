@@ -3,14 +3,18 @@ import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
   allowedScoresFor,
+  DENSITY_COUNT_KEYS,
   canonicalFactorAnnotations,
   casFromRegionStage,
+  densityLowerCountNeeded,
   isIbpCas,
+  readDensityPerHa,
   readFactorAnnotations,
   resolveMethodVersion,
   withFactorAnnotations,
   type BStratumCode,
   type CnpfFactorAGenusCode,
+  type DensityFactor,
   type DmhGroupCode,
   type IbpCas,
   type IbpMethodVersion,
@@ -154,6 +158,49 @@ const oneOfError = (value: string, label: string, allowed: readonly number[]): F
   return null
 }
 
+type DensityText = { upper: string; lower: string; surface: string }
+const densityText = (upper: string, lower: string, surface: string): DensityText => ({
+  upper,
+  lower,
+  surface,
+})
+
+/** The counts and surface of C, D or E as the payload reads them: null when empty or not storable. */
+function densityRaw(factor: DensityFactor, text: DensityText): Record<string, number | null> {
+  const [upperKey, lowerKey] = DENSITY_COUNT_KEYS[factor]
+  return {
+    [upperKey]: toFiniteNumberInRange(text.upper, { min: 0, integer: true }),
+    [lowerKey]: toFiniteNumberInRange(text.lower, { min: 0, integer: true }),
+    surface_ha: toFiniteNumberInRange(text.surface, { min: 0.000001 }),
+  }
+}
+
+/**
+ * The payload of C, D or E, or undefined while the package cannot read it: the upper count and the
+ * surface are needed, and the lower count too until the upper class reaches 1 per hectare. A lower
+ * count already typed is kept in every case. The package decides; nothing is repeated here.
+ */
+function densityPayload(
+  factor: DensityFactor,
+  text: DensityText,
+): Record<string, number> | undefined {
+  const raw = densityRaw(factor, text)
+  if (readDensityPerHa(factor, raw) === null) return undefined
+  const entries = Object.entries(raw).filter(
+    (entry): entry is [string, number] => entry[1] !== null,
+  )
+  return Object.fromEntries(entries)
+}
+
+/** True while the lower count (BMm, GB) still has to be counted, by the package's rule. */
+function lowerCountNeeded(factor: DensityFactor, text: DensityText): boolean {
+  return densityLowerCountNeeded(factor, densityRaw(factor, text))
+}
+
+/** The lower count's error: nothing for an empty field the package does not need. */
+const lowerCountError = (value: string, label: string, needed: boolean): FieldError =>
+  !needed && value.trim().length === 0 ? null : numberError(value, label, { min: 0, integer: true })
+
 export function useSurveyForm() {
   const [siteName, setSiteName] = useState(DEFAULT_SURVEY_FORM.siteName)
   const [regionVersion, setRegionVersion] = useState<RegionVersion>(
@@ -296,23 +343,21 @@ export function useSurveyForm() {
       }
     }
 
-    const cBmg = toFiniteNumberInRange(factorC.bmg_count, { min: 0, integer: true })
-    const cBmm = toFiniteNumberInRange(factorC.bmm_count, { min: 0, integer: true })
-    const cSurface = toFiniteNumberInRange(factorC.surface_ha, { min: 0.000001 })
-    if (cBmg !== null && cBmm !== null && cSurface !== null)
-      payload.C = { bmg_count: cBmg, bmm_count: cBmm, surface_ha: cSurface }
-
-    const dBmg = toFiniteNumberInRange(factorD.bmg_count, { min: 0, integer: true })
-    const dBmm = toFiniteNumberInRange(factorD.bmm_count, { min: 0, integer: true })
-    const dSurface = toFiniteNumberInRange(factorD.surface_ha, { min: 0.000001 })
-    if (dBmg !== null && dBmm !== null && dSurface !== null)
-      payload.D = { bmg_count: dBmg, bmm_count: dBmm, surface_ha: dSurface }
-
-    const eTgb = toFiniteNumberInRange(factorE.tgb_count, { min: 0, integer: true })
-    const eGb = toFiniteNumberInRange(factorE.gb_count, { min: 0, integer: true })
-    const eSurface = toFiniteNumberInRange(factorE.surface_ha, { min: 0.000001 })
-    if (eTgb !== null && eGb !== null && eSurface !== null)
-      payload.E = { tgb_count: eTgb, gb_count: eGb, surface_ha: eSurface }
+    const cPayload = densityPayload(
+      "C",
+      densityText(factorC.bmg_count, factorC.bmm_count, factorC.surface_ha),
+    )
+    if (cPayload !== undefined) payload.C = cPayload
+    const dPayload = densityPayload(
+      "D",
+      densityText(factorD.bmg_count, factorD.bmm_count, factorD.surface_ha),
+    )
+    if (dPayload !== undefined) payload.D = dPayload
+    const ePayload = densityPayload(
+      "E",
+      densityText(factorE.tgb_count, factorE.gb_count, factorE.surface_ha),
+    )
+    if (ePayload !== undefined) payload.E = ePayload
 
     const f = toFiniteNumberInRange(factorF.trees_per_ha, { min: 0 })
     if (f !== null) {
@@ -585,8 +630,21 @@ export function useSurveyForm() {
     [markFieldTouched, submitAttempted, touchedFields],
   )
 
-  const factorSections = useMemo<Record<FactorKey, FactorField[]>>(
-    () => ({
+  const factorSections = useMemo<Record<FactorKey, FactorField[]>>(() => {
+    // Follow-up 32-32: the lower counter (BMm, GB) is required only while the package needs it.
+    const cLowerNeeded = lowerCountNeeded(
+      "C",
+      densityText(factorC.bmg_count, factorC.bmm_count, factorC.surface_ha),
+    )
+    const dLowerNeeded = lowerCountNeeded(
+      "D",
+      densityText(factorD.bmg_count, factorD.bmm_count, factorD.surface_ha),
+    )
+    const eLowerNeeded = lowerCountNeeded(
+      "E",
+      densityText(factorE.tgb_count, factorE.gb_count, factorE.surface_ha),
+    )
+    return {
       A: [
         {
           label: fields.genera,
@@ -634,8 +692,9 @@ export function useSurveyForm() {
           label: fields.bmm_count,
           value: factorC.bmm_count,
           onChange: (value) => setFactorC((prev) => ({ ...prev, bmm_count: value })),
-          required: true,
-          error: numberError(factorC.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          required: cLowerNeeded,
+          notNeeded: !cLowerNeeded,
+          error: lowerCountError(factorC.bmm_count, fields.bmm_count, cLowerNeeded),
           ...touchState("C", fields.bmm_count),
         },
         {
@@ -660,8 +719,9 @@ export function useSurveyForm() {
           label: fields.bmm_count,
           value: factorD.bmm_count,
           onChange: (value) => setFactorD((prev) => ({ ...prev, bmm_count: value })),
-          required: true,
-          error: numberError(factorD.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          required: dLowerNeeded,
+          notNeeded: !dLowerNeeded,
+          error: lowerCountError(factorD.bmm_count, fields.bmm_count, dLowerNeeded),
           ...touchState("D", fields.bmm_count),
         },
         {
@@ -686,8 +746,9 @@ export function useSurveyForm() {
           label: fields.gb_count,
           value: factorE.gb_count,
           onChange: (value) => setFactorE((prev) => ({ ...prev, gb_count: value })),
-          required: true,
-          error: numberError(factorE.gb_count, fields.gb_count, { min: 0, integer: true }),
+          required: eLowerNeeded,
+          notNeeded: !eLowerNeeded,
+          error: lowerCountError(factorE.gb_count, fields.gb_count, eLowerNeeded),
           ...touchState("E", fields.gb_count),
         },
         {
@@ -768,21 +829,20 @@ export function useSurveyForm() {
           },
         },
       ],
-    }),
-    [
-      factorA,
-      factorB,
-      factorC,
-      factorD,
-      factorE,
-      factorF,
-      factorG,
-      factorH,
-      factorI,
-      factorJ,
-      touchState,
-    ],
-  )
+    }
+  }, [
+    factorA,
+    factorB,
+    factorC,
+    factorD,
+    factorE,
+    factorF,
+    factorG,
+    factorH,
+    factorI,
+    factorJ,
+    touchState,
+  ])
 
   // What the storage writes (01.8-08 rule): the version only when the form has one (a legacy draft
   // edited without switching sends no key and stays untagged), the cas and flag for v3.2, and
