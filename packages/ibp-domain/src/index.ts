@@ -41,6 +41,8 @@ export {
   DMH_GROUP_DENSITY_CAP_PER_HA,
   STRATUM_MIN_COVER_PERCENT,
   UNCAPPED_DETAIL_KEYS,
+  cappedDmhCounts,
+  cappedDmhTotalPerHa,
   dmhDensityPerHa,
   readDmhCounts,
   readStrataCover,

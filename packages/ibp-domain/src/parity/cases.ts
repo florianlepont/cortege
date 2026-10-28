@@ -751,6 +751,53 @@ const UNCAPPED_DETAIL_CASES: IbpParityCase[] = [
   })),
 ]
 
+/**
+ * Phase 32 follow-up (owner decision 2026-10-28): in the capped survey mode F also carries
+ * `dmh_counts`, a whole number of trees PER HECTARE from 0 to 2 per group, with the scored
+ * `trees_per_ha` derived by the app as their sum (`cappedDmhTotalPerHa`) and no `surface_ha`. No
+ * scorer reads the counts: each case expects what the same F gives with `trees_per_ha` alone.
+ */
+const CAPPED_COUNTS_3 = { dmh_01: 2, dmh_05: 1 }
+const CAPPED_GROUPS_3 = ["dmh_01", "dmh_05"]
+
+const CAPPED_COUNTS_CASES: IbpParityCase[] = [
+  // F: 3 trees per hectare give F = 2, with or without the groups and the counts, no surface.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-01@both#${suffix}-draft`,
+    matrixId: "MAT-F-CAP-01@both",
+    mode: "draft",
+    factors: {
+      F: { trees_per_ha: 3, dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 },
+    },
+    expect: { ok: true, scores: { F: 2 }, issueCodes: [] },
+  })),
+  // The same with F = 2 in the complete set: stand 5+2+1+0+2+2+2 = 14, total 14 + 7 = 21.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-01@both#${suffix}-submit`,
+    matrixId: "MAT-F-CAP-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      F: { trees_per_ha: 3, dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 },
+    },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, F: 2 },
+      totals: { ibp_peuplement_gestion: 14, ibp_contexte: 7, ibp_total: 21 },
+      issueCodes: [],
+    },
+  })),
+  // F: the capped counts without trees_per_ha are an unreadable F, like MAT-F-UNC-02.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-02@both#${suffix}`,
+    matrixId: "MAT-F-CAP-02@both",
+    mode: "draft",
+    factors: { F: { dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 } },
+    expect: { ok: false, scores: { F: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+]
+
 /** Every parity case: v3.0, both versions, v3.2, dispatch, annotations, détail keys (matrix v2 order). */
 export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...V30_CASES,
@@ -759,6 +806,7 @@ export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...DISPATCH_CASES,
   ...ANNOTATION_CASES,
   ...UNCAPPED_DETAIL_CASES,
+  ...CAPPED_COUNTS_CASES,
 ]
 
 /** Submit readiness per version (matrix v2 "Submit readiness", rows R-n). */

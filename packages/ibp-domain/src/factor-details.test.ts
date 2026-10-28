@@ -4,6 +4,8 @@ import {
   DMH_GROUP_DENSITY_CAP_PER_HA,
   STRATUM_MIN_COVER_PERCENT,
   UNCAPPED_DETAIL_KEYS,
+  cappedDmhCounts,
+  cappedDmhTotalPerHa,
   dmhDensityPerHa,
   readDmhCounts,
   readStrataCover,
@@ -82,6 +84,32 @@ describe("dmhDensityPerHa", () => {
     expect(dmhDensityPerHa({ dmh_01: 1 }, -1)).toBeNull()
     expect(dmhDensityPerHa({ dmh_01: 1 }, Number.NaN)).toBeNull()
     expect(dmhDensityPerHa({ dmh_01: 1 }, Number.POSITIVE_INFINITY)).toBeNull()
+  })
+})
+
+describe("cappedDmhCounts and cappedDmhTotalPerHa (capped survey mode)", () => {
+  it("holds each group at 2 trees per hectare, keeps the groups given, in code order", () => {
+    const input = { dmh_05: 7, dmh_01: 1, dmh_12: 0 }
+    const result = cappedDmhCounts(input)
+    expect(result).toEqual({ dmh_01: 1, dmh_05: 2, dmh_12: 0 })
+    expect(Object.keys(result)).toEqual(["dmh_01", "dmh_05", "dmh_12"])
+    expect(input).toEqual({ dmh_05: 7, dmh_01: 1, dmh_12: 0 })
+  })
+
+  it("sums the capped counts with no surface and no rounding", () => {
+    expect(cappedDmhTotalPerHa({})).toBe(0)
+    expect(cappedDmhTotalPerHa({ dmh_01: 2, dmh_05: 2, dmh_12: 1 })).toBe(5)
+    expect(cappedDmhTotalPerHa({ dmh_01: 9, dmh_02: 1 })).toBe(3)
+  })
+
+  it("is not limited to 8: the score classes already stop there", () => {
+    const all = Object.fromEntries(DMH_GROUP_CODES.map((code) => [code, 2]))
+    expect(cappedDmhTotalPerHa(all)).toBe(30)
+  })
+
+  it("agrees with the density of a one hectare surface", () => {
+    const counts = { dmh_01: 3, dmh_02: 1, dmh_03: 2 }
+    expect(cappedDmhTotalPerHa(counts)).toBe(dmhDensityPerHa(counts, 1)?.trees_per_ha)
   })
 })
 

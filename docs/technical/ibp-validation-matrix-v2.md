@@ -202,10 +202,18 @@ inside the MAT-SUBMIT-02 set, and expect what the same factors give without the 
 | MAT-B-UNC-03@both | draft | any | `B.strata_cover` only, no `B.strata_count` | `B` not scored, `ok=false` (a detail key without its scored key is unreadable input, as an empty B) | B `factor_invalid_raw` |
 | MAT-F-UNC-01@both | draft; submit (same contexts) | any | `F.trees_per_ha=2.5` plus `F.dmh_counts` (`dmh_01=5`, `dmh_02=1`) and `F.surface_ha=2` | same as `F.trees_per_ha=2.5` alone: `F=1`; in the MAT-SUBMIT-02 set with `F=1`, totals 13 / 7 / 20 | none |
 | MAT-F-UNC-02@both | draft | any | `F.dmh_counts` and `F.surface_ha` only, no `F.trees_per_ha` | `F` not scored, `ok=false` | B `factor_invalid_raw` |
+| MAT-F-CAP-01@both | draft; submit (same contexts) | any | `F.trees_per_ha=3` plus `F.dmh_groups` (`dmh_01`, `dmh_05`) and `F.dmh_counts` (`dmh_01=2`, `dmh_05=1`, trees per hectare, no `F.surface_ha`) | same as `F.trees_per_ha=3` alone: `F=2`; in the MAT-SUBMIT-02 set with `F=2`, totals 14 / 7 / 21 | none |
+| MAT-F-CAP-02@both | draft | any | `F.dmh_groups` and `F.dmh_counts` only (capped shape), no `F.trees_per_ha` | `F` not scored, `ok=false` | B `factor_invalid_raw` |
 
 The derivation helpers of the package are covered by their own unit tests (`factor-details.test.ts`):
 a stratum counts from 20 % (19 does not, 20 does); each group's density is capped at 2 trees per
 hectare, then summed, with no rounding (2.5 for 5 and 1 trees over 2 ha).
+
+Capped survey mode (follow-up of phase 32, owner decision 2026-10-28): F there also carries
+`F.dmh_counts`, but each value is a whole number of trees per hectare (0, 1 or 2 per group), `F.surface_ha`
+is not written and the scored `F.trees_per_ha` is the sum of the counts (`cappedDmhTotalPerHa`, each
+group held at 2). MAT-F-CAP-01 and MAT-F-CAP-02 show the counts are not read by a scorer; the two
+helpers `cappedDmhCounts` and `cappedDmhTotalPerHa` have their own unit tests.
 
 ## Submit readiness (mobile)
 

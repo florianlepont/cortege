@@ -10,6 +10,10 @@ import { isRecord } from "./input"
 // The F key is `dmh_counts`, never `dmh_group_counts`: that one is an array the F scorer already
 // reads (each group capped at 2, never divided by a surface). F's own `surface_ha` is the divisor of
 // the density; the app prefills it from the route's surface décrite, like C, D and E.
+//
+// The capped survey mode also writes `dmh_counts` (follow-up of phase 32, owner decision
+// 2026-10-28): there the values are whole trees PER HECTARE, 0 to 2 per group, no `surface_ha` is
+// written and `trees_per_ha` is their sum (`cappedDmhTotalPerHa`). Still never read by a scorer.
 
 /** The five strata of factor B, the codes the current B input already stores. */
 export const B_STRATUM_CODES = ["very_low", "low", "intermediate", "high", "herbaceous"] as const
@@ -92,6 +96,34 @@ export function dmhDensityPerHa(counts: DmhCounts, surfaceHa: number): DmhDensit
     }
   }
   return { trees_per_ha: total, capped_groups: cappedGroups }
+}
+
+/**
+ * The counts of F in the capped survey mode (phase 32 follow-up, owner decision 2026-10-28): each
+ * group holds a whole number of trees PER HECTARE, so no surface divides them, and a group counts
+ * for at most `DMH_GROUP_DENSITY_CAP_PER_HA`. Returns the counts with every value brought down to
+ * that cap (the input is not changed); the groups stay as given.
+ */
+export function cappedDmhCounts(counts: DmhCounts): DmhCounts {
+  const result: DmhCounts = {}
+  for (const code of DMH_GROUP_CODES) {
+    const count = counts[code]
+    if (count !== undefined) result[code] = Math.min(count, DMH_GROUP_DENSITY_CAP_PER_HA)
+  }
+  return result
+}
+
+/**
+ * Trees per hectare of F in the capped survey mode: the sum of the group counts, each held at
+ * `DMH_GROUP_DENSITY_CAP_PER_HA`. The app writes it as the scored `trees_per_ha` once an observer
+ * counts a group. Not limited to 8: the score classes already stop there (8 and above is the top
+ * class), so the sheet's total cap of 8 is a display matter, never a different score.
+ */
+export function cappedDmhTotalPerHa(counts: DmhCounts): number {
+  const capped = cappedDmhCounts(counts)
+  let total = 0
+  for (const code of DMH_GROUP_CODES) total += capped[code] ?? 0
+  return total
 }
 
 /**
