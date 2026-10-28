@@ -46,10 +46,16 @@ export function createChoiceListStyles(theme: BrandTheme) {
     rowPressed: {
       backgroundColor: theme.colors.surfaceSoft,
     },
+    labelColumn: {
+      flex: 1,
+    },
     label: {
       ...brandTypography.heroBody,
-      flex: 1,
       color: theme.colors.textPrimary,
+    },
+    rowNote: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
     },
     caption: {
       ...brandTypography.meta,

@@ -1,6 +1,12 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
-import { CNPF_FACTOR_A_GENUS_CODES } from "@cortege/ibp-domain"
+import {
+  allowedFactorAGenusCodes,
+  CNPF_FACTOR_A_GENUS_CODES,
+  IBP_METHOD_V3_0,
+  IBP_METHOD_V3_2,
+  type IbpCas,
+} from "@cortege/ibp-domain"
 import { sortGenusCodes } from "../../app/genus-order"
 import { fr } from "../../i18n"
 import { GenusChoice } from "./GenusChoice"
@@ -53,6 +59,8 @@ function mount(props: Partial<React.ComponentProps<typeof GenusChoice>> = {}) {
       onChange={onChange}
       touched={false}
       onTouch={onTouch}
+      methodVersion={IBP_METHOD_V3_2}
+      ibpCas={2}
       {...props}
       {...extra}
     />
@@ -173,5 +181,74 @@ describe("GenusChoice", () => {
     expect(hidden.texts()).not.toContain("Choisissez")
     const shown = mount({ error: "Choisissez", touched: true })
     expect(shown.texts()).toContain("Choisissez")
+  })
+
+  describe("the list follows the survey's method case (follow-up 32-33)", () => {
+    const ids = (rows: () => ReactTestInstance[]) =>
+      rows().map((r) => String(r.props.testID).replace("choice-row-A-", ""))
+    const SUPPLEMENTARY = ["Ceratonia", "Cercis", "Olea", "Phillyrea", "Pistacia"]
+
+    test.each([2, 4] as IbpCas[])(
+      "cas %i offers the 34 classes, the Mediterranean ones included",
+      (cas) => {
+        const { rows } = mount({ ibpCas: cas })
+        expect(ids(rows).sort()).toEqual([...allowedFactorAGenusCodes(cas)].sort())
+        expect(ids(rows)).toHaveLength(34)
+        expect(ids(rows)).toEqual(expect.arrayContaining(SUPPLEMENTARY))
+      },
+    )
+
+    test.each([1, 3] as IbpCas[])("cas %i offers the 29 main classes only", (cas) => {
+      const { rows } = mount({ ibpCas: cas })
+      expect(ids(rows)).toHaveLength(29)
+      for (const code of SUPPLEMENTARY) expect(ids(rows)).not.toContain(code)
+    })
+
+    test("v3.0 has no cas: the main classes only, whatever cas value is passed", () => {
+      const { rows } = mount({ methodVersion: IBP_METHOD_V3_0, ibpCas: 2 })
+      expect(ids(rows)).toHaveLength(29)
+    })
+
+    test("a v3.2 survey with no cas yet offers the main classes", () => {
+      const { rows } = mount({ ibpCas: null })
+      expect(ids(rows)).toHaveLength(29)
+    })
+
+    test("changing the cas changes the options", () => {
+      const { rows, update } = mount({ ibpCas: 1 })
+      expect(ids(rows)).not.toContain("Olea")
+      update({ ibpCas: 4 })
+      expect(ids(rows)).toContain("Olea")
+      update({ ibpCas: 3 })
+      expect(ids(rows)).not.toContain("Olea")
+    })
+
+    test("a ticked genus the case does not count stays listed with a quiet note, and can be unticked", () => {
+      const { rows, texts, onChange } = mount({ ibpCas: 1, value: "Fagus,Olea" })
+      const olea = rows().find((r) => r.props.testID === "choice-row-A-Olea")!
+      expect(olea.props.accessibilityState.checked).toBe(true)
+      expect(olea.props.accessibilityLabel).toBe(
+        `${fr.genus.latinLabel("Olea")}, ${fr.factorDetail.choice.notCountedCas}`,
+      )
+      expect(texts().filter((t) => t === fr.factorDetail.choice.notCountedCas)).toHaveLength(1)
+      // The counted genus carries no note.
+      const fagus = rows().find((r) => r.props.testID === "choice-row-A-Fagus")!
+      expect(fagus.props.accessibilityLabel).toBe(fr.genus.latinLabel("Fagus"))
+      act(() => olea.props.onPress())
+      expect(onChange).toHaveBeenLastCalledWith("Fagus")
+    })
+
+    test("the note names the method under v3.0, and the search still reaches the kept genus", () => {
+      const { texts, type, rows } = mount({
+        methodVersion: IBP_METHOD_V3_0,
+        ibpCas: null,
+        value: "Olea",
+      })
+      expect(texts()).toContain(fr.factorDetail.choice.notCountedMethod)
+      type("olea")
+      expect(ids(rows)).toEqual(["Olea"])
+      type("pistacia")
+      expect(rows()).toHaveLength(0)
+    })
   })
 })

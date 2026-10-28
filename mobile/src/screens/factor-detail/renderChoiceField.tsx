@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
+import type { IbpCas, IbpMethodVersion } from "@cortege/ibp-domain"
 import {
   selectionOptionsFor,
   withSelectionToggled,
@@ -127,6 +127,7 @@ export function renderChoiceField(
   variant: ChoiceVariant,
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
+  ibpCas: IbpCas | null = null,
 ): ReactElement | ReactElement[] {
   const key = `${factor}-${field.label}`
   switch (variant.kind) {
@@ -150,6 +151,8 @@ export function renderChoiceField(
           touched={field.touched}
           onTouch={field.onTouch}
           error={field.error}
+          methodVersion={methodVersion}
+          ibpCas={ibpCas}
         />
       )
   }

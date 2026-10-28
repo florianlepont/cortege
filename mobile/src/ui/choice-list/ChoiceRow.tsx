@@ -1,4 +1,5 @@
 import { memo } from "react"
+import { View } from "react-native"
 import { AppPressable } from "../AppPressable"
 import { AppText as Text } from "../AppText"
 import { feedback } from "../feedback"
@@ -10,6 +11,8 @@ export type ChoiceMode = "multi" | "single"
 export type ChoiceRowProps = {
   value: string
   label: string
+  /** A quiet line under the label; spoken after it. */
+  note?: string
   selected: boolean
   mode: ChoiceMode
   onChoose: (value: string) => void
@@ -26,6 +29,7 @@ export type ChoiceRowProps = {
 export const ChoiceRow = memo(function ChoiceRow({
   value,
   label,
+  note,
   selected,
   mode,
   onChoose,
@@ -46,12 +50,15 @@ export const ChoiceRow = memo(function ChoiceRow({
       accessibilityState={
         mode === "single" ? { checked: selected, selected } : { checked: selected }
       }
-      accessibilityLabel={label}
+      accessibilityLabel={note ? `${label}, ${note}` : label}
       style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
       testID={testID}
     >
       <SelectionCircle selected={selected} />
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.labelColumn}>
+        <Text style={styles.label}>{label}</Text>
+        {note ? <Text style={styles.rowNote}>{note}</Text> : null}
+      </View>
     </AppPressable>
   )
 })

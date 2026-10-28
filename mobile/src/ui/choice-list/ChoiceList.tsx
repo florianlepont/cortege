@@ -7,7 +7,12 @@ import { AppText as Text } from "../AppText"
 import { CHOICE_LABEL_INSET, createChoiceListStyles } from "./choice-list.styles"
 import { ChoiceRow, type ChoiceMode } from "./ChoiceRow"
 
-export type ChoiceOption = { value: string; label: string }
+export type ChoiceOption = {
+  value: string
+  label: string
+  /** A quiet line under the label (a ticked genus that does not count for this survey). */
+  note?: string
+}
 
 type ChoiceListProps = {
   /** The factor the list belongs to: the rows are `choice-row-<factor>-<value>`. */
@@ -79,6 +84,7 @@ export function ChoiceList({
               key={option.value}
               value={option.value}
               label={option.label}
+              note={option.note}
               selected={selected.has(option.value)}
               mode={mode}
               onChoose={choose}

@@ -66,6 +66,9 @@ export const factorDetailFr = {
       clear: "Effacer la recherche",
       empty: "Aucun genre ne correspond à votre recherche.",
     },
+    // A ticked genus the survey's cas (v3.2) or method (v3.0) does not count stays listed, quietly.
+    notCountedCas: "Ne compte pas pour ce cas",
+    notCountedMethod: "Ne compte pas pour cette version de la méthode",
   },
   // Follow-up 32-31: the numeric controls of the other factors as grouped rows (a label, then the
   // value and a -/+ capsule). The row label is the field's own label; a percent row drops the

@@ -1,8 +1,6 @@
 import {
   allowedScoresFor,
   DENSITY_COUNT_KEYS,
-  IBP_METHOD_V3_2,
-  isIbpCas,
   readDensityPerHa,
   readFactorAGenusCount,
   type GenusCountOutcome,
@@ -10,7 +8,7 @@ import {
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
-import { parseGenusListValue } from "./factor-a-genus-list"
+import { genusListCas, parseGenusListValue } from "./factor-a-genus-list"
 import { toFiniteNumberInRange } from "./number-range"
 import type { FactorField, FactorKey, FactorRetainedScore } from "./types"
 
@@ -85,8 +83,7 @@ export function genusCountFigure(outcome: GenusCountOutcome): string | null {
 
 function genusFigure(input: KeyFigureInput): string | null {
   // v3.0 has no cas: its supplementary genera never count, as the scorer reads them.
-  const cas =
-    input.methodVersion === IBP_METHOD_V3_2 && isIbpCas(input.ibpCas) ? input.ibpCas : null
+  const cas = genusListCas(input.methodVersion, input.ibpCas)
   const genera = parseGenusListValue(fieldValue(input.fields, 0))
   return genusCountFigure(readFactorAGenusCount({ genera }, cas))
 }

@@ -165,7 +165,7 @@ export function FactorDetailScreen({
       return
     }
     if (isChoiceVariant(variant)) {
-      choiceNodes.push(renderChoiceField(factor, variant, field, methodVersion))
+      choiceNodes.push(renderChoiceField(factor, variant, field, methodVersion, ibpCas))
     }
   })
   const valueNodes = renderValueSections({

@@ -1,13 +1,25 @@
 import { useMemo, useState } from "react"
-import { CNPF_FACTOR_A_GENUS_CODES, type CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { parseGenusListValue, toggleGenusInListValue } from "../../app/factor-a-genus-list"
+import {
+  allowedFactorAGenusCodes,
+  CNPF_FACTOR_A_GENUS_CODES,
+  IBP_METHOD_V3_2,
+  type CnpfFactorAGenusCode,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
+import {
+  genusListCas,
+  parseGenusListValue,
+  toggleGenusInListValue,
+} from "../../app/factor-a-genus-list"
 import { sortGenusCodes } from "../../app/genus-order"
 import { foldSearchText, normalizeSearchQuery } from "../../app/search-text"
 import { fr } from "../../i18n"
 import { ChoiceList, type ChoiceOption } from "../../ui/choice-list/ChoiceList"
 import { ChoiceSearchField } from "../../ui/choice-list/ChoiceSearchField"
 
-const t = fr.factorDetail.choice.search
+const choice = fr.factorDetail.choice
+const t = choice.search
 
 type Entry = ChoiceOption & { folded: string }
 
@@ -28,6 +40,10 @@ type GenusChoiceProps = {
   touched: boolean
   onTouch: () => void
   error?: string | null
+  /** The survey's method: v3.0 has no cas, so its list is the main genera only. */
+  methodVersion: IbpMethodVersion | null
+  /** The survey's cas (v3.2): cas 2 and 4 add the Mediterranean genera. */
+  ibpCas: IbpCas | null
 }
 
 /**
@@ -36,15 +52,39 @@ type GenusChoiceProps = {
  * French name); it never changes the selection, and the list keeps the Latin order, selected or
  * not. The header sums up how many are ticked, matches or not. A recognition suggestion
  * (`FactorAGenusRecognitionEntry`) still writes straight into the same string value.
+ *
+ * Follow-up 32-33: only the genera the package counts for the survey's method case are offered
+ * (`allowedFactorAGenusCodes`: the main list always, the Mediterranean ones at cas 2 and 4). A genus
+ * already ticked that the current case does not count (the cas was changed after) stays visible with
+ * a quiet note, so no stored choice is hidden.
  */
-export function GenusChoice({ title, value, onChange, touched, onTouch, error }: GenusChoiceProps) {
+export function GenusChoice({
+  title,
+  value,
+  onChange,
+  touched,
+  onTouch,
+  error,
+  methodVersion,
+  ibpCas,
+}: GenusChoiceProps) {
   const [query, setQuery] = useState("")
-  const selected = useMemo(() => new Set(parseGenusListValue(value)), [value])
+  const selected = useMemo(() => new Set<string>(parseGenusListValue(value)), [value])
   const needle = foldSearchText(normalizeSearchQuery(query))
-  const options = useMemo(
-    () => (needle === "" ? ENTRIES : ENTRIES.filter((entry) => entry.folded.includes(needle))),
-    [needle],
-  )
+  const cas = genusListCas(methodVersion, ibpCas)
+  const allowed = useMemo(() => new Set<string>(allowedFactorAGenusCodes(cas)), [cas])
+  const notCountedNote =
+    methodVersion === IBP_METHOD_V3_2 ? choice.notCountedCas : choice.notCountedMethod
+  const options = useMemo(() => {
+    const offered: ChoiceOption[] = []
+    for (const entry of ENTRIES) {
+      const counts = allowed.has(entry.value)
+      if (!counts && !selected.has(entry.value)) continue
+      if (needle !== "" && !entry.folded.includes(needle)) continue
+      offered.push(counts ? entry : { ...entry, note: notCountedNote })
+    }
+    return offered
+  }, [allowed, selected, needle, notCountedNote])
 
   const toggle = (genus: string): void => {
     onChange(toggleGenusInListValue(value, genus as CnpfFactorAGenusCode))

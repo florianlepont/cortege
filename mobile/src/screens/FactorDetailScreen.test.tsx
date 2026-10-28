@@ -231,6 +231,26 @@ describe("FactorDetailScreen fields", () => {
     expect(genusLists[0].props.title).toBe(fr.factorDetail.fieldLabels.genera)
   })
 
+  test("A hands the genus list the survey's method and cas (follow-up 32-33)", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="A"
+          fields={A_FIELDS}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          ibpCas={3}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+        />,
+      )
+    })
+    const list = tree.root.findByType("GenusChoice" as unknown as React.ElementType)
+    expect(list.props.methodVersion).toBe(IBP_METHOD_V3_2)
+    expect(list.props.ibpCas).toBe(3)
+  })
+
   test("A mounts the photo-recognition entry point, wired to the genus-list field", () => {
     const { tree } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
     const entries = tree.root.findAllByType(
