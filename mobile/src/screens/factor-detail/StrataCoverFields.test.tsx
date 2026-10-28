@@ -2,10 +2,12 @@ import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
-import { clampCoverText, StrataCoverFields } from "./StrataCoverFields"
+import { StrataCoverFields } from "./StrataCoverFields"
 
 const t = fr.factorDetail.countingMode
 
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../../ui/feedback", () => ({ feedback: { selection: jest.fn() } }))
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
@@ -31,10 +33,12 @@ beforeAll(() => {
     if (String(args[0] ?? "").includes("react-test-renderer is deprecated")) return
     originalConsoleError(...(args as Parameters<typeof console.error>))
   })
+  jest.useFakeTimers()
 })
 
 afterAll(() => {
   jest.restoreAllMocks()
+  jest.useRealTimers()
 })
 
 const textOf = (node: renderer.ReactTestInstance): string =>
@@ -54,64 +58,74 @@ function mount(props: Partial<React.ComponentProps<typeof StrataCoverFields>> = 
       />,
     )
   })
-  const input = (index: number) =>
-    tree.root.find(
-      (n) => (n.type as unknown) === "TextInput" && n.props.testID === `strata-cover-${index}`,
-    )
-  return { tree, onChange, input }
+  const byId = (id: string) => tree.root.findAll((n) => n.props.testID === id)
+  const press = (id: string): void => {
+    const button = byId(id)[0]
+    act(() => button.props.onPressIn())
+    act(() => button.props.onPressOut())
+    act(() => button.props.onPress())
+  }
+  // The typed field exists while the value is being edited: tap the value first.
+  const edit = (index: number) => {
+    act(() => byId(`strata-stepper-${index}-value`)[0].props.onPress())
+    return byId(`strata-cover-${index}`)[0]
+  }
+  return { tree, onChange, byId, press, edit }
 }
 
 describe("StrataCoverFields", () => {
-  test("five percent fields in the order and with the labels of B's options, and the helper", () => {
-    const { tree, input } = mount()
+  test("five rows in the order and with the labels of B's options, the title and the 20 percent rule", () => {
+    const { tree, byId } = mount()
     for (let index = 0; index < 5; index += 1) {
-      expect(input(index).props.keyboardType).toBe("decimal-pad")
+      expect(byId(`strata-stepper-${index}-row`)).not.toHaveLength(0)
     }
     const texts = textOf(tree.root)
     for (const option of fr.factorInput.strataOptions) expect(texts).toContain(option.label)
     expect(texts.indexOf("Très basse")).toBeLessThan(texts.indexOf("Basse"))
     expect(texts).toContain(t.strataTitle)
     expect(texts).toContain("Une strate compte à partir de 20 %")
-    expect(input(0).props.accessibilityLabel).toBe(t.strataFieldA11y({ label: "Très basse" }))
   })
 
-  test("typing calls onChange with the stratum code and the text", () => {
-    const { input, onChange } = mount()
-    act(() => input(0).props.onChangeText("25"))
-    act(() => input(4).props.onChangeText("12,5"))
-    expect(onChange).toHaveBeenNthCalledWith(1, "very_low", "25")
-    expect(onChange).toHaveBeenNthCalledWith(2, "herbaceous", "12,5")
+  test("a step is one percent, written as the stratum's text", () => {
+    const { press, onChange } = mount({ coverText: { very_low: "25" } })
+    press("strata-stepper-0-increase")
+    expect(onChange).toHaveBeenLastCalledWith("very_low", "26")
+    press("strata-stepper-1-increase")
+    expect(onChange).toHaveBeenLastCalledWith("low", "1")
+  })
+
+  test("typing keeps the old field's test id and calls onChange with the code and the text", () => {
+    const { edit, onChange } = mount()
+    const input = edit(0)
+    expect(input.props.keyboardType).toBe("decimal-pad")
+    act(() => input.props.onChangeText("25"))
+    act(() => input.props.onBlur())
+    expect(onChange).toHaveBeenLastCalledWith("very_low", "25")
   })
 
   test("shows the values the form holds, so a reload shows what was typed", () => {
-    const { input } = mount({ coverText: { very_low: "25", high: "40" } })
-    expect(input(0).props.value).toBe("25")
-    expect(input(3).props.value).toBe("40")
-    expect(input(1).props.value).toBe("")
+    const { tree } = mount({ coverText: { very_low: "25", high: "40" } })
+    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
+    expect(texts).toContain("25 %")
+    expect(texts).toContain("40 %")
+    expect(texts.filter((text) => text === "0 %")).toHaveLength(3)
   })
 
   test("clamps what is typed to a percent from 0 to 100 (T-30-41)", () => {
-    const { input, onChange } = mount()
-    act(() => input(1).props.onChangeText("250"))
-    act(() => input(1).props.onChangeText("-5"))
-    act(() => input(1).props.onChangeText("1a2"))
-    expect(onChange).toHaveBeenNthCalledWith(1, "low", "100")
-    expect(onChange).toHaveBeenNthCalledWith(2, "low", "5")
-    expect(onChange).toHaveBeenNthCalledWith(3, "low", "12")
-    expect(clampCoverText("12,3,4")).toBe("12,34")
-    expect(clampCoverText("100")).toBe("100")
-    expect(clampCoverText("100,1")).toBe("100")
-    expect(clampCoverText("")).toBe("")
+    const { edit, onChange } = mount()
+    const input = edit(1)
+    act(() => input.props.onChangeText("250"))
+    act(() => input.props.onBlur())
+    expect(onChange).toHaveBeenLastCalledWith("low", "100")
   })
 
-  test("the keyboard goes next on the first four fields and done on the last", () => {
-    const { input } = mount()
-    expect(input(0).props.returnKeyType).toBe("next")
-    expect(input(3).props.returnKeyType).toBe("next")
-    expect(input(4).props.returnKeyType).toBe("done")
+  test("the + stops at 100", () => {
+    const { press, onChange } = mount({ coverText: { high: "100" } })
+    press("strata-stepper-3-increase")
+    expect(onChange).not.toHaveBeenCalled()
   })
 
-  test("shows the count the form derived, only once a cover is typed", () => {
+  test("shows the count the form derived in the header, only once a cover is typed", () => {
     const find = (tree: renderer.ReactTestRenderer) =>
       tree.root.findAll((n) => n.props.testID === "strata-cover-count")
     expect(find(mount({ strataCountText: "2" }).tree)).toHaveLength(0)
@@ -121,13 +135,14 @@ describe("StrataCoverFields", () => {
     expect(textOf(find(one)[0])).toBe("1 strate comptée")
   })
 
-  test("a locked page is not editable", () => {
-    const { input } = mount({ editable: false })
-    expect(input(0).props.editable).toBe(false)
+  test("a locked page is not editable: no capsule", () => {
+    const { byId } = mount({ editable: false })
+    expect(byId("strata-stepper-0-increase")).toHaveLength(0)
+    expect(byId("strata-stepper-0-value")).not.toHaveLength(0)
   })
 
   test("v3.0 lists the same strata", () => {
-    const { input } = mount({ methodVersion: IBP_METHOD_V3_0 })
-    expect(input(4)).toBeDefined()
+    const { byId } = mount({ methodVersion: IBP_METHOD_V3_0 })
+    expect(byId("strata-stepper-4-row")).not.toHaveLength(0)
   })
 })

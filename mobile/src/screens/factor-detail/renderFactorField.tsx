@@ -9,10 +9,6 @@ import {
   type SelectionOption,
 } from "../../app/factor-selections"
 import type { FactorField, FactorKey } from "../../app/types"
-import { AppField } from "../../ui/AppField"
-import type { createDetailStyles } from "../factor-detail.styles"
-import { FactorCounterInput } from "../../ui/FactorCounterInput"
-import { FactorSliderInput } from "../../ui/FactorSliderInput"
 import { fr } from "../../i18n"
 import { DmhGroupList } from "./DmhGroupList"
 import type { UncappedEntryProps } from "./UncappedFieldBlock"
@@ -26,7 +22,9 @@ const t = fr.factorDetail
 // card, straight on the canvas, redesign 32-18 A-C1; H: the continuity sources under it), and the
 // options of B, I and J come from selectionOptionsFor so I and J follow the CNPF typology of the
 // survey's method (D-09). Follow-up 32-30: the "segmented", "chips" and "genusList" variants are
-// drawn by `renderChoiceField` as grouped choice lists on the canvas; this file renders the rest.
+// drawn by `renderChoiceField` as grouped choice lists on the canvas, and follow-up 32-31 draws the
+// "numeric", "counter" and "slider" variants as grouped value rows (`renderValueSections`); this
+// file keeps the variant table and F's group list.
 type SegmentedOption = { value: string; label: string }
 type OptionsFor = (selected: readonly string[] | null) => SelectionOption[]
 type Companion = "F" | "H"
@@ -137,61 +135,4 @@ export function renderDmhGroupList(
       onOpenDmhGuide={extras.onOpenDmhGuide ?? ignoreSelectionChange}
     />
   )
-}
-
-export function renderFactorField(
-  factor: FactorKey,
-  variant: FieldVariant | undefined,
-  field: FactorField,
-  methodVersion: IbpMethodVersion | null,
-  detailStyles: ReturnType<typeof createDetailStyles>,
-) {
-  const current: FieldVariant = variant ?? { kind: "numeric" }
-  const label = field.required
-    ? t.requiredField({ label: humanizeFieldLabel(field.label) })
-    : humanizeFieldLabel(field.label)
-  const key = `${factor}-${field.label}`
-  switch (current.kind) {
-    case "counter":
-      return (
-        <FactorCounterInput
-          key={key}
-          label={label}
-          value={field.value}
-          onChange={field.onChange}
-          touched={field.touched}
-          onTouch={field.onTouch}
-          error={field.error}
-        />
-      )
-    case "slider":
-      return (
-        <FactorSliderInput
-          key={key}
-          label={label}
-          value={field.value}
-          onChange={field.onChange}
-          touched={field.touched}
-          onTouch={field.onTouch}
-          error={field.error}
-        />
-      )
-    case "numeric":
-    default:
-      return (
-        <AppField
-          key={key}
-          label={label}
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onTouch}
-          keyboardType="numeric"
-          placeholder={t.numericPlaceholder}
-          error={field.touched ? field.error : null}
-          containerStyle={detailStyles.fieldBlock}
-          labelStyle={detailStyles.fieldLabel}
-          inputStyle={detailStyles.input}
-        />
-      )
-  }
 }

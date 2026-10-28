@@ -9,6 +9,7 @@ import {
 } from "@cortege/ibp-domain"
 import type { FactorField, FactorKey } from "../app/types"
 import { FACTOR_TITLES } from "../app/constants"
+import { withoutPercentUnit } from "../app/decimal-text"
 import { fr } from "../i18n"
 import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
@@ -75,13 +76,6 @@ jest.mock("../ui/AppChoiceChip", () => {
   return {
     AppChoiceChip: (props: { variant?: string }) =>
       props.variant === "status" ? null : actual.AppChoiceChip(props as never),
-  }
-})
-
-jest.mock("../ui/AppField", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    AppField: (props: { label: string }) => ReactRef.createElement("AppField", props),
   }
 })
 
@@ -189,7 +183,10 @@ const renderDetail = (
   })
   const [help, hints] = onOpenHelp.mock.calls[0] as [string, string[]]
   const texts = [help, ...hints]
-  const inputs = tree.root.findAllByType("AppField" as unknown as React.ElementType)
+  // Follow-up 32-31: a numeric control is a grouped row; its stepper is one adjustable element.
+  const inputs = tree.root.findAll(
+    (n) => (n.type as unknown) === "View" && n.props.accessibilityRole === "adjustable",
+  )
   return { tree, texts, inputs }
 }
 
@@ -222,10 +219,12 @@ describe("FactorDetailScreen help per method version", () => {
 })
 
 describe("FactorDetailScreen fields", () => {
-  test("A renders the genus list (not an AppField) and the native cover AppField", () => {
+  test("A renders the genus list (not a value row) and the native cover row, without its (%)", () => {
     const { tree, inputs } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
-    expect(inputs.map((input) => input.props.label)).toEqual([
-      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
+    expect(inputs.map((input) => input.props.accessibilityLabel)).toEqual([
+      withoutPercentUnit(
+        fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
+      ),
     ])
     const genusLists = tree.root.findAllByType("GenusChoice" as unknown as React.ElementType)
     expect(genusLists).toHaveLength(1)
@@ -250,7 +249,7 @@ describe("FactorDetailScreen fields", () => {
     ).toHaveLength(0)
   })
 
-  test("B renders no AppField (chips variant, FLOW-01)", () => {
+  test("B renders no value row (choice list, FLOW-01)", () => {
     const { inputs } = renderDetail("B", [field("strata_count")], IBP_METHOD_V3_2)
     expect(inputs).toHaveLength(0)
   })
@@ -277,20 +276,22 @@ describe("FactorDetailScreen fields", () => {
     expect(rows).toHaveLength(fr.factorInput.strataOptions.length)
   })
 
-  test("C renders two counters and one numeric surface field", () => {
+  test("C renders two counters and one surface row, with the form's labels", () => {
     const { inputs } = renderDetail(
       "C",
       [field("bmg_count"), field("bmm_count"), field("surface_ha")],
       IBP_METHOD_V3_2,
     )
-    // Only the numeric surface_ha field renders as an AppField; the two counts are counters.
-    expect(inputs).toHaveLength(1)
-    expect(inputs[0].props.label).toBe(
-      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.surface_ha }),
+    expect(inputs.map((input) => input.props.accessibilityLabel)).toEqual(
+      ["bmg_count", "bmm_count", "surface_ha"].map((key) =>
+        fr.factorDetail.requiredField({
+          label: fr.factorDetail.fieldLabels[key as "bmg_count"],
+        }),
+      ),
     )
   })
 
-  test("H renders no AppField (segmented variant, 0/2/5 only)", () => {
+  test("H renders no value row (single choice list, 0/2/5 only)", () => {
     const { inputs } = renderDetail("H", [field("class_score")], IBP_METHOD_V3_2)
     expect(inputs).toHaveLength(0)
   })
@@ -390,7 +391,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(chips[12].props.accessibilityState.checked).toBe(true)
   })
 
-  test("F renders the numeric trees field then the group list, with the field's selection", () => {
+  test("F without a counting entry renders the typed trees row then the group list, with the field's selection", () => {
     const onChange = jest.fn()
     const onOpenDmhGuide = jest.fn()
     let tree!: renderer.ReactTestRenderer
@@ -418,15 +419,16 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(onChange).toHaveBeenCalledWith(["dmh_01", "dmh_02"])
     props.onOpenDmhGuide("dmh_05")
     expect(onOpenDmhGuide).toHaveBeenCalledWith("dmh_05")
-    // The numeric field comes first, the list after the card.
+    // The typed row comes first, the list after it, both straight on the canvas: no glass card.
     const order = tree.root
-      .findAll((n) => ["AppField", "DmhGroupList"].includes(n.type as unknown as string))
-      .map((n) => n.type as unknown as string)
-    expect(order).toEqual(["AppField", "DmhGroupList"])
-    // The list is not inside the input card: one container level, straight on the canvas (A-C1).
-    const card = tree.root.findAll((n) => (n.type as unknown) === "AppCard")[0]
-    expect(card.findAll((n) => (n.type as unknown) === "DmhGroupList")).toHaveLength(0)
-    expect(card.findAll((n) => (n.type as unknown) === "AppField")).toHaveLength(1)
+      .findAll(
+        (n) =>
+          ((n.type as unknown) === "View" && n.props.testID === "density-F-section") ||
+          (n.type as unknown) === "DmhGroupList",
+      )
+      .map((n) => ((n.type as unknown) === "View" ? "row" : "list"))
+    expect(order).toEqual(["row", "list"])
+    expect(tree.root.findAll((n) => (n.type as unknown) === "AppCard")).toHaveLength(0)
   })
 
   test("H renders the class as a single choice and the 3 optional sources under it", () => {
@@ -475,10 +477,10 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
     })
     return tree
   }
-  test("the input card is the glass card, padding 16 kept", () => {
-    const card = renderPlain(null).root.findAllByType("AppCard" as unknown as React.ElementType)[0]
-    expect(card.props.variant).toBe("glass")
-    expect(card.props.padding).toBe(16)
+  test("the typed fields are grouped rows on the canvas: no glass input card (follow-up 32-31)", () => {
+    const tree = renderPlain(null)
+    expect(tree.root.findAll((n) => (n.type as unknown) === "AppCard")).toHaveLength(0)
+    expect(tree.root.findAll((n) => n.props.testID === "density-F-section")).not.toHaveLength(0)
   })
 
   test("the page has no score line any more: the score is in the pager header (follow-up 32-26)", () => {
@@ -522,24 +524,15 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
     expect(onOpenHelp).toHaveBeenCalledTimes(1)
   })
 
-  test("the help hints are glass rows, block gaps on the 4-grid, input chrome untouched", () => {
+  test("the help hints are glass rows, block gaps on the 4-grid", () => {
     const styles = createDetailStyles(defaultTheme)
     expect(styles.hintRow.backgroundColor).toBe(glass.cardFill)
     expect(styles.hintRow.borderColor).toBe(glass.cardBorder)
     expect(styles.hintRow.borderRadius).toBe(22)
     expect(styles.hintDot.backgroundColor).toBe(defaultTheme.visual.score.high)
-    for (const gap of [
-      styles.screen.gap,
-      styles.panel.gap,
-      styles.fieldsList.gap,
-      styles.hintsList.gap,
-      styles.sheetContent.gap,
-    ]) {
+    for (const gap of [styles.screen.gap, styles.hintsList.gap, styles.sheetContent.gap]) {
       expect((gap as number) % 4).toBe(0)
     }
-    // UI-SPEC Typography exception: the field input chrome keeps its legacy roles.
-    expect(styles.fieldLabel.fontFamily).toBe("Sora-ExtraBold")
-    expect(styles.input).toEqual({ paddingHorizontal: 14, paddingVertical: 12 })
     expect(styles.sheetClose.width).toBe(44)
     expect(styles.sheetClose.height).toBe(44)
   })
@@ -766,7 +759,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
       strata: () => byType("StrataCoverFields"),
       dmh: () => byType("DmhCountFields"),
       chips: () => byType("FactorChipsInput"),
-      fields: () => byType("AppField"),
+      fields: () => byType("View").filter((n) => n.props.accessibilityRole === "adjustable"),
       list: () => byType("DmhGroupList"),
       // Follow-up 32-27: F's hero card, read-only, under the intro paragraph.
       hero: () => byType("View").filter((n) => n.props.testID === "trees-per-ha-value"),
@@ -874,20 +867,20 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
         counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption"),
       ).toHaveLength(0)
     }
-    // Capped: nothing is left for the input card, so there is no empty glass card; counted in full
-    // the card keeps the caption and the surface field.
+    // Follow-up 32-31: no glass card in either mode; counted in full the surface block stands on
+    // the canvas above the list.
     expect(mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry }).card()).toHaveLength(
       0,
     )
     expect(
       mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry }).card(),
-    ).toHaveLength(1)
+    ).toHaveLength(0)
   })
 
-  test("without the counting entry the field stays a typed input, in its card, with no hero card", () => {
+  test("without the counting entry the field stays a typed row, on the canvas, with no hero card", () => {
     const plain = mount("F", fFields, {})
     expect(plain.fields()).toHaveLength(1)
-    expect(plain.card()).toHaveLength(1)
+    expect(plain.card()).toHaveLength(0)
     expect(plain.hero()).toHaveLength(0)
   })
 
@@ -910,7 +903,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     ).toHaveLength(0)
   })
 
-  test("F: the sub-label follows the mode, and the page order is intro, hero, strip, card, list", () => {
+  test("F: the sub-label follows the mode, and the page order is intro, hero, strip, surface, list", () => {
     const capped = mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry })
     const full = mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry })
     const subOf = (m: typeof capped) =>
@@ -932,11 +925,13 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
             ? "strip"
             : child.props.treesPerHaText !== undefined && child.props.counted !== undefined
               ? "hero"
-              : child.props.methodVersion !== undefined
-                ? "list"
-                : "card",
+              : child.props.entry !== undefined
+                ? "surface"
+                : child.props.methodVersion !== undefined
+                  ? "list"
+                  : "other",
       )
-    expect(order).toEqual(["intro", "hero", "strip", "card", "list"])
+    expect(order).toEqual(["intro", "hero", "strip", "surface", "list"])
   })
 
   test("the other factors get no detail block, whatever the route says", () => {
@@ -1057,20 +1052,21 @@ describe("FactorDetailScreen key figure hero (follow-up 32-29)", () => {
     I: 1,
     J: 1,
   }
-  // Follow-up 32-30: the choice controls are grouped lists on the canvas, the typed fields stay in
-  // the card. A also has the photo entry above its list; H has two lists.
+  // Follow-ups 32-30 and 32-31: the choice controls and the numeric rows are grouped lists on the
+  // canvas, no glass card. A also has the photo entry above its list; H has two lists; C, D and E
+  // have the counters then the surface.
   test.each<[FactorKey, string[]]>([
-    ["A", ["entry", "choice", "card"]],
+    ["A", ["entry", "choice", "value"]],
     ["B", ["choice"]],
-    ["C", ["card"]],
-    ["D", ["card"]],
-    ["E", ["card"]],
-    ["G", ["card"]],
+    ["C", ["value", "value"]],
+    ["D", ["value", "value"]],
+    ["E", ["value", "value"]],
+    ["G", ["value"]],
     ["H", ["choice", "choice"]],
     ["I", ["choice"]],
     ["J", ["choice"]],
   ])("%s: the page order is intro, hero, strip, then the inputs", (factor, inputs) => {
-    // As many fields as the factor has: a spare field would be one more typed input in the card.
+    // As many fields as the factor has: a spare field would be one more typed row.
     const { tree } = mountFactor(factor, ["Fagus", "1", "1"].slice(0, FIELD_COUNT[factor]))
     const root = tree.root
       .findByType(FactorDetailScreen)
@@ -1086,9 +1082,11 @@ describe("FactorDetailScreen key figure hero (follow-up 32-29)", () => {
               ? "hero"
               : child.props.genusField
                 ? "entry"
-                : String(child.props.testID).startsWith("choice-list") || child.props.title
-                  ? "choice"
-                  : "card",
+                : /^(counters|cover|surface|percent|density)-/.test(String(child.props.testID))
+                  ? "value"
+                  : String(child.props.testID).startsWith("choice-list") || child.props.title
+                    ? "choice"
+                    : "other",
       )
     expect(order).toEqual(["intro", "hero", "strip", ...inputs])
   })

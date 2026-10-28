@@ -100,8 +100,6 @@ const SAMPLES: Record<string, () => string> = {
     fr.factorDetail.countingMode.zoneLine({ hectares: "1,2" }),
   "factorDetailCountingMode.strataCounted": () =>
     `${fr.factorDetail.countingMode.strataCounted({ count: 1 })}|${fr.factorDetail.countingMode.strataCounted({ count: 3 })}`,
-  "factorDetailCountingMode.strataFieldA11y": () =>
-    fr.factorDetail.countingMode.strataFieldA11y({ label: "Très basse" }),
 }
 
 const ALLOWED_METHOD_WORDS = [join("méthode officielle de l", "'IBP"), join("Méthode", " IBP")]

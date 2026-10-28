@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import { View } from "react-native"
 import {
   allowedScoresFor,
@@ -10,10 +10,8 @@ import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { computeFactorKeyFigure, hasKeyFigure } from "../app/factor-key-figure"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
-import { AppCard } from "../ui/AppCard"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
-import { FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DmhHeroCard } from "./factor-detail/DmhHeroCard"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import { FactorIntro } from "./factor-detail/FactorIntro"
@@ -24,8 +22,8 @@ import {
   hasDmhListCompanion,
   ignoreSelectionChange,
   renderDmhGroupList,
-  renderFactorField,
 } from "./factor-detail/renderFactorField"
+import { renderValueSections } from "./factor-detail/renderValueFields"
 import {
   hasUncappedBlock,
   UncappedFieldBlock,
@@ -144,10 +142,10 @@ export function FactorDetailScreen({
     enabled: surfaceField !== undefined,
   })
 
-  // The input card keeps the typed fields; the choice controls are grouped lists on the canvas
-  // (follow-up 32-30), drawn after the pills.
-  const fieldNodes: ReactNode[] = []
+  // The choice controls and the numeric rows are grouped lists on the canvas (follow-ups 32-30 and
+  // 32-31), drawn after the pills; the counted-in-full blocks of B and F come last.
   const choiceNodes: ReactNode[] = []
+  const blockNodes: ReactNode[] = []
   fields.forEach((field, index) => {
     const block = detailEntry ? (
       <UncappedFieldBlock
@@ -160,43 +158,23 @@ export function FactorDetailScreen({
       />
     ) : null
     const variant = variants[index]
-    // B: the cover per stratum replaces the strata list.
-    if (block !== null && factor === "B") {
-      fieldNodes.push(block)
-      return
-    }
-    // F with the group counters: the trees per hectare is the list's sum line, not a field here.
-    if (groupEntry !== undefined && hasDmhListCompanion(variant)) {
-      if (block !== null) fieldNodes.push(block)
+    // B: the cover per stratum replaces the strata list. F with the group counters: the trees per
+    // hectare is the list's sum line, not a field; its own surface (counted in full) is the block.
+    if (block !== null && (factor === "B" || hasDmhListCompanion(variant))) {
+      blockNodes.push(block)
       return
     }
     if (isChoiceVariant(variant)) {
       choiceNodes.push(renderChoiceField(factor, variant, field, methodVersion))
-      return
     }
-    const input = renderFactorField(factor, variant, field, methodVersion, detailStyles)
-    if (block !== null) {
-      fieldNodes.push(
-        <Fragment key={`${factor}-${field.label}-detail`}>
-          {input}
-          {block}
-        </Fragment>,
-      )
-      return
-    }
-    fieldNodes.push(
-      fromRoute && field === surfaceField ? (
-        <Fragment key={`${factor}-${field.label}-from-route`}>
-          {input}
-          <FromRouteCaption />
-        </Fragment>
-      ) : (
-        input
-      ),
-    )
   })
-  // Nothing typed left for the card (capped F, or a page of choice lists only): no empty glass card.
-  const showPanel = fieldNodes.length > 0
+  const valueNodes = renderValueSections({
+    factor,
+    variants,
+    fields,
+    fromRoute,
+    groupCounters: groupEntry !== undefined,
+  })
 
   return (
     <View style={detailStyles.screen}>
@@ -239,12 +217,8 @@ export function FactorDetailScreen({
 
       {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
       {choiceNodes}
-
-      {showPanel ? (
-        <AppCard variant="glass" padding={16} style={detailStyles.panel}>
-          <View style={detailStyles.fieldsList}>{fieldNodes}</View>
-        </AppCard>
-      ) : null}
+      {valueNodes}
+      {blockNodes}
 
       {dmhListField
         ? renderDmhGroupList(dmhListField, methodVersion, {

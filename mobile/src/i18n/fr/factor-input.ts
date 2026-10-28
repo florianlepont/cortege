@@ -1,11 +1,6 @@
-// Phase 3 (FLOW-01/02): the four FactorInput variants and their shared a11y copy.
+// Phase 3 (FLOW-01/02): the option lists and shared copy of the factor inputs (the counters, the
+// percent slider and the surface are grouped rows since follow-up 32-31: `fr.factorDetail.valueRows`).
 export const factorInputFr = {
-  counter: {
-    decrease: ({ label }: { label: string }) => `Diminuer ${label}`,
-    increase: ({ label }: { label: string }) => `Augmenter ${label}`,
-    editValue: ({ label, value }: { label: string; value: string }) =>
-      `${label}, valeur actuelle ${value}. Toucher pour saisir un nombre`,
-  },
   segmented: {
     a11yHint: "Choisissez une seule valeur",
   },
@@ -17,14 +12,6 @@ export const factorInputFr = {
       count === 1
         ? "1 coché avant l'enregistrement du détail : cochez pour préciser"
         : `${count} cochés avant l'enregistrement du détail : cochez pour préciser`,
-  },
-  slider: {
-    decrease: ({ label }: { label: string }) => `Diminuer ${label} de 5 %`,
-    increase: ({ label }: { label: string }) => `Augmenter ${label} de 5 %`,
-    valueLabel: ({ label, percent }: { label: string; percent: number }) =>
-      `${label} : ${percent} %`,
-    fieldLabel: ({ label, percent }: { label: string; percent: number }) =>
-      `${label} : ${percent} %`,
   },
   // FLOW-01: factor B (5 strata tiers, chip-derived count). Height thresholds vary by cas/version
   // and are already shown in the factor help sheet ("Aide au relevé"), so the tier names

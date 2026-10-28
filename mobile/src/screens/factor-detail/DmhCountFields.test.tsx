@@ -14,6 +14,7 @@ jest.mock("react-native", () => {
   return {
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
+    TextInput: mockComponent("TextInput"),
     View: mockComponent("View"),
     Platform: { OS: "ios", select: (options: { default?: unknown }) => options.default },
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {} },
@@ -21,11 +22,8 @@ jest.mock("react-native", () => {
   }
 })
 
-// The field is under test in its own file: a probe that keeps its props.
-jest.mock("../../ui/AppField", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return { AppField: (props: Record<string, unknown>) => ReactRef.createElement("AppField", props) }
-})
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../../ui/feedback", () => ({ feedback: { selection: jest.fn() } }))
 
 const originalConsoleError = console.error
 
@@ -35,10 +33,12 @@ beforeAll(() => {
     if (String(args[0] ?? "").includes("react-test-renderer is deprecated")) return
     originalConsoleError(...(args as Parameters<typeof console.error>))
   })
+  jest.useFakeTimers()
 })
 
 afterAll(() => {
   jest.restoreAllMocks()
+  jest.useRealTimers()
 })
 
 const textOf = (node: renderer.ReactTestInstance): string =>
@@ -58,11 +58,14 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
   act(() => {
     tree = renderer.create(element(props))
   })
-  const surface = () =>
-    tree.root.find(
-      (n) => (n.type as unknown) === "AppField" && n.props.testID === "dmh-surface-field",
-    )
+  const byId = (id: string) => tree.root.findAll((n) => n.props.testID === id)
+  // The typed field exists while the value is being edited: tap the value first.
+  const surface = () => {
+    act(() => byId("dmh-surface-stepper-value")[0].props.onPress())
+    return byId("dmh-surface-field")[0]
+  }
   return {
+    byId,
     tree,
     onChangeSurface,
     surface,
@@ -76,15 +79,25 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
 }
 
 describe("DmhCountFields", () => {
-  test("renders only the surface field: no counter row", () => {
-    const { tree, surface } = mount()
-    expect(surface().props.label).toBe(t.dmhSurfaceLabel)
+  test("renders only the surface row, with its label and a decimal keyboard: no counter row", () => {
+    const { tree, surface, byId } = mount()
+    expect(textOf(tree.root)).toContain(t.dmhSurfaceLabel)
+    expect(byId("dmh-surface-block")).not.toHaveLength(0)
     expect(
       tree.root.findAll(
         (n) => typeof n.props.testID === "string" && n.props.testID.startsWith("dmh-count-"),
       ),
     ).toHaveLength(0)
-    expect(tree.root.findAll((n) => (n.type as unknown) === "FactorCounterInput")).toHaveLength(0)
+    expect(surface().props.keyboardType).toBe("decimal-pad")
+  })
+
+  test("the capsule steps a tenth of a hectare", () => {
+    const { byId, onChangeSurface } = mount({ surfaceText: "1,2" })
+    const up = byId("dmh-surface-stepper-increase")[0]
+    act(() => up.props.onPressIn())
+    act(() => up.props.onPressOut())
+    act(() => up.props.onPress())
+    expect(onChangeSurface).toHaveBeenLastCalledWith("1,3")
   })
 
   test("F's surface starts from the route's zone, once, and says where it comes from", () => {
@@ -97,7 +110,6 @@ describe("DmhCountFields", () => {
     expect(fromRoute()).toHaveLength(1)
     expect(textOf(fromRoute()[0])).toBe(t.fromRoute)
     expect(surface().props.value).toBe("1,2")
-    expect(surface().props.label).toBe(t.dmhSurfaceLabel)
   })
 
   test("F's surface is editable: the caption goes away, the typed value is never replaced", () => {
@@ -106,7 +118,9 @@ describe("DmhCountFields", () => {
       surfaceText: "1,2",
     })
     expect(onChangeSurface).not.toHaveBeenCalled()
-    act(() => surface().props.onChangeText("2"))
+    const field = surface()
+    act(() => field.props.onChangeText("2"))
+    act(() => field.props.onBlur())
     expect(onChangeSurface).toHaveBeenCalledWith("2")
     update({ surfaceText: "2" })
     expect(fromRoute()).toHaveLength(0)
@@ -120,8 +134,8 @@ describe("DmhCountFields", () => {
   })
 
   test("a locked page writes nothing and cannot be edited", () => {
-    const { surface, onChangeSurface } = mount({ zoneSurfaceHa: 1.2, editable: false })
+    const { byId, onChangeSurface } = mount({ zoneSurfaceHa: 1.2, editable: false })
     expect(onChangeSurface).not.toHaveBeenCalled()
-    expect(surface().props.editable).toBe(false)
+    expect(byId("dmh-surface-stepper-increase")).toHaveLength(0)
   })
 })

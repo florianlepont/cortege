@@ -3,7 +3,6 @@ export const factorDetailFr = {
   fieldsProgress: ({ filledCount, totalCount }: { filledCount: number; totalCount: number }) =>
     `${filledCount}/${totalCount} champs`,
   requiredField: ({ label }: { label: string }) => `${label} *`,
-  numericPlaceholder: "Saisissez une valeur numérique",
   // OA-30: the help is behind a link, not a card open by default; the sheet closes with its button.
   // Follow-up 32-27: the link is at the top of every factor page, named "Aide au relevé".
   helpLink: "Aide au relevé",
@@ -47,12 +46,8 @@ export const factorDetailFr = {
     strataTitle: "Couvert de chaque strate",
     strataHelper:
       "Une strate compte à partir de 20 % de couvert. Les strates se superposent : le total peut dépasser 100 %.",
-    strataCoverUnit: "%",
-    strataCoverPlaceholder: "0",
     strataCounted: ({ count }: { count: number }) =>
       count === 1 ? "1 strate comptée" : `${count} strates comptées`,
-    strataFieldA11y: ({ label }: { label: string }) =>
-      `Couvert de la strate ${label}, en pourcentage`,
     dmhSurfaceLabel: "Surface décrite pour ce comptage (ha)",
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
     fromRoute: "D'après le parcours",
@@ -79,6 +74,7 @@ export const factorDetailFr = {
       surface: "Surface",
       cover: "Couvert",
       percent: "Part de la surface",
+      density: "Arbres par hectare",
     },
     percentSuffix: "\u00a0%",
     spoken: {
@@ -92,7 +88,6 @@ export const factorDetailFr = {
       decrement: "Diminuer",
     },
     slider: {
-      rowLabel: "Valeur",
       min: "0\u00a0%",
       max: "100\u00a0%",
       a11yLabel: ({ label, percent }: { label: string; percent: number }) =>

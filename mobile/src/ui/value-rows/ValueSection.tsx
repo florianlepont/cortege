@@ -64,3 +64,14 @@ export function ValueSection({
     </View>
   )
 }
+
+/** A quiet line under a section's list (the 20 % rule of the strata cover). */
+export function ValueSectionNote({ children, testID }: { children: string; testID?: string }) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createValueRowStyles(theme), [theme])
+  return (
+    <Text style={styles.caption} testID={testID}>
+      {children}
+    </Text>
+  )
+}

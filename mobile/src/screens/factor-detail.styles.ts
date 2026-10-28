@@ -1,42 +1,18 @@
 import { StyleSheet } from "react-native"
-import {
-  brandRadius,
-  brandSpacing,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
 /**
- * OA-30: the factor screen is the input first. No hero, the help behind a link (at the top of the
- * page since follow-up 32-27, see `FactorIntro`); the factor's score is in the pager's header
- * (follow-up 32-26). Phase 12.2 (variant I): the input card (AppCard
- * `glass`) and the help hints are glass without blur (D-12) at the card radius, block gaps on the
- * 4-grid. The input
- * chrome (`fieldBlock`, `fieldLabel`, `input`) keeps its legacy roles (UI-SPEC Typography exception).
+ * OA-30: the factor screen is the input first, the help behind a link (at the top of the page since
+ * follow-up 32-27, see `FactorIntro`); the factor's score is in the pager's header (follow-up
+ * 32-26). Phase 12.2 (variant I): the help hints are glass without blur (D-12) at the card radius,
+ * block gaps on the 4-grid. Follow-up 32-31: the page has no input card any more, the controls are
+ * grouped rows on the canvas, so only the page gap and the help sheet are styled here.
  */
 export function createDetailStyles(theme: BrandTheme) {
   return StyleSheet.create({
     screen: {
       gap: brandSpacing4.md,
-    },
-    panel: {
-      gap: brandSpacing4.smd,
-    },
-    fieldsList: {
-      gap: brandSpacing4.smd,
-    },
-    fieldBlock: {
-      gap: brandSpacing.xs,
-    },
-    fieldLabel: {
-      ...brandTypography.label,
-      color: theme.colors.textPrimary,
-    },
-    input: {
-      paddingHorizontal: 14,
-      paddingVertical: brandSpacing4.smd,
     },
     // The help sheet.
     sheet: {

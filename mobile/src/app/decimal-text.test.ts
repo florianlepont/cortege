@@ -1,4 +1,10 @@
-import { formatDecimalComma, formatHectares, toFieldText } from "./decimal-text"
+import {
+  clampPercentText,
+  formatDecimalComma,
+  formatHectares,
+  toFieldText,
+  withoutPercentUnit,
+} from "./decimal-text"
 
 describe("toFieldText", () => {
   test("writes whole numbers plain and decimals with a comma", () => {
@@ -28,5 +34,27 @@ describe("formatHectares", () => {
     expect(formatHectares(1.2)).toBe("1,2")
     expect(formatHectares(0.25)).toBe("0,25")
     expect(formatHectares(100000)).toBe("100000,0")
+  })
+})
+
+describe("clampPercentText", () => {
+  test("keeps digits and one separator, and brings a value above 100 back to 100", () => {
+    expect(clampPercentText("12a")).toBe("12")
+    expect(clampPercentText("1,5,2")).toBe("1,52")
+    expect(clampPercentText("150")).toBe("100")
+    expect(clampPercentText("100,5")).toBe("100")
+    expect(clampPercentText("")).toBe("")
+    expect(clampPercentText("abc")).toBe("")
+    expect(clampPercentText("100")).toBe("100")
+  })
+})
+
+describe("withoutPercentUnit", () => {
+  test("drops the trailing (%) and keeps the required marker", () => {
+    expect(withoutPercentUnit("Milieux ouverts fleuris (%)")).toBe("Milieux ouverts fleuris")
+    expect(withoutPercentUnit("Couvert des essences autochtones (%) *")).toBe(
+      "Couvert des essences autochtones *",
+    )
+    expect(withoutPercentUnit("Surface (ha)")).toBe("Surface (ha)")
   })
 })
