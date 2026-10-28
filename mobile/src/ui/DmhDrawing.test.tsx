@@ -1,8 +1,9 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { brandRadius } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 import { drawingFor, type DmhDrawingData } from "../app/dmh-guide/drawings"
-import { DmhDrawing } from "./DmhDrawing"
+import { DMH_DRAWING_RENDER_SCALE, DmhDrawing } from "./DmhDrawing"
 
 const originalConsoleError = console.error
 
@@ -57,7 +58,7 @@ describe("DmhDrawing", () => {
     expect(render(null).toJSON()).toBeNull()
   })
 
-  test("is one accessible image labelled by the caller, 4:3, capped at 240", () => {
+  test("is one accessible image labelled by the caller, on a moss plate", () => {
     const tree = render(FIXTURE, "Une loge de pic dans un tronc")
     const [wrapper] = byType(tree, "View")
     expect(wrapper.props).toMatchObject({
@@ -66,10 +67,22 @@ describe("DmhDrawing", () => {
       accessibilityLabel: "Une loge de pic dans un tronc",
       testID: "dmh-drawing",
     })
-    expect(wrapper.props.style).toMatchObject({
+    // The plate (B-C3): card radius, the icon tile moss, 16 pt around the drawing.
+    expect(Object.assign({}, ...[wrapper.props.style].flat())).toMatchObject({
+      width: "100%",
+      borderRadius: brandRadius.card,
+      padding: 16,
+      backgroundColor: defaultTheme.visual.glass.iconTile,
+    })
+    expect(brandRadius.card).toBe(22)
+  })
+
+  test("the drawing inside the plate is 4:3 and at most 200 pt tall", () => {
+    const [, frame] = byType(render(FIXTURE), "View")
+    expect(frame.props.style).toMatchObject({
       width: "100%",
       aspectRatio: 800 / 600,
-      maxHeight: 240,
+      maxHeight: 200,
     })
   })
 
@@ -103,14 +116,15 @@ describe("DmhDrawing", () => {
     expect(shapes[3]).toMatchObject({ cx: 400, cy: 300, r: 9 })
   })
 
-  test("every shape takes its own width and the theme ink, with no fill and round ends", () => {
+  test("every shape takes its own width times the render scale and the brand ink, round ends", () => {
+    expect(DMH_DRAWING_RENDER_SCALE).toBe(1.5)
     const [svg] = byType(render(FIXTURE), "Svg")
     const widths = [6, 4, 5, 12]
     svg.children.forEach((child, index) => {
       expect((child as renderer.ReactTestInstance).props).toMatchObject({
-        stroke: defaultTheme.colors.textPrimary,
+        stroke: defaultTheme.semanticColors.ctaPrimary,
         fill: "none",
-        strokeWidth: widths[index],
+        strokeWidth: widths[index] * DMH_DRAWING_RENDER_SCALE,
         strokeLinecap: "round",
         strokeLinejoin: "round",
       })
