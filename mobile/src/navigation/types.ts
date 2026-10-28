@@ -8,6 +8,7 @@ import type {
   SearchPlaceKind,
   UncappableFactor,
 } from "@cortege/ibp-domain"
+import type { SearchGroupKey } from "../app/global-search"
 import type { ExportMode } from "../app/survey-pdf-export"
 import type { FactorKey } from "../app/types"
 import type { RouteDetailsValue } from "../screens/route-guide/RouteDetailsCard"
@@ -158,10 +159,13 @@ export type SearchStackParamList = {
    * one author (D-04, UI-SPEC U-11).
    */
   searchGroup: {
-    group: "mine" | "community" | "places" | "parcels"
+    group: SearchGroupKey
     query: string
     memberName?: string
   }
+  // Phase 32 (owner request 2026-10-28): a guide result opens the dendromicrohabitat guide as the
+  // same sheet as everywhere else. Closing it goes back to the search.
+  surveyDmhGuide: { group?: DmhGroupCode } | undefined
 }
 
 export type RootTabParamList = {
@@ -209,10 +213,11 @@ export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "su
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
-/** Mounted by the survey stack and by the Accueil stack: it reads only its own params. */
+/** Mounted by the survey, Accueil and search stacks: it reads only its own params. */
 export type DmhGuideRouteProps =
   | StackRouteProps<SurveysStackParamList, "surveyDmhGuide">
   | StackRouteProps<HomeStackParamList, "surveyDmhGuide">
+  | StackRouteProps<SearchStackParamList, "surveyDmhGuide">
 export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ExportChoiceRouteProps = StackRouteProps<SurveysStackParamList, "surveyExportChoice">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">

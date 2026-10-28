@@ -62,12 +62,13 @@ const mockSearch = {
   active: false,
   offline: false,
   mine: [],
+  guide: ["dmh_01"],
   community: { status: "idle" },
   places: { status: "idle" },
   parcels: { status: "idle" },
   parcelsShown: false,
   best: null,
-  order: ["mine", "community", "places", "parcels"],
+  order: ["mine", "community", "places", "parcels", "guide"],
   busy: false,
   settled: true,
   resultCount: 0,
@@ -263,6 +264,31 @@ describe("SearchHomeRoute", () => {
       params: {
         focus: expect.objectContaining({ kind: "parcel", parcelId: "77186000AB0012" }),
       },
+    })
+  })
+
+  test("hands the matching guide groups to the results, and opens the guide sheet on a group", () => {
+    mockSearch.active = true
+    mount()
+    type("Pic")
+    expect(screenProps.results.guide).toEqual(["dmh_01"])
+    act(() => screenProps.results.onOpenGuide("dmh_01"))
+    expect(mockNavigation.navigate).toHaveBeenLastCalledWith("search", {
+      screen: "surveyDmhGuide",
+      params: { group: "dmh_01" },
+    })
+    expect(mockSelection).toHaveBeenCalledTimes(1)
+    expect(mockRecents.save).toHaveBeenCalledWith("Pic")
+  })
+
+  test("'Voir les N' of the guide opens its full list for the typed text", () => {
+    mockSearch.active = true
+    mount()
+    type(" Pic ")
+    act(() => screenProps.results.onSeeAll("guide"))
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("search", {
+      screen: "searchGroup",
+      params: { group: "guide", query: "Pic" },
     })
   })
 

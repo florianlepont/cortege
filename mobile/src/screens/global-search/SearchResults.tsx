@@ -1,6 +1,7 @@
-import { ReactElement, ReactNode, useMemo } from "react"
+import { ReactNode, useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import type {
+  DmhGroupCode,
   SearchCommunityResponse,
   SearchParcelItem,
   SearchParcelsResponse,
@@ -28,8 +29,8 @@ import { RowIndicator } from "../survey-list/row-indicator"
 import { resolveRowScore } from "../survey-list/row-score"
 import { SearchBestResult } from "./SearchBestResult"
 import { SearchGroupCard } from "./SearchGroupCard"
-import { SearchGroupNotice } from "./SearchGroupNotice"
-import type { SearchNoticeGroup } from "./SearchGroupNotice"
+import { SearchGuideGroup } from "./SearchGuideGroup"
+import { isLoading, networkNotice } from "./network-notice"
 import { SearchResultRow } from "./SearchResultRow"
 import { bestResultLabels, memberLabels, parcelLabels, placeLabels } from "./result-labels"
 
@@ -46,6 +47,8 @@ export type SearchResultsProps = {
   community: SearchGroupState<SearchCommunityResponse>
   places: SearchGroupState<SearchPlacesResponse>
   parcels: SearchGroupState<SearchParcelsResponse>
+  /** The groups of the dendromicrohabitat guide that match, from the phone (never promoted). */
+  guide: readonly DmhGroupCode[]
   /** False: the Parcelles group is not drawn at all (U-09). */
   parcelsShown: boolean
   best: BestResult | null
@@ -57,44 +60,14 @@ export type SearchResultsProps = {
   onOpenMember: (name: string) => void
   onOpenPlace: (item: SearchPlaceItem) => void
   onOpenParcel: (item: SearchParcelItem) => void
+  onOpenGuide: (code: DmhGroupCode) => void
   /** "Voir les N" of a group. */
   onSeeAll: (group: SearchGroupKey) => void
 }
 
-const isLoading = (state: SearchGroupState<unknown>) =>
-  state.status === "waiting" || state.status === "loading"
-
-/**
- * The line that stands in for the rows of a network group: no connection, a failed request (that
- * group alone re-runs), or the first load. A group that has rows keeps them while it loads again.
- */
-function networkNotice(
-  group: SearchNoticeGroup,
-  state: SearchGroupState<unknown>,
-): ReactElement | null {
-  if (state.status === "offline") {
-    return <SearchGroupNotice key="notice" group={group} variant="offline" />
-  }
-  if (state.status === "error") {
-    return (
-      <SearchGroupNotice
-        key="notice"
-        group={group}
-        variant="error"
-        error={state.error}
-        onRetry={state.retry}
-      />
-    )
-  }
-  if (isLoading(state) && state.data === null) {
-    return <SearchGroupNotice key="notice" group={group} variant="loading" />
-  }
-  return null
-}
-
 /**
  * The results of an active query (25-11, D-02, D-10, D-11, UI-SPEC section 3): the "Meilleur
- * résultat" card, then the groups in the given order, each at most three slim rows in one glass card
+ * résultat" card, then the groups in the given order (the guide last), each at most three slim rows in one glass card
  * with "Voir les N" when more exist. A group without a row and without a notice disappears; the
  * result promoted to the best-result card is not drawn twice. A network group keeps its header
  * with a line for "offline", "error" (with its own "Réessayer") or the first load. When nothing is
@@ -108,6 +81,7 @@ export function SearchResults({
   community,
   places,
   parcels,
+  guide,
   parcelsShown,
   best,
   order,
@@ -117,6 +91,7 @@ export function SearchResults({
   onOpenMember,
   onOpenPlace,
   onOpenParcel,
+  onOpenGuide,
   onSeeAll,
 }: SearchResultsProps) {
   const theme = useBrandTheme()
@@ -267,6 +242,14 @@ export function SearchResults({
     community: renderCommunity,
     places: renderPlaces,
     parcels: renderParcels,
+    guide: () => (
+      <SearchGuideGroup
+        key="guide"
+        groups={guide}
+        onOpen={onOpenGuide}
+        onSeeAll={() => onSeeAll("guide")}
+      />
+    ),
   }
 
   const renderBest = (result: BestResult): ReactNode => {
@@ -336,6 +319,7 @@ export function SearchResults({
   const loading = networkStates.some(isLoading)
   const matched =
     mine.length > 0 ||
+    guide.length > 0 ||
     (community.data?.members.length ?? 0) > 0 ||
     (community.data?.surveys.length ?? 0) > 0 ||
     (places.data?.items.length ?? 0) > 0 ||

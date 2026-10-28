@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import { FlatList, ListRenderItemInfo, StyleSheet, View } from "react-native"
 import type {
   CommunitySurveyItem,
+  DmhGroupCode,
   SearchCommunityResponse,
   SearchMemberItem,
   SearchParcelItem,
@@ -31,7 +32,7 @@ import { resolveRowScore } from "../survey-list/row-score"
 import { SurveyRow } from "../survey-list/SurveyRow"
 import { OwnSurveyChips } from "./OwnSurveyChips"
 import { SearchResultRow } from "./SearchResultRow"
-import { memberLabels, parcelLabels, placeLabels } from "./result-labels"
+import { guideLabels, memberLabels, parcelLabels, placeLabels } from "./result-labels"
 
 const t = fr.search
 
@@ -69,11 +70,13 @@ export type SearchGroupListScreenProps = {
   community?: SearchCommunityResponse | null
   places?: readonly SearchPlaceItem[]
   parcels?: readonly SearchParcelItem[]
+  guide?: readonly DmhGroupCode[]
   onOpenOwn: (surveyId: string) => void
   onOpenCommunity: (surveyId: string) => void
   onOpenMember: (name: string) => void
   onOpenPlace: (item: SearchPlaceItem) => void
   onOpenParcel: (item: SearchParcelItem) => void
+  onOpenGuide: (code: DmhGroupCode) => void
 }
 
 type ListItem =
@@ -82,6 +85,7 @@ type ListItem =
   | { kind: "community"; item: CommunitySurveyItem }
   | { kind: "place"; item: SearchPlaceItem }
   | { kind: "parcel"; item: SearchParcelItem }
+  | { kind: "guide"; code: DmhGroupCode }
 
 function keyOf(row: ListItem): string {
   switch (row.kind) {
@@ -95,6 +99,8 @@ function keyOf(row: ListItem): string {
       return `place:${row.item.id}`
     case "parcel":
       return `parcel:${row.item.parcel_id}`
+    case "guide":
+      return `guide:${row.code}`
   }
 }
 
@@ -105,6 +111,7 @@ function buildItems(
   community: SearchCommunityResponse | null | undefined,
   places: readonly SearchPlaceItem[] | undefined,
   parcels: readonly SearchParcelItem[] | undefined,
+  guide: readonly DmhGroupCode[] | undefined,
 ): ListItem[] {
   switch (group) {
     case "mine":
@@ -121,6 +128,8 @@ function buildItems(
       return (places ?? []).map((item) => ({ kind: "place", item }))
     case "parcels":
       return (parcels ?? []).map((item) => ({ kind: "parcel", item }))
+    case "guide":
+      return (guide ?? []).map((code) => ({ kind: "guide", code }))
   }
 }
 
@@ -143,11 +152,13 @@ export function SearchGroupListScreen({
   community,
   places,
   parcels,
+  guide,
   onOpenOwn,
   onOpenCommunity,
   onOpenMember,
   onOpenPlace,
   onOpenParcel,
+  onOpenGuide,
 }: SearchGroupListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -157,8 +168,8 @@ export function SearchGroupListScreen({
   const clearance = useTabBarClearance()
 
   const items = useMemo(
-    () => buildItems(group, memberName, mine?.surveys, community, places, parcels),
-    [group, memberName, mine?.surveys, community, places, parcels],
+    () => buildItems(group, memberName, mine?.surveys, community, places, parcels, guide),
+    [group, memberName, mine?.surveys, community, places, parcels, guide],
   )
 
   // Rows 0 to 7 that mount with the page slide up once; scrolling never replays the entrance.
@@ -216,6 +227,17 @@ export function SearchGroupListScreen({
           />
         )
       }
+      case "guide": {
+        const labels = guideLabels(row.code)
+        return (
+          <SearchResultRow
+            kind="guide"
+            density="regular"
+            {...labels}
+            onPress={() => onOpenGuide(row.code)}
+          />
+        )
+      }
     }
   }
 
@@ -243,14 +265,14 @@ export function SearchGroupListScreen({
   const state = renderState()
 
   function renderState() {
-    if (status === "offline" && group !== "mine") {
+    if (status === "offline" && group !== "mine" && group !== "guide") {
       return (
         <Text style={styles.centered} accessibilityLiveRegion="polite" testID="search-list-offline">
           {t.offline[group]}
         </Text>
       )
     }
-    if (status === "error" && group !== "mine") {
+    if (status === "error" && group !== "mine" && group !== "guide") {
       return (
         <View style={styles.errorBlock} testID="search-list-error">
           <Text style={styles.centered} accessibilityLiveRegion="polite">

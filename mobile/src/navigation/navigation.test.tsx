@@ -882,9 +882,16 @@ describe("stack options and listeners", () => {
     // Owner request 2026-10-28: Accueil opens the same sheet, so the Accueil stack registers it
     // too, with the same options and the same route component (closing returns to Accueil).
     const guides = mockRegistrations.filter((record) => record.name === "surveyDmhGuide")
-    expect(guides).toHaveLength(2)
-    expect(guides[0].options).toEqual(guides[1].options)
-    expect(guides[0].component).toBe(guides[1].component)
+    // Owner request 2026-10-28 (32-20): the search stack registers it as well, so a guide result
+    // of the global search opens it as a sheet over the search (closing returns to the search).
+    expect(guides).toHaveLength(3)
+    for (const guide of guides) {
+      expect(guide.options).toEqual(guides[0].options)
+      expect(guide.component).toBe(guides[0].component)
+    }
+    const searchNavigator = mockRegistrations.filter((record) => record.name === "searchHome")[0]
+      .navigator
+    expect(guides.map((guide) => guide.navigator)).toContain(searchNavigator)
     mockPlatform.OS = "ios"
     const { dmhGuideScreenOptions } = jest.requireActual("./stacks/stack-options") as {
       dmhGuideScreenOptions: (theme: unknown) => Options

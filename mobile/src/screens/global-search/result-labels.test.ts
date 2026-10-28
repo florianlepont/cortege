@@ -1,9 +1,12 @@
+import { DMH_GROUP_CODES } from "@cortege/ibp-domain"
 import type {
   CommunitySurveyItem,
   SearchMemberItem,
   SearchParcelItem,
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
+import { formOf } from "../../app/dmh-guide/structure"
+import { selectionLabel } from "../../app/factor-selections"
 import { formatDay, formatShortDateTime } from "../../app/formatters"
 import type { BestResult } from "../../app/global-search"
 import { fr } from "../../i18n"
@@ -11,6 +14,7 @@ import type { LocalSurvey } from "../../storage/types"
 import {
   bestResultLabels,
   communitySurveyLabels,
+  guideLabels,
   memberLabels,
   ownSurveyLabels,
   parcelLabels,
@@ -214,6 +218,23 @@ describe("communitySurveyLabels (25-09)", () => {
     const labels = communitySurveyLabels(communitySurvey({ author_name: "  ", site_name: " " }))
     expect(labels.meta).toContain("un ancien membre")
     expect(labels.title).toBe(fr.common.untitledSurvey)
+  })
+})
+
+describe("guideLabels (phase 32)", () => {
+  test("the title is the group name and the meta its official form", () => {
+    const labels = guideLabels("dmh_01")
+    expect(labels.title).toBe(selectionLabel("F", "dmh_01"))
+    expect(labels.meta).toBe(fr.dmhGuide.forms[formOf("dmh_01")])
+    expect(labels.accessibilityLabel).toBe(`Guide : ${labels.title}, ${labels.meta}`)
+  })
+
+  test("every one of the fifteen groups has a name and a form", () => {
+    for (const code of DMH_GROUP_CODES) {
+      const labels = guideLabels(code)
+      expect(labels.title).not.toBe(code)
+      expect(labels.meta.length).toBeGreaterThan(0)
+    }
   })
 })
 

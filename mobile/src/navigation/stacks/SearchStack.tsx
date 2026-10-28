@@ -2,11 +2,16 @@ import { View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { DmhGuideRoute } from "../routes/DmhGuideRoute"
 import { SearchGroupRoute } from "../routes/SearchGroupRoute"
 import { SearchHomeRoute } from "../routes/SearchHomeRoute"
 import { styles } from "../styles"
 import type { SearchStackParamList } from "../types"
-import { createBaseStackScreenOptions, pageTitleOptions } from "./stack-options"
+import {
+  createBaseStackScreenOptions,
+  dmhGuideScreenOptions,
+  pageTitleOptions,
+} from "./stack-options"
 
 const SearchStack = createNativeStackNavigator<SearchStackParamList>()
 
@@ -14,7 +19,9 @@ const SearchStack = createNativeStackNavigator<SearchStackParamList>()
  * The search tab on every platform (D-01): the native search tab on iOS, the fourth JS tab
  * elsewhere, both mounting this one stack. `searchHome` is the search page (no native header, it
  * draws its own field); `searchGroup` is the full list of one group, pushed from "Voir les N" or a
- * member, with the native large title on iOS and the back label "Rechercher".
+ * member, with the native large title on iOS and the back label "Rechercher". `surveyDmhGuide` is
+ * the dendromicrohabitat guide sheet a guide result opens (same route component and options as in
+ * the survey and Accueil stacks); closing it returns to the search.
  */
 export function SearchTabNavigator() {
   const theme = useBrandTheme()
@@ -34,6 +41,11 @@ export function SearchTabNavigator() {
             ...pageTitleOptions(theme),
           }}
           component={SearchGroupRoute}
+        />
+        <SearchStack.Screen
+          name="surveyDmhGuide"
+          component={DmhGuideRoute}
+          options={dmhGuideScreenOptions(theme)}
         />
       </SearchStack.Navigator>
     </View>

@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react"
 import { Keyboard, ScrollView, TextInput } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import type { SearchParcelItem, SearchPlaceItem } from "@cortege/ibp-domain"
+import type { DmhGroupCode, SearchParcelItem, SearchPlaceItem } from "@cortege/ibp-domain"
 import type { SearchGroupKey } from "../../app/global-search"
 import { useGlobalSearch } from "../../hooks/useGlobalSearch"
 import { useSearchRecents } from "../../hooks/useSearchRecents"
@@ -15,9 +15,10 @@ import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /**
  * The home page of the search tab (25-11, D-01, D-02, D-02b): the field, the start page with the
- * recent searches, and the four result groups. The query lives in this route's own state, never in
+ * recent searches, and the five result groups. The query lives in this route's own state, never in
  * a shared context, so a keystroke re-renders this page only (T-25-31). Every result opens its own
- * target (a survey, a member's list, Explorer centred on a place or a parcel); each open, each
+ * target (a survey, a member's list, Explorer centred on a place or a parcel, the guide sheet of
+ * a dendromicrohabitat group, phase 32); each open, each
  * "Voir les N" and each tapped recent first keeps the query as a recent search and plays the
  * selection haptic.
  *
@@ -109,6 +110,10 @@ export const SearchHomeRoute = memo(function SearchHomeRoute() {
       params: { focus: parcelFocus(item, Date.now()) },
     })
   })
+  const onOpenGuide = useLatestCallback((group: DmhGroupCode) => {
+    choose()
+    navigation.navigate("search", { screen: "surveyDmhGuide", params: { group } })
+  })
   const onSeeAll = useLatestCallback((group: SearchGroupKey) => {
     choose()
     navigation.navigate("search", {
@@ -156,6 +161,7 @@ export const SearchHomeRoute = memo(function SearchHomeRoute() {
           normalized: search.normalized,
           offline: search.offline,
           mine: search.mine,
+          guide: search.guide,
           community: search.community,
           places: search.places,
           parcels: search.parcels,
@@ -168,6 +174,7 @@ export const SearchHomeRoute = memo(function SearchHomeRoute() {
           onOpenMember,
           onOpenPlace,
           onOpenParcel,
+          onOpenGuide,
           onSeeAll,
         }}
         settled={search.settled}
