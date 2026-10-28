@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from "react"
+import { Fragment, useMemo, type ReactNode } from "react"
 import { View } from "react-native"
 import {
   allowedScoresFor,
@@ -18,6 +18,7 @@ import { DmhHeroCard } from "./factor-detail/DmhHeroCard"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import { FactorIntro } from "./factor-detail/FactorIntro"
 import { FactorKeyHero } from "./factor-detail/FactorKeyHero"
+import { isChoiceVariant, renderChoiceField } from "./factor-detail/renderChoiceField"
 import {
   fieldVariantsFor,
   hasDmhListCompanion,
@@ -143,7 +144,11 @@ export function FactorDetailScreen({
     enabled: surfaceField !== undefined,
   })
 
-  const fieldNodes = fields.map((field, index) => {
+  // The input card keeps the typed fields; the choice controls are grouped lists on the canvas
+  // (follow-up 32-30), drawn after the pills.
+  const fieldNodes: ReactNode[] = []
+  const choiceNodes: ReactNode[] = []
+  fields.forEach((field, index) => {
     const block = detailEntry ? (
       <UncappedFieldBlock
         key={`${factor}-${field.label}-uncapped`}
@@ -154,30 +159,44 @@ export function FactorDetailScreen({
         zoneSurfaceHa={zoneSurfaceHa}
       />
     ) : null
-    // B: the cover per stratum replaces the strata chips.
-    if (block !== null && factor === "B") return block
+    const variant = variants[index]
+    // B: the cover per stratum replaces the strata list.
+    if (block !== null && factor === "B") {
+      fieldNodes.push(block)
+      return
+    }
     // F with the group counters: the trees per hectare is the list's sum line, not a field here.
-    if (groupEntry !== undefined && hasDmhListCompanion(variants[index])) return block
-    const input = renderFactorField(factor, variants[index], field, methodVersion, detailStyles)
+    if (groupEntry !== undefined && hasDmhListCompanion(variant)) {
+      if (block !== null) fieldNodes.push(block)
+      return
+    }
+    if (isChoiceVariant(variant)) {
+      choiceNodes.push(renderChoiceField(factor, variant, field, methodVersion))
+      return
+    }
+    const input = renderFactorField(factor, variant, field, methodVersion, detailStyles)
     if (block !== null) {
-      return (
+      fieldNodes.push(
         <Fragment key={`${factor}-${field.label}-detail`}>
           {input}
           {block}
-        </Fragment>
+        </Fragment>,
       )
+      return
     }
-    return fromRoute && field === surfaceField ? (
-      <Fragment key={`${factor}-${field.label}-from-route`}>
-        {input}
-        <FromRouteCaption />
-      </Fragment>
-    ) : (
-      input
+    fieldNodes.push(
+      fromRoute && field === surfaceField ? (
+        <Fragment key={`${factor}-${field.label}-from-route`}>
+          {input}
+          <FromRouteCaption />
+        </Fragment>
+      ) : (
+        input
+      ),
     )
   })
-  // Capped F has nothing left for the card (the list holds it all): no empty glass card.
-  const showPanel = genusListField !== null || fieldNodes.some((node) => node)
+  // Nothing typed left for the card (capped F, or a page of choice lists only): no empty glass card.
+  const showPanel = fieldNodes.length > 0
 
   return (
     <View style={detailStyles.screen}>
@@ -218,9 +237,11 @@ export function FactorDetailScreen({
         onCommitNote={onCommitNote}
       />
 
+      {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
+      {choiceNodes}
+
       {showPanel ? (
         <AppCard variant="glass" padding={16} style={detailStyles.panel}>
-          {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
           <View style={detailStyles.fieldsList}>{fieldNodes}</View>
         </AppCard>
       ) : null}

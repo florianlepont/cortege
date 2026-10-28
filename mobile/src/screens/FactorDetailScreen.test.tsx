@@ -85,11 +85,12 @@ jest.mock("../ui/AppField", () => {
   }
 })
 
-jest.mock("../ui/FactorGenusListInput", () => {
+// Follow-up 32-30: the genus list (a search field and 34 rows) is under test in
+// factor-detail/GenusChoice.test.tsx; here it is a probe that keeps its props.
+jest.mock("./factor-detail/GenusChoice", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    FactorGenusListInput: (props: { label: string }) =>
-      ReactRef.createElement("FactorGenusListInput", props),
+    GenusChoice: (props: { title: string }) => ReactRef.createElement("GenusChoice", props),
   }
 })
 
@@ -226,11 +227,9 @@ describe("FactorDetailScreen fields", () => {
     expect(inputs.map((input) => input.props.label)).toEqual([
       fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
     ])
-    const genusLists = tree.root.findAllByType(
-      "FactorGenusListInput" as unknown as React.ElementType,
-    )
+    const genusLists = tree.root.findAllByType("GenusChoice" as unknown as React.ElementType)
     expect(genusLists).toHaveLength(1)
-    expect(genusLists[0].props.label).toBe(fr.factorDetail.fieldLabels.genera)
+    expect(genusLists[0].props.title).toBe(fr.factorDetail.fieldLabels.genera)
   })
 
   test("A mounts the photo-recognition entry point, wired to the genus-list field", () => {
@@ -256,7 +255,7 @@ describe("FactorDetailScreen fields", () => {
     expect(inputs).toHaveLength(0)
   })
 
-  test("B renders one chip per strata tier", () => {
+  test("B renders one choice row per strata tier", () => {
     let tree!: renderer.ReactTestRenderer
     act(() => {
       tree = renderer.create(
@@ -270,13 +269,12 @@ describe("FactorDetailScreen fields", () => {
         />,
       )
     })
-    const chips = tree.root.findAll(
+    const rows = tree.root.findAll(
       (node) =>
         (node.type as unknown) === "Pressable" &&
-        node.props.accessibilityState &&
-        "selected" in node.props.accessibilityState,
+        String(node.props.testID).startsWith("choice-row-B-"),
     )
-    expect(chips).toHaveLength(fr.factorInput.strataOptions.length)
+    expect(rows).toHaveLength(fr.factorInput.strataOptions.length)
   })
 
   test("C renders two counters and one numeric surface field", () => {
@@ -323,8 +321,8 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     tree.root.findAll(
       (node) =>
         (node.type as unknown) === "Pressable" &&
-        node.props.accessibilityState &&
-        "selected" in node.props.accessibilityState,
+        String(node.props.testID).startsWith("choice-row-") &&
+        node.props.accessibilityRole === "checkbox",
     )
   const withSelection = (
     label: string,
@@ -343,7 +341,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
       IBP_METHOD_V3_2,
     )
     const chips = chipsOf(tree)
-    expect(chips.map((chip) => chip.props.accessibilityState.selected)).toEqual([
+    expect(chips.map((chip) => chip.props.accessibilityState.checked)).toEqual([
       false,
       true,
       false,
@@ -358,7 +356,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
 
   test("B with a count and no selection shows the legacy line and no ticked chip", () => {
     const tree = renderPlain("B", [withSelection("strata_count", null, "3")], IBP_METHOD_V3_2)
-    expect(chipsOf(tree).every((chip) => !chip.props.accessibilityState.selected)).toBe(true)
+    expect(chipsOf(tree).every((chip) => !chip.props.accessibilityState.checked)).toBe(true)
     expect(textsOf(tree)).toContain(fr.factorInput.chips.legacyCount({ count: 3 }))
   })
 
@@ -389,7 +387,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     const tree = renderPlain("J", [withSelection("count", ["lower_rock"], "1")], IBP_METHOD_V3_2)
     const chips = chipsOf(tree)
     expect(chips).toHaveLength(13)
-    expect(chips[12].props.accessibilityState.selected).toBe(true)
+    expect(chips[12].props.accessibilityState.checked).toBe(true)
   })
 
   test("F renders the numeric trees field then the group list, with the field's selection", () => {
@@ -431,20 +429,23 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
     expect(card.findAll((n) => (n.type as unknown) === "AppField")).toHaveLength(1)
   })
 
-  test("H renders the segmented class and the 3 optional source chips under it", () => {
+  test("H renders the class as a single choice and the 3 optional sources under it", () => {
     const { tree } = renderDetail(
       "H",
       [withSelection("class_score", ["field_signs"], "5")],
       IBP_METHOD_V3_2,
     )
-    const chips = chipsOf(tree).filter((chip) =>
-      fr.factorInput.continuityEvidenceOptions.some(
-        (o) => o.label === chip.props.accessibilityLabel,
-      ),
+    const evidence = chipsOf(tree)
+    expect(evidence).toHaveLength(3)
+    expect(evidence.map((row) => row.props.accessibilityLabel)).toEqual(
+      fr.factorInput.continuityEvidenceOptions.map((o) => o.label),
     )
-    expect(chips).toHaveLength(3)
     expect(textsOf(tree)).toContain(fr.factorDetail.companionLabels.evidence)
-    expect(chips[2].props.accessibilityState.selected).toBe(true)
+    expect(evidence[2].props.accessibilityState.checked).toBe(true)
+    const classes = tree.root.findAll(
+      (node) => (node.type as unknown) === "Pressable" && node.props.accessibilityRole === "radio",
+    )
+    expect(classes.map((row) => row.props.accessibilityState.checked)).toEqual([false, false, true])
   })
 
   test("a companion renders without a selection, nothing ticked, and without the guide opener", () => {
@@ -783,7 +784,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     }),
   ]
 
-  test("B counted in full shows the cover per stratum instead of the strata chips", () => {
+  test("B counted in full shows the cover per stratum instead of the strata list", () => {
     const { strata, tree } = mount("B", bFields, { uncappedFactors: ["B"], uncappedEntry: entry })
     expect(strata()).toHaveLength(1)
     const props = strata()[0].props
@@ -802,7 +803,7 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(entry.setStratumCover).toHaveBeenCalledWith("low", "30")
   })
 
-  test("B capped keeps the chips, with the count as it was", () => {
+  test("B capped keeps the strata list, with the count as it was", () => {
     const { strata, tree } = mount("B", bFields, { uncappedFactors: ["F"], uncappedEntry: entry })
     expect(strata()).toHaveLength(0)
     const chips = tree.root.findAll(
@@ -1044,27 +1045,53 @@ describe("FactorDetailScreen key figure hero (follow-up 32-29)", () => {
     expect(hero()).toHaveLength(0)
   })
 
-  test.each(["A", "B", "C", "D", "E", "G", "H", "I", "J"] as FactorKey[])(
-    "%s: the page order is intro, hero, strip, then the input card",
-    (factor) => {
-      const { tree } = mountFactor(factor, ["Fagus", "1", "1"])
-      const root = tree.root
-        .findByType(FactorDetailScreen)
-        .findAll((n) => (n.type as unknown) === "View")[0]
-      const order = root.children
-        .filter((child): child is renderer.ReactTestInstance => typeof child !== "string")
-        .map((child) =>
-          child.props.onOpenHelp
-            ? "intro"
-            : child.props.onCommitNote
-              ? "strip"
-              : child.props.figure
-                ? "hero"
-                : "card",
-        )
-      expect(order).toEqual(["intro", "hero", "strip", "card"])
-    },
-  )
+  const FIELD_COUNT: Record<FactorKey, number> = {
+    A: 2,
+    B: 1,
+    C: 3,
+    D: 3,
+    E: 3,
+    F: 1,
+    G: 1,
+    H: 1,
+    I: 1,
+    J: 1,
+  }
+  // Follow-up 32-30: the choice controls are grouped lists on the canvas, the typed fields stay in
+  // the card. A also has the photo entry above its list; H has two lists.
+  test.each<[FactorKey, string[]]>([
+    ["A", ["entry", "choice", "card"]],
+    ["B", ["choice"]],
+    ["C", ["card"]],
+    ["D", ["card"]],
+    ["E", ["card"]],
+    ["G", ["card"]],
+    ["H", ["choice", "choice"]],
+    ["I", ["choice"]],
+    ["J", ["choice"]],
+  ])("%s: the page order is intro, hero, strip, then the inputs", (factor, inputs) => {
+    // As many fields as the factor has: a spare field would be one more typed input in the card.
+    const { tree } = mountFactor(factor, ["Fagus", "1", "1"].slice(0, FIELD_COUNT[factor]))
+    const root = tree.root
+      .findByType(FactorDetailScreen)
+      .findAll((n) => (n.type as unknown) === "View")[0]
+    const order = root.children
+      .filter((child): child is renderer.ReactTestInstance => typeof child !== "string")
+      .map((child) =>
+        child.props.onOpenHelp
+          ? "intro"
+          : child.props.onCommitNote
+            ? "strip"
+            : child.props.figure
+              ? "hero"
+              : child.props.genusField
+                ? "entry"
+                : String(child.props.testID).startsWith("choice-list") || child.props.title
+                  ? "choice"
+                  : "card",
+      )
+    expect(order).toEqual(["intro", "hero", "strip", ...inputs])
+  })
 })
 
 const textsIn = (node: renderer.ReactTestInstance): string =>

@@ -1,10 +1,8 @@
-import type { ReactElement } from "react"
 import {
   DMH_GROUP_DENSITY_CAP_PER_HA,
   type DmhGroupCode,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
-import { parseFiniteNumberInput } from "../../app/number-utils"
 import {
   selectionOptionsFor,
   type SelectionFactor,
@@ -13,11 +11,7 @@ import {
 import type { FactorField, FactorKey } from "../../app/types"
 import { AppField } from "../../ui/AppField"
 import type { createDetailStyles } from "../factor-detail.styles"
-import { FactorChipsInput } from "../../ui/FactorChipsInput"
 import { FactorCounterInput } from "../../ui/FactorCounterInput"
-import { FactorGenusListInput } from "../../ui/FactorGenusListInput"
-import type { FactorSegmentedOption } from "../../ui/FactorSegmentedInput"
-import { FactorSegmentedInput } from "../../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../../ui/FactorSliderInput"
 import { fr } from "../../i18n"
 import { DmhGroupList } from "./DmhGroupList"
@@ -29,21 +23,21 @@ const t = fr.factorDetail
 // useSurveyForm's factorSections builds them. F's trees_per_ha has no natural discrete variant and
 // stays numeric. Phase 25.1 (D-12): F and H carry an optional companion to their scored field
 // (F: the dendromicrohabitat group list since phase 32, D-08, which the screen draws after the input
-// card, straight on the canvas, redesign 32-18 A-C1; H: the continuity source chips under it), and
-// the chip options of B, I and J come from selectionOptionsFor so I and J follow the CNPF typology
-// of the survey's method (D-09).
+// card, straight on the canvas, redesign 32-18 A-C1; H: the continuity sources under it), and the
+// options of B, I and J come from selectionOptionsFor so I and J follow the CNPF typology of the
+// survey's method (D-09). Follow-up 32-30: the "segmented", "chips" and "genusList" variants are
+// drawn by `renderChoiceField` as grouped choice lists on the canvas; this file renders the rest.
+type SegmentedOption = { value: string; label: string }
 type OptionsFor = (selected: readonly string[] | null) => SelectionOption[]
 type Companion = "F" | "H"
 
 export type FieldVariant =
   | { kind: "numeric"; companion?: Companion }
   | { kind: "counter" }
-  | { kind: "segmented"; options: readonly FactorSegmentedOption[]; companion?: Companion }
+  | { kind: "segmented"; options: readonly SegmentedOption[]; companion?: Companion }
   | { kind: "chips"; optionsFor: OptionsFor }
   | { kind: "genusList" }
   | { kind: "slider" }
-
-const CHIP_COUNT_LABEL = (count: number): string => fr.factorInput.chips.selectedCount({ count })
 
 export const ignoreSelectionChange = (): void => undefined
 
@@ -77,40 +71,11 @@ export function fieldVariantsFor(
   }
 }
 
-function humanizeFieldLabel(label: string): string {
+export function humanizeFieldLabel(label: string): string {
   const labels: Record<string, string> = t.fieldLabels
   return Object.prototype.hasOwnProperty.call(labels, label)
     ? labels[label]
     : label.replace(/_/g, " ")
-}
-
-/** The count ticked before the detail was stored, read from the field text while no selection is. */
-function legacyCountOf(field: FactorField): number | null {
-  if (field.selection?.selected) return null
-  const parsed = parseFiniteNumberInput(field.value)
-  return parsed === null ? null : Math.max(0, Math.round(parsed))
-}
-
-/** H's optional source chips, under its class. */
-function renderEvidenceChips(
-  field: FactorField,
-  methodVersion: IbpMethodVersion | null,
-  key: string,
-) {
-  const selected = field.selection?.selected ?? null
-  return (
-    <FactorChipsInput
-      key={`${key}-companion`}
-      label={t.companionLabels.evidence}
-      options={selectionOptionsFor("H", methodVersion, selected)}
-      selected={selected}
-      onSelectionChange={field.selection?.onChange ?? ignoreSelectionChange}
-      touched={false}
-      onTouch={ignoreSelectionChange}
-      error={null}
-      countLabel={CHIP_COUNT_LABEL}
-    />
-  )
 }
 
 /** What the factor F page hands its group list: the counting entry and the guide opener. */
@@ -186,59 +151,10 @@ export function renderFactorField(
     ? t.requiredField({ label: humanizeFieldLabel(field.label) })
     : humanizeFieldLabel(field.label)
   const key = `${factor}-${field.label}`
-  // Only H's chips follow the input here; F's list is drawn by the screen, outside the card.
-  const withCompanion = (input: ReactElement): ReactElement | ReactElement[] =>
-    "companion" in current && current.companion === "H"
-      ? [input, renderEvidenceChips(field, methodVersion, key)]
-      : input
-
   switch (current.kind) {
     case "counter":
       return (
         <FactorCounterInput
-          key={key}
-          label={label}
-          value={field.value}
-          onChange={field.onChange}
-          touched={field.touched}
-          onTouch={field.onTouch}
-          error={field.error}
-        />
-      )
-    case "segmented":
-      return withCompanion(
-        <FactorSegmentedInput
-          key={key}
-          label={label}
-          value={field.value}
-          onChange={field.onChange}
-          options={current.options}
-          touched={field.touched}
-          onTouch={field.onTouch}
-          error={field.error}
-        />,
-      )
-    case "chips": {
-      const selected = field.selection?.selected ?? null
-      return (
-        <FactorChipsInput
-          key={key}
-          label={label}
-          options={current.optionsFor(selected)}
-          selected={selected}
-          onSelectionChange={field.selection?.onChange ?? ignoreSelectionChange}
-          touched={field.touched}
-          onTouch={field.onTouch}
-          error={field.error}
-          countLabel={CHIP_COUNT_LABEL}
-          legacyCount={legacyCountOf(field)}
-          filled={field.value.trim().length > 0}
-        />
-      )
-    }
-    case "genusList":
-      return (
-        <FactorGenusListInput
           key={key}
           label={label}
           value={field.value}
@@ -262,7 +178,7 @@ export function renderFactorField(
       )
     case "numeric":
     default:
-      return withCompanion(
+      return (
         <AppField
           key={key}
           label={label}
@@ -275,7 +191,7 @@ export function renderFactorField(
           containerStyle={detailStyles.fieldBlock}
           labelStyle={detailStyles.fieldLabel}
           inputStyle={detailStyles.input}
-        />,
+        />
       )
   }
 }

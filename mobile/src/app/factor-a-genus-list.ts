@@ -2,7 +2,7 @@ import { isCnpfFactorAGenusCode, type CnpfFactorAGenusCode } from "@cortege/ibp-
 
 // Factor A's genus list travels through the generic FactorField channel as a single string
 // (mobile/src/app/types.ts: FactorField.value is always a plain string), the same convention
-// FactorChipsInput already uses for B/I/J's derived counts. Here the string carries the actual
+// the choice lists of B/I/J use for their derived counts. Here the string carries the actual
 // genus codes themselves, comma-joined, since Factor A needs identity (which genus), not just a
 // count: a recognition suggestion must be able to add one specific genus to whatever the surveyor
 // already picked, and reopening a draft must show the same genera again, not just their number.
