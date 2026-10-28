@@ -889,6 +889,19 @@ describe("FactorPager counting mode (Phase 30, D-07)", () => {
     expect(probe.props.uncappedEntry).toBe(uncappedEntry)
   })
 
+  test("the page receives the survey's cas for the hero card of A (follow-up 32-29), none by default", () => {
+    const withCas = render("A", {}, null, {}, { ibpCas: 2 })
+    expect(
+      withCas.tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0].props
+        .ibpCas,
+    ).toBe(2)
+    const without = render("A")
+    expect(
+      without.tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0].props
+        .ibpCas,
+    ).toBeNull()
+  })
+
   test("the page receives the guide opener (Phase 32, D-04)", () => {
     const onOpenDmhGuide = jest.fn()
     const { tree } = render("F", {}, null, {}, { onOpenDmhGuide })

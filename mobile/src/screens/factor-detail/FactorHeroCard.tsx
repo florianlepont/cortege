@@ -7,46 +7,55 @@ import { fr } from "../../i18n"
 import { AppGroupedContainer } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 
+// The quiet pill and its hint are the single copy of the catalogue's top-score strings.
 const t = fr.factorDetail.dmhList
 
 const NUMERAL_SIZE = 44
 const NUMERAL_LINE = 50
 const PILL_GLYPH_SIZE = 16
 
-type DmhHeroCardProps = {
-  /** F's stored trees per hectare as text ("" while nothing is derived). */
-  treesPerHaText: string
-  /** At least one group has a count: an empty figure then reads "À calculer", not 0. */
-  counted: boolean
-  /** Counted in full: the figure comes from the described surface, not from the sum alone. */
-  countedInFull: boolean
-  /** The evaluation retains F's highest score: the quiet "Maximum" pill shows. */
-  topScoreReached: boolean
+export type FactorHeroCardProps = {
+  /** The figure as shown ("6", "1,5", "3 %"); null while it cannot be given: `pendingText` shows. */
+  value: string | null
+  /** The word that stands in the figure's place while `value` is null ("À calculer"). */
+  pendingText: string
+  /** What the figure counts ("genres autochtones"). */
+  label: string
+  /** Where the figure comes from ("d'après la liste ci-dessous"). */
+  subLabel: string
+  /** The one spoken element's label ("Arbres par hectare, 6"). */
+  accessibilityLabel: string
+  /** The factor's retained score is its highest: the quiet "Maximum" pill shows. */
+  topScore: boolean
+  /** The figure is a word (H's class), set at the title size instead of the 44 pt numeral. */
+  textual?: boolean
+  testID?: string
+  topScoreTestID?: string
 }
 
 /**
- * Factor F's "Arbres par hectare" (follow-up 32-27, owner mockup "Proposition 1"): a read-only hero
- * card right under the intro paragraph. The big figure and its label hug each other on the left,
- * the quiet "Maximum" pill with a check closes the row once the top score is reached (the max-score
- * toast is the pager's). It is never an input: the figure is only the sum of the counted trees. One
- * container level (`AppGroupedContainer`, the glass card tokens of the redesign) and one spoken
- * element, "Arbres par hectare, N", with "Score maximal atteint" as its hint at the top.
+ * The hero card of a factor page (follow-up 32-27, generalised in 32-29 from factor F's "Arbres par
+ * hectare"): a read-only card right under the intro paragraph. The big figure and its label hug each
+ * other on the left, the quiet "Maximum" pill with a check closes the row once the top score is
+ * reached (the max-score toast is the pager's, and F's only). It is never an input. One container
+ * level (`AppGroupedContainer`, the glass card tokens of the redesign) and one spoken element,
+ * "label, value", with "Score maximal atteint" as its hint at the top.
  */
-export function DmhHeroCard({
-  treesPerHaText,
-  counted,
-  countedInFull,
-  topScoreReached,
-}: DmhHeroCardProps) {
+export function FactorHeroCard({
+  value,
+  pendingText,
+  label,
+  subLabel,
+  accessibilityLabel,
+  topScore,
+  textual = false,
+  testID = "factor-hero-value",
+  topScoreTestID = "factor-hero-top-score",
+}: FactorHeroCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
-  // The stored figure shows (an older typed number stays until a counter replaces it); with nothing
-  // stored it is 0, or "À calculer" once a count exists but no figure can be derived (counted in
-  // full without a surface).
-  const empty = treesPerHaText.trim() === ""
-  const pending = empty && counted
-  const shown = empty ? (counted ? t.treesPerHaPending : "0") : treesPerHaText
+  const words = value === null || textual
 
   return (
     <AppGroupedContainer>
@@ -54,19 +63,19 @@ export function DmhHeroCard({
         style={styles.card}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={t.treesPerHaA11y({ value: shown })}
-        accessibilityHint={topScoreReached ? t.topScoreHint : undefined}
-        testID="trees-per-ha-value"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={topScore ? t.topScoreHint : undefined}
+        testID={testID}
       >
-        <Text style={pending ? styles.pending : styles.numeral} numberOfLines={1}>
-          {shown}
+        <Text style={words ? styles.words : styles.numeral} numberOfLines={1}>
+          {value ?? pendingText}
         </Text>
         <View style={styles.labels}>
-          <Text style={styles.label}>{t.hero.label}</Text>
-          <Text style={styles.sub}>{countedInFull ? t.hero.subFull : t.hero.subCapped}</Text>
+          <Text style={styles.label}>{label}</Text>
+          <Text style={styles.sub}>{subLabel}</Text>
         </View>
-        {topScoreReached ? (
-          <View style={styles.pill} testID="trees-top-score-trace">
+        {topScore ? (
+          <View style={styles.pill} testID={topScoreTestID}>
             <Ionicons
               name="checkmark-circle-outline"
               size={PILL_GLYPH_SIZE}
@@ -98,8 +107,8 @@ function createStyles(theme: BrandTheme) {
       fontVariant: ["tabular-nums"],
       color: theme.semanticColors.textStrong,
     },
-    // No figure to show yet: the words stand in the figure's place, at the title size.
-    pending: {
+    // A word stands in the figure's place (no figure yet, or H's class), at the title size.
+    words: {
       ...brandTypeScale.title2,
       fontFamily: brandTypography.screenTitle.fontFamily,
       color: theme.semanticColors.textStrong,

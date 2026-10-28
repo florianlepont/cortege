@@ -1,24 +1,15 @@
 import { useMemo } from "react"
 import { StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandDefaultFontFamily,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandDefaultFontFamily, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
-import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 
 const t = fr.factorDetail
 const intro = fr.factorDetail.dmhList.intro
 
-// The help row keeps its 44 pt target (D-05).
-export const HELP_LINK_MIN_HEIGHT = 44
-const ROW_GLYPH_SIZE = 20
 const INLINE_GLYPH_SIZE = 16
 const NBSP = "\u00A0"
 
@@ -29,43 +20,57 @@ const GLUED_LINK_LABEL = t.helpLink.replace(/ /g, NBSP)
 
 type FactorIntroProps = {
   factor: FactorKey
-  /** Factor F counted in full: its paragraph names the cap that only the score applies. */
+  /** The factor is counted in full: its paragraph says so and names what the cap no longer limits. */
   countedInFull: boolean
   /** Opens the factor's help sheet. */
   onOpenHelp: () => void
 }
 
+/** The plain-text sentence of a factor other than F: counted in full, the counting-mode sentence. */
+function paragraphFor(factor: Exclude<FactorKey, "F">, countedInFull: boolean): string {
+  return countedInFull && factor !== "H" ? t.countingMode[factor] : t.intro[factor]
+}
+
 /**
- * The top of every factor page (follow-up 32-27): the "Aide au relevé" link, which opens the factor
- * help sheet. Factor F has an intro paragraph, one paragraph on the canvas with no card, and the
- * link ends it inline ("ⓘ Aide au relevé ›", one unbreakable unit); the other factors have no paragraph, so the link is a
- * slim row of its own. The paragraph is built per counting mode through the catalogue.
+ * The top of every factor page (follow-ups 32-27 and 32-29): one short paragraph on the canvas with
+ * no card, saying what to record, and the "Aide au relevé" link ending it inline ("ⓘ Aide au
+ * relevé ›", one unbreakable unit) that opens the factor help sheet. Factor F's paragraph is built
+ * per counting mode with its cap in semibold; every other factor has one sentence (its
+ * counting-mode sentence when it is counted in full, so no caption box stacks above the inputs).
  */
 export function FactorIntro({ factor, countedInFull, onOpenHelp }: FactorIntroProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
+  const link = (
+    <Text
+      style={styles.linkText}
+      onPress={onOpenHelp}
+      accessibilityRole="link"
+      accessibilityLabel={t.helpLink}
+      testID="factor-help-link"
+    >
+      <Ionicons
+        name="information-circle-outline"
+        size={INLINE_GLYPH_SIZE}
+        color={theme.visual.accentText}
+      />
+      {NBSP}
+      {GLUED_LINK_LABEL}
+      {NBSP}
+      <Ionicons
+        name="chevron-forward-outline"
+        size={INLINE_GLYPH_SIZE}
+        color={theme.visual.accentText}
+      />
+    </Text>
+  )
+
   if (factor !== "F") {
     return (
-      <AppPressable
-        style={styles.row}
-        onPress={onOpenHelp}
-        accessibilityRole="button"
-        accessibilityLabel={t.helpLink}
-        testID="factor-help-link"
-      >
-        <Ionicons
-          name="information-circle-outline"
-          size={ROW_GLYPH_SIZE}
-          color={theme.visual.accentText}
-        />
-        <Text style={styles.linkText}>{GLUED_LINK_LABEL}</Text>
-        <Ionicons
-          name="chevron-forward-outline"
-          size={INLINE_GLYPH_SIZE}
-          color={theme.visual.accentText}
-        />
-      </AppPressable>
+      <Text style={styles.paragraph} testID="factor-intro">
+        {paragraphFor(factor, countedInFull)} {link}
+      </Text>
     )
   }
 
@@ -74,41 +79,13 @@ export function FactorIntro({ factor, countedInFull, onOpenHelp }: FactorIntroPr
     <Text style={styles.paragraph} testID="factor-intro">
       {parts.lead}
       <Text style={styles.strong}>{parts.strong}</Text>
-      {parts.tail}{" "}
-      <Text
-        style={styles.linkText}
-        onPress={onOpenHelp}
-        accessibilityRole="link"
-        accessibilityLabel={t.helpLink}
-        testID="factor-help-link"
-      >
-        <Ionicons
-          name="information-circle-outline"
-          size={INLINE_GLYPH_SIZE}
-          color={theme.visual.accentText}
-        />
-        {NBSP}
-        {GLUED_LINK_LABEL}
-        {NBSP}
-        <Ionicons
-          name="chevron-forward-outline"
-          size={INLINE_GLYPH_SIZE}
-          color={theme.visual.accentText}
-        />
-      </Text>
+      {parts.tail} {link}
     </Text>
   )
 }
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    row: {
-      alignSelf: "flex-start",
-      minHeight: HELP_LINK_MIN_HEIGHT,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.xs,
-    },
     paragraph: {
       ...brandTypeScale.subhead,
       fontFamily: brandDefaultFontFamily,

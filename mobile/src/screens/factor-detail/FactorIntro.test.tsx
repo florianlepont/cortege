@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons"
 import type { FactorKey } from "../../app/types"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { FactorIntro, HELP_LINK_MIN_HEIGHT } from "./FactorIntro"
+import { FactorIntro } from "./FactorIntro"
 
 const t = fr.factorDetail
 const intro = fr.factorDetail.dmhList.intro
@@ -61,17 +61,23 @@ function render(factor: FactorKey, countedInFull = false) {
   return { tree, onOpenHelp, link }
 }
 
-describe("FactorIntro, the help row of factors A to E and G to J", () => {
-  test.each(["A", "B", "C", "D", "E", "G", "H", "I", "J"] as FactorKey[])(
-    "%s: a slim 44 pt button named 'Aide au relevé', with no paragraph",
+const NOT_F = ["A", "B", "C", "D", "E", "G", "H", "I", "J"] as const
+
+describe("FactorIntro, factors A to E and G to J (follow-up 32-29)", () => {
+  test.each(NOT_F)(
+    "%s: one sentence from the catalogue, the help link ends it inline",
     (factor) => {
       const { tree, link, onOpenHelp } = render(factor)
-      expect(link.props.accessibilityRole).toBe("button")
+      const paragraph = tree.root.findAll(
+        (n) => typeof n.type === "string" && n.props.testID === "factor-intro",
+      )[0]
+      expect(textOf(paragraph).startsWith(`${t.intro[factor]} `)).toBe(true)
+      expect(link.props.accessibilityRole).toBe("link")
       expect(link.props.accessibilityLabel).toBe("Aide au relevé")
       expect(link.props.accessibilityLabel).toBe(t.helpLink)
-      expect(HELP_LINK_MIN_HEIGHT).toBe(44)
-      expect(flat(link.props.style).minHeight).toBe(44)
-      expect(tree.root.findAll((n) => n.props.testID === "factor-intro")).toHaveLength(0)
+      expect(textOf(paragraph).endsWith(textOf(link))).toBe(true)
+      // No separate row of its own any more.
+      expect(tree.root.findAll((n) => (n.type as unknown) === "Pressable")).toHaveLength(0)
       act(() => {
         link.props.onPress()
       })
@@ -79,21 +85,49 @@ describe("FactorIntro, the help row of factors A to E and G to J", () => {
     },
   )
 
-  test("the label of the slim row is glued too, the spoken name keeps its spaces", () => {
-    const { link } = render("C")
-    expect(link.props.accessibilityLabel).toBe("Aide au relevé")
-    const text = link.findAll((n) => (n.type as unknown) === "Text")[0]
-    expect(textOf(text)).not.toMatch(/ /)
+  test.each(["A", "B", "C", "D", "E", "G", "I", "J"] as const)(
+    "%s counted in full opens with its counting-mode sentence instead",
+    (factor) => {
+      const { tree } = render(factor, true)
+      const paragraph = tree.root.findAll(
+        (n) => typeof n.type === "string" && n.props.testID === "factor-intro",
+      )[0]
+      expect(textOf(paragraph).startsWith(`${t.countingMode[factor]} `)).toBe(true)
+      expect(textOf(paragraph)).not.toContain(t.intro[factor])
+    },
+  )
+
+  test("H is never counted in full: its sentence does not change", () => {
+    const { tree } = render("H", true)
+    const paragraph = tree.root.findAll(
+      (n) => typeof n.type === "string" && n.props.testID === "factor-intro",
+    )[0]
+    expect(textOf(paragraph).startsWith(`${t.intro.H} `)).toBe(true)
   })
 
-  test("information-circle-outline, accent text token, no 'Que relever'", () => {
-    const { tree } = render("C")
-    const icons = tree.root.findAllByType(Ionicons)
+  test("the sentences are short imperative French with no abbreviation and no em dash", () => {
+    for (const factor of NOT_F) {
+      const sentence: string = t.intro[factor]
+      expect(sentence).toMatch(/^(Notez|Comptez|Estimez|Choisissez|Cochez) /)
+      expect(sentence.length).toBeLessThan(130)
+      expect(sentence).not.toMatch(/—|BMg|BMm|TGB|\bGB\b|DMH/)
+    }
+  })
+
+  test("the link is glued with no-break spaces, the spoken name keeps its spaces", () => {
+    const { link } = render("C")
+    expect(textOf(link)).toBe("\u00A0Aide\u00A0au\u00A0relevé\u00A0")
+    expect(textOf(link)).not.toMatch(/ /)
+    expect(link.props.accessibilityLabel).toBe("Aide au relevé")
+  })
+
+  test("information-circle-outline in the accent text token, the link in the accent ink", () => {
+    const { link } = render("C")
+    const icons = link.findAllByType(Ionicons)
     expect(icons[0].props.name).toBe("information-circle-outline")
     expect(icons[0].props.color).toBe(defaultTheme.visual.accentText)
-    const text = tree.root.findAll((n) => (n.type as unknown) === "Text")[0]
-    expect(textOf(text)).toBe("Aide\u00A0au\u00A0relevé")
-    expect(flat(text.props.style).color).toBe(defaultTheme.visual.accentText)
+    expect(icons[1].props.name).toBe("chevron-forward-outline")
+    expect(flat(link.props.style).color).toBe(defaultTheme.visual.accentText)
     expect(JSON.stringify(t)).not.toMatch(/Que relever/)
   })
 })

@@ -10,7 +10,12 @@ import {
   useWindowDimensions,
   View,
 } from "react-native"
-import { allowedScoresFor, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
+import {
+  allowedScoresFor,
+  type DmhGroupCode,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 import { brandShadow, brandSpacing4 } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
@@ -60,6 +65,8 @@ type FactorPagerProps = {
   factorSections: Record<FactorKey, FactorField[]>
   factorRetainedScores: Record<FactorKey, FactorRetainedScore | null>
   methodVersion: IbpMethodVersion | null
+  /** The survey's cas, for A's genus count in the hero card (follow-up 32-29). */
+  ibpCas?: IbpCas | null
   /** The factor now on screen: the route puts its name in the native header. */
   onActiveFactorChange?: (factor: FactorKey) => void
   /** "Terminer" on the last factor: back to the list. */
@@ -107,6 +114,7 @@ export const FactorPager = memo(function FactorPager({
   factorSections,
   factorRetainedScores,
   methodVersion,
+  ibpCas = null,
   onActiveFactorChange,
   onFinish,
   onOpenHelp,
@@ -225,6 +233,7 @@ export const FactorPager = memo(function FactorPager({
                 fields={factorSections[factor]}
                 retainedScore={factorRetainedScores[factor]}
                 methodVersion={methodVersion}
+                ibpCas={ibpCas}
                 onOpenHelp={onOpenHelp}
                 onOpenDmhGuide={onOpenDmhGuide}
                 doubt={factorAnnotations[factor]?.doubt === true}

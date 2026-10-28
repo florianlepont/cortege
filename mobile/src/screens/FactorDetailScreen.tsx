@@ -1,16 +1,23 @@
 import { Fragment, useMemo } from "react"
 import { View } from "react-native"
-import { allowedScoresFor, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
+import {
+  allowedScoresFor,
+  type DmhGroupCode,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
+import { computeFactorKeyFigure, hasKeyFigure } from "../app/factor-key-figure"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
-import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
+import { FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DmhHeroCard } from "./factor-detail/DmhHeroCard"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import { FactorIntro } from "./factor-detail/FactorIntro"
+import { FactorKeyHero } from "./factor-detail/FactorKeyHero"
 import {
   fieldVariantsFor,
   hasDmhListCompanion,
@@ -39,6 +46,8 @@ type FactorDetailScreenProps = {
   retainedScore: FactorRetainedScore | null
   /** The survey's IBP method; null is an untagged legacy draft (v3.0 help, D-09). */
   methodVersion: IbpMethodVersion | null
+  /** The survey's cas: A's genus count allows the Mediterranean genera at cas 2 and 4 only. */
+  ibpCas?: IbpCas | null
   /** Opens the help sheet (a route of the survey stack) with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
   /** Phase 27 (D-12): the factor's doubt flag and note as the form holds them. */
@@ -81,12 +90,17 @@ type FactorDetailScreenProps = {
  * mode. Follow-up 32-27: the sum is the "Arbres par hectare" hero card under the intro paragraph,
  * with a quiet "Maximum" pill once F's top score is retained; the page order of F is the intro
  * (with the help link), the hero, the doubt and note pills, then the sections list.
+ * Follow-up 32-29: every other factor has the same top: a one-sentence intro paragraph ending with
+ * the help link (a factor counted in full opens with its counting-mode sentence, so no caption box
+ * stacks above the inputs), the hero card with the factor's key figure (`computeFactorKeyFigure`),
+ * the pills, then the inputs, still in the glass card until they are converted.
  */
 export function FactorDetailScreen({
   factor,
   fields,
   retainedScore,
   methodVersion,
+  ibpCas = null,
   onOpenHelp,
   doubt,
   note,
@@ -163,7 +177,7 @@ export function FactorDetailScreen({
     )
   })
   // Capped F has nothing left for the card (the list holds it all): no empty glass card.
-  const showPanel = countedInFull || genusListField !== null || fieldNodes.some((node) => node)
+  const showPanel = genusListField !== null || fieldNodes.some((node) => node)
 
   return (
     <View style={detailStyles.screen}>
@@ -181,6 +195,18 @@ export function FactorDetailScreen({
           topScoreReached={topScoreReached}
         />
       ) : null}
+      {hasKeyFigure(factor) ? (
+        <FactorKeyHero
+          figure={computeFactorKeyFigure({
+            factor,
+            fields,
+            methodVersion,
+            ibpCas,
+            countedInFull,
+            retainedScore,
+          })}
+        />
+      ) : null}
 
       <DoubtNoteStrip
         factor={factor}
@@ -194,7 +220,6 @@ export function FactorDetailScreen({
 
       {showPanel ? (
         <AppCard variant="glass" padding={16} style={detailStyles.panel}>
-          {countedInFull ? <CountingModeCaption factor={factor} /> : null}
           {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
           <View style={detailStyles.fieldsList}>{fieldNodes}</View>
         </AppCard>

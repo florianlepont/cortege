@@ -46,6 +46,7 @@ const mockForm = {
     factorSections: {},
     factorRetainedScores: {},
     ibpMethodVersion: null,
+    ibpCas: 2,
     factorAnnotations: {} as FactorAnnotationDraft,
     uncapped: {
       strataCoverText: { very_low: "25" },
@@ -127,6 +128,13 @@ const pager = () =>
     onChangeNote: (factor: string, text: string) => void
     onCommitNote: () => void
   }
+
+describe("FactorDetailRoute survey context (follow-up 32-29)", () => {
+  test("hands the survey's cas to the pager, for A's genus count", () => {
+    mount()
+    expect((mockPagerProps.value as { ibpCas: unknown }).ibpCas).toBe(2)
+  })
+})
 
 describe("FactorDetailRoute doubt and note (D-16)", () => {
   test("hands the form's annotations and the note setter to the pager", () => {

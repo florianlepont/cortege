@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { fr } from "../../i18n"
-import { CountingModeCaption, CountingModeChip, FromRouteCaption } from "./CountingModeStrip"
+import { CountingModeChip, FromRouteCaption } from "./CountingModeStrip"
 
 const t = fr.factorDetail.countingMode
 
@@ -54,36 +54,6 @@ describe("CountingModeChip", () => {
     expect(textOf(chip)).toBe("Relevé déplafonné")
     expect(textOf(chip)).toBe(t.chip)
     expect(tree.root.findAllByType("Pressable" as unknown as React.ElementType)).toHaveLength(0)
-  })
-})
-
-describe("CountingModeCaption", () => {
-  test("shows the glyph and the sentence of the factor", () => {
-    const tree = render(<CountingModeCaption factor="B" />)
-    expect(textOf(tree.root)).toBe(t.B)
-    const glyph = tree.root.findAll(
-      (n) => (n.type as unknown) !== "View" && n.props.name === "trail-sign-outline",
-    )
-    expect(glyph.length).toBeGreaterThan(0)
-  })
-
-  test("reads as one text element, the glyph is hidden from accessibility", () => {
-    const tree = render(<CountingModeCaption factor="C" />)
-    const row = tree.root.findAll((n) => n.props.testID === "counting-caption")[0]
-    expect(row.props.accessible).toBe(true)
-    expect(row.props.accessibilityLabel).toBe(t.C)
-  })
-
-  test("H, which is never counted in full, renders nothing", () => {
-    const tree = render(<CountingModeCaption factor="H" />)
-    expect(tree.toJSON()).toBeNull()
-  })
-
-  test("every factor but H has a sentence", () => {
-    for (const factor of ["A", "B", "C", "D", "E", "F", "G", "I", "J"] as const) {
-      const tree = render(<CountingModeCaption factor={factor} />)
-      expect(textOf(tree.root)).toBe(t[factor])
-    }
   })
 })
 

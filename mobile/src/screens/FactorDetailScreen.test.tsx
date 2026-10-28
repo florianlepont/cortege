@@ -13,7 +13,6 @@ import { fr } from "../i18n"
 import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
 import { createDetailStyles } from "./factor-detail.styles"
-import { HELP_LINK_MIN_HEIGHT } from "./factor-detail/FactorIntro"
 
 const originalConsoleError = console.error
 
@@ -183,9 +182,7 @@ const renderDetail = (
   act(() => {
     tree.root
       .findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.factorDetail.helpLink,
+        (node) => (node.type as unknown) === "Text" && node.props.testID === "factor-help-link",
       )[0]
       .props.onPress()
   })
@@ -460,11 +457,6 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
 })
 
 describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15)", () => {
-  type Style = Record<string, unknown>
-  const flat = (style: unknown): Style =>
-    Array.isArray(style)
-      ? style.reduce<Style>((acc, part) => ({ ...acc, ...flat(part) }), {})
-      : ((style ?? {}) as Style)
   const glass = defaultTheme.visual.glass
   const renderPlain = (retainedScore: { selected_class: string; score: number } | null) => {
     let tree!: renderer.ReactTestRenderer
@@ -500,7 +492,8 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
     }
   })
 
-  test("the help link keeps its 44 pt target", () => {
+  test("the help link ends the intro paragraph, inline, and opens the help", () => {
+    const onOpenHelp = jest.fn()
     let tree!: renderer.ReactTestRenderer
     act(() => {
       tree = renderer.create(
@@ -509,18 +502,23 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
           fields={[field("bmg_count")]}
           retainedScore={null}
           methodVersion={IBP_METHOD_V3_2}
-          onOpenHelp={jest.fn()}
+          onOpenHelp={onOpenHelp}
           {...STRIP_PROPS}
         />,
       )
     })
-    const link = tree.root.findAll(
-      (n) =>
-        (n.type as unknown) === "Pressable" &&
-        n.props.accessibilityLabel === fr.factorDetail.helpLink,
+    const paragraph = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "factor-intro",
     )[0]
-    expect(HELP_LINK_MIN_HEIGHT).toBe(44)
-    expect(flat(link.props.style).minHeight).toBe(44)
+    const link = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "factor-help-link",
+    )[0]
+    expect(link.props.accessibilityRole).toBe("link")
+    expect(link.props.accessibilityLabel).toBe(fr.factorDetail.helpLink)
+    expect(textsIn(paragraph).startsWith(fr.factorDetail.intro.C)).toBe(true)
+    expect(textsIn(paragraph).endsWith(textsIn(link))).toBe(true)
+    act(() => link.props.onPress())
+    expect(onOpenHelp).toHaveBeenCalledTimes(1)
   })
 
   test("the help hints are glass rows, block gaps on the 4-grid, input chrome untouched", () => {
@@ -569,7 +567,7 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
   }
   const stripOf = (tree: renderer.ReactTestRenderer) =>
     tree.root.findByType("DoubtNoteStrip" as unknown as React.ElementType)
-  test("sits right under the help link, above the input card (follow-up 32-27)", () => {
+  test("sits under the intro and the hero card, above the input card (follow-ups 32-27, 32-29)", () => {
     const tree = renderWith()
     const screen = tree.root
       .findByType(FactorDetailScreen)
@@ -583,9 +581,11 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
           ? "strip"
           : child.props.onOpenHelp
             ? "intro"
-            : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
+            : child.props.figure
+              ? "hero"
+              : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
       )
-    expect(names.slice(0, 2)).toEqual(["intro", "strip"])
+    expect(names.slice(0, 3)).toEqual(["intro", "hero", "strip"])
     // The old link at the very bottom is gone: nothing follows the input card.
     expect(names.indexOf(fr.factorDetail.helpLink)).toBe(-1)
     expect(names.indexOf("factor-help-link")).toBe(-1)
@@ -648,17 +648,35 @@ describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", 
     field("surface_ha", surface),
   ]
 
-  test("a factor counted in full opens with its caption", () => {
-    const { caption } = mount("B", [field("strata_count")], { uncappedFactors: ["B", "F"] })
-    expect(caption()).toHaveLength(1)
-    expect(caption()[0].props.accessibilityLabel).toBe(fr.factorDetail.countingMode.B)
+  test("a factor counted in full opens with its counting-mode sentence, in the intro, no caption box", () => {
+    const { tree, caption } = mount("B", [field("strata_count")], { uncappedFactors: ["B", "F"] })
+    expect(caption()).toHaveLength(0)
+    const intro = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "factor-intro",
+    )[0]
+    expect(textsIn(intro).startsWith(fr.factorDetail.countingMode.B)).toBe(true)
+    expect(textsIn(intro)).not.toContain(fr.factorDetail.intro.B)
   })
 
-  test("a capped factor, or a survey with no route, shows no caption", () => {
-    expect(mount("B", [field("strata_count")], { uncappedFactors: ["F"] }).caption()).toHaveLength(
-      0,
-    )
-    expect(mount("B", [field("strata_count")]).caption()).toHaveLength(0)
+  test("a capped factor, or a survey with no route, opens with its plain sentence", () => {
+    for (const m of [
+      mount("B", [field("strata_count")], { uncappedFactors: ["F"] }),
+      mount("B", [field("strata_count")]),
+    ]) {
+      const intro = m.tree.root.findAll(
+        (n) => (n.type as unknown) === "Text" && n.props.testID === "factor-intro",
+      )[0]
+      expect(textsIn(intro).startsWith(fr.factorDetail.intro.B)).toBe(true)
+      expect(m.caption()).toHaveLength(0)
+    }
+  })
+
+  test("H is never counted in full: its sentence stays the plain one", () => {
+    const { tree } = mount("H", [field("class_score")], { uncappedFactors: ["H"] as FactorKey[] })
+    const intro = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "factor-intro",
+    )[0]
+    expect(textsIn(intro).startsWith(fr.factorDetail.intro.H)).toBe(true)
   })
 
   test("C starts from the zone: the empty field is filled once and says where it comes from", () => {
@@ -928,6 +946,125 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(g.strata()).toHaveLength(0)
     expect(g.dmh()).toHaveLength(0)
   })
+})
+
+describe("FactorDetailScreen key figure hero (follow-up 32-29)", () => {
+  const mountFactor = (
+    factor: FactorKey,
+    values: string[],
+    extra: { retainedScore?: never | null; uncappedFactors?: FactorKey[] } = {},
+  ) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor={factor}
+          fields={values.map((value, index) => field(`f${index}`, { value }))}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+          {...extra}
+        />,
+      )
+    })
+    const byId = (id: string) =>
+      tree.root.findAll((n) => typeof n.type === "string" && n.props.testID === id)
+    return {
+      tree,
+      hero: () => byId("factor-hero-value"),
+      pill: () => byId("factor-hero-top-score"),
+    }
+  }
+  const textsOf = (hero: renderer.ReactTestInstance) =>
+    hero.findAll((n) => (n.type as unknown) === "Text").map(textsIn)
+
+  test.each<[FactorKey, string[], string[]]>([
+    ["A", ["Fagus,Acer", "70"], ["2", "genres autochtones", "d'après la liste ci-dessous"]],
+    ["B", ["3"], ["3", "strates de végétation", "d'après vos choix"]],
+    [
+      "C",
+      ["3", "4", "2"],
+      ["1,5", "gros bois morts sur pied par hectare", "calculé d'après la surface décrite"],
+    ],
+    [
+      "D",
+      ["6", "0", "2"],
+      ["3", "gros bois morts au sol par hectare", "calculé d'après la surface décrite"],
+    ],
+    [
+      "E",
+      ["2", "9", "4"],
+      ["0,5", "très gros bois vivants par hectare", "calculé d'après la surface décrite"],
+    ],
+    ["G", ["3"], ["3\u00A0%", "milieux ouverts fleuris", "part de la surface"]],
+    ["H", ["2"], ["Partielle", "continuité boisée", "ancienneté de l'état boisé"]],
+    ["I", ["2"], ["2", "types de milieux aquatiques", "d'après vos choix"]],
+    ["J", ["1"], ["1", "types de milieux rocheux", "d'après vos choix"]],
+  ])(
+    "%s: the hero card shows the key figure, its label and its origin",
+    (factor, values, texts) => {
+      const { hero } = mountFactor(factor, values)
+      expect(hero()).toHaveLength(1)
+      expect(textsOf(hero()[0])).toEqual(texts)
+      expect(hero()[0].props.accessibilityLabel).toBe(`${texts[1]}, ${texts[0]}`)
+      expect(hero()[0].props.accessible).toBe(true)
+    },
+  )
+
+  test("B counted in full says the figure follows the cover of each stratum", () => {
+    const { hero } = mountFactor("B", ["3"], { uncappedFactors: ["B"] })
+    expect(textsOf(hero()[0])[2]).toBe("d'après le couvert de chaque strate")
+  })
+
+  test("C, D and E without a count or a surface read 'À calculer'; G 'À estimer'; H 'À choisir'", () => {
+    expect(textsOf(mountFactor("C", ["3", "4", ""]).hero()[0])[0]).toBe("À calculer")
+    expect(textsOf(mountFactor("E", ["", "", ""]).hero()[0])[0]).toBe("À calculer")
+    expect(textsOf(mountFactor("G", [""]).hero()[0])[0]).toBe("À estimer")
+    expect(textsOf(mountFactor("H", [""]).hero()[0])[0]).toBe("À choisir")
+  })
+
+  test("the Maximum pill shows only when the retained score is the factor's highest", () => {
+    const top = { selected_class: "S5", score: 5 } as never
+    const low = { selected_class: "S2", score: 2 } as never
+    for (const factor of ["A", "B", "C", "D", "E", "G", "H", "I", "J"] as const) {
+      const at = mountFactor(factor, ["1", "1", "1"], { retainedScore: top })
+      expect(at.pill()).toHaveLength(1)
+      expect(textsIn(at.pill()[0])).toBe("Maximum")
+      expect(at.hero()[0].props.accessibilityHint).toBe(fr.factorDetail.dmhList.topScoreHint)
+      const below = mountFactor(factor, ["1", "1", "1"], { retainedScore: low })
+      expect(below.pill()).toHaveLength(0)
+      expect(below.hero()[0].props.accessibilityHint).toBeUndefined()
+      expect(mountFactor(factor, ["1", "1", "1"]).pill()).toHaveLength(0)
+    }
+  })
+
+  test("F keeps its own hero and gets no generic one", () => {
+    const { hero } = mountFactor("F", ["3"])
+    expect(hero()).toHaveLength(0)
+  })
+
+  test.each(["A", "B", "C", "D", "E", "G", "H", "I", "J"] as FactorKey[])(
+    "%s: the page order is intro, hero, strip, then the input card",
+    (factor) => {
+      const { tree } = mountFactor(factor, ["Fagus", "1", "1"])
+      const root = tree.root
+        .findByType(FactorDetailScreen)
+        .findAll((n) => (n.type as unknown) === "View")[0]
+      const order = root.children
+        .filter((child): child is renderer.ReactTestInstance => typeof child !== "string")
+        .map((child) =>
+          child.props.onOpenHelp
+            ? "intro"
+            : child.props.onCommitNote
+              ? "strip"
+              : child.props.figure
+                ? "hero"
+                : "card",
+        )
+      expect(order).toEqual(["intro", "hero", "strip", "card"])
+    },
+  )
 })
 
 const textsIn = (node: renderer.ReactTestInstance): string =>

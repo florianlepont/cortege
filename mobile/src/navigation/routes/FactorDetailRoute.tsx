@@ -150,6 +150,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         factorSections={state.factorSections}
         factorRetainedScores={state.factorRetainedScores}
         methodVersion={state.ibpMethodVersion}
+        ibpCas={state.ibpCas}
         onActiveFactorChange={handleActiveFactorChange}
         onFinish={handleFinish}
         onOpenHelp={handleOpenHelp}
