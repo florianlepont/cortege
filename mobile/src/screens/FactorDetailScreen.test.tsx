@@ -12,7 +12,8 @@ import { FACTOR_TITLES } from "../app/constants"
 import { fr } from "../i18n"
 import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
-import { createDetailStyles, HELP_LINK_MIN_HEIGHT } from "./factor-detail.styles"
+import { createDetailStyles } from "./factor-detail.styles"
+import { HELP_LINK_MIN_HEIGHT } from "./factor-detail/FactorIntro"
 
 const originalConsoleError = console.error
 
@@ -500,7 +501,20 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
   })
 
   test("the help link keeps its 44 pt target", () => {
-    const link = renderPlain(null).root.findAll(
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="C"
+          fields={[field("bmg_count")]}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+        />,
+      )
+    })
+    const link = tree.root.findAll(
       (n) =>
         (n.type as unknown) === "Pressable" &&
         n.props.accessibilityLabel === fr.factorDetail.helpLink,
@@ -555,7 +569,7 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
   }
   const stripOf = (tree: renderer.ReactTestRenderer) =>
     tree.root.findByType("DoubtNoteStrip" as unknown as React.ElementType)
-  test("sits right above the help link", () => {
+  test("sits right under the help link, above the input card (follow-up 32-27)", () => {
     const tree = renderWith()
     const screen = tree.root
       .findByType(FactorDetailScreen)
@@ -567,11 +581,14 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
       .map((child) =>
         child.props.onCommitNote
           ? "strip"
-          : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
+          : child.props.onOpenHelp
+            ? "intro"
+            : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
       )
-    const stripIndex = names.indexOf("strip")
-    expect(stripIndex).toBeGreaterThanOrEqual(0)
-    expect(names.indexOf(fr.factorDetail.helpLink)).toBe(stripIndex + 1)
+    expect(names.slice(0, 2)).toEqual(["intro", "strip"])
+    // The old link at the very bottom is gone: nothing follows the input card.
+    expect(names.indexOf(fr.factorDetail.helpLink)).toBe(-1)
+    expect(names.indexOf("factor-help-link")).toBe(-1)
   })
 
   test("hands the factor, its title, the doubt, the note and the callbacks to the strip", () => {

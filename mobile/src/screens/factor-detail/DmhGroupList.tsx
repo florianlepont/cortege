@@ -62,7 +62,8 @@ const KNOWN_CODES: ReadonlySet<string> = new Set(DMH_GROUP_CODES)
  * The factor F group list (32-UI-SPEC S1, redesign 32-18): heading, one helper and the summary
  * line, then seven form sections, each a grouped-list header over one `AppGroupedContainer` of
  * rows. There is no guide entry card on top (owner decision, 32-22): the guide opens from each
- * row's info button, from Accueil and from the global search. It is drawn straight on the screen, not inside the factor's input
+ * row's info button, from Accueil and from the global search. The heading, the helper and the
+ * summary line are gone (follow-up 32-27): the page's intro paragraph says it all. It is drawn straight on the screen, not inside the factor's input
  * card (A-C1): one container level, as in an iOS inset grouped list. The order and the open sections are computed once, when the list mounts (D-08 levers
  * b and c): ticking, counting or unticking never moves a row or a section, so a thumb never meets
  * a row that has jumped (research pitfall 5). The info buttons stay active when the list is
@@ -87,7 +88,6 @@ export function DmhGroupList({
   const [sections] = useState(() => orderDmhRows({ ticked: selected, counts: counts ?? {} }))
   const full = counting !== undefined
   const maxCount = counting?.max
-  const perHectare = maxCount !== undefined
 
   const onToggle = useLatestCallback((code: DmhGroupCode, next: boolean): void => {
     onChangeSelection(withSelectionToggled("F", methodVersion, selected, code, next))
@@ -109,14 +109,6 @@ export function DmhGroupList({
   })
 
   const tickedSet = new Set((selected ?? []).filter((code) => KNOWN_CODES.has(code)))
-  const trees = Object.values(counts ?? {}).reduce<number>((sum, count) => sum + (count ?? 0), 0)
-  const summary =
-    tickedSet.size === 0
-      ? t.summaryNone
-      : full && !perHectare
-        ? t.summaryFull({ groups: tickedSet.size, trees })
-        : t.summaryCapped({ groups: tickedSet.size })
-
   // The sum is read from the stored figure, so an older typed number shows until a counter replaces
   // it; with nothing stored it is 0, or "À calculer" once a count exists but no figure can be derived
   // (counted in full without a surface).
@@ -127,52 +119,34 @@ export function DmhGroupList({
         : "0"
       : treesPerHaText
 
-  // One helper line: the cap sentence of the counting modes, then where the guide is.
-  const helper = perHectare
-    ? [t.cappedHelper, t.infoHelper].join(" ")
-    : full
-      ? [fr.factorDetail.countingMode.dmhHelper, t.infoHelper].join(" ")
-      : t.infoHelper
-
   return (
     <View style={styles.root}>
-      <View style={styles.headingBlock}>
-        <Text style={styles.heading} accessibilityRole="header">
-          {full && !perHectare
-            ? fr.factorDetail.countingMode.dmhTitle
-            : fr.factorDetail.companionLabels.dmh_groups}
-        </Text>
-        <Text style={styles.helper}>{helper}</Text>
-        {full ? (
-          // Follow-up 32-26: the figure is only the sum of the counted trees, so it is a plain line
-          // of the page and not a field: the label and its value side by side, nothing to focus.
-          // At the top score a quiet "maximum" stays beside it once the toast is gone.
-          <View
-            style={styles.sumLine}
-            accessible
-            accessibilityRole="text"
-            accessibilityLabel={t.treesPerHaA11y({ value: treesShown })}
-            accessibilityHint={topScoreReached ? t.topScoreHint : undefined}
-            testID="trees-per-ha-value"
-          >
-            <Text style={styles.sumLabel}>{t.sumLabel}</Text>
-            <Text style={styles.sumValue}>{treesShown}</Text>
-            {topScoreReached ? (
-              <View style={styles.sumTrace} testID="trees-top-score-trace">
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={TRACE_GLYPH_SIZE}
-                  color={theme.colors.textSecondary}
-                />
-                <Text style={styles.sumTraceText}>{t.topScoreTrace}</Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-        <Text style={styles.summary} testID="dmh-summary">
-          {summary}
-        </Text>
-      </View>
+      {full ? (
+        // Follow-up 32-26: the figure is only the sum of the counted trees, so it is a plain line
+        // of the page and not a field: the label and its value side by side, nothing to focus.
+        // At the top score a quiet "maximum" stays beside it once the toast is gone.
+        <View
+          style={styles.sumLine}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={t.treesPerHaA11y({ value: treesShown })}
+          accessibilityHint={topScoreReached ? t.topScoreHint : undefined}
+          testID="trees-per-ha-value"
+        >
+          <Text style={styles.sumLabel}>{t.sumLabel}</Text>
+          <Text style={styles.sumValue}>{treesShown}</Text>
+          {topScoreReached ? (
+            <View style={styles.sumTrace} testID="trees-top-score-trace">
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={TRACE_GLYPH_SIZE}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.sumTraceText}>{t.topScoreTrace}</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       <View style={styles.sections}>
         {sections.map((section) => {
           const total = section.codes.length

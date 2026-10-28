@@ -2022,7 +2022,7 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     )
   })
 
-  test("Que relever ? opens the help route with the texts, and the sheet closes by going back", async () => {
+  test("Aide au relevé opens the help route with the texts, and the sheet closes by going back", async () => {
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={makeFixture()}>

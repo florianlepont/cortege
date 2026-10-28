@@ -27,7 +27,7 @@ export const factorInputFr = {
       `${label} : ${percent} %`,
   },
   // FLOW-01: factor B (5 strata tiers, chip-derived count). Height thresholds vary by cas/version
-  // and are already shown in FactorDetailScreen's "Que relever" hints panel, so the tier names
+  // and are already shown in the factor help sheet ("Aide au relevé"), so the tier names
   // stay generic here.
   strataOptions: [
     { value: "very_low", label: "Très basse" },

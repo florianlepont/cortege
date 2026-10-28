@@ -28,22 +28,6 @@ export function createDmhListStyles(theme: BrandTheme) {
     root: {
       gap: brandSpacing4.md,
     },
-    headingBlock: {
-      gap: brandSpacing4.xs,
-    },
-    heading: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.sectionHeader.fontFamily,
-      color: theme.colors.textPrimary,
-    },
-    helper: {
-      ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
-    },
-    summary: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-    },
     // The sum line of the counting modes: the label and its figure hugging each other, left
     // aligned, no box (a figure at the far right would read as detached from its label).
     sumLine: {

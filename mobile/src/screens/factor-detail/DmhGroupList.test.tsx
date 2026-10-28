@@ -133,12 +133,18 @@ const FORM_ORDER = [
 ].map((form) => `dmh-section-${form}`)
 
 describe("DmhGroupList, structure", () => {
-  test("nothing ticked: seven sections in form order, all closed, summary says none", () => {
-    const { sectionIds, one, textOf, all } = mount()
+  test("nothing ticked: seven sections in form order, all closed, no heading and no summary", () => {
+    const { sectionIds, one, all, tree } = mount()
     expect(sectionIds()).toEqual(FORM_ORDER)
     for (const id of FORM_ORDER)
       expect(one(id).props.accessibilityState).toEqual({ expanded: false })
-    expect(textOf(one("dmh-summary"))).toBe(t.summaryNone)
+    // The intro paragraph, the heading and the summary of the old list are gone (follow-up 32-27).
+    expect(all("dmh-summary")).toHaveLength(0)
+    expect(
+      tree.root.findAll(
+        (n) => typeof n.type === "string" && n.props.accessibilityRole === "header",
+      ),
+    ).toHaveLength(0)
     expect(all("dmh-row-dmh_01")).toHaveLength(0)
     expect(all("dmh-row-dmh_15")).toHaveLength(0)
   })
@@ -238,40 +244,16 @@ describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", 
     expect(all("dmh-guide-entry")).toHaveLength(0)
   })
 
-  test("the summary sits with the heading block, under the helper, in the meta style", () => {
-    const { tree, one } = mount({ selected: ["dmh_01"], counting: counting({ dmh_01: 2 }) })
-    const block = tree.root.find(
-      (n) =>
-        (n.type as unknown) === "View" &&
-        n.findAll((m) => m.props.testID === "dmh-summary").length > 0 &&
-        flat(n.props.style).gap === 4,
-    )
-    const texts = block.findAll((n) => (n.type as unknown) === "Text").map((n) => n.props.testID)
-    // Heading, helper, the sum line's label and figure, then the meta summary.
-    expect(texts).toEqual([undefined, undefined, undefined, undefined, "dmh-summary"])
-    expect(flat(one("dmh-summary").props.style).fontSize).toBe(12)
-  })
-
   test("without the counters there is no sum line and no note", () => {
-    const { all, tree } = mount({ topScoreReached: true })
+    const { all } = mount({ topScoreReached: true })
     expect(all("trees-per-ha-value")).toHaveLength(0)
     expect(all("trees-top-score-note")).toHaveLength(0)
-    const block = tree.root.find(
-      (n) =>
-        (n.type as unknown) === "View" &&
-        n.findAll((m) => m.props.testID === "dmh-summary").length > 0 &&
-        flat(n.props.style).gap === 4,
-    )
-    expect(block.findAll((n) => (n.type as unknown) === "Text")).toHaveLength(3)
   })
 })
 
 describe("DmhGroupList, the sum line (follow-up 32-26)", () => {
   test("the companion labels carry no '(facultatif)'", () => {
     expect(JSON.stringify(fr.factorDetail.companionLabels)).not.toMatch(/facultatif/i)
-    expect(fr.factorDetail.companionLabels.dmh_groups).toBe(
-      "Groupes de dendromicrohabitats observés",
-    )
   })
 
   const sum = (m: ReturnType<typeof mount>) => m.one("trees-per-ha-value")
@@ -336,51 +318,31 @@ describe("DmhGroupList, the sum line (follow-up 32-26)", () => {
 })
 
 describe("DmhGroupList, modes", () => {
-  test("capped: heading, no +, summary capped", () => {
-    const { tree, all, textOf, one } = mount({ selected: ["dmh_01", "dmh_02"] })
-    const heading = tree.root.findAll(
-      (n) => typeof n.type === "string" && n.props.accessibilityRole === "header",
-    )[0]
-    expect(textOf(heading)).toBe(fr.factorDetail.companionLabels.dmh_groups)
+  test("capped: no + on unticked rows", () => {
+    const { all } = mount({ selected: ["dmh_01", "dmh_02"] })
     expect(all("dmh-add-dmh_03")).toHaveLength(0)
-    // One helper line only, the one that says where the guide is.
-    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
-    expect(texts).toContain(t.infoHelper)
-    expect(texts).not.toContain(fr.factorDetail.countingMode.dmhHelper)
-    expect(textOf(one("dmh-summary"))).toBe(t.summaryCapped({ groups: 2 }))
   })
 
-  test("full: heading, helper, a + on unticked rows, summary with the sum of the counts", () => {
-    const { tree, all, textOf, one } = mount({
+  test("full: a + on unticked rows only", () => {
+    const { all } = mount({
       selected: ["dmh_01", "dmh_05"],
       counting: counting({ dmh_01: 3, dmh_05: 11 }),
     })
-    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
-    expect(texts).toContain(fr.factorDetail.countingMode.dmhTitle)
-    // The cap sentence and the guide sentence are merged in one helper line.
-    expect(texts).toContain(`${fr.factorDetail.countingMode.dmhHelper} ${t.infoHelper}`)
     expect(all("dmh-add-dmh_03")).toHaveLength(1)
     expect(all("dmh-add-dmh_01")).toHaveLength(0)
-    expect(textOf(one("dmh-summary"))).toBe(t.summaryFull({ groups: 2, trees: 14 }))
   })
 })
 
 describe("DmhGroupList, capped counters per hectare (follow-up of phase 32)", () => {
   const perHectare = (counts: DmhListCounting["counts"] = {}) => ({ ...counting(counts), max: 2 })
 
-  test("heading of the capped list, the cap sentence then the guide sentence, a + on unticked rows", () => {
-    const { tree, all, textOf, one } = mount({
+  test("a + on unticked rows, none on ticked ones", () => {
+    const { all } = mount({
       selected: ["dmh_01", "dmh_05"],
       counting: perHectare({ dmh_01: 2, dmh_05: 1 }),
     })
-    const texts = tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))
-    expect(texts).toContain(fr.factorDetail.companionLabels.dmh_groups)
-    expect(texts).toContain(`${t.cappedHelper} ${t.infoHelper}`)
-    expect(texts).not.toContain(fr.factorDetail.countingMode.dmhHelper)
     expect(all("dmh-add-dmh_03")).toHaveLength(1)
     expect(all("dmh-add-dmh_01")).toHaveLength(0)
-    // Groups only: the trees are the total below the list, not a count on a surface.
-    expect(textOf(one("dmh-summary"))).toBe(t.summaryCapped({ groups: 2 }))
   })
 
   test("no total is drawn under the list: the sum is the trees per hectare field above it", () => {

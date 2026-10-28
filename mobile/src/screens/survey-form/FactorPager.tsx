@@ -64,7 +64,7 @@ type FactorPagerProps = {
   onActiveFactorChange?: (factor: FactorKey) => void
   /** "Terminer" on the last factor: back to the list. */
   onFinish: () => void
-  /** "Que relever ?": opens the help sheet route with the factor's texts. */
+  /** "Aide au relevé": opens the help sheet route with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
   /** Phase 32 (D-04): opens the dendromicrohabitat guide sheet, on a group or on the catalogue. */
   onOpenDmhGuide: (group: DmhGroupCode) => void

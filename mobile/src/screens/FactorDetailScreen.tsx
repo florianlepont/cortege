@@ -1,7 +1,5 @@
 import { Fragment, useMemo } from "react"
 import { View } from "react-native"
-import { AppText as Text } from "../ui/AppText"
-import { Ionicons } from "@expo/vector-icons"
 import { allowedScoresFor, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
@@ -11,6 +9,7 @@ import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
 import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
+import { FactorIntro } from "./factor-detail/FactorIntro"
 import {
   fieldVariantsFor,
   hasDmhListCompanion,
@@ -24,10 +23,6 @@ import {
   type UncappedEntryProps,
 } from "./factor-detail/UncappedFieldBlock"
 import { useRouteSurfacePrefill } from "./factor-detail/useRouteSurfacePrefill"
-import { fr } from "../i18n"
-import { AppPressable } from "../ui/AppPressable"
-
-const t = fr.factorDetail
 
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
 const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
@@ -66,10 +61,11 @@ type FactorDetailScreenProps = {
 }
 
 /**
- * One factor's entry (OA-30): the input first, then a link to the help. The factor's name, its score
+ * One factor's entry (OA-30): the help link at the top (follow-up 32-27: "Aide au relevé", ending
+ * F's intro paragraph), the two doubt and note pills, then the input. The factor's name, its score
  * and the running total are in the pager's header, not here (follow-up 32-26). Factor A
- * opens with the photo identification (OA-31). Phase 27 (D-16): the flat doubt and note strip sits
- * above the help link; it never changes the score. Phase 30 (D-07): a
+ * opens with the photo identification (OA-31). Phase 27 (D-16): the doubt and note pills never
+ * change the score. Phase 30 (D-07): a
  * factor counted in full opens with its one-line caption, and the surface field of C, D and E starts
  * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
  * B counted in full swaps its strata chips for a cover per stratum. Phase 32 (D-08): F shows the
@@ -167,6 +163,22 @@ export function FactorDetailScreen({
 
   return (
     <View style={detailStyles.screen}>
+      <FactorIntro
+        factor={factor}
+        countedInFull={countedInFull}
+        onOpenHelp={() => onOpenHelp(helpTexts.help[factor], helpTexts.hints[factor])}
+      />
+
+      <DoubtNoteStrip
+        factor={factor}
+        title={FACTOR_TITLES[factor]}
+        doubt={doubt}
+        note={note}
+        onChangeDoubt={onChangeDoubt}
+        onChangeNote={onChangeNote}
+        onCommitNote={onCommitNote}
+      />
+
       {showPanel ? (
         <AppCard variant="glass" padding={16} style={detailStyles.panel}>
           {countedInFull ? <CountingModeCaption factor={factor} /> : null}
@@ -183,30 +195,6 @@ export function FactorDetailScreen({
             topScoreReached,
           })
         : null}
-
-      <DoubtNoteStrip
-        factor={factor}
-        title={FACTOR_TITLES[factor]}
-        doubt={doubt}
-        note={note}
-        onChangeDoubt={onChangeDoubt}
-        onChangeNote={onChangeNote}
-        onCommitNote={onCommitNote}
-      />
-
-      <AppPressable
-        style={detailStyles.helpLink}
-        onPress={() => onOpenHelp(helpTexts.help[factor], helpTexts.hints[factor])}
-        accessibilityRole="button"
-        accessibilityLabel={t.helpLink}
-      >
-        <Ionicons
-          name="information-circle-outline"
-          size={20}
-          color={theme.semanticColors.textStrong}
-        />
-        <Text style={detailStyles.helpLinkText}>{t.helpLink}</Text>
-      </AppPressable>
     </View>
   )
 }

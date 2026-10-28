@@ -76,12 +76,9 @@ function mount(props: Partial<React.ComponentProps<typeof DmhCountFields>> = {})
 }
 
 describe("DmhCountFields", () => {
-  test("renders only the surface field: no title, no helper, no counter row", () => {
+  test("renders only the surface field: no counter row", () => {
     const { tree, surface } = mount()
     expect(surface().props.label).toBe(t.dmhSurfaceLabel)
-    const texts = textOf(tree.root)
-    expect(texts).not.toContain(t.dmhTitle)
-    expect(texts).not.toContain(t.dmhHelper)
     expect(
       tree.root.findAll(
         (n) => typeof n.props.testID === "string" && n.props.testID.startsWith("dmh-count-"),

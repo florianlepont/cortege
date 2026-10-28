@@ -5,7 +5,7 @@ import type { FactorHelpRouteProps } from "../types"
 /**
  * The factor help as a screen of the survey stack: presented as a native form sheet on iOS, a
  * modal on Android (`factorHelpScreenOptions`). The texts travel as params, chosen by the survey's
- * method version where "Que relever ?" was tapped.
+ * method version where "Aide au relevé" was tapped.
  */
 export const FactorHelpRoute = memo(function FactorHelpRoute({
   navigation,

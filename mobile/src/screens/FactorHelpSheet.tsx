@@ -16,7 +16,7 @@ type FactorHelpSheetProps = {
 }
 
 /**
- * The factor's help, opened from "Que relever ?" (OA-30): what the factor counts, then the field
+ * The factor's help, opened from "Aide au relevé" (OA-30, "Que relever ?" before follow-up 32-27): what the factor counts, then the field
  * reminders. The content of the `surveyFactorHelp` route, which the stack presents as a native
  * form sheet on iOS (system grabber, swipe down, tap outside) and as a modal screen on Android
  * (`factorHelpScreenOptions`); the close button is the way out where there is no grabber. The title

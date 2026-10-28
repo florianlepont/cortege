@@ -8,12 +8,10 @@ import {
 } from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
-// Field sizes (D-05): the help link keeps its height.
-export const HELP_LINK_MIN_HEIGHT = 44
-
 /**
- * OA-30: the factor screen is the input first. No hero, the help behind a link; the factor's score
- * is in the pager's header (follow-up 32-26). Phase 12.2 (variant I): the input card (AppCard
+ * OA-30: the factor screen is the input first. No hero, the help behind a link (at the top of the
+ * page since follow-up 32-27, see `FactorIntro`); the factor's score is in the pager's header
+ * (follow-up 32-26). Phase 12.2 (variant I): the input card (AppCard
  * `glass`) and the help hints are glass without blur (D-12) at the card radius, block gaps on the
  * 4-grid. The input
  * chrome (`fieldBlock`, `fieldLabel`, `input`) keeps its legacy roles (UI-SPEC Typography exception).
@@ -25,17 +23,6 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     panel: {
       gap: brandSpacing4.smd,
-    },
-    helpLink: {
-      minHeight: HELP_LINK_MIN_HEIGHT,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-      paddingHorizontal: brandSpacing4.xs,
-    },
-    helpLinkText: {
-      ...brandTypography.button,
-      color: theme.semanticColors.textStrong,
     },
     fieldsList: {
       gap: brandSpacing4.smd,

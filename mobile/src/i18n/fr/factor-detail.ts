@@ -5,12 +5,12 @@ export const factorDetailFr = {
   requiredField: ({ label }: { label: string }) => `${label} *`,
   numericPlaceholder: "Saisissez une valeur numérique",
   // OA-30: the help is behind a link, not a card open by default; the sheet closes with its button.
-  helpLink: "Que relever ?",
-  helpTitle: "Que relever ?",
+  // Follow-up 32-27: the link is at the top of every factor page, named "Aide au relevé".
+  helpLink: "Aide au relevé",
+  helpTitle: "Aide au relevé",
   helpClose: "Fermer l'aide",
   // Phase 25.1 (D-12): labels of the optional detail lists that sit next to a scored value.
   companionLabels: {
-    dmh_groups: "Groupes de dendromicrohabitats observés",
     evidence: "Sources de la continuité",
   },
   // Keyed by the factor field label the form passes in (see useSurveyForm).
@@ -40,7 +40,7 @@ export const factorDetailFr = {
     C: "Relevé déplafonné : comptez tous les bois morts sur pied, sans vous arrêter à un maximum par hectare.",
     D: "Relevé déplafonné : comptez tous les bois morts au sol, sans vous arrêter à un maximum par hectare.",
     E: "Relevé déplafonné : comptez tous les très gros bois et les gros bois vivants, sans vous arrêter à un maximum par hectare.",
-    F: "Relevé déplafonné : comptez les arbres porteurs de dendromicrohabitats, groupe par groupe. Pour le score, l'app garde au plus 2 arbres par hectare et par groupe.",
+    F: "Relevé déplafonné : comptez tous les arbres de chaque groupe sur la surface décrite, sans vous arrêter à un maximum. L'app en déduit le nombre d'arbres par hectare.",
     G: "Relevé déplafonné : notez le pourcentage de milieux ouverts fleuris, sans vous arrêter à 5 %.",
     I: "Relevé déplafonné : notez tous les types observés, sans vous arrêter à deux.",
     J: "Relevé déplafonné : notez tous les types observés, sans vous arrêter à deux.",
@@ -53,8 +53,6 @@ export const factorDetailFr = {
       count === 1 ? "1 strate comptée" : `${count} strates comptées`,
     strataFieldA11y: ({ label }: { label: string }) =>
       `Couvert de la strate ${label}, en pourcentage`,
-    dmhTitle: "Arbres par groupe de dendromicrohabitats",
-    dmhHelper: "Pour le score, l'app garde au plus 2 arbres par hectare et par groupe.",
     dmhSurfaceLabel: "Surface décrite pour ce comptage (ha)",
     zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
     fromRoute: "D'après le parcours",
@@ -86,8 +84,20 @@ export const factorDetailFr = {
   // Phase 32: the dendromicrohabitat group list of factor F
   // Texts verbatim from section 8.1 of docs/specs/dmh-guide-content-v1.md (validated 2026-10-27).
   dmhList: {
-    // The one helper line under the heading: where the guide is (32-22).
-    infoHelper: "Touchez l'icône i d'un groupe pour apprendre à le reconnaître, même sans réseau.",
+    // The one paragraph at the top of the page (follow-up 32-27), in three parts so the cap is
+    // semibold: the cap per group, then where the guide is (32-22). The help link ends it.
+    intro: {
+      capped: {
+        lead: "Comptez les arbres vivants porteurs de dendromicrohabitats : ",
+        strong: "au plus 2 par groupe et par hectare",
+        tail: ". Touchez l'icône i d'un groupe pour apprendre à le reconnaître, même sans réseau.",
+      },
+      full: {
+        lead: "Comptez les arbres vivants porteurs de dendromicrohabitats, groupe par groupe. Pour le score, l'app garde ",
+        strong: "au plus 2 arbres par hectare et par groupe",
+        tail: ". Touchez l'icône i d'un groupe pour apprendre à le reconnaître, même sans réseau.",
+      },
+    },
     entry: {
       title: "Guide des dendromicrohabitats",
       caption: "Reconnaître chaque groupe, sans réseau.",
@@ -108,18 +118,10 @@ export const factorDetailFr = {
       ticked === 1
         ? `${form}, 1 groupe sur ${total} coché`
         : `${form}, ${ticked} groupes sur ${total} cochés`,
-    summaryNone: "Aucun groupe coché.",
-    summaryCapped: ({ groups }: { groups: number }) =>
-      groups === 1 ? "1 groupe coché" : `${groups} groupes cochés`,
-    summaryFull: ({ groups, trees }: { groups: number; trees: number }) =>
-      `${groups === 1 ? "1 groupe" : `${groups} groupes`}, ${trees === 1 ? "1 arbre" : `${trees} arbres`}`,
     treesCaption: "Arbres",
     // Follow-up of phase 32 (owner decision 2026-10-28): in the capped survey mode a group holds a
     // whole number of trees per hectare, 0 to 2, and the total is the sum of the groups.
     treesCaptionPerHa: "Arbres par hectare",
-    // The sum of the groups is the figure of the sum line below it (follow-up 32-26).
-    cappedHelper:
-      "Comptez au plus 2 arbres par hectare pour chaque groupe : la somme donne le total.",
     // The sum line of the counting modes (follow-up 32-26): a plain line, not a field. It shows
     // "À calculer" while the groups give no figure yet (counted in full without a surface), and its
     // spoken form reads "label, value".
