@@ -6,9 +6,11 @@ import {
   isCnpfFactorAGenusCode,
   isIbpCas,
   readDmhCounts,
+  readOpenAreasHa,
   readStrataCover,
   resolveMethodVersion,
   scoreGenusCount,
+  sumOpenAreasHa,
   usesCas3Scale,
   usesSubalpineScale,
 } from "@cortege/ibp-domain"
@@ -244,15 +246,22 @@ function densityPair(
   ]
 }
 
-/** The trees counted per dendromicrohabitat group (relevé déplafonné), in code order. */
+/**
+ * The trees counted per dendromicrohabitat group, in code order. Counted in full the counts are
+ * trees over the described surface; in the capped mode (no surface) they are trees per hectare.
+ */
 function dmhCountItems(rawF: Raw | null, method: ExportMethodContext): string[] {
+  const perHa = finite(rawF, "surface_ha") === null
   const counts = readDmhCounts(rawF?.dmh_counts)
   const items: string[] = []
   for (const code of DMH_GROUP_CODES) {
     const count = counts?.[code]
     const label = selectionLabel("F", code, method.version)
     if (count !== undefined && label !== null) {
-      items.push(t.dmhCountItem({ label, count: formatDecimal(count) }))
+      const text = formatDecimal(count)
+      items.push(
+        perHa ? t.dmhCapCountItem({ label, count: text }) : t.dmhCountItem({ label, count: text }),
+      )
     }
   }
   return items
@@ -268,9 +277,25 @@ function factorF(factors: Raw, method: ExportMethodContext): ObservationLine[] {
       trees === null ? null : t.treesPerHaValue({ value: formatDecimal(trees) }),
     ),
     ...itemsLine(t.dmhGroups, selectionItems(rawF, "F", method)),
-    ...itemsLine(t.dmhCounts, counts),
+    ...itemsLine(finite(rawF, "surface_ha") === null ? t.dmhCapCounts : t.dmhCounts, counts),
     // The surface the counts were divided by, shown only beside the counts.
     ...(counts.length > 0 ? surfaceLine(rawF) : []),
+  ]
+}
+
+/** G: the percent, then the zones of open habitat in hectares when they are stored. */
+function factorG(factors: Raw): ObservationLine[] {
+  const rawG = asRecord(factors.G)
+  const areas = (readOpenAreasHa(rawG?.open_areas_ha) ?? []).filter((area) => area > 0)
+  return [
+    ...percentLine(rawG, "open_flowering_percent", t.openFlowering),
+    ...itemsLine(
+      t.openAreas,
+      areas.map((area, index) => t.openAreaItem({ index: index + 1, value: formatDecimal(area) })),
+    ),
+    ...(areas.length > 0
+      ? valueLine(t.openAreasTotal, t.surfaceValue({ value: formatDecimal(sumOpenAreasHa(areas)) }))
+      : []),
   ]
 }
 
@@ -320,7 +345,7 @@ export function buildFactorObservations(
     case "F":
       return factorF(rawFactors, method)
     case "G":
-      return percentLine(asRecord(rawFactors.G), "open_flowering_percent", t.openFlowering)
+      return factorG(rawFactors)
     case "H":
       return factorH(rawFactors, method)
     case "I":

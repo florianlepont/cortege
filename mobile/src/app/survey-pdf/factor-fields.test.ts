@@ -296,6 +296,31 @@ describe("factors F and G", () => {
     expect(lineOf(lines, t.treesPerHa).value).toBe("2,5 arbres / ha")
   })
 
+  it("prints the capped counts as trees per hectare when there is no surface", () => {
+    const lines = buildFactorObservations(
+      "F",
+      { F: { trees_per_ha: 3, dmh_counts: { dmh_13: 1, dmh_01: 2 } } },
+      { method: V32, points: 2 },
+    )
+    expect(lineOf(lines, t.dmhCapCounts).items).toEqual([
+      "1. Loges de pic : 2 / ha",
+      "13. Nids : 1 / ha",
+    ])
+    noLine(lines, t.dmhCounts)
+    noLine(lines, t.surface)
+  })
+
+  it("prints the zones of open habitat and their total", () => {
+    const lines = buildFactorObservations(
+      "G",
+      { G: { open_flowering_percent: 15, open_areas_ha: [0.5, 0, 0.3, "x"] } },
+      { method: V32, points: 2 },
+    )
+    expect(lineOf(lines, t.openAreas).items).toEqual(["Zone 1 : 0,5 ha", "Zone 2 : 0,3 ha"])
+    expect(lineOf(lines, t.openAreasTotal).value).toBe("0,8 ha")
+    expect(lineOf(lines, t.openFlowering).value).toBe("15 %")
+  })
+
   it("gives the open flowering cover", () => {
     const lines = buildFactorObservations(
       "G",

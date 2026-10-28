@@ -33,7 +33,7 @@ describe("PDF export of a capped survey with counts per hectare", () => {
     const byCaption = (caption: string) => lines.find((line) => line.caption === caption)
     expect(byCaption(t.treesPerHa)?.value).toBe("3 arbres / ha")
     expect(byCaption(t.dmhGroups)?.items).toHaveLength(2)
-    expect(byCaption(t.dmhCounts)?.items).toHaveLength(2)
+    expect(byCaption(t.dmhCapCounts)?.items).toHaveLength(2)
     expect(byCaption(t.surface)).toBeUndefined()
   })
 })

@@ -155,6 +155,9 @@ export const surveyExportFr = {
     strataCoverItem: ({ label, value }: { label: string; value: string }) =>
       `${label} : ${value} %`,
     dmhCounts: "Arbres par groupe de dendromicrohabitats",
+    dmhCapCounts: "Arbres par hectare et par groupe de dendromicrohabitats",
+    dmhCapCountItem: ({ label, count }: { label: string; count: string }) =>
+      `${label} : ${count} / ha`,
     dmhCountItem: ({ label, count }: { label: string; count: string }) => `${label} : ${count}`,
     bmg: "Bois morts de grosse dimension (BMg)",
     bmm: "Bois morts de dimension moyenne (BMm)",
@@ -167,6 +170,10 @@ export const surveyExportFr = {
     treesPerHaValue: ({ value }: { value: string }) => `${value} arbres / ha`,
     dmhGroups: "Groupes de dendromicrohabitats observés",
     openFlowering: "Milieux ouverts florifères",
+    openAreas: "Zones de milieux ouverts florifères",
+    openAreaItem: ({ index, value }: { index: number; value: string }) =>
+      `Zone ${index} : ${value} ha`,
+    openAreasTotal: "Total des zones",
     continuity: "Continuité de l'état boisé",
     evidence: "Sources",
     typeCount: "Nombre de types",
