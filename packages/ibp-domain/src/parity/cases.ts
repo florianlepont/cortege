@@ -752,6 +752,62 @@ const UNCAPPED_DETAIL_CASES: IbpParityCase[] = [
 ]
 
 /**
+ * Phase 32 follow-up 32-35 (owner decision 2026-10-30): G also carries `open_areas_ha`, the open
+ * flowering zones in hectares from which the app derives the scored `open_flowering_percent`. No
+ * scorer reads the list: each case expects what the same G gives without it. Scores come from the
+ * matrix thresholds (cas 1 and ACA collineen: 1 to 5 % gives 5, 0 gives 0, above 5 gives 2). In the
+ * complete set G replaces its direct score 2: G = 5 gives stand 5+2+1+0+2+5+5 = 20, total 27.
+ */
+const OPEN_AREAS_2_PERCENT = [0.3, 0.1]
+const OPEN_AREAS_OVER_SURFACE = [30, 20]
+
+const OPEN_AREAS_CASES: IbpParityCase[] = [
+  // G: 2 % gives G = 5, with or without the zones.
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-01@both#${suffix}-draft`,
+    matrixId: "MAT-G-UNC-01@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 2, open_areas_ha: OPEN_AREAS_2_PERCENT } },
+    expect: { ok: true, scores: { G: 5 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-01@both#${suffix}-submit`,
+    matrixId: "MAT-G-UNC-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      G: { open_flowering_percent: 2, open_areas_ha: OPEN_AREAS_2_PERCENT },
+    },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, G: 5 },
+      totals: { ibp_peuplement_gestion: 20, ibp_contexte: 7, ibp_total: 27 },
+      issueCodes: [],
+    },
+  })),
+  // G: zones larger than the surface give a percent held at 100 (G = 2, above 5 %), the list itself
+  // is not read; an empty list with 0 % is G = 0 ("no zone").
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-02@both#${suffix}-over`,
+    matrixId: "MAT-G-UNC-02@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 100, open_areas_ha: OPEN_AREAS_OVER_SURFACE } },
+    expect: { ok: true, scores: { G: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-02@both#${suffix}-none`,
+    matrixId: "MAT-G-UNC-02@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 0, open_areas_ha: [] } },
+    expect: { ok: true, scores: { G: 0 }, issueCodes: [] },
+  })),
+]
+
+/**
  * Phase 32 follow-up (owner decision 2026-10-28): in the capped survey mode F also carries
  * `dmh_counts`, a whole number of trees PER HECTARE from 0 to 2 per group, with the scored
  * `trees_per_ha` derived by the app as their sum (`cappedDmhTotalPerHa`) and no `surface_ha`. No
@@ -912,6 +968,7 @@ export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...DISPATCH_CASES,
   ...ANNOTATION_CASES,
   ...UNCAPPED_DETAIL_CASES,
+  ...OPEN_AREAS_CASES,
   ...CAPPED_COUNTS_CASES,
   ...LOWER_COUNT_CASES,
 ]

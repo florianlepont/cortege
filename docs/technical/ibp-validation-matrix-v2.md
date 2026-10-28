@@ -215,6 +215,22 @@ is not written and the scored `F.trees_per_ha` is the sum of the counts (`capped
 group held at 2). MAT-F-CAP-01 and MAT-F-CAP-02 show the counts are not read by a scorer; the two
 helpers `cappedDmhCounts` and `cappedDmhTotalPerHa` have their own unit tests.
 
+## Follow-up 32-35: several open flowering zones in G
+
+Owner decision 2026-10-30: the observer of G lists the open flowering zones, each a surface in
+hectares, and the app derives the percent from the survey's described surface (the route's
+`zone_surface_ha`). The list is stored as `G.open_areas_ha` (0 to 20 numbers, each from 0 to the
+surface maximum, two decimals; a 0 is a row added and not filled), beside the scored
+`G.open_flowering_percent`, which the app writes as `floweringPercentFromAreas(areas, surface)`
+(sum over surface, capped at 100, two decimals). No scorer reads the list: each case expects what
+the same G gives without it. The three helpers `sumOpenAreasHa`, `floweringPercentFromAreas`,
+`openAreasExceedSurface` and the reader `readOpenAreasHa` have their own unit tests.
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-G-UNC-01@both | draft; submit (v3.0 ACA collineen, v3.2 cas 1) | any | `G.open_flowering_percent=2` plus `G.open_areas_ha=[0.3, 0.1]` | same as `G.open_flowering_percent=2` alone: `G=5`; in the MAT-SUBMIT-02 set with `G=5`, totals 20 / 7 / 27 | none |
+| MAT-G-UNC-02@both | draft (two inputs: `#over`, `#none`) | any | `G.open_flowering_percent=100` plus zones above the surface (`[30, 20]`); `G.open_flowering_percent=0` plus `G.open_areas_ha=[]` | `G=2` (above 5 %, the list is not read); `G=0` | none |
+
 ## Follow-up 32-32: lower diameter class not needed from 1 upper per hectare
 
 The lower class of C, D and E (BMm, GB) only decides the score while the upper class (BMg, TGB) is

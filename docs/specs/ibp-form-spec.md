@@ -458,6 +458,14 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
     - `5`: 1 to 5%
 - UI validation:
   - blocking: described area > 0.
+- Several zones (follow-up 32-35, owner decision 2026-10-30): the app does not ask the share directly
+  but a list of zones ("Zones de milieux ouverts fleuris", up to 20), each a surface in hectares, and
+  derives `open_flowering_percent` as their sum over the survey's described surface (the route's
+  `zone_surface_ha`), capped at 100 with a quiet warning when the zones exceed the surface. The
+  list is stored as `open_areas_ha` beside the scored key; no scorer reads it (parity cases
+  `MAT-G-UNC-*`). The row "Aucune zone de milieux ouverts fleuris" records 0 % with no zone. A G
+  with only `open_flowering_percent` (an older survey, or a survey with no route surface) still
+  validates, scores and displays. See `ibp-validation-matrix-v2.md`.
 - Example:
   - 3.2% flowering open habitats (v3.0 M) -> score `5`.
   - 6% flowering open habitats (v3.2 cas 3) -> score `5`; the same under cas 1 -> score `2`.
