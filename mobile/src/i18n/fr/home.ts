@@ -50,16 +50,16 @@ export const homeFr = {
     title: "Outils",
     identify: {
       title: "Identifier un arbre",
-      body: "Le genre à partir d'une photo.",
+      body: "Le genre, sur photo.",
       a11y: "Identifier un arbre par photo",
       // The button of a result says where it leads: a survey is chosen next (OA-114).
       confirm: "Utiliser dans un relevé",
     },
-    // Phase 32 (owner request): the dendromicrohabitat guide, next to the photo tool. The wording is
-    // the one of the guide entry in factor F (fr.factorDetail.dmhList.entry).
+    // Phase 32 (owner request): the dendromicrohabitat guide, in a half-width tile next to the photo
+    // tool, so the title and the body are short; the full name is in the accessibility label.
     guide: {
-      title: "Guide des dendromicrohabitats",
-      body: "Reconnaître chaque groupe, sans réseau.",
+      title: "Dendromicrohabitats",
+      body: "Le guide, sans réseau.",
       a11y: "Ouvrir le guide des dendromicrohabitats",
     },
     // OA-114: the native sheet that follows. Starting a survey is the main action, adding to a

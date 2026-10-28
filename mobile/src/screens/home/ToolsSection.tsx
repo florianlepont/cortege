@@ -11,7 +11,14 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
 import { GenusTargetSheet } from "./GenusTargetSheet"
-import { HOME_GAPS, TOOL_ROW_GAP, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
+import {
+  HOME_GAPS,
+  TOOL_TILE_GAP,
+  TOOL_TILE_ICON,
+  TOOL_TILE_ICON_GAP,
+  TOOL_TILE_MIN_HEIGHT,
+  TOOL_TILE_PADDING,
+} from "./layout-budget"
 import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.tools
@@ -47,8 +54,8 @@ type ToolsSectionProps = {
 /**
  * OA-107: the tools that help fill in the factors, launched from Accueil. The photo identification
  * (the same tool as in factor A) opens the camera at once; its confirmed genus is not kept as an
- * object of its own: it goes into a survey in progress, or starts a survey with it. Under it, the
- * dendromicrohabitat guide (phase 32): the same sheet as in factor F, read offline.
+ * object of its own: it goes into a survey in progress, or starts a survey with it. Beside it, on the
+ * same line, the dendromicrohabitat guide (phase 32): the same sheet as in factor F, read offline.
  */
 export function ToolsSection({
   surveys,
@@ -172,7 +179,7 @@ type ToolCardProps = {
   onPress: () => void
 }
 
-/** One slim full-width tool row: icon tile, title and one-line subtitle, chevron. */
+/** One half-width tool tile: the icon tile on top, then the title and one short line. */
 function ToolCard({ styles, iconName, title, body, a11y, testID, onPress }: ToolCardProps) {
   const theme = useBrandTheme()
   return (
@@ -187,10 +194,18 @@ function ToolCard({ styles, iconName, title, body, a11y, testID, onPress }: Tool
         <Ionicons name={iconName} size={22} color={theme.semanticColors.onCtaPrimary} />
       </View>
       <View style={styles.copy}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardBody}>{body}</Text>
+        <Text
+          style={styles.cardTitle}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+        >
+          {title}
+        </Text>
+        <Text style={styles.cardBody} numberOfLines={2}>
+          {body}
+        </Text>
       </View>
-      <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
     </AppPressable>
   )
 }
@@ -208,31 +223,30 @@ function createStyles(theme: BrandTheme) {
       marginHorizontal: PAGE_H,
       marginBottom: brandSpacing4.smd,
     },
-    // D-20d: one slim full-width row (40 pt icon tile, 8 pt around it: 56 pt), not a half-width tile.
+    // Owner request 2026-10-28: the two tools side by side, two half-width tiles on one line. The
+    // row stretches them to the same height.
     row: {
+      flexDirection: "row",
       paddingHorizontal: PAGE_H,
-      gap: TOOL_ROW_GAP,
+      gap: TOOL_TILE_GAP,
     },
     card: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.smd,
-      minHeight: TOOL_ROW_MIN_HEIGHT,
+      flex: 1,
+      minHeight: TOOL_TILE_MIN_HEIGHT,
+      gap: TOOL_TILE_ICON_GAP,
       borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
-      paddingVertical: brandSpacing4.sm,
-      paddingLeft: brandSpacing4.sm,
-      paddingRight: brandSpacing4.md,
+      padding: TOOL_TILE_PADDING,
     },
     copy: {
-      flex: 1,
+      alignSelf: "stretch",
     },
     icon: {
-      width: 40,
-      height: 40,
+      width: TOOL_TILE_ICON,
+      height: TOOL_TILE_ICON,
       borderRadius: brandRadius.badgeSm,
       alignItems: "center",
       justifyContent: "center",
