@@ -7,6 +7,8 @@ expert (section 12). Les seuils et l'exactitude des dessins n'ont été lus que 
 essais sur le terrain peuvent encore y trouver des erreurs, qui se corrigent par une révision datée de
 ce document.
 
+Mise à jour du 2026-10-30 : le propriétaire a indiqué que l'expert a relu le document (dessins, textes et seuils) et que tout est bon, sans aucune correction. Le nom de l'expert et la date de sa relecture n'ont pas été communiqués ; ils sont à compléter dans la section 12 dès qu'ils sont connus. Les paragraphes ci-dessus gardent l'historique de la validation du 2026-10-27.
+
 Date de rédaction : 2026-10-26
 
 Validation du propriétaire : validé par le propriétaire le 2026-10-27, sans expert (section 12)
@@ -890,3 +892,9 @@ Les trois lignes ci-dessus sont remplies, le statut en tête de document est « 
 cellule « Décision validée » de la section 10 et chaque cellule « Relu (exactitude) » de la section 9
 est remplie : les textes du catalogue et les écrans peuvent être écrits à partir de cette
 spécification.
+
+Relecture par un expert (ajout du 2026-10-30) : le propriétaire a rapporté que l'expert a relu le
+document et conclu « tout est bon », sans correction de texte, de seuil ni de dessin. Les points de la
+section « Points à faire vérifier par l'expert » sont donc considérés comme confirmés par cette
+relecture. Nom de l'expert : Florian Lepont. Date de la relecture : 28 octobre 2026 (rapportée le
+2026-10-30).

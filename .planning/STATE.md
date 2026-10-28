@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 32 (Detailed DMH Information (INSERTED, V1)) — COMPLETE
 Plan: 37 of 38 done (32-07, the timing campaign, skipped by the owner's decision of 2026-10-27)
-Status: Phase 32 closed and merged 2026-10-30 (owner validations on 2026-10-27 and 2026-10-28, feedback rounds until 2026-10-30); the expert reading of the 15 drawings and of the thresholds was not done, field tests will check them
+Status: Phase 32 closed and merged 2026-10-30 (owner validations on 2026-10-27 and 2026-10-28, feedback rounds until 2026-10-30); the expert has read the 15 drawings and the thresholds and found them right (reported by the owner on 2026-10-30; name and date to complete)
 Last activity: 2026-10-28 — Phase 32 (Detailed DMH Information) complete: F group list, guide sheet with 15 original drawings, entry on Accueil, native-feel redesign; validated by the owner on the iPhone, branch claude/practical-bhaskara-39c526 (merged with origin/main) not pushed. Before: 2026-10-26 Phase 33 (PDF Export, Exhaustive and Simplified) complete: 20 plans (15 planned, 5 gap plans from the owner's decisions and iPhone reviews), both versions validated on the iPhone. Branch claude/intelligent-agnesi-22f0a3 not pushed.
 
 Progress: [█████████░] 33/39 phases complete

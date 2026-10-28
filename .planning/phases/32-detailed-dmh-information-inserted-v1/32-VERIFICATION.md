@@ -137,3 +137,8 @@ The code delivers the three roadmap criteria: the guide exists offline in three 
 
 _Verified: 2026-10-28_
 _Verifier: Claude (gsd-verifier)_
+
+
+## Update 2026-10-30
+
+The owner reported that the expert has read the 15 drawings, the texts and the IBP thresholds and that everything is fine, with no correction. This closes the gap on the missing expert reading (gap 2) except for the expert's name and the date of the reading, which were not given (spec section 12). Android, dark mode, VoiceOver and the owner's confirmation of plans 32-20 to 32-35 on a device remain open.
