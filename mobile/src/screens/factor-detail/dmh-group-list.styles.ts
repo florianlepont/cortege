@@ -1,9 +1,5 @@
 import { StyleSheet } from "react-native"
-import {
-  brandInteraction,
-  brandSpacing4,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandInteraction, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import type { BrandTheme } from "../../app/theme"
 import { DMH_STEPPER_SIZE } from "../../ui/DmhCounterStepper"
 import { SELECTION_CIRCLE_SIZE } from "../../ui/SelectionCircle"
