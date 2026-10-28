@@ -294,27 +294,15 @@ describe("DmhGroupList, capped counters per hectare (follow-up of phase 32)", ()
     expect(textOf(one("dmh-summary"))).toBe(t.summaryCapped({ groups: 2 }))
   })
 
-  test("the total under the list is the package's sum, each group held at 2", () => {
-    const { textOf, one } = mount({
-      selected: ["dmh_01", "dmh_05", "dmh_12"],
-      counting: perHectare({ dmh_01: 2, dmh_05: 2, dmh_12: 1 }),
-    })
-    expect(textOf(one("dmh-total"))).toBe("Total : 5 arbres par hectare")
-    expect(textOf(one("dmh-total"))).toBe(t.totalPerHa({ trees: 5 }))
-    // A count of 5 left by a counted-in-full survey still counts for 2.
-    const stale = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 5 }) })
-    expect(stale.textOf(stale.one("dmh-total"))).toBe("Total : 2 arbres par hectare")
-  })
-
-  test("one tree reads in the singular; no counter above 0 shows no total", () => {
-    const one1 = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 1 }) })
-    expect(one1.textOf(one1.one("dmh-total"))).toBe("Total : 1 arbre par hectare")
-    const none = mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 0 }) })
-    expect(none.all("dmh-total")).toHaveLength(0)
-    expect(mount({ selected: ["dmh_01"] }).all("dmh-total")).toHaveLength(0)
-    expect(
-      mount({ selected: ["dmh_01"], counting: counting({ dmh_01: 3 }) }).all("dmh-total"),
-    ).toHaveLength(0)
+  test("no total is drawn under the list: the sum is the trees per hectare field above it", () => {
+    for (const counted of [
+      mount({ selected: ["dmh_01", "dmh_05"], counting: perHectare({ dmh_01: 2, dmh_05: 1 }) }),
+      mount({ selected: ["dmh_01"], counting: perHectare({ dmh_01: 0 }) }),
+      mount({ selected: ["dmh_01"] }),
+      mount({ selected: ["dmh_01"], counting: counting({ dmh_01: 3 }) }),
+    ]) {
+      expect(counted.all("dmh-total")).toHaveLength(0)
+    }
   })
 
   test("a row steps to 2 at most and the handlers go up with the group", () => {

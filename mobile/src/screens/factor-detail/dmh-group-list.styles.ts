@@ -47,11 +47,6 @@ export function createDmhListStyles(theme: BrandTheme) {
     sections: {
       gap: brandSpacing4.md,
     },
-    total: {
-      ...brandTypeScale.subhead,
-      fontFamily: brandTypography.sectionHeader.fontFamily,
-      color: theme.colors.textPrimary,
-    },
     row: {
       minHeight: ROW_MIN_HEIGHT,
       justifyContent: "center",

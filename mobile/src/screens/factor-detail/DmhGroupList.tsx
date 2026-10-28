@@ -1,11 +1,6 @@
 import { useMemo, useState } from "react"
 import { View } from "react-native"
-import {
-  cappedDmhTotalPerHa,
-  DMH_GROUP_CODES,
-  type DmhGroupCode,
-  type IbpMethodVersion,
-} from "@cortege/ibp-domain"
+import { DMH_GROUP_CODES, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { orderDmhRows } from "../../app/dmh-guide/order"
 import { selectionLabel, withSelectionToggled } from "../../app/factor-selections"
 import { useBrandTheme } from "../../app/theme"
@@ -99,8 +94,6 @@ export function DmhGroupList({
       : full && !perHectare
         ? t.summaryFull({ groups: tickedSet.size, trees })
         : t.summaryCapped({ groups: tickedSet.size })
-  // The capped mode shows the derived total under the list (the package's sum, each group held at 2).
-  const perHectareTotal = perHectare ? cappedDmhTotalPerHa(counts ?? {}) : 0
 
   // One helper line: the cap sentence of the counting modes, then where the guide is.
   const helper = perHectare
@@ -164,11 +157,6 @@ export function DmhGroupList({
           )
         })}
       </View>
-      {perHectareTotal > 0 ? (
-        <Text style={styles.total} testID="dmh-total">
-          {t.totalPerHa({ trees: perHectareTotal })}
-        </Text>
-      ) : null}
     </View>
   )
 }
