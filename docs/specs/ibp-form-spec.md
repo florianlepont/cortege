@@ -396,6 +396,13 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   before (typed number, ticks only) opens as it was and still validates. Counts of a counted-in-full
   survey (trees on a surface) are brought to the cap on the first touch in the capped mode. The
   score never reads the counts (parity cases `MAT-F-CAP-*`).
+  A stand where no tree carries a dendromicrohabitat records it with one row above the first
+  section of the list ("Aucun arbre porteur de dendromicrohabitats", both counting modes): it
+  stores `trees_per_ha` 0 with no group and no count (a surface typed in the counted-in-full mode
+  stays), a stored shape the package already scores; the row is ticked exactly when `trees_per_ha`
+  is stored as 0 and no group is ticked or counted (so an older survey with a typed 0 shows it
+  ticked), a press on a ticked row empties the field again, touching a counter takes over, and
+  while a count is above 0 the row is locked like a counted group.
 - Example:
   - total after capping = 8.4 trees/ha -> score `5`.
 
