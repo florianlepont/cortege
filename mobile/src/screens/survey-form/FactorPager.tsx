@@ -32,6 +32,7 @@ import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
 import { AppPressable } from "../../ui/AppPressable"
+import { ScrollLockProvider } from "../../ui/ScrollLockContext"
 import { MaxScoreToast, useMaxScoreToast } from "./MaxScoreToast"
 import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
 
@@ -133,6 +134,8 @@ export const FactorPager = memo(function FactorPager({
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
+  // Follow-up 32-33: a percent track being dragged holds both scrolls (the pager's and the page's).
+  const [scrollLocked, setScrollLocked] = useState(false)
   const [finishRowHeight, setFinishRowHeight] = useState(FINISH_ROW_MIN_HEIGHT)
   const { width: windowWidth } = useWindowDimensions()
   const hasScrolledToInitial = useRef(false)
@@ -207,6 +210,7 @@ export const FactorPager = memo(function FactorPager({
         ref={scrollRef}
         horizontal
         pagingEnabled
+        scrollEnabled={!scrollLocked}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumEnd}
         style={styles.pages}
@@ -219,6 +223,7 @@ export const FactorPager = memo(function FactorPager({
             // texts are measured on one line and the score line runs off the edge (OA-110).
             style={{ width: pageWidth || windowWidth }}
             contentContainerStyle={[styles.pageContent, { paddingBottom: pageBottom }]}
+            scrollEnabled={!scrollLocked}
             // A tap on the strip or on a chip works with the keyboard up; dragging the page puts the
             // keyboard away; the page makes room for it (UI-SPEC 2.4).
             keyboardShouldPersistTaps="handled"
@@ -228,23 +233,25 @@ export const FactorPager = memo(function FactorPager({
             {/* Only the active page mounts real content: ten factor screens' worth of hint state
              * and validation running at once is wasted work the surveyor never sees. */}
             {index === activeIndex ? (
-              <FactorDetailScreen
-                factor={factor}
-                fields={factorSections[factor]}
-                retainedScore={factorRetainedScores[factor]}
-                methodVersion={methodVersion}
-                ibpCas={ibpCas}
-                onOpenHelp={onOpenHelp}
-                onOpenDmhGuide={onOpenDmhGuide}
-                doubt={factorAnnotations[factor]?.doubt === true}
-                note={factorAnnotations[factor]?.note ?? ""}
-                onChangeDoubt={(next) => onChangeDoubt(factor, next)}
-                onChangeNote={(text) => onChangeNote(factor, text)}
-                onCommitNote={onCommitNote}
-                uncappedFactors={uncappedFactors}
-                zoneSurfaceHa={zoneSurfaceHa}
-                uncappedEntry={uncappedEntry}
-              />
+              <ScrollLockProvider value={setScrollLocked}>
+                <FactorDetailScreen
+                  factor={factor}
+                  fields={factorSections[factor]}
+                  retainedScore={factorRetainedScores[factor]}
+                  methodVersion={methodVersion}
+                  ibpCas={ibpCas}
+                  onOpenHelp={onOpenHelp}
+                  onOpenDmhGuide={onOpenDmhGuide}
+                  doubt={factorAnnotations[factor]?.doubt === true}
+                  note={factorAnnotations[factor]?.note ?? ""}
+                  onChangeDoubt={(next) => onChangeDoubt(factor, next)}
+                  onChangeNote={(text) => onChangeNote(factor, text)}
+                  onCommitNote={onCommitNote}
+                  uncappedFactors={uncappedFactors}
+                  zoneSurfaceHa={zoneSurfaceHa}
+                  uncappedEntry={uncappedEntry}
+                />
+              </ScrollLockProvider>
             ) : null}
           </ScrollView>
         ))}

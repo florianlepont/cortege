@@ -93,11 +93,18 @@ jest.mock("@expo/vector-icons", () => {
   }
 })
 
+// The probe keeps the page's scroll lock, the way a percent track under the page would call it.
+const mockScrollLock: { current: ((locked: boolean) => void) | null } = { current: null }
+
 jest.mock("../FactorDetailScreen", () => {
   const ReactRef = require("react") as typeof import("react")
+  const { useScrollLock } =
+    require("../../ui/ScrollLockContext") as typeof import("../../ui/ScrollLockContext")
   return {
-    FactorDetailScreen: (props: Record<string, unknown>) =>
-      ReactRef.createElement("FactorDetailScreenProbe", props),
+    FactorDetailScreen: (props: Record<string, unknown>) => {
+      mockScrollLock.current = useScrollLock()
+      return ReactRef.createElement("FactorDetailScreenProbe", props)
+    },
   }
 })
 
@@ -474,6 +481,24 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
       })
     })
     expect(selectedText(byTestID("pager-strip"))).toBe(valueOf("C"))
+  })
+
+  test("a percent track being dragged holds the pager scroll and the page scroll (follow-up 32-33)", () => {
+    const { tree, byTestID } = render("A")
+    const scrolls = () =>
+      tree.root.findAll(
+        (n) =>
+          (n.type as unknown) === "ScrollView" &&
+          (n.props.testID === "factor-pager-scroll" ||
+            n.findAll((c) => (c.type as unknown) === "FactorDetailScreenProbe").length > 0),
+      )
+    // The pager's own scroll and the active page's vertical scroll.
+    expect(scrolls().filter((n) => n.props.scrollEnabled === true)).toHaveLength(2)
+    act(() => mockScrollLock.current?.(true))
+    expect(byTestID("factor-pager-scroll").props.scrollEnabled).toBe(false)
+    expect(scrolls().filter((n) => n.props.scrollEnabled === false)).toHaveLength(2)
+    act(() => mockScrollLock.current?.(false))
+    expect(scrolls().filter((n) => n.props.scrollEnabled === true)).toHaveLength(2)
   })
 
   test("a complete factor, an invalid one and an empty one have their own letter look", () => {
