@@ -20,6 +20,12 @@ const intro = fr.factorDetail.dmhList.intro
 export const HELP_LINK_MIN_HEIGHT = 44
 const ROW_GLYPH_SIZE = 20
 const INLINE_GLYPH_SIZE = 16
+const NBSP = "\u00A0"
+
+// The words of the link are glued with no-break spaces (U+00A0), so the link never splits across
+// two lines (follow-up 32-28: the chevron fell alone on the next line). The accessibility label
+// keeps the catalogue string with its normal spaces.
+const GLUED_LINK_LABEL = t.helpLink.replace(/ /g, NBSP)
 
 type FactorIntroProps = {
   factor: FactorKey
@@ -32,7 +38,7 @@ type FactorIntroProps = {
 /**
  * The top of every factor page (follow-up 32-27): the "Aide au relevé" link, which opens the factor
  * help sheet. Factor F has an intro paragraph, one paragraph on the canvas with no card, and the
- * link ends it inline ("ⓘ Aide au relevé ›"); the other factors have no paragraph, so the link is a
+ * link ends it inline ("ⓘ Aide au relevé ›", one unbreakable unit); the other factors have no paragraph, so the link is a
  * slim row of its own. The paragraph is built per counting mode through the catalogue.
  */
 export function FactorIntro({ factor, countedInFull, onOpenHelp }: FactorIntroProps) {
@@ -53,7 +59,7 @@ export function FactorIntro({ factor, countedInFull, onOpenHelp }: FactorIntroPr
           size={ROW_GLYPH_SIZE}
           color={theme.visual.accentText}
         />
-        <Text style={styles.linkText}>{t.helpLink}</Text>
+        <Text style={styles.linkText}>{GLUED_LINK_LABEL}</Text>
         <Ionicons
           name="chevron-forward-outline"
           size={INLINE_GLYPH_SIZE}
@@ -80,8 +86,10 @@ export function FactorIntro({ factor, countedInFull, onOpenHelp }: FactorIntroPr
           name="information-circle-outline"
           size={INLINE_GLYPH_SIZE}
           color={theme.visual.accentText}
-        />{" "}
-        {t.helpLink}{" "}
+        />
+        {NBSP}
+        {GLUED_LINK_LABEL}
+        {NBSP}
         <Ionicons
           name="chevron-forward-outline"
           size={INLINE_GLYPH_SIZE}

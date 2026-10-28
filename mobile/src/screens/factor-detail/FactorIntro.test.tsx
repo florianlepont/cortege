@@ -79,13 +79,20 @@ describe("FactorIntro, the help row of factors A to E and G to J", () => {
     },
   )
 
+  test("the label of the slim row is glued too, the spoken name keeps its spaces", () => {
+    const { link } = render("C")
+    expect(link.props.accessibilityLabel).toBe("Aide au relevé")
+    const text = link.findAll((n) => (n.type as unknown) === "Text")[0]
+    expect(textOf(text)).not.toMatch(/ /)
+  })
+
   test("information-circle-outline, accent text token, no 'Que relever'", () => {
     const { tree } = render("C")
     const icons = tree.root.findAllByType(Ionicons)
     expect(icons[0].props.name).toBe("information-circle-outline")
     expect(icons[0].props.color).toBe(defaultTheme.visual.accentText)
     const text = tree.root.findAll((n) => (n.type as unknown) === "Text")[0]
-    expect(textOf(text)).toBe("Aide au relevé")
+    expect(textOf(text)).toBe("Aide\u00A0au\u00A0relevé")
     expect(flat(text.props.style).color).toBe(defaultTheme.visual.accentText)
     expect(JSON.stringify(t)).not.toMatch(/Que relever/)
   })
@@ -109,12 +116,24 @@ describe("FactorIntro, factor F", () => {
     // The link is a child of the paragraph, after the whole text.
     expect(link.props.accessibilityRole).toBe("link")
     expect(link.props.accessibilityLabel).toBe(t.helpLink)
-    expect(textOf(link)).toContain(t.helpLink)
+    expect(textOf(link)).toContain("Aide\u00A0au\u00A0relevé")
     expect(textOf(paragraph).endsWith(textOf(link))).toBe(true)
     act(() => {
       link.props.onPress()
     })
     expect(onOpenHelp).toHaveBeenCalledTimes(1)
+  })
+
+  test("the link never splits: no regular space inside it, no-break spaces around the words", () => {
+    const { link } = render("F")
+    // Glyph, no-break space, the three words glued, no-break space, chevron.
+    const text = textOf(link)
+    expect(text).toBe("\u00A0Aide\u00A0au\u00A0relevé\u00A0")
+    expect(text).not.toMatch(/ /)
+    expect(text).toMatch(/Aide\u00A0au\u00A0relevé/)
+    // The spoken name keeps normal spaces.
+    expect(link.props.accessibilityLabel).toBe("Aide au relevé")
+    expect(link.props.accessibilityLabel).toMatch(/Aide au relevé/)
   })
 
   test("counted in full the paragraph names the cap that only the score applies", () => {
