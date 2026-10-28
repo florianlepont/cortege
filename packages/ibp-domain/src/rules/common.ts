@@ -216,3 +216,43 @@ export function readDensityPair(
   if (upper === null || lower === null || surfaceHa === null || surfaceHa <= 0) return null
   return { upper, lower, surfaceHa }
 }
+
+/** The raw keys of each two-class density factor: [upper class, lower class]. */
+export const DENSITY_COUNT_KEYS = {
+  C: ["bmg_count", "bmm_count"],
+  D: ["bmg_count", "bmm_count"],
+  E: ["tgb_count", "gb_count"],
+} as const satisfies Record<string, readonly [string, string]>
+
+/** The factors scored on two diameter classes counted over a surface. */
+export type DensityFactor = keyof typeof DENSITY_COUNT_KEYS
+
+/** Per-hectare densities of a two-class factor: the upper class, the lower class, and both. */
+export type DensityPerHa = { upperPerHa: number; lowerPerHa: number; sumPerHa: number }
+
+/** The per-hectare densities of a counted pair; the scorers and the display read them here. */
+export function densityPerHa(pair: {
+  upper: number
+  lower: number
+  surfaceHa: number
+}): DensityPerHa {
+  return {
+    upperPerHa: pair.upper / pair.surfaceHa,
+    lowerPerHa: pair.lower / pair.surfaceHa,
+    sumPerHa: (pair.upper + pair.lower) / pair.surfaceHa,
+  }
+}
+
+/**
+ * C, D or E: the per-hectare densities of the factor's raw counts and surface, or null when a
+ * count or a positive surface is missing. `upperPerHa` is the figure the score is read from (BMg
+ * per ha for C and D, TGB per ha for E). Strings that read as numbers are accepted, as for scoring.
+ */
+export function readDensityPerHa(
+  factor: DensityFactor,
+  raw: Record<string, unknown>,
+): DensityPerHa | null {
+  const [upperKey, lowerKey] = DENSITY_COUNT_KEYS[factor]
+  const pair = readDensityPair(raw, upperKey, lowerKey)
+  return pair === null ? null : densityPerHa(pair)
+}
