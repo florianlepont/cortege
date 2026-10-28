@@ -749,6 +749,8 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
       chips: () => byType("FactorChipsInput"),
       fields: () => byType("AppField"),
       list: () => byType("DmhGroupList"),
+      // Follow-up 32-27: F's hero card, read-only, under the intro paragraph.
+      hero: () => byType("View").filter((n) => n.props.testID === "trees-per-ha-value"),
       // Follow-up 32-26: the card exists only when something is left in it.
       card: () => byType("AppCard"),
     }
@@ -863,27 +865,59 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     ).toHaveLength(1)
   })
 
-  test("without the counting entry the field stays a typed input, in its card, with no sum line", () => {
+  test("without the counting entry the field stays a typed input, in its card, with no hero card", () => {
     const plain = mount("F", fFields, {})
     expect(plain.fields()).toHaveLength(1)
     expect(plain.card()).toHaveLength(1)
-    expect(plain.list()[0].props.topScoreReached).toBe(false)
+    expect(plain.hero()).toHaveLength(0)
   })
 
-  test("F: the list is told when the evaluation retains the top score, both modes, and only for F", () => {
+  test("F: the hero card shows the stored figure, the Maximum pill when the top score is retained, only for F", () => {
     const top = { selected_class: "S5", score: 5 } as never
     const low = { selected_class: "S2", score: 2 } as never
     for (const uncappedFactors of [[], ["F"]] as FactorKey[][]) {
-      const reached = (retainedScore: never | null) =>
-        mount("F", fFields, { uncappedFactors, uncappedEntry: entry, retainedScore }).list()[0]
-          .props.topScoreReached
-      expect(reached(top)).toBe(true)
-      expect(reached(low)).toBe(false)
-      expect(reached(null)).toBe(false)
+      const heroOf = (retainedScore: never | null) => {
+        const m = mount("F", fFields, { uncappedFactors, uncappedEntry: entry, retainedScore })
+        expect(m.hero()).toHaveLength(1)
+        return m.hero()[0]
+      }
+      expect(heroOf(top).props.accessibilityLabel).toBe("Arbres par hectare, 3")
+      expect(heroOf(top).props.accessibilityHint).toBe(fr.factorDetail.dmhList.topScoreHint)
+      expect(heroOf(low).props.accessibilityHint).toBeUndefined()
+      expect(heroOf(null).props.accessibilityHint).toBeUndefined()
     }
     expect(
-      mount("G", [field("open_flowering_percent")], { retainedScore: top }).list(),
+      mount("G", [field("open_flowering_percent")], { retainedScore: top }).hero(),
     ).toHaveLength(0)
+  })
+
+  test("F: the sub-label follows the mode, and the page order is intro, hero, strip, card, list", () => {
+    const capped = mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry })
+    const full = mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry })
+    const subOf = (m: typeof capped) =>
+      m
+        .hero()[0]
+        .findAll((n) => (n.type as unknown) === "Text")
+        .map((n) => n.props.children)[2]
+    expect(subOf(capped)).toBe(fr.factorDetail.dmhList.hero.subCapped)
+    expect(subOf(full)).toBe(fr.factorDetail.dmhList.hero.subFull)
+    const root = full.tree.root
+      .findByType(FactorDetailScreen)
+      .findAll((n) => (n.type as unknown) === "View")[0]
+    const order = root.children
+      .filter((child): child is renderer.ReactTestInstance => typeof child !== "string")
+      .map((child) =>
+        child.props.onOpenHelp
+          ? "intro"
+          : child.props.onCommitNote
+            ? "strip"
+            : child.props.treesPerHaText !== undefined && child.props.counted !== undefined
+              ? "hero"
+              : child.props.methodVersion !== undefined
+                ? "list"
+                : "card",
+      )
+    expect(order).toEqual(["intro", "hero", "strip", "card", "list"])
   })
 
   test("the other factors get no detail block, whatever the route says", () => {

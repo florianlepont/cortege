@@ -244,76 +244,18 @@ describe("DmhGroupList, one container level (redesign A-C1, A-C2, A-I1, A-I4)", 
     expect(all("dmh-guide-entry")).toHaveLength(0)
   })
 
-  test("without the counters there is no sum line and no note", () => {
-    const { all } = mount({ topScoreReached: true })
-    expect(all("trees-per-ha-value")).toHaveLength(0)
-    expect(all("trees-top-score-note")).toHaveLength(0)
+  test("the list draws no sum line, trace or note: the hero card above it shows the figure", () => {
+    for (const m of [mount(), mount({ counting: counting(), treesPerHaText: "9" })]) {
+      expect(m.all("trees-per-ha-value")).toHaveLength(0)
+      expect(m.all("trees-top-score-trace")).toHaveLength(0)
+      expect(m.all("trees-top-score-note")).toHaveLength(0)
+    }
   })
 })
 
-describe("DmhGroupList, the sum line (follow-up 32-26)", () => {
+describe("DmhGroupList, labels", () => {
   test("the companion labels carry no '(facultatif)'", () => {
     expect(JSON.stringify(fr.factorDetail.companionLabels)).not.toMatch(/facultatif/i)
-  })
-
-  const sum = (m: ReturnType<typeof mount>) => m.one("trees-per-ha-value")
-
-  test("a plain line, not a field: label and figure, no box, no input, spoken as one text", () => {
-    const m = mount({ counting: counting(), treesPerHaText: "6" })
-    const line = sum(m)
-    expect(line.props.accessible).toBe(true)
-    expect(line.props.accessibilityRole).toBe("text")
-    expect(line.props.accessibilityLabel).toBe(t.treesPerHaA11y({ value: "6" }))
-    expect(line.props.accessibilityLabel).toBe("Arbres par hectare, 6")
-    expect(m.textOf(line)).toBe("Arbres par hectare :6")
-    const style = flat(line.props.style)
-    expect(style.flexDirection).toBe("row")
-    for (const key of ["backgroundColor", "borderWidth", "borderRadius", "minHeight"]) {
-      expect(style[key]).toBeUndefined()
-    }
-    const figure = line.findAll((n) => (n.type as unknown) === "Text")[1]
-    expect(flat(figure.props.style).fontVariant).toEqual(["tabular-nums"])
-    expect(m.tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
-  })
-
-  test("empty figure: 0 while nothing is counted, 'À calculer' once a count has no figure", () => {
-    expect(m0().textOf(sum(m0()))).toContain("0")
-    function m0() {
-      return mount({ counting: counting(), treesPerHaText: "" })
-    }
-    const pending = mount({ counting: counting({ dmh_01: 2 }), treesPerHaText: "" })
-    expect(pending.one("trees-per-ha-value").props.accessibilityLabel).toBe(
-      `Arbres par hectare, ${t.treesPerHaPending}`,
-    )
-  })
-
-  test("the label and its figure sit side by side, left aligned, not apart", () => {
-    const m = mount({ counting: counting(), treesPerHaText: "9" })
-    const style = flat(m.one("trees-per-ha-value").props.style)
-    expect(style.flexDirection).toBe("row")
-    expect(style.justifyContent).toBeUndefined()
-    expect(style.alignItems).toBe("baseline")
-  })
-
-  test("a quiet 'maximum' trace sits beside the sum only at the top score, in both modes", () => {
-    for (const max of [undefined, 2]) {
-      const top = mount({
-        counting: { ...counting({ dmh_01: 2 }), max },
-        treesPerHaText: "8",
-        topScoreReached: true,
-      })
-      const trace = top.one("trees-top-score-trace")
-      expect(top.textOf(trace)).toBe(t.topScoreTrace)
-      expect(top.one("trees-per-ha-value").props.accessibilityHint).toBe(t.topScoreHint)
-      const below = mount({ counting: { ...counting({ dmh_01: 2 }), max }, treesPerHaText: "7" })
-      expect(below.all("trees-top-score-trace")).toHaveLength(0)
-      expect(below.one("trees-per-ha-value").props.accessibilityHint).toBeUndefined()
-    }
-  })
-
-  test("no note block is left in the page flow", () => {
-    const m = mount({ counting: counting(), treesPerHaText: "9", topScoreReached: true })
-    expect(m.all("trees-top-score-note")).toHaveLength(0)
   })
 })
 

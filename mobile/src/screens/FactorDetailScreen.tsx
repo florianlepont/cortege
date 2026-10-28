@@ -8,6 +8,7 @@ import { AppCard } from "../ui/AppCard"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
 import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
+import { DmhHeroCard } from "./factor-detail/DmhHeroCard"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import { FactorIntro } from "./factor-detail/FactorIntro"
 import {
@@ -22,13 +23,14 @@ import {
   UncappedFieldBlock,
   type UncappedEntryProps,
 } from "./factor-detail/UncappedFieldBlock"
+import { anyDmhCount } from "./factor-detail/no-dmh-group"
 import { useRouteSurfacePrefill } from "./factor-detail/useRouteSurfacePrefill"
 
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
 const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
 const NO_FACTORS: readonly FactorKey[] = []
 // F's highest score, read from the package's allowed scores so no second copy of its threshold lives
-// here: the note under the sum of the trees per hectare shows once the evaluation retains it.
+// here: the "Maximum" pill of the hero card shows once the evaluation retains it.
 const TOP_F_SCORE = Math.max(...allowedScoresFor("F"))
 
 type FactorDetailScreenProps = {
@@ -75,8 +77,10 @@ type FactorDetailScreenProps = {
  * the list (the detail values are kept, never deleted, when the factor goes back to the capped
  * entry, U-O10). Follow-up of phase 32 (owner decision 2026-10-28): in the capped mode the list
  * counts too, 0 to 2 trees per hectare per group, and their sum is the trees per hectare. Follow-up
- * 32-26: that sum is a plain line of the list (both modes), with a note under it once F's top
- * score is retained, so the page has no input card at all in the capped mode: it is the list alone.
+ * 32-26: that sum is read-only (both modes), so the page has no input card at all in the capped
+ * mode. Follow-up 32-27: the sum is the "Arbres par hectare" hero card under the intro paragraph,
+ * with a quiet "Maximum" pill once F's top score is retained; the page order of F is the intro
+ * (with the help link), the hero, the doubt and note pills, then the sections list.
  */
 export function FactorDetailScreen({
   factor,
@@ -169,6 +173,15 @@ export function FactorDetailScreen({
         onOpenHelp={() => onOpenHelp(helpTexts.help[factor], helpTexts.hints[factor])}
       />
 
+      {dmhListField && groupEntry ? (
+        <DmhHeroCard
+          treesPerHaText={dmhListField.value}
+          counted={anyDmhCount(groupEntry.state.dmhCounts)}
+          countedInFull={countedInFull}
+          topScoreReached={topScoreReached}
+        />
+      ) : null}
+
       <DoubtNoteStrip
         factor={factor}
         title={FACTOR_TITLES[factor]}
@@ -192,7 +205,6 @@ export function FactorDetailScreen({
             uncappedEntry: detailEntry,
             cappedEntry,
             onOpenDmhGuide,
-            topScoreReached,
           })
         : null}
     </View>

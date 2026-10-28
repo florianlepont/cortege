@@ -122,15 +122,19 @@ export const factorDetailFr = {
     // Follow-up of phase 32 (owner decision 2026-10-28): in the capped survey mode a group holds a
     // whole number of trees per hectare, 0 to 2, and the total is the sum of the groups.
     treesCaptionPerHa: "Arbres par hectare",
-    // The sum line of the counting modes (follow-up 32-26): a plain line, not a field. It shows
-    // "À calculer" while the groups give no figure yet (counted in full without a surface), and its
-    // spoken form reads "label, value".
-    sumLabel: "Arbres par hectare :",
+    // The hero card under the intro paragraph (follow-up 32-27): a read-only figure, its label and
+    // where it comes from. The figure shows "À calculer" while the groups give no figure yet
+    // (counted in full without a surface), and its spoken form reads "label, value".
+    hero: {
+      label: "arbres par hectare",
+      subCapped: "somme des groupes comptés",
+      subFull: "calculé d'après la surface décrite",
+    },
     treesPerHaPending: "À calculer",
     treesPerHaA11y: ({ value }: { value: string }) => `Arbres par hectare, ${value}`,
-    // Beside the sum once the evaluation retains F's top score; the toast that announces it is the
-    // pager's (`fr.factorPager.maxScoreToast`).
-    topScoreTrace: "maximum",
+    // The quiet pill of the hero once the evaluation retains F's top score; the toast that announces
+    // it is the pager's (`fr.factorPager.maxScoreToast`).
+    topScoreTrace: "Maximum",
     topScoreHint: "Score maximal atteint",
     lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
     // Follow-up 32-25: the row above the sections that records "no group observed" (0 per hectare).

@@ -124,8 +124,6 @@ export type FactorFieldExtras = {
   cappedEntry?: UncappedEntryProps
   /** Phase 32 (D-04): opens the guide on the catalogue (no argument) or on one group. */
   onOpenDmhGuide?: (group: DmhGroupCode) => void
-  /** Follow-up 32-26: the evaluation retains F's top score, the sum line says no need to count more. */
-  topScoreReached?: boolean
 }
 
 /** True when the variant's companion is F's group list, which the screen draws after its card. */
@@ -149,7 +147,6 @@ export function renderDmhGroupList(
       key={`F-${field.label}-companion`}
       methodVersion={methodVersion}
       treesPerHaText={field.value}
-      topScoreReached={extras.topScoreReached === true}
       selected={field.selection?.selected ?? null}
       onChangeSelection={field.selection?.onChange ?? ignoreSelectionChange}
       counting={
