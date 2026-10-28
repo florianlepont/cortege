@@ -21,6 +21,7 @@ import { FactorSegmentedInput } from "../../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../../ui/FactorSliderInput"
 import { fr } from "../../i18n"
 import { DmhGroupList } from "./DmhGroupList"
+import { ReadOnlyValueField } from "./ReadOnlyValueField"
 import type { UncappedEntryProps } from "./UncappedFieldBlock"
 
 const t = fr.factorDetail
@@ -177,8 +178,12 @@ export function renderFactorField(
   field: FactorField,
   methodVersion: IbpMethodVersion | null,
   detailStyles: ReturnType<typeof createDetailStyles>,
-  /** `readOnly`: F's trees per hectare while the capped group counters derive it. */
-  options?: { readOnly?: boolean },
+  /**
+   * `readOnly`: F's trees per hectare, which the group counters derive and nobody types (follow-up
+   * 32-24): a value block instead of an input. `readOnlyEmpty` is shown while the field holds no
+   * figure yet.
+   */
+  options?: { readOnly?: boolean; readOnlyEmpty?: string },
 ) {
   const current: FieldVariant = variant ?? { kind: "numeric" }
   const label = field.required
@@ -261,6 +266,21 @@ export function renderFactorField(
       )
     case "numeric":
     default:
+      if (options?.readOnly === true) {
+        const shown = field.value.trim() === "" ? (options.readOnlyEmpty ?? "") : field.value
+        return withCompanion(
+          <ReadOnlyValueField
+            key={key}
+            label={humanizeFieldLabel(field.label)}
+            value={shown}
+            accessibilityLabel={t.dmhList.treesPerHaA11y({ value: shown })}
+            error={field.touched ? field.error : null}
+            containerStyle={detailStyles.fieldBlock}
+            labelStyle={detailStyles.fieldLabel}
+            testID="trees-per-ha-value"
+          />,
+        )
+      }
       return withCompanion(
         <AppField
           key={key}
@@ -268,7 +288,6 @@ export function renderFactorField(
           value={field.value}
           onChangeText={field.onChange}
           onBlur={field.onTouch}
-          editable={options?.readOnly !== true}
           keyboardType="numeric"
           placeholder={t.numericPlaceholder}
           error={field.touched ? field.error : null}

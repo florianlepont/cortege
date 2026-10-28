@@ -3,7 +3,8 @@ export const factorDetailFr = {
   fieldsProgress: ({ filledCount, totalCount }: { filledCount: number; totalCount: number }) =>
     `${filledCount}/${totalCount} champs`,
   scorePoints: ({ scoreCount }: { scoreCount: number }) => `${scoreCount} pts`,
-  scoreClass: ({ selectedClass }: { selectedClass: string }) => `Classe ${selectedClass}`,
+  // The factor's class is in the pager header (follow-up 32-24); the line keeps the label of its points.
+  scoreLabel: "Score du facteur",
   pending: "En attente",
   scoreHint: "Remplissez tous les champs obligatoires pour calculer le score",
   requiredField: ({ label }: { label: string }) => `${label} *`,
@@ -121,10 +122,15 @@ export const factorDetailFr = {
     // whole number of trees per hectare, 0 to 2, and the total is the sum of the groups.
     treesCaptionPerHa: "Arbres par hectare",
     cappedHelper: "Comptez au plus 2 arbres par hectare pour chaque groupe.",
-    totalPerHa: ({ trees }: { trees: number }) =>
-      `Total : ${trees === 1 ? "1 arbre" : `${trees} arbres`} par hectare`,
-    // Under the trees-per-hectare field once a group counter is above 0 (the field is then derived).
+    // Under the trees-per-hectare field, which is always derived and never typed (follow-up 32-24).
     derivedFromGroups: "Calculé d'après les groupes ci-dessous.",
+    // The read-only value stands in for the field while the groups give no figure yet (counted in
+    // full without a surface), and its spoken form reads "label, value".
+    treesPerHaPending: "À calculer",
+    treesPerHaA11y: ({ value }: { value: string }) => `Arbres par hectare, ${value}`,
+    // Under the field once the class is the highest: the 8 is pinned to the package by a test.
+    topClassNote:
+      "À partir de 8 arbres par hectare, la classe est 5. Inutile de compter davantage.",
     lockedUntick: "Ramenez le nombre à 0 pour décocher ce groupe.",
     a11y: {
       info: ({ label }: { label: string }) => `En savoir plus sur ${label}`,

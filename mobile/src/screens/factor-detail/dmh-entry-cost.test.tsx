@@ -217,10 +217,12 @@ describe("new factor F flow (row list) against the recorded old flow", () => {
     }
     expect(form().uncapped.dmhCounts).toEqual({ dmh_01: 2 })
     expect((form().draftInput.factors.F as { trees_per_ha: number }).trees_per_ha).toBe(2)
-    // The trees-per-hectare field now shows the sum and cannot be typed.
-    const inputs = tree().root.findAll((n) => (n.type as unknown) === "TextInput")
-    expect(inputs.length).toBeGreaterThan(0)
-    expect(inputs.every((input) => input.props.editable === false)).toBe(true)
-    expect(inputs[0].props.value).toBe("2")
+    // The trees-per-hectare field now shows the sum as a value: no text input is left to focus.
+    const root = tree().root
+    expect(root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
+    const block = root.find(
+      (n) => (n.type as unknown) === "View" && n.props.testID === "trees-per-ha-value",
+    )
+    expect(block.props.accessibilityLabel).toBe("Arbres par hectare, 2")
   })
 })

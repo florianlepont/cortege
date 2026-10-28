@@ -2,7 +2,7 @@ import { Fragment, useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { cappedDmhTotalPerHa, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
+import { allowedScoresFor, type DmhGroupCode, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
@@ -13,6 +13,7 @@ import {
   CountingModeCaption,
   DerivedFromGroupsCaption,
   FromRouteCaption,
+  TopClassNote,
 } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import {
@@ -36,6 +37,9 @@ const t = fr.factorDetail
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
 const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
 const NO_FACTORS: readonly FactorKey[] = []
+// F's highest class, read from the package's allowed scores so no second copy of its threshold lives
+// here: the note under the trees per hectare shows once the evaluation retains that class.
+const TOP_F_SCORE = Math.max(...allowedScoresFor("F"))
 
 type FactorDetailScreenProps = {
   factor: FactorKey
@@ -79,8 +83,9 @@ type FactorDetailScreenProps = {
  * canvas, so the card keeps only the trees per hectare and, counted in full, F's own surface above
  * the list (the detail values are kept, never deleted, when the factor goes back to the capped
  * entry, U-O10). Follow-up of phase 32 (owner decision 2026-10-28): in the capped mode the list
- * counts too, 0 to 2 trees per hectare per group, and their sum becomes the read-only trees per
- * hectare while one counter is above 0.
+ * counts too, 0 to 2 trees per hectare per group, and their sum is the trees per hectare. Follow-up
+ * 32-24: that figure is always a read-only value (both modes), with a note under it once F's
+ * highest class is retained, and the factor's class is in the pager's header, not on the score line.
  */
 export function FactorDetailScreen({
   factor,
@@ -108,10 +113,14 @@ export function FactorDetailScreen({
   const countedInFull = uncappedFactors.includes(factor)
   const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
   // Follow-up of phase 32: F in the capped mode has one counter per group (trees per hectare, at
-  // most 2). Once one is above 0 their sum is the page's trees per hectare and cannot be typed.
+  // most 2). Follow-up 32-24: with the group counters on the page (either mode) the trees per
+  // hectare is only ever their derived figure, a value and not an input.
   const cappedEntry = factor === "F" && !countedInFull ? uncappedEntry : undefined
-  const derivedFromGroups =
-    cappedEntry !== undefined && cappedDmhTotalPerHa(cappedEntry.state.dmhCounts) > 0
+  const groupEntry = detailEntry ?? cappedEntry
+  const anyGroupCounted = Object.values(groupEntry?.state.dmhCounts ?? {}).some(
+    (count) => (count ?? 0) > 0,
+  )
+  const topClassReached = factor === "F" && retainedScore?.score === TOP_F_SCORE
   // Found by its place (the numeric variant), not by its label: the form hands the French label
   // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).
   const surfaceIndex = SURFACE_FACTORS.includes(factor)
@@ -147,19 +156,25 @@ export function FactorDetailScreen({
             ) : null
             // B: the cover per stratum replaces the strata chips.
             if (block !== null && factor === "B") return block
+            const derivedTrees = groupEntry !== undefined && hasDmhListCompanion(variants[index])
             const input = renderFactorField(
               factor,
               variants[index],
               field,
               methodVersion,
               detailStyles,
-              { readOnly: derivedFromGroups && hasDmhListCompanion(variants[index]) },
+              {
+                readOnly: derivedTrees,
+                readOnlyEmpty: anyGroupCounted ? t.dmhList.treesPerHaPending : "0",
+              },
             )
-            if (derivedFromGroups && hasDmhListCompanion(variants[index])) {
+            if (derivedTrees) {
               return (
                 <Fragment key={`${factor}-${field.label}-derived`}>
                   {input}
                   <DerivedFromGroupsCaption />
+                  {topClassReached ? <TopClassNote /> : null}
+                  {block}
                 </Fragment>
               )
             }
@@ -198,11 +213,7 @@ export function FactorDetailScreen({
           retainedScore ? detailStyles.scoreLineFilled : detailStyles.scoreLinePending,
         ]}
       >
-        <Text style={detailStyles.scoreLineText}>
-          {retainedScore
-            ? t.scoreClass({ selectedClass: retainedScore.selected_class })
-            : t.scoreHint}
-        </Text>
+        <Text style={detailStyles.scoreLineText}>{retainedScore ? t.scoreLabel : t.scoreHint}</Text>
         <Text style={detailStyles.scoreLinePoints}>
           {retainedScore ? t.scorePoints({ scoreCount: retainedScore.score }) : t.pending}
         </Text>

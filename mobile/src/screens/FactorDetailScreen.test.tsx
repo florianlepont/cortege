@@ -1,8 +1,10 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import {
+  allowedScoresFor,
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
+  scoreTreeDensity,
   type BStratumCode,
   type DmhGroupCode,
   type IbpMethodVersion,
@@ -625,6 +627,35 @@ describe("FactorDetailScreen strip (phase 27, D-16)", () => {
   })
 })
 
+describe("FactorDetailScreen score line (follow-up 32-24)", () => {
+  test("the class is in the pager header, so the line holds its label and the points only", () => {
+    const line = (retained: { selected_class: string; score: number } | null) => {
+      let tree!: renderer.ReactTestRenderer
+      act(() => {
+        tree = renderer.create(
+          <FactorDetailScreen
+            factor="G"
+            fields={[field("open_flowering_percent")]}
+            retainedScore={retained as never}
+            methodVersion={IBP_METHOD_V3_2}
+            onOpenHelp={jest.fn()}
+            {...STRIP_PROPS}
+          />,
+        )
+      })
+      return tree.root
+        .find((n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line")
+        .findAll((n) => (n.type as unknown) === "Text")
+        .map((n) => String(n.props.children))
+    }
+    expect(line({ selected_class: "S5", score: 5 })).toEqual([
+      fr.factorDetail.scoreLabel,
+      fr.factorDetail.scorePoints({ scoreCount: 5 }),
+    ])
+    expect(line(null)).toEqual([fr.factorDetail.scoreHint, fr.factorDetail.pending])
+  })
+})
+
 describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", () => {
   const mount = (
     factor: FactorKey,
@@ -764,8 +795,13 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
       dmh: () => byType("DmhCountFields"),
       chips: () => byType("FactorChipsInput"),
       fields: () => byType("AppField"),
+      // Follow-up 32-24: F's trees per hectare is a value block (a host View), never an input.
+      valueBlock: () => byType("View").filter((n) => n.props.testID === "trees-per-ha-value"),
+      note: () => byType("Text").filter((n) => n.props.testID === "trees-top-class-note"),
     }
   }
+  const textsOf = (node: renderer.ReactTestInstance): string[] =>
+    node.findAll((n) => (n.type as unknown) === "Text").map((n) => String(n.props.children))
   const bFields = [
     field("strata_count", { value: "2", selection: { selected: null, onChange: jest.fn() } }),
   ]
@@ -805,12 +841,14 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
   })
 
   test("F counted in full gives the list the counting entry; the surface block sits above the list", () => {
-    const { dmh, fields, tree } = mount("F", fFields, {
+    const { dmh, fields, valueBlock, tree } = mount("F", fFields, {
       uncappedFactors: ["F"],
       uncappedEntry: entry,
       zoneSurfaceHa: 1.2,
     })
-    expect(fields()).toHaveLength(1)
+    // The trees per hectare is derived from the counts and the surface: a value, not an input.
+    expect(fields()).toHaveLength(0)
+    expect(valueBlock()).toHaveLength(1)
     const list = tree.root.find((n) => (n.type as unknown) === "DmhGroupList")
     expect(list.props.counting.counts).toBe(entry.state.dmhCounts)
     list.props.counting.onBump("dmh_13", 1)
@@ -826,10 +864,14 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     props.onChangeSurface("2")
     expect(entry.setFSurface).toHaveBeenCalledWith("2")
     const order = tree.root
-      .findAll((n) => ["AppField", "DmhGroupList", "DmhCountFields"].includes(n.type as never))
-      .map((n) => n.type as unknown as string)
-    // The surface field sits with the density field in the card, above the list (A-C1).
-    expect(order).toEqual(["AppField", "DmhCountFields", "DmhGroupList"])
+      .findAll(
+        (n) =>
+          ["DmhGroupList", "DmhCountFields"].includes(n.type as never) ||
+          ((n.type as unknown) === "View" && n.props.testID === "trees-per-ha-value"),
+      )
+      .map((n) => ((n.type as unknown) === "View" ? "ValueBlock" : (n.type as unknown as string)))
+    // The surface field sits with the density value in the card, above the list (A-C1).
+    expect(order).toEqual(["ValueBlock", "DmhCountFields", "DmhGroupList"])
   })
 
   test("F capped without a route entry keeps the tick-only list; with the entry it counts per hectare", () => {
@@ -854,29 +896,76 @@ describe("FactorDetailScreen detail fields of B and F counted in full (Phase 30,
     expect(entry.setDmhCount).toHaveBeenCalledWith("dmh_13", 2, 2)
   })
 
-  test("capped F: the trees per hectare field is read-only and captioned once a counter is above 0", () => {
-    const counted = mount("F", fFields, { uncappedFactors: [], uncappedEntry: entry })
-    expect(counted.fields()[0].props.editable).toBe(false)
-    expect(
-      counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption").length,
-    ).toBeGreaterThan(0)
-
-    const zero = {
-      ...entry,
-      state: { ...entry.state, dmhCounts: { dmh_01: 0 } as Partial<Record<DmhGroupCode, number>> },
+  test("F with the group counters: the trees per hectare is a value, never an input, in both modes", () => {
+    for (const uncappedFactors of [[], ["F"]] as FactorKey[][]) {
+      const counted = mount("F", fFields, { uncappedFactors, uncappedEntry: entry })
+      expect(counted.fields()).toHaveLength(0)
+      expect(counted.tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
+      const block = counted.valueBlock()[0]
+      expect(block.props.accessible).toBe(true)
+      expect(block.props.accessibilityLabel).toBe("Arbres par hectare, 3")
+      expect(textsOf(block)).toEqual([fr.factorDetail.fieldLabels.trees_per_ha, "3"])
+      expect(
+        counted.tree.root.findAll((n) => n.props.testID === "trees-derived-caption").length,
+      ).toBeGreaterThan(0)
     }
-    const none = mount("F", fFields, { uncappedFactors: [], uncappedEntry: zero })
-    expect(none.fields()[0].props.editable).toBe(true)
-    expect(none.tree.root.findAll((n) => n.props.testID === "trees-derived-caption")).toHaveLength(
-      0,
-    )
+  })
 
-    // Counted in full, and with no entry at all, the field stays as it was.
+  test("capped F with nothing counted shows 0, read as a value; counted in full it says it is to compute", () => {
+    const emptyField = [
+      field("trees_per_ha", { value: "", selection: { selected: null, onChange: jest.fn() } }),
+    ]
+    const none = {
+      ...entry,
+      state: { ...entry.state, dmhCounts: {} as Partial<Record<DmhGroupCode, number>> },
+    }
+    const zero = mount("F", emptyField, { uncappedFactors: [], uncappedEntry: none })
+    expect(zero.fields()).toHaveLength(0)
+    expect(textsOf(zero.valueBlock()[0])).toContain("0")
+    expect(zero.valueBlock()[0].props.accessibilityLabel).toBe("Arbres par hectare, 0")
+    // Groups counted in full but no surface yet: no figure, and the page says so.
+    const pending = mount("F", emptyField, { uncappedFactors: ["F"], uncappedEntry: entry })
+    expect(pending.valueBlock()[0].props.accessibilityLabel).toBe(
+      `Arbres par hectare, ${fr.factorDetail.dmhList.treesPerHaPending}`,
+    )
+    // A typed number kept by an older survey is shown as it is until a counter replaces it.
+    const kept = mount("F", fFields, { uncappedFactors: [], uncappedEntry: none })
+    expect(kept.valueBlock()[0].props.accessibilityLabel).toBe("Arbres par hectare, 3")
+  })
+
+  test("without the counting entry the field stays a typed input", () => {
+    const plain = mount("F", fFields, {})
+    expect(plain.fields()).toHaveLength(1)
+    expect(plain.valueBlock()).toHaveLength(0)
+    expect(plain.note()).toHaveLength(0)
+  })
+
+  test("F: the top-class note shows once the evaluation retains the highest class, both modes", () => {
+    const top = { selected_class: "S5", score: 5 } as never
+    const low = { selected_class: "S2", score: 2 } as never
+    for (const uncappedFactors of [[], ["F"]] as FactorKey[][]) {
+      const shown = mount("F", fFields, {
+        uncappedFactors,
+        uncappedEntry: entry,
+        retainedScore: top,
+      })
+      expect(shown.note()).toHaveLength(1)
+      expect(textsOf(shown.note()[0])).toEqual([fr.factorDetail.dmhList.topClassNote])
+      expect(
+        mount("F", fFields, { uncappedFactors, uncappedEntry: entry, retainedScore: low }).note(),
+      ).toHaveLength(0)
+      expect(mount("F", fFields, { uncappedFactors, uncappedEntry: entry }).note()).toHaveLength(0)
+    }
+    // Only F carries the note.
     expect(
-      mount("F", fFields, { uncappedFactors: ["F"], uncappedEntry: entry }).fields()[0].props
-        .editable,
-    ).toBe(true)
-    expect(mount("F", fFields, {}).fields()[0].props.editable).toBe(true)
+      mount("G", [field("open_flowering_percent")], { retainedScore: top }).note(),
+    ).toHaveLength(0)
+  })
+
+  test("the note's 8 is the package's threshold for the highest class", () => {
+    expect(fr.factorDetail.dmhList.topClassNote).toContain(" 8 arbres par hectare")
+    expect(scoreTreeDensity(8)).toBe(Math.max(...allowedScoresFor("F")))
+    expect(scoreTreeDensity(7.99)).toBeLessThan(scoreTreeDensity(8))
   })
 
   test("the other factors get no detail block, whatever the route says", () => {
