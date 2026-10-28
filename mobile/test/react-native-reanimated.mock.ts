@@ -112,6 +112,17 @@ function createChainableBuilder(): ChainableBuilder {
   return builder
 }
 
+// `new Keyframe({...}).duration(...).reduceMotion(...)`: an entering/exiting keyframe animation.
+export class Keyframe {
+  constructor(public readonly definition?: unknown) {}
+  duration(_durationMs: number): this {
+    return this
+  }
+  reduceMotion(_value: unknown): this {
+    return this
+  }
+}
+
 export const FadeIn = createChainableBuilder()
 export const FadeInDown = createChainableBuilder()
 export const FadeInUp = createChainableBuilder()

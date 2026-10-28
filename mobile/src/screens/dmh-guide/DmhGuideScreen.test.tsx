@@ -3,6 +3,7 @@ import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { selectionLabel } from "../../app/factor-selections"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { DmhGuideScreen } from "./DmhGuideScreen"
 
@@ -23,6 +24,7 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     TextInput: mockComponent("TextInput"),
     View: mockComponent("View"),
+    Platform: { OS: "ios" },
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {}, flatten: (s: unknown) => s },
     useColorScheme: () => "light",
     AccessibilityInfo: {
@@ -151,6 +153,7 @@ describe("DmhGuideScreen", () => {
     expect(header.findAll((n) => n.props.testID === "dmh-catalogue").length).toBe(0)
     // Opaque canvas background so scrolled text never shows through, above the content.
     const style = header.props.style as { backgroundColor?: string; zIndex?: number }
+    expect(style.backgroundColor).toBe(defaultTheme.semanticColors.backgroundCanvas)
     expect(style.backgroundColor).toEqual(expect.any(String))
     expect(style.zIndex).toBe(1)
   })
@@ -272,5 +275,51 @@ describe("DmhGuideScreen", () => {
     act(() => input.props.onChangeText("pic"))
     expect(mockFocus).not.toHaveBeenCalled()
     expect(mockScrollTo).not.toHaveBeenCalled()
+  })
+
+  test("the bar title is centred on the catalogue only; a view with a back has the back, not the title", () => {
+    const { tree } = render()
+    const header = byTestId(tree, "dmh-guide-header")[0]
+    expect(header.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))).toEqual([
+      t.sheet.title,
+    ])
+    press(tree, "dmh-catalogue-row-dmh_05")
+    const after = byTestId(tree, "dmh-guide-header")[0]
+    expect(after.findAll((n) => (n.type as unknown) === "Text").map((n) => textOf(n))).toEqual([
+      t.sheet.back,
+    ])
+  })
+
+  test("the bottom hairline of the bar shows only once the content has scrolled", () => {
+    const { tree } = render()
+    const scrollTo = (y: number) =>
+      act(() =>
+        byTestId(tree, "dmh-guide-screen")[0].props.onScroll({
+          nativeEvent: { contentOffset: { y } },
+        }),
+      )
+    expect(byTestId(tree, "dmh-guide-header-hairline")).toHaveLength(0)
+    scrollTo(12)
+    expect(byTestId(tree, "dmh-guide-header-hairline")).toHaveLength(1)
+    scrollTo(-8)
+    expect(byTestId(tree, "dmh-guide-header-hairline")).toHaveLength(0)
+    scrollTo(0)
+    expect(byTestId(tree, "dmh-guide-header-hairline")).toHaveLength(0)
+    expect(byTestId(tree, "dmh-guide-screen")[0].props.scrollEventThrottle).toBe(16)
+  })
+
+  test("a view change pushes: no entrance at opening, 24 pt from the trailing edge forward, from the leading edge back", () => {
+    const { tree } = render()
+    const entering = () =>
+      tree.root.find((n) => typeof n.type === "string" && "entering" in n.props).props.entering as
+        | { definition: { 0: { transform: { translateX: number }[] } } }
+        | undefined
+    expect(entering()).toBeUndefined()
+    press(tree, "dmh-catalogue-row-dmh_05")
+    expect(entering()?.definition[0].transform[0].translateX).toBe(24)
+    press(tree, "dmh-back")
+    expect(entering()?.definition[0].transform[0].translateX).toBe(-24)
+    press(tree, "dmh-sources-link")
+    expect(entering()?.definition[0].transform[0].translateX).toBe(24)
   })
 })
