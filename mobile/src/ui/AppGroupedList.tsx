@@ -1,8 +1,8 @@
-import { Fragment, ReactNode, useMemo } from "react"
+import { Children, Fragment, ReactNode, useMemo } from "react"
 import { ActivityIndicator, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppPressable } from "./AppPressable"
 
@@ -30,6 +30,14 @@ type AppGroupedListNavRow = {
    * lines, right-aligned (the summary's "Parcelles" row, whose value names the parcours).
    */
   valueLines?: number
+  /**
+   * Phase 32: how many lines the label may take (default 1; 2 when `multiline`). Wins over
+   * `multiline` for the label only.
+   */
+  labelLines?: number
+  /** Phase 32: a second line under the label (13/18, secondary ink), e.g. a guide entry's caption. */
+  subtitle?: string
+  testID?: string
 }
 
 type AppGroupedListCustomRow = {
@@ -96,22 +104,69 @@ export function AppGroupedList({ sections }: AppGroupedListProps) {
       {sections.map((section) => (
         <View key={section.key} style={styles.section}>
           {section.title ? <Text style={styles.sectionTitle}>{section.title}</Text> : null}
-          <View style={styles.sectionBody}>
-            {section.rows.map((row, index) => (
-              <Fragment key={row.key}>
-                {index > 0 ? (
-                  <View style={[styles.divider, hasIcon(row) ? styles.dividerInset : null]} />
-                ) : null}
-                {isCustomRow(row) ? (
-                  <View style={styles.customRow}>{row.content}</View>
-                ) : (
-                  <NavRow row={row} theme={theme} styles={styles} />
-                )}
-              </Fragment>
-            ))}
-          </View>
+          <AppGroupedContainer
+            dividerInset={(index) =>
+              hasIcon(section.rows[index]) ? ICON_DIVIDER_INSET : DEFAULT_DIVIDER_INSET
+            }
+          >
+            {section.rows.map((row) =>
+              isCustomRow(row) ? (
+                <View key={row.key} style={styles.customRow}>
+                  {row.content}
+                </View>
+              ) : (
+                <NavRow key={row.key} row={row} theme={theme} styles={styles} />
+              ),
+            )}
+          </AppGroupedContainer>
           {section.footer ? <Text style={styles.sectionFooter}>{section.footer}</Text> : null}
         </View>
+      ))}
+    </View>
+  )
+}
+
+type AppGroupedContainerProps = {
+  children: ReactNode
+  /**
+   * Where the hairlines between children start (left margin). A number for all of them, or a
+   * function of the index of the child under the hairline (so a row with a leading tile can start
+   * its hairline under the label). Default 16.
+   */
+  dividerInset?: number | ((index: number) => number)
+}
+
+/**
+ * Phase 32 (redesign A-I1): the one grouped container of the app, a glass card at the card radius
+ * with a 1 pt hairline between its children, clipped. The Settings lists, the F group list and the
+ * guide sheet all use it, so the list look is defined once. It is a single level: put rows in it,
+ * never another card.
+ */
+export function AppGroupedContainer({
+  children,
+  dividerInset = DEFAULT_DIVIDER_INSET,
+}: AppGroupedContainerProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const items = Children.toArray(children)
+
+  return (
+    <View style={styles.sectionBody}>
+      {items.map((item, index) => (
+        <Fragment key={index}>
+          {index > 0 ? (
+            <View
+              style={[
+                styles.divider,
+                {
+                  marginLeft:
+                    typeof dividerInset === "function" ? dividerInset(index) : dividerInset,
+                },
+              ]}
+            />
+          ) : null}
+          {item}
+        </Fragment>
       ))}
     </View>
   )
@@ -135,6 +190,7 @@ function NavRow({
     row.centered ? styles.labelCentered : null,
     row.valueLines ? styles.valueFixed : null,
   ]
+  const labelLines = row.labelLines ?? (row.multiline ? 2 : 1)
 
   return (
     <AppPressable
@@ -151,11 +207,21 @@ function NavRow({
       accessibilityLabel={row.accessibilityLabel ?? row.label}
       accessibilityHint={row.accessibilityHint}
       accessibilityState={{ disabled: row.disabled || row.loading, busy: row.loading }}
+      testID={row.testID}
     >
       {row.icon ? <AppGroupedListIconTile name={row.icon} destructive={row.destructive} /> : null}
-      <Text style={labelStyle} numberOfLines={row.multiline ? 2 : 1}>
-        {row.label}
-      </Text>
+      {row.subtitle ? (
+        <View style={styles.labelColumn}>
+          <Text style={labelStyle} numberOfLines={labelLines}>
+            {row.label}
+          </Text>
+          <Text style={styles.subtitle}>{row.subtitle}</Text>
+        </View>
+      ) : (
+        <Text style={labelStyle} numberOfLines={labelLines}>
+          {row.label}
+        </Text>
+      )}
       {!row.centered ? (
         <View style={styles.rowTrailing}>
           {row.value ? (
@@ -184,6 +250,9 @@ function NavRow({
 const ROW_MIN_HEIGHT = 48
 const ICON_TILE_SIZE = 28
 const ICON_SIZE = 20
+const DEFAULT_DIVIDER_INSET = brandSpacing4.md
+// With a leading tile, the hairline starts under the label.
+const ICON_DIVIDER_INSET = brandSpacing4.md + ICON_TILE_SIZE + brandSpacing4.smd
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
@@ -216,12 +285,7 @@ function createStyles(theme: BrandTheme) {
     },
     divider: {
       height: 1,
-      marginLeft: brandSpacing4.md,
       backgroundColor: theme.colors.divider,
-    },
-    // With a leading tile, the hairline starts under the label.
-    dividerInset: {
-      marginLeft: brandSpacing4.md + ICON_TILE_SIZE + brandSpacing4.smd,
     },
     row: {
       flexDirection: "row",
@@ -254,6 +318,15 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.input,
       flexShrink: 1,
       color: theme.colors.textPrimary,
+    },
+    // A label with a subtitle under it.
+    labelColumn: {
+      flexShrink: 1,
+      gap: brandSpacing4.xxs,
+    },
+    subtitle: {
+      ...brandTypeScale.footnote,
+      color: theme.colors.textSecondary,
     },
     labelDestructive: {
       color: theme.colors.terracotta,

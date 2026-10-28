@@ -1115,3 +1115,64 @@ describe.each(schemes)("Phase 29 radio cards, %s scheme", (scheme) => {
     ).toBeGreaterThanOrEqual(4.5)
   })
 })
+
+// Phase 32 redesign 32-18 (brief A-C3, A-C4, A-I3): the F group list controls sit on the glass card
+// over the canvas. Graphics (ring, fills, glyphs) need 3:1 (WCAG 1.4.11), text 4.5. Before the
+// redesign the unticked ring (colors.divider) measured 1.34:1 light and 1.15:1 dark, the forest
+// glyphs 1.97:1 in dark and the moss info glyph 2.6:1 in light.
+describe.each(schemes)("F group list controls, %s scheme", (scheme) => {
+  const { colors, semanticColors, visual } = themes[scheme]
+  const card = compositeOver(visual.glass.cardFill, colors.canvas)
+  const capsule = compositeOver(visual.control.fill, card)
+  const pressed = colors.surfaceSoft
+
+  test("the unticked circle ring (colors.inputBorder) reads on the card (3:1)", () => {
+    expect(contrastRatio(colors.inputBorder, card)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("the old ring (colors.divider) failed, the reason for the change", () => {
+    expect(contrastRatio(colors.divider, card)).toBeLessThan(3)
+  })
+
+  test("the ticked circle fill (ctaPrimary) reads on the card, and its check on the fill (3:1)", () => {
+    expect(contrastRatio(semanticColors.ctaPrimary, card)).toBeGreaterThanOrEqual(3)
+    expect(
+      contrastRatio(semanticColors.onCtaPrimary, semanticColors.ctaPrimary),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the +, - and add glyphs (ctaPrimary) read on the capsule, on its pressed half and on the card (3:1)", () => {
+    for (const surface of [capsule, pressed, card]) {
+      expect(contrastRatio(semanticColors.ctaPrimary, surface)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test("the old forest glyph failed in dark, the reason for the change", () => {
+    if (scheme === "dark") expect(contrastRatio(colors.forest, capsule)).toBeLessThan(3)
+  })
+
+  test("the info glyph (visual.accentText) reads on the card and on the pressed fill (4.5:1)", () => {
+    expect(contrastRatio(visual.accentText, card)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(visual.accentText, pressed)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the old moss info glyph failed on the light card, the reason for the change", () => {
+    if (scheme === "light") expect(contrastRatio(semanticColors.accent, card)).toBeLessThan(3)
+  })
+
+  test("the count, the labels and the captions read on the card (4.5:1)", () => {
+    expect(contrastRatio(colors.textPrimary, card)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(colors.textSecondary, card)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(colors.textPrimary, capsule)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the grouped section headers read on the canvas (4.5:1)", () => {
+    expect(contrastRatio(colors.textSecondary, colors.canvas)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the control fill is the iOS tertiary fill, from existing inks: 7% of the text ink or white 10%", () => {
+    expect(visual.control.fill).toBe(
+      scheme === "dark" ? "rgba(255, 255, 255, 0.1)" : withAlpha(colors.textPrimary, 0.07),
+    )
+  })
+})

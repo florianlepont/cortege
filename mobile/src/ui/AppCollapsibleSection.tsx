@@ -11,7 +11,13 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated"
-import { brandMotion, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandMotion,
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppChoiceChip } from "./AppChoiceChip"
@@ -24,8 +30,18 @@ type AppCollapsibleSectionProps = {
   /** Phase 32: a test handle on the header, and a label that replaces the default toggle label. */
   testID?: string
   accessibilityLabel?: string
+  /**
+   * `"boxed"` (default, Settings): a bordered box, an uppercase meta title, a status chip and a
+   * down chevron. `"grouped"` (phase 32, redesign A-C2): an iOS grouped-list section header with no
+   * chrome, a sentence-case title, the count as plain text and a disclosure chevron that turns a
+   * quarter turn when open; the body is the caller's `AppGroupedContainer`.
+   */
+  variant?: "boxed" | "grouped"
   children: ReactNode
 }
+
+const GROUPED_HEADER_MIN_HEIGHT = 44
+const GROUPED_CHEVRON_OPEN_DEG = 90
 
 export function AppCollapsibleSection({
   title,
@@ -33,17 +49,20 @@ export function AppCollapsibleSection({
   defaultExpanded = false,
   testID,
   accessibilityLabel,
+  variant = "boxed",
   children,
 }: AppCollapsibleSectionProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const grouped = variant === "grouped"
+  const openDegrees = grouped ? GROUPED_CHEVRON_OPEN_DEG : 180
   const [expanded, setExpanded] = useState(defaultExpanded)
-  const chevronRotation = useSharedValue(defaultExpanded ? 180 : 0)
+  const chevronRotation = useSharedValue(defaultExpanded ? openDegrees : 0)
 
   const toggle = () => {
     setExpanded((prev) => {
       const next = !prev
-      chevronRotation.value = withTiming(next ? 180 : 0, {
+      chevronRotation.value = withTiming(next ? openDegrees : 0, {
         duration: brandMotion.durations.base,
         reduceMotion: ReduceMotion.System,
       })
@@ -56,11 +75,17 @@ export function AppCollapsibleSection({
   }))
 
   return (
-    <Animated.View style={styles.root} layout={LinearTransition.reduceMotion(ReduceMotion.System)}>
+    <Animated.View
+      style={grouped ? styles.rootGrouped : styles.root}
+      layout={LinearTransition.reduceMotion(ReduceMotion.System)}
+    >
       <AppPressable
         disableScale
         disableRipple
-        style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
+        style={({ pressed }) => [
+          grouped ? styles.headerGrouped : styles.header,
+          pressed && styles.headerPressed,
+        ]}
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -69,15 +94,21 @@ export function AppCollapsibleSection({
         }
         testID={testID}
       >
-        <Text style={styles.title}>{title}</Text>
-        {badge ? <AppChoiceChip variant="status" label={badge} tone="neutral" /> : null}
+        <Text style={grouped ? styles.titleGrouped : styles.title}>{title}</Text>
+        {badge && grouped ? <Text style={styles.badgeGrouped}>{badge}</Text> : null}
+        {badge && !grouped ? <AppChoiceChip variant="status" label={badge} tone="neutral" /> : null}
         <Animated.View style={chevronStyle}>
-          <Ionicons name="chevron-down-outline" size={14} color={theme.colors.textSecondary} />
+          <Ionicons
+            name={grouped ? "chevron-forward-outline" : "chevron-down-outline"}
+            size={grouped ? 16 : 14}
+            color={theme.colors.textSecondary}
+            accessible={false}
+          />
         </Animated.View>
       </AppPressable>
       {expanded ? (
         <Animated.View
-          style={styles.body}
+          style={grouped ? undefined : styles.body}
           entering={FadeIn.duration(brandMotion.durations.base).reduceMotion(ReduceMotion.System)}
           exiting={FadeOut.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
         >
@@ -118,6 +149,26 @@ function createStyles(theme: BrandTheme) {
       gap: brandSpacing.sm,
       borderTopWidth: 1,
       borderTopColor: theme.colors.divider,
+    },
+    // Grouped variant: no border and no clipping, the header sits outside the container.
+    rootGrouped: {
+      gap: brandSpacing4.sm,
+    },
+    headerGrouped: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      minHeight: GROUPED_HEADER_MIN_HEIGHT,
+      paddingHorizontal: brandSpacing4.xs,
+    },
+    titleGrouped: {
+      flex: 1,
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textSecondary,
+    },
+    badgeGrouped: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
     },
   })
 }
