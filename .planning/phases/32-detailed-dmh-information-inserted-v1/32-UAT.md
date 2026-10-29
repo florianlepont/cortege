@@ -1,7 +1,7 @@
 ---
 phase: 32
-status: partial
-updated: 2026-10-30
+status: complete
+updated: 2026-10-29
 source: owner replies in the session, iPhone 15 Pro, Release builds installed from the main checkout
 ---
 
@@ -40,10 +40,10 @@ Items 1 to 6 and 8 of the former pending list (build 8c04fecc, plans 32-20 to 32
 
 ## Pending
 
-None. VoiceOver on the iPhone: OK, reported by the owner (2026-10-29). Android back arrow contrast in dark mode: fixed (the bar tint and title take `semanticColors.textStrong`), not re-seen on the emulator.
+None. PDF with the capped counts and the G zones: seen on the device, OK (owner, 2026-10-29). VoiceOver on the iPhone: OK, reported by the owner (2026-10-29). Android back arrow contrast in dark mode: fixed (the bar tint and title take `semanticColors.textStrong`), not re-seen on the emulator.
 
 ## Not done
 
 - Expert reading of the 15 drawings and the IBP thresholds: DONE, reported by the owner on 2026-10-30 ("L'expert a relu", conclusion "Tout est bon", no correction); the expert's name and the reading date were not given and are to be added to the spec section 12.
-- PDF export for the capped counts ("par hectare") and the G zones: DONE in PR 319 (merged 2026-10-29); not yet seen on a device.
+- PDF export for the capped counts ("par hectare") and the G zones: DONE in PR 319 (merged 2026-10-29); seen on the owner's device (2026-10-29).
 - Pager bar A-J over the bottom tab bar: the owner has never seen it and it is not visible on the simulator; dropped.
