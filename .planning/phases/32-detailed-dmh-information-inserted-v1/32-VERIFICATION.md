@@ -1,7 +1,7 @@
 ---
 phase: 32-detailed-dmh-information-inserted-v1
 verified: 2026-10-28T00:00:00Z
-status: human_needed
+status: passed
 score: 3/3 roadmap criteria verified in code (criterion 3 with an owner-accepted tie on S1), 5/5 requirements covered with caveats on 2 (REQ-C-dmh-illustrations expert check waived; REQ-FT-dmh-speed rests on the owner's word)
 behavior_unverified: 0
 overrides_applied: 0
@@ -30,7 +30,7 @@ human_verification:
 
 **Phase Goal:** While recording, the observer gets detailed information on dendromicrohabitats (many potential DMH), in a tool or a dedicated page.
 **Verified:** 2026-10-28 (worktree on the commit of PR #316, `db43306f`)
-**Status:** human_needed. No roadmap truth failed; the open items are things the code cannot prove (expert accuracy of drawings and thresholds, device and Android behaviour of the later plans).
+**Status:** passed (closed 2026-10-29 by the owner's confirmations: iPhone review of plans 32-20 to 32-35, expert reading, VoiceOver, PDF on the device; Android and dark mode run on the emulator and simulator). Original finding: No roadmap truth failed; the open items are things the code cannot prove (expert accuracy of drawings and thresholds, device and Android behaviour of the later plans).
 **Re-verification:** No, initial verification.
 
 Method note: the PR landed as one squashed commit, so the "package changes only as documented" check was done on `git show HEAD -- packages api`. The SUMMARY files were used only to find where to look; every row below was read in code or run.
