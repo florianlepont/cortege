@@ -86,9 +86,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                   headerTitleStyle: {
                     fontSize: 30,
                     fontWeight: "900" as const,
-                    color: theme.colors.forest,
+                    color: theme.semanticColors.textStrong,
                   },
-                  headerTintColor: theme.colors.forest,
+                  headerTintColor: theme.semanticColors.textStrong,
                 }),
           }}
         >

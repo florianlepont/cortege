@@ -34,7 +34,7 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
     ...(Platform.OS === "ios"
       ? {}
       : {
-          headerTintColor: theme.colors.forest,
+          headerTintColor: theme.semanticColors.textStrong,
           headerTitleStyle: androidHeaderTitleStyle(theme),
         }),
   }

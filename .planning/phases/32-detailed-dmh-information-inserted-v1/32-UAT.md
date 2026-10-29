@@ -40,8 +40,7 @@ Items 1 to 6 and 8 of the former pending list (build 8c04fecc, plans 32-20 to 32
 
 ## Pending
 
-1. VoiceOver on the iPhone (reading order and labels of the F list, the guide and the G zones).
-2. Android back arrow contrast in dark mode (decision to take).
+None. VoiceOver on the iPhone: OK, reported by the owner (2026-10-29). Android back arrow contrast in dark mode: fixed (the bar tint and title take `semanticColors.textStrong`), not re-seen on the emulator.
 
 ## Not done
 
