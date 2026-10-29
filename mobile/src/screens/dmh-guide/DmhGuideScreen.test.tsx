@@ -12,6 +12,10 @@ const mockFocus = jest.fn()
 const mockScrollTo = jest.fn()
 const mockBackHandlers = new Set<() => boolean>()
 
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 24, bottom: 0, left: 0, right: 0 }),
+}))
+
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
@@ -135,6 +139,22 @@ describe("DmhGuideScreen", () => {
     expect(sheet.props.contentInsetAdjustmentBehavior).toBe("never")
     expect(sheet.props.keyboardShouldPersistTaps).toBe("handled")
     expect(sheet.props.automaticallyAdjustKeyboardInsets).toBe(true)
+  })
+
+  test("on Android the sheet keeps its bar below the status bar, on iOS it adds nothing", () => {
+    const rn = jest.requireMock("react-native") as { Platform: { OS: string } }
+    const paddingOf = () => {
+      const { tree } = render()
+      const style = byTestId(tree, "dmh-guide-screen")[0].props.style as unknown[]
+      return style.flat().find((entry) => entry && (entry as { paddingTop?: number }).paddingTop)
+    }
+    expect(paddingOf()).toBeUndefined()
+    rn.Platform.OS = "android"
+    try {
+      expect(paddingOf()).toEqual({ paddingTop: 24 })
+    } finally {
+      rn.Platform.OS = "ios"
+    }
   })
 
   test("the header row is the first child of the scroll view and sticks to the top", () => {

@@ -27,19 +27,24 @@ Only what the owner actually confirmed or reported in the conversation is record
 - G: slider scrolled the page (fixed in the gesture); several zones with computed percent (built).
 - Global: "Douteux" renamed "Incertitude"; start button "Définir le parcours" when a draft has no route.
 
-## Pending (installed on build 8c04fecc, no owner feedback yet)
+## Reviewed by the owner on the iPhone (2026-10-29)
 
-1. C, D, E: surface caption only; lower-size counter hidden when the upper density is at least 1 per hectare (capped mode).
-2. A: cover as typed value with slider; genus list per cas (29 or 34 genera).
-3. B (counted in full) strata rows with slider and typed value.
-4. G: open-area zones (add, remove, "aucune zone", total line, warning above 100 percent), slider no longer moves the page.
-5. "Incertitude" pill and badge on all factors, summary and PDF.
-6. "Définir le parcours" on a draft with no route and no factor filled.
-7. Dark mode on all redesigned screens; VoiceOver; Android (the whole phase is untested on Android).
-8. Hold-repeat feel of the +/- steppers; haptics.
+Items 1 to 6 and 8 of the former pending list (build 8c04fecc, plans 32-20 to 32-35) were tried by the owner, who answered "c'est revu !" with no issue reported. The answer covers the whole list, not each item, so no per-item wording is recorded.
+
+## Checked by the assistant on simulators (2026-10-29, Release builds of the phase 32 code, PDF not exercised, account "Marie", nothing edited)
+
+- iOS Simulator (iPhone 17 Pro, iOS 26.5, Release): dark mode on the guide catalogue and a group page with its drawing, factor A, factor F in the capped mode (counter at the cap of 2, total of 6 per hectare, header capsule) and factor G with its zones. All readable; the A-J pager bar sits above the tab bar and does not overlap it.
+- Android Emulator (Pixel_8, API 36, Release APK): light and dark on the guide, the survey summary and factors D, F and G. One defect found and fixed: the guide sheet drew its title bar and close cross under the status bar (the Android modal is edge to edge); `DmhGuideScreen` now adds the top inset on Android, as the export sheet does. Seen after the fix in light and dark.
+- Seen and not changed: on Android the back arrow of the survey pages is a dark green that is dim on the dark background; the tab bar stays visible under the guide modal.
+- VoiceOver and TalkBack were not run: a simulator cannot be listened to. Still pending on the iPhone.
+
+## Pending
+
+1. VoiceOver on the iPhone (reading order and labels of the F list, the guide and the G zones).
+2. Android back arrow contrast in dark mode (decision to take).
 
 ## Not done
 
 - Expert reading of the 15 drawings and the IBP thresholds: DONE, reported by the owner on 2026-10-30 ("L'expert a relu", conclusion "Tout est bon", no correction); the expert's name and the reading date were not given and are to be added to the spec section 12.
-- PDF export not updated for the capped counts (printed without "par hectare") and not for the G zones.
-- Pager bar A-J overlaps the bottom tab bar on factor pages (pre-existing).
+- PDF export for the capped counts ("par hectare") and the G zones: DONE in PR 319 (merged 2026-10-29); not yet seen on a device.
+- Pager bar A-J over the bottom tab bar: the owner has never seen it and it is not visible on the simulator; dropped.
