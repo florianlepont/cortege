@@ -32,7 +32,7 @@
 //                   deploy, retry after the env file is fixed, and the one-time self re-exec
 //                   (D-21) with its loop guard.
 //   production      Read-only, for after the deploy:
-//                   SIM_BASE=https://cortege.algernon.ovh/v1 node scripts/owner-check-simulation.mjs production
+//                   SIM_BASE=https://cortege.algernon.is/v1 node scripts/owner-check-simulation.mjs production
 //                   /health 200, /debug/test-token 404, /surveys without a token 401,
 //                   /public/map-items 200 with items (also with a mainland-France bbox, and 400
 //                   for a malformed bbox), no CORS headers for a foreign origin, and
@@ -53,7 +53,7 @@
 //   SIM_API_DIR       API workspace, absolute or relative to SIM_REPO_DIR (default api); the
 //                     built files are read from <SIM_API_DIR>/dist
 //   SIM_FILES_HEALTH  MinIO health URL for production
-//                     (default https://cortege-files.algernon.ovh/minio/health/live)
+//                     (default https://cortege-files.algernon.is/minio/health/live)
 import { spawn, spawnSync } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import {
@@ -84,7 +84,7 @@ const CHECK_CONFIG_JS = path.join(API_DIR, "dist", "config", "check-config.js")
 const UPDATE_STACK = path.join(REPO_DIR, "infra", "vps", "update-stack.sh")
 const CHECK_ENV = path.join(REPO_DIR, "infra", "vps", "check-env.sh")
 const FILES_HEALTH =
-  process.env.SIM_FILES_HEALTH ?? "https://cortege-files.algernon.ovh/minio/health/live"
+  process.env.SIM_FILES_HEALTH ?? "https://cortege-files.algernon.is/minio/health/live"
 const FOREIGN_ORIGIN = "https://evil.example"
 
 const results = []

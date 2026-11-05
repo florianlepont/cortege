@@ -61,7 +61,7 @@ Response `200`:
   characters. The image of a commit is also tagged `ghcr.io/florianlepont/cortege:sha-<commit>`.
 - Nothing else about the build or the environment is exposed (no library versions, no settings).
 
-Check the deployed version: `curl -s https://cortege.algernon.ovh/v1/health`.
+Check the deployed version: `curl -s https://cortege.algernon.is/v1/health`.
 
 ### GET /map-styles/{name}.json
 
