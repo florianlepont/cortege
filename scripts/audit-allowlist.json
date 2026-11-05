@@ -2,11 +2,6 @@
   "comment": "High-severity advisories with no patched release upstream, accepted until one ships. Each entry must name the advisory, why it is accepted, and where it comes from. scripts/audit-check.mjs fails when an entry no longer matches an advisory, so the list shrinks by itself.",
   "advisories": [
     {
-      "id": "GHSA-86w9-cpqp-85rv",
-      "package": "node-forge",
-      "reason": "RSA PKCS#1 v1.5 signature verification flaw. No patched release (1.4.0 is the latest and is affected). Reached only through @expo/cli code signing in the Expo build tooling, which verifies nothing at runtime in the app or the API."
-    },
-    {
       "id": "GHSA-mrhx-c7xc-m3w5",
       "package": "zod",
       "reason": "Memory exhaustion when validating oversized constrained collections. The patched release is zod 4.6.6, but every consumer pins the 3.x line (3.25.76 is the latest 3.x and is affected). Reached only through @expo/cli and jimp, which are build tooling (Expo prebuild and icon generation); no source file in api, mobile or the package imports zod, and the app and the API never run it at runtime. Accepted with the owner's approval on 2026-10-26, until Expo and jimp move to zod 4."
