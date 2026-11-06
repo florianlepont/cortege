@@ -28,6 +28,7 @@ import type {
   SearchParcelItem,
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
+import { searchDmhGroups } from "../app/dmh-guide/search"
 import type { LocalSurvey } from "../storage/types"
 import { useGlobalSearch } from "./useGlobalSearch"
 import { SEARCH_DEBOUNCE_MS } from "./useSearchGroup"
@@ -155,7 +156,41 @@ describe("useGlobalSearch", () => {
     expect(result.current.parcels.status).toBe("idle")
     expect(result.current.busy).toBe(false)
     expect(result.current.settled).toBe(true)
-    expect(result.current.order).toEqual(["mine", "community", "places", "parcels"])
+    expect(result.current.order).toEqual(["mine", "community", "places", "parcels", "guide"])
+  })
+
+  it("matches the guide groups on the phone, with no request, never as the best result", async () => {
+    const { result } = await renderHook((params: Params) => useGlobalSearch(params), {
+      initialProps: { ...base, query: "lierre" },
+    })
+    // At once, before the typing pause has elapsed.
+    expect(result.current.guide).toEqual(searchDmhGroups("lierre"))
+    expect(result.current.guide.length).toBeGreaterThan(0)
+    expect(result.current.best).toBeNull()
+    expect(result.current.resultCount).toBe(result.current.guide.length)
+    await flush()
+    expect(result.current.best).toBeNull()
+  })
+
+  it("offline or without a token, the guide groups are still found", async () => {
+    mockOffline = true
+    const { result, rerender } = await renderHook((params: Params) => useGlobalSearch(params), {
+      initialProps: { ...base, query: "pic" },
+    })
+    await flush()
+    expect(result.current.guide).toEqual(searchDmhGroups("pic"))
+    expect(result.current.guide.length).toBeGreaterThan(0)
+    mockOffline = false
+    await rerender({ ...base, query: "pic", accessToken: null })
+    expect(result.current.guide).toEqual(searchDmhGroups("pic"))
+    expect(mockCommunity).not.toHaveBeenCalled()
+  })
+
+  it("lists no guide group for an empty or too short query", async () => {
+    const { result } = await renderHook((params: Params) => useGlobalSearch(params), {
+      initialProps: { ...base, query: " p " },
+    })
+    expect(result.current.guide).toEqual([])
   })
 
   it("finds an own survey by its note alone, flagged, once the notes are read (D-07)", async () => {

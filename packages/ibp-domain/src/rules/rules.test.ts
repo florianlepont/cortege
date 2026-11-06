@@ -101,7 +101,27 @@ describe("v3.0 rules (D-05: pre-01.8 rules with BUG-1 and BUG-2 fixed)", () => {
       score: 5,
     })
     expect(v30("C", { bmg_count: 1, bmm_count: 1, surface_ha: 0 })).toEqual({ kind: "invalid" })
-    expect(v30("C", { bmg_count: 1, surface_ha: 1 })).toEqual({ kind: "invalid" })
+    expect(v30("C", { bmg_count: 1, surface_ha: 2 })).toEqual({ kind: "invalid" })
+  })
+
+  it("C/D/E: the lower class is not needed from 1 upper per hectare, and then not read", () => {
+    expect(v30("C", { bmg_count: 1, surface_ha: 1 })).toEqual({ kind: "scored", score: 2 })
+    expect(v30("D", { bmg_count: 6, surface_ha: 2 })).toEqual({ kind: "scored", score: 5 })
+    expect(v30("E", { tgb_count: 4, surface_ha: 1 })).toEqual({ kind: "scored", score: 2 })
+    expect(v30("E", { tgb_count: 5, gb_count: "", surface_ha: 1 })).toEqual({
+      kind: "scored",
+      score: 5,
+    })
+    // Below 1 per hectare, or a lower count that is present but not a number: still unreadable.
+    expect(v30("E", { tgb_count: 1, surface_ha: 2 })).toEqual({ kind: "invalid" })
+    expect(v30("C", { bmg_count: 3, bmm_count: "many", surface_ha: 1 })).toEqual({
+      kind: "invalid",
+    })
+    // A typed lower count never changes a score the upper class already fixes.
+    expect(v30("C", { bmg_count: 3, bmm_count: 9, surface_ha: 1 })).toEqual({
+      kind: "scored",
+      score: 5,
+    })
   })
 
   it("E: lower class alone for score 1", () => {
@@ -254,7 +274,7 @@ describe("v3.2 rules (CH-1..CH-5)", () => {
       kind: "scored",
       score: 5,
     })
-    expect(v32("C", { bmg_count: 3, surface_ha: 1 })).toEqual({ kind: "invalid" })
+    expect(v32("C", { bmg_count: 1, surface_ha: 2 })).toEqual({ kind: "invalid" })
     expect(v32("E", { tgb_count: 1, gb_count: 1, surface_ha: 2 })).toEqual({
       kind: "scored",
       score: 1,
@@ -272,6 +292,25 @@ describe("v3.2 rules (CH-1..CH-5)", () => {
       score: 5,
     })
     expect(v32("E", { tgb_count: 5, gb_count: 0 })).toEqual({ kind: "invalid" })
+  })
+
+  it("C/D/E: the lower class is not needed from 1 upper per hectare, and then not read", () => {
+    expect(v32("C", { bmg_count: 3, surface_ha: 1 })).toEqual({ kind: "scored", score: 5 })
+    expect(v32("D", { bmg_count: 4, surface_ha: 2 })).toEqual({ kind: "scored", score: 2 })
+    expect(v32("E", { tgb_count: 1, gb_count: null, surface_ha: 1 })).toEqual({
+      kind: "scored",
+      score: 2,
+    })
+    expect(v32("E", { tgb_count: 5, surface_ha: 1 })).toEqual({ kind: "scored", score: 5 })
+    // Below 1 per hectare, or a lower count that is present but not a number: still unreadable.
+    expect(v32("E", { tgb_count: 1, surface_ha: 2 })).toEqual({ kind: "invalid" })
+    expect(v32("C", { bmg_count: 3, bmm_count: "many", surface_ha: 1 })).toEqual({
+      kind: "invalid",
+    })
+    expect(v32("C", { bmg_count: 3, bmm_count: 9, surface_ha: 1 })).toEqual({
+      kind: "scored",
+      score: 5,
+    })
   })
 
   it("G: cas scales; missing cas is incomplete", () => {

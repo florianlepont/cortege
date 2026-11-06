@@ -165,6 +165,37 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
     })
   })
 
+  test("route first: an editable draft with no route and nothing scored defines the parcours", () => {
+    expect(resolveFinishCta(survey(), false, false, 0, "A", true)).toEqual({
+      kind: "route",
+      label: c.defineRoute,
+    })
+    expect(c.defineRoute).toBe("Définir le parcours")
+  })
+
+  test("once the route exists, or factors are already filled, the label is as before", () => {
+    expect(resolveFinishCta(survey(), false, false, 0, "A", false)).toEqual({
+      kind: "next",
+      label: c.start,
+      factor: "A",
+    })
+    expect(resolveFinishCta(survey(), false, false, 3, "D", true)).toEqual({
+      kind: "next",
+      label: c.continue,
+      factor: "D",
+    })
+  })
+
+  test("a finished survey or an unknown count never shows the route button", () => {
+    expect(resolveFinishCta(survey({ status: "submitted" }), false, true, 0, null, true)).toEqual({
+      kind: "hidden",
+    })
+    expect(resolveFinishCta(survey(), false, null, null, null, true)).toEqual({
+      kind: "disabled",
+      label: c.remainingUnknown,
+    })
+  })
+
   test("all ten factors filled but the context missing asks for the context", () => {
     expect(resolveFinishCta(survey(), false, false, 10, null)).toEqual({
       kind: "disabled",

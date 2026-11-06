@@ -60,7 +60,7 @@
       [
         "react-native-auth0",
         {
-          "domain": "cortege-auth.algernon.ovh"
+          "domain": "auth.algernon.is"
         }
       ],
       "./plugins/with-scene-delegate",

@@ -388,7 +388,7 @@ longue, plus le relevé l'est : le texte officiel demande de choisir les facteur
 | B | nombre de strates présentes (couvrant au moins 20 % de la surface échantillonnée) | couvert de chaque strate, en pourcentage de la surface échantillonnée | **nouvelle saisie** `strata_cover` (section 7) |
 | C et D | au plus 3 bois morts de grosse dimension et 1 de dimension moyenne par hectare | tous les bois morts | rien de plus : les comptes sont déjà sans plafond ; textes et indices changent |
 | E | au plus 5 très gros bois et 1 gros bois par hectare | tous les très gros bois et gros bois | idem |
-| F | au plus 2 arbres par hectare et par groupe de dendromicrohabitats, au plus 8 au total | tous les arbres porteurs, groupe par groupe | **nouvelle saisie** `dmh_counts` (section 7) |
+| F | au plus 2 arbres par hectare et par groupe de dendromicrohabitats, au plus 8 au total | tous les arbres porteurs, groupe par groupe | **nouvelle saisie** `dmh_counts` (section 7) ; en plafonné aussi, un compteur de 0 à 2 arbres par hectare par groupe (section 7, suite de la phase 32) |
 | G | pourcentage de milieux ouverts, avec arrêt à 5 % (score maximal) | pourcentage sans arrêt à 5 % (M p. 24) | rien de plus : le pourcentage est déjà saisi sans plafond |
 | H | classe | sans objet | rien |
 | I et J | au plus 2 types comptés | tous les types observés | rien de plus : le nombre de types est déjà saisi sans plafond |
@@ -421,6 +421,20 @@ les groupes sont additionnés (M p. 9 et p. 17). Le calcul est un utilitaire pur
 (`dmhDensityPerHa`). La nouvelle clé n'est **pas** `dmh_group_counts` : cette clé existe déjà,
 c'est un tableau de nombres que le calculateur actuel plafonne à 2 sans jamais diviser par une
 surface ; lui donner un autre sens changerait le score de relevés existants.
+
+**F en relevé plafonné : `dmh_counts` par hectare (suite de la phase 32, décision du propriétaire du
+2026-10-28).** La fiche officielle demande aussi en relevé plafonné « au maximum 2 arbres/ha par
+groupe de DMH et total plafonné à 8 arbres/ha ». Le relevé plafonné a donc lui aussi un compteur par
+groupe, mais l'unité n'est pas la même : la valeur est un nombre entier d'arbres **par hectare** de
+0 à 2 (`DMH_GROUP_DENSITY_CAP_PER_HA`), sans surface et sans division, sans fraction. L'application
+écrit `dmh_counts` avec `dmh_groups` et une clé notée `trees_per_ha` dérivée, la somme des
+compteurs (`cappedDmhTotalPerHa`, chaque groupe tenu à 2) ; elle n'écrit pas `surface_ha`. Le total
+n'est pas ramené à 8 : les classes de score s'arrêtent déjà à 8, le plafond de 8 de la fiche n'est
+qu'un affichage. Le nombre global d'arbres par hectare reste modifiable tant qu'aucun compteur n'est
+au-dessus de 0 ; ensuite il est dérivé et non modifiable. Toucher un compteur reprend la main sur un
+nombre tapé : le total dérivé le remplace. Un relevé plafonné enregistré avant (nombre tapé et
+cases cochées seulement) s'ouvre tel quel et reste valide. La règle U-O10 reste vraie : aucun
+calculateur ne lit `dmh_counts` (cas de parité `MAT-F-CAP-01` et `MAT-F-CAP-02`).
 
 **Règle U-O10 (valeur proposée).** Une clé de détail n'est jamais lue par un calculateur de score.
 Tant qu'un facteur est compté en entier, l'application écrit sa clé notée (`strata_count`,

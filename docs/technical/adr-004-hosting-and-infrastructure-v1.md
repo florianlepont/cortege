@@ -17,7 +17,7 @@ budget approval requested on that basis. That plan was never implemented.
 The infrastructure that is actually running today is different again, and was built and documented
 incrementally in `infra/vps/README.md` without ever being ratified as a decision:
 
-- A VPS (`cortege.algernon.ovh` / `cortege-files.algernon.ovh`) the project already pays for and
+- A VPS (`cortege.algernon.is` / `cortege-files.algernon.is`) the project already pays for and
   shares with other projects, replacing an earlier Freebox (home-connection) deployment that was
   retired because its self-hosted CI runner became unsafe once the repository went public, and
   because a residential connection with a dynamic address was never a sound production target.
@@ -34,7 +34,7 @@ incrementally in `infra/vps/README.md` without ever being ratified as a decision
   needs no inbound access beyond what Caddy already serves.
 - **MinIO** (`pgsty/minio`, pinned by digest — the upstream `minio/minio` image is no longer
   published) as the S3-compatible object store for attachments and profile pictures, reachable
-  through the host Caddy under `cortege-files.algernon.ovh` because attachment URLs are presigned
+  through the host Caddy under `cortege-files.algernon.is` because attachment URLs are presigned
   and the signature covers the `Host` header.
 
 This stack has been running in production, serving real field surveys, since the Freebox
@@ -52,13 +52,13 @@ throwing that away for no operational gain, and would leave the object storage m
 **The hosting and infrastructure target is the VPS stack already running in production:**
 
 - **Compute**: a VPS running Docker Compose (`infra/docker-compose.vps.yml`).
-- **Reverse proxy / TLS**: the host's Caddy instance, serving `cortege.algernon.ovh` (API) and
-  `cortege-files.algernon.ovh` (object storage), per `infra/vps/Caddyfile.snippet`.
+- **Reverse proxy / TLS**: the host's Caddy instance, serving `cortege.algernon.is` (API) and
+  `cortege-files.algernon.is` (object storage), per `infra/vps/Caddyfile.snippet`.
 - **Database**: PostgreSQL 16 in a Compose service, with the durability program of Phase 11
   (scheduled backups, a documented and rehearsed restore, and hardened migrations) as the thing
   that takes it out of the "PoC fonctionnel" status noted in the presentation document.
 - **Object storage**: MinIO (`pgsty/minio`, pinned by digest), S3-compatible, reachable at
-  `OBJECT_STORAGE_ENDPOINT=https://cortege-files.algernon.ovh`.
+  `OBJECT_STORAGE_ENDPOINT=https://cortege-files.algernon.is`.
   A managed S3-compatible provider (Scaleway Object Storage, AWS S3) stays a valid future upgrade
   — the API's storage layer is already provider-agnostic (`api/src/storage/storage.service.ts`,
   `OBJECT_STORAGE_MODE=local|minio` plus standard S3 env vars) — but is not needed today and is

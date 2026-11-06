@@ -751,7 +751,216 @@ const UNCAPPED_DETAIL_CASES: IbpParityCase[] = [
   })),
 ]
 
-/** Every parity case: v3.0, both versions, v3.2, dispatch, annotations, détail keys (matrix v2 order). */
+/**
+ * Phase 32 follow-up 32-35 (owner decision 2026-10-30): G also carries `open_areas_ha`, the open
+ * flowering zones in hectares from which the app derives the scored `open_flowering_percent`. No
+ * scorer reads the list: each case expects what the same G gives without it. Scores come from the
+ * matrix thresholds (cas 1 and ACA collineen: 1 to 5 % gives 5, 0 gives 0, above 5 gives 2). In the
+ * complete set G replaces its direct score 2: G = 5 gives stand 5+2+1+0+2+5+5 = 20, total 27.
+ */
+const OPEN_AREAS_2_PERCENT = [0.3, 0.1]
+const OPEN_AREAS_OVER_SURFACE = [30, 20]
+
+const OPEN_AREAS_CASES: IbpParityCase[] = [
+  // G: 2 % gives G = 5, with or without the zones.
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-01@both#${suffix}-draft`,
+    matrixId: "MAT-G-UNC-01@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 2, open_areas_ha: OPEN_AREAS_2_PERCENT } },
+    expect: { ok: true, scores: { G: 5 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-01@both#${suffix}-submit`,
+    matrixId: "MAT-G-UNC-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      G: { open_flowering_percent: 2, open_areas_ha: OPEN_AREAS_2_PERCENT },
+    },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, G: 5 },
+      totals: { ibp_peuplement_gestion: 20, ibp_contexte: 7, ibp_total: 27 },
+      issueCodes: [],
+    },
+  })),
+  // G: zones larger than the surface give a percent held at 100 (G = 2, above 5 %), the list itself
+  // is not read; an empty list with 0 % is G = 0 ("no zone").
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-02@both#${suffix}-over`,
+    matrixId: "MAT-G-UNC-02@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 100, open_areas_ha: OPEN_AREAS_OVER_SURFACE } },
+    expect: { ok: true, scores: { G: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-G-UNC-02@both#${suffix}-none`,
+    matrixId: "MAT-G-UNC-02@both",
+    mode: "draft",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { G: { open_flowering_percent: 0, open_areas_ha: [] } },
+    expect: { ok: true, scores: { G: 0 }, issueCodes: [] },
+  })),
+]
+
+/**
+ * Phase 32 follow-up (owner decision 2026-10-28): in the capped survey mode F also carries
+ * `dmh_counts`, a whole number of trees PER HECTARE from 0 to 2 per group, with the scored
+ * `trees_per_ha` derived by the app as their sum (`cappedDmhTotalPerHa`) and no `surface_ha`. No
+ * scorer reads the counts: each case expects what the same F gives with `trees_per_ha` alone.
+ */
+const CAPPED_COUNTS_3 = { dmh_01: 2, dmh_05: 1 }
+const CAPPED_GROUPS_3 = ["dmh_01", "dmh_05"]
+
+const CAPPED_COUNTS_CASES: IbpParityCase[] = [
+  // F: 3 trees per hectare give F = 2, with or without the groups and the counts, no surface.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-01@both#${suffix}-draft`,
+    matrixId: "MAT-F-CAP-01@both",
+    mode: "draft",
+    factors: {
+      F: { trees_per_ha: 3, dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 },
+    },
+    expect: { ok: true, scores: { F: 2 }, issueCodes: [] },
+  })),
+  // The same with F = 2 in the complete set: stand 5+2+1+0+2+2+2 = 14, total 14 + 7 = 21.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-01@both#${suffix}-submit`,
+    matrixId: "MAT-F-CAP-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      F: { trees_per_ha: 3, dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 },
+    },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, F: 2 },
+      totals: { ibp_peuplement_gestion: 14, ibp_contexte: 7, ibp_total: 21 },
+      issueCodes: [],
+    },
+  })),
+  // F: the capped counts without trees_per_ha are an unreadable F, like MAT-F-UNC-02.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-CAP-02@both#${suffix}`,
+    matrixId: "MAT-F-CAP-02@both",
+    mode: "draft",
+    factors: { F: { dmh_groups: CAPPED_GROUPS_3, dmh_counts: CAPPED_COUNTS_3 } },
+    expect: { ok: false, scores: { F: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+]
+
+/**
+ * Phase 32 follow-up (owner decision 2026-10-30): the lower diameter class (C/D BMm, E GB) only
+ * decides the score while the upper class is under 1 per hectare, so its count is not required from
+ * 1 upper per hectare and is not read then. Below that, a missing lower count is still an unreadable
+ * factor. Scores come from the matrix thresholds (upper per hectare: 1 to under 3 gives 2 for C and D,
+ * 3 or more gives 5; E: 1 to under 5 gives 2, 5 or more gives 5). In the complete set the factor
+ * replaces its direct score: C = 5 gives stand 5+2+5+0+2+5+2 = 21, total 28; D = 2 gives stand
+ * 5+2+1+2+2+5+2 = 19, total 26; E = 5 gives stand 5+2+1+0+5+5+2 = 20, total 27.
+ */
+const LOWER_COUNT_CASES: IbpParityCase[] = [
+  // C: BMg only, 4 on 2 ha is 2 per hectare: C = 2. 6 on 2 ha is 3 per hectare: C = 5.
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-01@both#${suffix}-draft`,
+    matrixId: "MAT-LOW-01@both",
+    mode: "draft",
+    factors: { C: { bmg_count: 4, surface_ha: 2 } },
+    expect: { ok: true, scores: { C: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-01@both#${suffix}-submit`,
+    matrixId: "MAT-LOW-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, C: { bmg_count: 6, surface_ha: 2 } },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, C: 5 },
+      totals: { ibp_peuplement_gestion: 21, ibp_contexte: 7, ibp_total: 28 },
+      issueCodes: [],
+    },
+  })),
+  // D: BMg only, exactly 1 per hectare (the line): D = 2, and a typed BMm of 9 changes nothing.
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-02@both#${suffix}-draft`,
+    matrixId: "MAT-LOW-02@both",
+    mode: "draft",
+    factors: { D: { bmg_count: 1, surface_ha: 1 } },
+    expect: { ok: true, scores: { D: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-02@both#${suffix}-with-lower`,
+    matrixId: "MAT-LOW-02@both",
+    mode: "draft",
+    factors: { D: { bmg_count: 1, bmm_count: 9, surface_ha: 1 } },
+    expect: { ok: true, scores: { D: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-02@both#${suffix}-submit`,
+    matrixId: "MAT-LOW-02@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, D: { bmg_count: 1, surface_ha: 1 } },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, D: 2 },
+      totals: { ibp_peuplement_gestion: 19, ibp_contexte: 7, ibp_total: 26 },
+      issueCodes: [],
+    },
+  })),
+  // E: TGB only, 5 on 1 ha is 5 per hectare: E = 5; 4 on 1 ha: E = 2.
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-03@both#${suffix}-draft`,
+    matrixId: "MAT-LOW-03@both",
+    mode: "draft",
+    factors: { E: { tgb_count: 4, surface_ha: 1 } },
+    expect: { ok: true, scores: { E: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-03@both#${suffix}-submit`,
+    matrixId: "MAT-LOW-03@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, E: { tgb_count: 5, surface_ha: 1 } },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, E: 5 },
+      totals: { ibp_peuplement_gestion: 20, ibp_contexte: 7, ibp_total: 27 },
+      issueCodes: [],
+    },
+  })),
+  // Under 1 per hectare the lower count is needed: C with 1 BMg on 2 ha and no BMm is unreadable,
+  // in a draft (blocking invalid input) as at submit; a lower count that is not a number too.
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-04@both#${suffix}-draft`,
+    matrixId: "MAT-LOW-04@both",
+    mode: "draft",
+    factors: { C: { bmg_count: 1, surface_ha: 2 } },
+    expect: { ok: false, scores: { C: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-04@both#${suffix}-submit`,
+    matrixId: "MAT-LOW-04@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, E: { tgb_count: 1, surface_ha: 2 } },
+    expect: { ok: false, scores: { E: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-LOW-05@both#${suffix}`,
+    matrixId: "MAT-LOW-05@both",
+    mode: "draft",
+    factors: { C: { bmg_count: 3, bmm_count: "many", surface_ha: 1 } },
+    expect: { ok: false, scores: { C: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+]
+
+/** Every parity case: v3.0, both versions, v3.2, dispatch, annotations, détail keys, lower counts (matrix v2 order). */
 export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...V30_CASES,
   ...BOTH_CASES,
@@ -759,6 +968,9 @@ export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...DISPATCH_CASES,
   ...ANNOTATION_CASES,
   ...UNCAPPED_DETAIL_CASES,
+  ...OPEN_AREAS_CASES,
+  ...CAPPED_COUNTS_CASES,
+  ...LOWER_COUNT_CASES,
 ]
 
 /** Submit readiness per version (matrix v2 "Submit readiness", rows R-n). */

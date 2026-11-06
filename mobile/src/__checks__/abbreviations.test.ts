@@ -19,15 +19,22 @@ import { fr } from "../i18n"
 //                term uses it today, the mechanism stays for the fixtures
 //   written-out  the long form must occur in the same catalogue file (case-insensitive, spaces and
 //                apostrophes normalised); the texts live in `fr.abbreviations.terms` (D-04)
+//   file-only    a term the owner allowed bare in the listed catalogue files only, no info button
+//                (DMH: the title of the factor F page, owner request of 2026-10-28)
 //   dev-only     shown only by `shouldShowDevTools()`: allowed in the listed files only
 //
 // Single capital letters (factor letters, the north arrow) are labels and are never candidates;
 // shouted words ("HORS LIGNE", "10 FACTEURS") are words in capitals and are skipped.
 
-type Treatment = "allowlist" | "info" | "written-out" | "dev-only"
+type Treatment = "allowlist" | "info" | "written-out" | "dev-only" | "file-only"
 type TermPolicy = { treatment: Treatment; definedIn?: string[]; files?: string[] }
 type Policy = Record<string, TermPolicy>
-type Reason = "unregistered" | "not-written-out" | "dev-only-outside" | "snake-case"
+type Reason =
+  | "unregistered"
+  | "not-written-out"
+  | "dev-only-outside"
+  | "file-only-outside"
+  | "snake-case"
 type Finding = { file: string; line: number; token: string; reason: Reason }
 type Leaf = { text: string; line: number }
 type LongForms = Record<string, string>
@@ -53,6 +60,7 @@ const POLICY: Policy = {
   CC0: { treatment: "written-out" },
   "CC BY": { treatment: "written-out" },
   "WGS 84": { treatment: "written-out" },
+  DMH: { treatment: "file-only", files: ["factor-pager.ts"] },
   DEV: { treatment: "dev-only", files: ["settings.ts", "auth-gate.ts"] },
   URL: { treatment: "dev-only", files: ["settings.ts", "auth-gate.ts"] },
   API: { treatment: "dev-only", files: ["settings.ts", "auth-gate.ts"] },
@@ -179,6 +187,10 @@ function findUnexplainedAbbreviations(
           } else if (rule.treatment === "dev-only") {
             if (!(rule.files ?? []).includes(path.basename(file))) {
               findings.push({ file, line, token: key, reason: "dev-only-outside" })
+            }
+          } else if (rule.treatment === "file-only") {
+            if (!(rule.files ?? []).includes(path.basename(file))) {
+              findings.push({ file, line, token: key, reason: "file-only-outside" })
             }
           }
           return " ".repeat(match.length)
@@ -397,6 +409,20 @@ describe("findUnexplainedAbbreviations", () => {
     expect(run(listed).map(({ token }) => token)).toEqual(["API"])
     expect(run(elsewhere)).toEqual([
       { file: elsewhere, line: 1, token: "URL", reason: "dev-only-outside" },
+    ])
+  })
+
+  it("allows a file-only term in its listed file and reports it elsewhere", () => {
+    const policy: Policy = {
+      ...FIXTURE_POLICY,
+      DMH: { treatment: "file-only", files: ["pager.ts"] },
+    }
+    const listed = writeFixture("fr/pager.ts", 'export const a = "DMH"\n')
+    const elsewhere = writeFixture("fr/home.ts", 'export const a = "Liste des DMH"\n')
+
+    expect(run(listed, policy)).toEqual([])
+    expect(run(elsewhere, policy)).toEqual([
+      { file: elsewhere, line: 1, token: "DMH", reason: "file-only-outside" },
     ])
   })
 

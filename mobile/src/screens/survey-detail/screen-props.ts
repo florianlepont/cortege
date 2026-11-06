@@ -6,6 +6,7 @@ import {
   SurveyEventItem,
   VegetationStage,
 } from "../../app/types"
+import type { SurveyExportRequest } from "../../navigation/types"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import type { HeaderNavigation } from "./useSurveyDetailHeader"
 import type { PulseNavigation } from "./useVisiblePulse"
@@ -31,6 +32,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onDeleteSurvey: (surveyId: string) => void
   /** Opens the submission step (the finish sheet: visibility choice, then the send), Phase 29. */
   onOpenFinish: (surveyId: string) => void
+  /** Opens the route step in edit mode for a draft with no route ("Définir le parcours"). */
+  onDefineRoute: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
@@ -52,6 +55,12 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onOpenHistory: () => void
   /** Opens "Journal du relevé" from the "…" menu (D-02); stable, the header items capture it. */
   onOpenJournal: () => void
+  /** The PDF chosen in the export choice sheet, applied once per nonce (phase 33). */
+  exportRequest?: SurveyExportRequest
+  /** Opens the export choice sheet for this survey (phase 33). */
+  onOpenExportChoice: (surveyId: string) => void
+  /** Clears the request parameter once it is taken. */
+  onExportRequestHandled: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
 }

@@ -60,13 +60,15 @@ export const canFinishSurvey = (
 /**
  * The single button at the bottom (OA-40). `hidden` once the survey is finished; `next` opens the
  * first factor still to fill ("Commencer" with none filled, then "Continuer"); `disabled` says
- * what is missing (a name, the route, or a blocked sync); `ready` finishes the survey. There is no sync step
- * to wait for (D-25).
+ * what is missing (a name, the route, or a blocked sync); `ready` finishes the survey; `route` replaces
+ * "Commencer la notation" on an editable draft that has no route yet (route first) and opens the route
+ * step. There is no sync step to wait for (D-25).
  */
 export type FinishCta =
   | { kind: "hidden" }
   | { kind: "ready"; label: string }
   | { kind: "next"; label: string; factor: FactorKey }
+  | { kind: "route"; label: string }
   | { kind: "disabled"; label: string }
 
 export const resolveFinishCta = (
@@ -75,6 +77,7 @@ export const resolveFinishCta = (
   isComplete: boolean | null,
   filledFactorCount: number | null,
   nextFactor: FactorKey | null,
+  routeMissing = false,
 ): FinishCta => {
   if (survey.status === "submitted") return { kind: "hidden" }
   if (canFinishNow) return { kind: "ready", label: c.finish }
@@ -87,6 +90,7 @@ export const resolveFinishCta = (
   }
   if (filledFactorCount === null) return { kind: "disabled", label: c.remainingUnknown }
   if (nextFactor === null) return { kind: "disabled", label: c.contextMissing }
+  if (routeMissing && filledFactorCount === 0) return { kind: "route", label: c.defineRoute }
   return {
     kind: "next",
     label: filledFactorCount === 0 ? c.start : c.continue,

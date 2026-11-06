@@ -1,8 +1,15 @@
-import { isCnpfFactorAGenusCode, type CnpfFactorAGenusCode } from "@cortege/ibp-domain"
+import {
+  IBP_METHOD_V3_2,
+  isCnpfFactorAGenusCode,
+  isIbpCas,
+  type CnpfFactorAGenusCode,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
 
 // Factor A's genus list travels through the generic FactorField channel as a single string
 // (mobile/src/app/types.ts: FactorField.value is always a plain string), the same convention
-// FactorChipsInput already uses for B/I/J's derived counts. Here the string carries the actual
+// the choice lists of B/I/J use for their derived counts. Here the string carries the actual
 // genus codes themselves, comma-joined, since Factor A needs identity (which genus), not just a
 // count: a recognition suggestion must be able to add one specific genus to whatever the surveyor
 // already picked, and reopening a draft must show the same genera again, not just their number.
@@ -44,4 +51,16 @@ export function addGenusToListValue(value: string, genus: CnpfFactorAGenusCode):
   const current = parseGenusListValue(value)
   if (current.includes(genus)) return serializeGenusListValue(current)
   return serializeGenusListValue([...current, genus])
+}
+
+/**
+ * The cas the package keys A's genus list by (`allowedFactorAGenusCodes`, `readFactorAGenusCount`):
+ * the survey's `ibp_cas` under v3.2, null for v3.0 (no cas, the supplementary genera never count)
+ * and for a v3.2 survey whose cas is not set yet.
+ */
+export function genusListCas(
+  methodVersion: IbpMethodVersion | null,
+  ibpCas: unknown,
+): IbpCas | null {
+  return methodVersion === IBP_METHOD_V3_2 && isIbpCas(ibpCas) ? ibpCas : null
 }

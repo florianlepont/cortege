@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native"
 import type { CompositeNavigationProp } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type {
+  DmhGroupCode,
   SearchCommunityResponse,
   SearchParcelItem,
   SearchParcelsResponse,
@@ -17,6 +18,7 @@ import {
   PLACES_RESULT_LIMIT,
   SEARCH_MIN_LENGTH,
   isSearchActive,
+  matchGuideGroups,
   matchOwnSurveys,
 } from "../../app/global-search"
 import { normalizeSearchQuery } from "../../app/search-text"
@@ -49,7 +51,9 @@ const t = fr.search
  * The full list of one search group (25-12, D-02 "Voir les N", D-04, U-11, U-12), pushed from the
  * search page. "Mes relevés" matches the member's own surveys on the phone through the surveys
  * context, so the chips and the sort of the survey list apply (and are reset when the page closes);
- * the three other groups ask the API for this page's own query, with the loading, offline, error
+ * "Guide des dendromicrohabitats" matches the bundled guide groups on the phone and opens the guide
+ * sheet;
+ * the three network groups ask the API for this page's own query, with the loading, offline, error
  * and retry of `useSearchGroup`. A member result lands here as the community list of that author
  * (`memberName`), without any profile page. Every row opens the target it opens in the summary;
  * the query is kept as a recent search and the selection haptic plays. The query lives in the
@@ -69,10 +73,11 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
   const author = memberName?.trim() || undefined
 
   // The three network groups share one hook call (hooks cannot be conditional): the group decides
-  // what is fetched, and "Mes relevés" never is.
+  // what is fetched, and "Mes relevés" and the guide never are.
+  const isNetworkGroup = group !== "mine" && group !== "guide"
   const network = useSearchGroup({
     query: normalized,
-    enabled: group !== "mine" && accessToken !== null && isSearchActive(normalized),
+    enabled: isNetworkGroup && accessToken !== null && isSearchActive(normalized),
     offline,
     immediate: true,
     fetcher: (text): Promise<GroupData> => {
@@ -109,12 +114,19 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
     [group, state.surveys, normalized, ownNotes],
   )
 
+  // The guide groups come from the bundled catalogue, like the own surveys come from the phone.
+  const guideRows = useMemo(
+    () => (group === "guide" ? matchGuideGroups(normalized) : []),
+    [group, normalized],
+  )
+
   const community = group === "community" ? (network.data as SearchCommunityResponse | null) : null
   const places = group === "places" ? (network.data as SearchPlacesResponse | null) : null
   const parcels = group === "parcels" ? (network.data as SearchParcelsResponse | null) : null
 
   let count: number | null = null
   if (group === "mine") count = ownRows.length
+  else if (group === "guide") count = guideRows.length
   else if (community) count = community.surveys.length + (author ? 0 : community.members.length)
   else if (places) count = places.items.length
   else if (parcels) count = parcels.items.length
@@ -191,6 +203,10 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
       params: { focus: parcelFocus(item, Date.now()) },
     })
   })
+  const onOpenGuide = useLatestCallback((code: DmhGroupCode) => {
+    choose()
+    navigation.navigate("surveyDmhGuide", { group: code })
+  })
 
   return (
     <ScreenFrame largeTitle={usesNativeLargeTitle()}>
@@ -199,10 +215,11 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
         query={query}
         memberName={author}
         count={count}
-        status={group === "mine" ? "ready" : network.status}
+        status={isNetworkGroup ? network.status : "ready"}
         error={network.error}
         onRetry={network.retry}
         mine={mine}
+        guide={group === "guide" ? guideRows : undefined}
         community={community}
         places={places?.items}
         parcels={parcels?.items}
@@ -211,6 +228,7 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
         onOpenMember={onOpenMember}
         onOpenPlace={onOpenPlace}
         onOpenParcel={onOpenParcel}
+        onOpenGuide={onOpenGuide}
       />
     </ScreenFrame>
   )

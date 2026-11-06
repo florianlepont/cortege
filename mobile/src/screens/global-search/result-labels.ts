@@ -1,9 +1,12 @@
 import type {
   CommunitySurveyItem,
+  DmhGroupCode,
   SearchMemberItem,
   SearchParcelItem,
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
+import { formOf } from "../../app/dmh-guide/structure"
+import { selectionLabel } from "../../app/factor-selections"
 import { formatDay, formatShortDateTime } from "../../app/formatters"
 import type { BestResult, OwnSurveyMatch } from "../../app/global-search"
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
@@ -51,6 +54,13 @@ export function parcelLabels(item: SearchParcelItem): ResultLabels {
     surveyCount: item.survey_count > 0 ? item.survey_count : null,
   })
   return { title, meta, accessibilityLabel: t.rows.parcelA11y({ title, meta }) }
+}
+
+/** A group of the dendromicrohabitat guide: its name, then the official form it belongs to. */
+export function guideLabels(code: DmhGroupCode): ResultLabels {
+  const title = selectionLabel("F", code) ?? code
+  const meta = fr.dmhGuide.forms[formOf(code)]
+  return { title, meta, accessibilityLabel: t.rows.guideA11y({ name: title, meta }) }
 }
 
 /**

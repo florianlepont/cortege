@@ -24,7 +24,8 @@ export function computeFactorProgress(
 ): Record<FactorKey, FactorProgress> {
   return FACTOR_ORDER.reduce<Record<FactorKey, FactorProgress>>(
     (acc, factor) => {
-      const fields = factorSections[factor]
+      // A field the package does not need now (the lower counter of C, D, E) is not counted.
+      const fields = factorSections[factor].filter((field) => field.notNeeded !== true)
       const total = fields.length
       const filled = fields.filter((field) => field.value.trim().length > 0).length
       // FLOW-02: an untouched, never-opened factor is neutral, not a warning — only a field the

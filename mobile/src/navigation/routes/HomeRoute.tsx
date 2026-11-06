@@ -55,6 +55,10 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
   const onOpenSyncStatus = useLatestCallback(() => {
     navigation.navigate("settings")
   })
+  // Phase 32 (owner request): the dendromicrohabitat guide as a sheet over Accueil, the catalogue.
+  const onOpenDmhGuide = useLatestCallback(() => {
+    navigation.navigate("surveyDmhGuide")
+  })
   // HOME-06: the avatar navigates to Compte.
   const onNavigateToAccount = useLatestCallback(() => {
     navigation.navigate("accountHome")
@@ -124,6 +128,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       onOpenSurveyList={onOpenSurveyList}
       onNavigateToExplorer={onNavigateToExplorer}
       onNavigateToAccount={onNavigateToAccount}
+      onOpenDmhGuide={onOpenDmhGuide}
       onRefresh={syncActions.handlePullChanges}
     />
   )

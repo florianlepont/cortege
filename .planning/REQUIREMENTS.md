@@ -244,6 +244,18 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 - [x] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
 - [x] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
 - [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4. Deferred to the field tests by the owner on 2026-10-23: the protocol and the scenario sheets are ready, no tester is available before them.)*
+- [x] **REQ-DOC-dmh-sources** — The sources, authors, licence status, retrieval date and SHA-256 of every document the DMH guide draws on are recorded in `docs/references/README.md`; the IBP-to-WSL crosswalk and the group texts are written as a French spec (`docs/specs/dmh-guide-content-v1.md`) and validated in writing by the owner before any screen uses them. *(New - Phase 32)*
+- [x] **REQ-C-dmh-guide** — From the factor F screen the observer opens, offline, a sheet per DMH group (what counts for the IBP, how to recognise it, frequent confusions, the types of the pocket guide) and a searchable catalogue of the 15 groups, with sources shown. *(New - Phase 32)*
+- [x] **REQ-C-dmh-illustrations** — Each of the 15 groups shows an original drawing owned by the association, shown static (no animation), offline, checked for accuracy by a domain expert (first waived by the owner on 2026-10-27; the expert has since read it and found it right, reported by the owner on 2026-10-30). *(New - Phase 32)*
+- [x] **REQ-C-dmh-fast-entry** — Entering factor F with many groups is simpler than before (fewer taps and less scrolling); the stored payload and every score are unchanged. *(New - Phase 32)*
+- [x] **REQ-FT-dmh-speed** — Simplicity is confirmed by the owner on their own phone with the new F list (no timing: owner decision 2026-10-27), next to the automated press-count proxy. *(New - Phase 32)*
+
+- [x] **REQ-C-pdf-two-versions** — At export time the member chooses between a complete PDF and a one-page summary through a choice sheet; nothing is remembered; the summary is disabled on a draft with one explanatory sentence. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-summary-page** — The summary is one A4 page for patrons and partners: logo, site name, date, score /50, parcel map, the CNPF-like plane of context against stand and management, and the trend; offline first, no photo, submitted surveys only. *(New — Phase 33, built and validated by the owner on the iPhone 2026-10-26; the plane replaced the ten-factor chart by owner decision D-28)*
+- [x] **REQ-C-pdf-modern-layout** — The complete PDF has a cover page with the parcel map, a title hierarchy, worked graphics (the CNPF-like plane and rose, the trend) and charter colours, always light, with no network resource. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-lean-export** — Fewer pages, cleaner page breaks and a lighter file, with the layout constants re-measured on a device. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-commune-row** — The identity block prints one "Commune" row (code and département) instead of two rows. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-QA-pdf-sections-registry** — PDF sections register through one ordered list with a per-section mode filter, so a later phase adds a section by appending one entry. *(New — Phase 33, built and validated 2026-10-26)*
 
 ## Traceability
 
@@ -301,7 +313,18 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-C-route-display | New | Phase 30 | Build |
 | REQ-C-uncapped-entry | New | Phase 30 | Build |
 | REQ-FT-route-test | New | Phase 30 | Verify (deferred to the field tests) |
+| REQ-DOC-dmh-sources | New | Phase 32 | Build |
+| REQ-C-dmh-guide | New | Phase 32 | Build |
+| REQ-C-dmh-illustrations | New | Phase 32 | Build |
+| REQ-C-dmh-fast-entry | New | Phase 32 | Build |
+| REQ-FT-dmh-speed | New | Phase 32 | Verify (simplicity confirmed by the owner, no timing) |
 | REQ-C-pdf-export | New | Phase 19 | Build |
+| REQ-C-pdf-two-versions | New | Phase 33 | Build |
+| REQ-C-pdf-summary-page | New | Phase 33 | Build |
+| REQ-C-pdf-modern-layout | New | Phase 33 | Build |
+| REQ-C-pdf-lean-export | New | Phase 33 | Build |
+| REQ-C-pdf-commune-row | New | Phase 33 | Build |
+| REQ-QA-pdf-sections-registry | New | Phase 33 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |
 | REQ-INF-backups | New | Phase 20 | Build |
