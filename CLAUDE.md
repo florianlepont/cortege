@@ -454,7 +454,7 @@ A separate `codeql.yml` workflow runs CodeQL analysis.
 - `ci.yml` publishes `ghcr.io/florianlepont/cortege:latest` (linux/amd64) on `main` pushes touching `api/**` or `packages/**`
 - A systemd timer on the VPS polls the registry every 5 minutes and restarts the stack when the digest changes
 - `infra/vps/update-stack.sh` runs the new image's configuration check before restarting; on failure the previous API keeps serving
-- The host's Caddy serves `cortege.algernon.ovh` and `cortege-files.algernon.ovh`; the stack publishes on the loopback only
+- The host's Caddy serves `cortege.algernon.is` and `cortege-files.algernon.is`; the stack publishes on the loopback only
 - Attachment URLs are presigned, so `OBJECT_STORAGE_ENDPOINT` must be the public name clients call
 - Runtime secrets live in `/home/ubuntu/cortege.env` on the VPS
 - Setup and operations: `infra/vps/README.md`

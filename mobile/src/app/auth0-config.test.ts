@@ -10,11 +10,11 @@ describe("auth0-config", () => {
     const { AUTH0_AUDIENCE, AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_IOS_CALLBACK_URL } =
       await import("./auth0-config")
 
-    expect(AUTH0_DOMAIN).toBe("cortege-auth.algernon.ovh")
+    expect(AUTH0_DOMAIN).toBe("auth.algernon.is")
     expect(AUTH0_CLIENT_ID).toBe("qaOBdPPo7eIMadCmIq5qDhmEGOqZF6py")
     expect(AUTH0_AUDIENCE).toBe("https://api.ibp-app")
     expect(AUTH0_IOS_CALLBACK_URL).toBe(
-      "fr.etatssauvages.cortege.auth0://cortege-auth.algernon.ovh/ios/fr.etatssauvages.cortege/callback",
+      "fr.etatssauvages.cortege.auth0://auth.algernon.is/ios/fr.etatssauvages.cortege/callback",
     )
   })
 
@@ -27,7 +27,7 @@ describe("auth0-config", () => {
       buildAuth0UnauthorizedMessage,
     } = await import("./auth0-config")
     const { fr } = await import("../i18n")
-    const message = buildAuth0UnauthorizedMessage("https://cortege.algernon.ovh/v1")
+    const message = buildAuth0UnauthorizedMessage("https://cortege.algernon.is/v1")
 
     expect(message).toBe(fr.status.session.loginRefused())
     expect(message).not.toContain(AUTH0_CLIENT_ID)
@@ -35,7 +35,7 @@ describe("auth0-config", () => {
       clientId: AUTH0_CLIENT_ID,
       audience: AUTH0_AUDIENCE,
       iosCallback: AUTH0_IOS_CALLBACK_URL,
-      api: "https://cortege.algernon.ovh/v1",
+      api: "https://cortege.algernon.is/v1",
     })
     debug.mockRestore()
   })
@@ -44,13 +44,13 @@ describe("auth0-config", () => {
     const debug = jest.spyOn(console, "debug").mockImplementation(() => undefined)
     const { AUTH0_AUDIENCE, buildApiTokenRejectedMessage } = await import("./auth0-config")
     const { fr } = await import("../i18n")
-    const message = buildApiTokenRejectedMessage("https://cortege.algernon.ovh/v1")
+    const message = buildApiTokenRejectedMessage("https://cortege.algernon.is/v1")
 
     expect(message).toBe(fr.status.session.loginInterrupted())
     expect(message).not.toContain(AUTH0_AUDIENCE)
     expect(debug).toHaveBeenCalledWith("[status] session.apiTokenRejected", {
       audience: AUTH0_AUDIENCE,
-      api: "https://cortege.algernon.ovh/v1",
+      api: "https://cortege.algernon.is/v1",
     })
     debug.mockRestore()
   })

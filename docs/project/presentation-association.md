@@ -257,7 +257,7 @@ Confirmer l'enveloppe annuelle de fonctionnement (~274 €/an, hors part du VPS 
 
 Une fois le MVP finalisé (septembre 2026), nous aurons besoin que l'association fournisse ou ouvre les accès aux services d'hébergement et de distribution :
 
-- **VPS et nom de domaine** — accès déjà en place, utilisés pour le déploiement du serveur en production (`cortege.algernon.ovh`)
+- **VPS et nom de domaine** — accès déjà en place, utilisés pour le déploiement du serveur en production (`cortege.algernon.is`)
 - **Apple Developer** — compte développeur pour publier sur l'App Store (la demande de dispense de frais sera faite au nom de l'association)
 - **Google Play Console** — compte pour publier sur Android
 
