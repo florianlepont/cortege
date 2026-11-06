@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import type { SearchParcelItem, SearchPlaceItem } from "@cortege/ibp-domain"
+import { searchDmhGroups } from "../../app/dmh-guide/search"
 import { fr } from "../../i18n"
 import { SearchGroupRoute } from "./SearchGroupRoute"
 
@@ -123,7 +124,7 @@ jest.mock("../../screens/global-search/SearchGroupListScreen", () => ({
 }))
 
 type Params = {
-  group: "mine" | "community" | "places" | "parcels"
+  group: "mine" | "community" | "places" | "parcels" | "guide"
   query: string
   memberName?: string
 }
@@ -389,6 +390,49 @@ describe("SearchGroupRoute: network groups", () => {
 
   test("closing a network list leaves the surveys' chips alone", () => {
     mount({ group: "places", query: "Fontainebleau" })
+    act(() => tree.unmount())
+    expect(mockSurveys.actions.resetFilters).not.toHaveBeenCalled()
+  })
+})
+
+describe("SearchGroupRoute: Guide des dendromicrohabitats", () => {
+  test("lists the matching guide groups from the phone, with no request", () => {
+    mount({ group: "guide", query: "pic" })
+    const expected = searchDmhGroups("pic")
+    expect(expected.length).toBeGreaterThan(0)
+    expect(screenProps.group).toBe("guide")
+    expect(screenProps.guide).toEqual(expected)
+    expect(screenProps.count).toBe(expected.length)
+    expect(screenProps.status).toBe("ready")
+    expect(lastGroupParams().enabled).toBe(false)
+    expect(mockSearchCommunity).not.toHaveBeenCalled()
+    expect(mockUseOwnSurveyNotes).toHaveBeenLastCalledWith(false, mockSurveys.state.surveys)
+    expect(mockNavigation.setOptions).toHaveBeenLastCalledWith({
+      title: t.list.title({ group: t.groups.guide, count: expected.length }),
+    })
+  })
+
+  test("a query under two characters lists nothing", () => {
+    mount({ group: "guide", query: "p" })
+    expect(screenProps.guide).toEqual([])
+    expect(screenProps.count).toBe(0)
+  })
+
+  test("a guide row keeps the query as a recent and opens the guide sheet on that group", () => {
+    mount({ group: "guide", query: "pic" })
+    act(() => screenProps.onOpenGuide("dmh_03"))
+    expect(mockSelection).toHaveBeenCalledTimes(1)
+    expect(mockSaveRecent).toHaveBeenCalledWith("pic")
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("surveyDmhGuide", { group: "dmh_03" })
+  })
+
+  test("the other lists carry no guide rows", () => {
+    mount({ group: "places", query: "pic" })
+    expect(screenProps.guide).toBeUndefined()
+  })
+
+  test("closing a guide list leaves the surveys' chips alone", () => {
+    mount({ group: "guide", query: "pic" })
     act(() => tree.unmount())
     expect(mockSurveys.actions.resetFilters).not.toHaveBeenCalled()
   })

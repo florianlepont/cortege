@@ -41,7 +41,7 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Quick survey additions (phase 27, epic C, V1):
   - US-C10 free note on the survey (1000 characters) and on each factor (300 characters): `REQ-C-survey-note`, `REQ-C-factor-note`.
   - US-C11 weather pre-filled from Météo-France through the Cortege API, read-only except the sky the observer chooses, empty without error offline: `REQ-C-weather-provider`, `REQ-C-weather-prefill`.
-  - US-C12 "Douteux" doubt flag per factor, no effect on any score: `REQ-C-doubt-flag`.
+  - US-C12 "Incertitude" doubt flag per factor, no effect on any score: `REQ-C-doubt-flag`.
   - All three travel with the survey without false sync conflicts: `REQ-C-conditions-sync`.
 - Route choice assistant (phase 30, epic C, V1):
   - US-C13 "Aide au choix du parcours": a mandatory step after the parcel choice proposes the parcours (in full or partial) and the mode de relevé (capped or uncapped) with plain-French reasons, offline, with the quick path "Je connais déjà mon parcours": `REQ-C-route-guide`, `REQ-DOC-route-rules`, `REQ-FT-route-test`.
@@ -59,7 +59,7 @@ their own epic documents), not V2 — they were previously filed under "V2 Backl
 
 ### V2 Backlog
 - Push notifications (new badges, ranking updates, moderation feedback).
-- Excel export (the PDF export is built on the phone: Phase 19, rebuilt to the CNPF sheet content in Phase 25.1).
+- Excel export (the PDF export is built on the phone: Phase 19, rebuilt to the CNPF sheet content in Phase 25.1; since Phase 33 it has a complete version and a one-page summary version, chosen when sharing).
 - KPI dashboards (average time, error rate, sync success rate).
 - Forest analytics and insights in Explore (regional score summaries, trends, factor distributions).
 - Multi-language support.

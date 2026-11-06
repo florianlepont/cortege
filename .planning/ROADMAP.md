@@ -86,8 +86,8 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list; completed 2026-10-13)
 - [x] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand (completed 2026-10-23; criterion 4, the recorded tester test, is deferred to the field tests)
 - [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
-- [ ] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
-- [ ] **Phase 33: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners
+- [x] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
+- [x] **Phase 33: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners (completed 2026-10-26; owner validated both versions on the iPhone)
 - [ ] **Phase 34: Extended Photo Recognition, Factor by Factor** (INSERTED) - Decide, factor by factor, what ships in V1.0 and what waits for V1.x, then build the V1.0 share
 - [ ] **Phase 35: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface once the V1 features are in, update the design system, close the gaps with the "États Sauvages" graphic charter, check global coherence across screens and fix visual bugs; one of the last steps before release (owner decision 2026-10-07)
 - [ ] **Phase 36: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed; runs before the field validation (owner decisions 2026-10-06 and 2026-10-23)
@@ -1110,22 +1110,22 @@ Plans:
 
 **Goal**: While recording, the observer gets detailed information on dendromicrohabitats (many potential DMH), in a tool or a dedicated page.
 **Depends on**: Phase 25.1 (stored DMH details)
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-DOC-dmh-sources, REQ-C-dmh-guide, REQ-C-dmh-illustrations, REQ-C-dmh-fast-entry, REQ-FT-dmh-speed
 **Source**: seminar 2026-10-10: the card is about more detailed information during the survey, not about changing the data (owner clarification); the IBP typology crossed with the WSL one
 **Success Criteria** (what must be TRUE):
 
   1. A tool or page reachable from the DMH inputs explains each DMH with its identification information, offline.
   2. The content crosses the IBP typology with the WSL one, and its sources and licence for reuse are recorded (WSL already has PDF content).
-  3. Recording a survey with many potential DMH is quicker than before, measured on a real survey.
+  3. Recording a survey with many potential DMH is simpler than before: fewer taps for the same stored data (automated proxy) and confirmed by the owner on their own phone (no timing, owner decision 2026-10-27).
 
-**Plans**: TBD
+**Plans**: 38 plans (16 planned + 22 from the owner's iPhone feedback rounds of 2026-10-28 to 2026-10-30: redesign of the F list and the guide, guide in the global search and on Accueil, capped counters per group, the F look applied to factors A to J, G open-area zones, "Incertitude" wording; see 32-17 to 32-35 summaries); 32-07 skipped by owner decision; complete 2026-10-28 (`.planning/phases/32-detailed-dmh-information-inserted-v1/`)
 **UI hint**: yes
 
 ### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)
 
 **Goal**: The survey PDF is beautiful and complete, with an exhaustive version and a simplified one, usable with patrons and partners.
 **Depends on**: Phase 25.1 (the previous rework), Phase 27
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-C-pdf-two-versions, REQ-C-pdf-summary-page, REQ-C-pdf-modern-layout, REQ-C-pdf-lean-export, REQ-C-pdf-commune-row, REQ-QA-pdf-sections-registry
 **Source**: seminar 2026-10-10: the "export présentable pour mécènes" is the PDF export, to rework again because it is not yet beautiful nor exhaustive enough
 **Success Criteria** (what must be TRUE):
 
@@ -1133,7 +1133,57 @@ Plans:
   2. The gaps the owner sees in the current PDF are listed and closed, with the owner's review of both versions on their phone.
   3. Both stay offline-first, branded and named per the existing rules.
 
-**Plans**: TBD
+**Plans**: 20/20 plans executed (planned 2026-10-24; executed 2026-10-24 to 2026-10-26; 33-16 to 33-20 are the gap plans from the owner's decisions and iPhone reviews; 33-15 is the owner's review, validated 2026-10-26)
+
+Plans:
+
+**Wave 1**
+
+- [x] 33-01-PLAN.md - Throwaway Chrome render harness and design probe P-1 to P-5, page-count baseline
+- [x] 33-02-PLAN.md - Data contract: `mode`, `PdfBlock.pageStyle`, forest palette keys, summary frame, fixtures, photo-free summary loader
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 33-03-PLAN.md - Section registry (`sections.ts`), assembler as two flatMaps, cover and summary page types
+- [x] 33-04-PLAN.md - Catalogue strings, one "Commune" row, `-resume` file name
+- [x] 33-05-PLAN.md - Export choice sheet content (`fr.surveyExportChoice`, picker, sheet)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 33-06-PLAN.md - Identity card with method folded in, restyled conditions, route and factor cards
+- [x] 33-07-PLAN.md - Score ring, captioned factor chart, richer trend
+- [x] 33-08-PLAN.md - `map-figure.ts`, map frame 515 x 250, trial photo encoding
+- [x] 33-09-PLAN.md - `surveyExportChoice` route, `estimateCompletePages` through the facade
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 33-10-PLAN.md - Cover builder
+- [x] 33-11-PLAN.md - One-page summary builder with fallbacks
+- [x] 33-12-PLAN.md - Summary screen wiring: sheet from "Partager", one export per nonce
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 33-13-PLAN.md - Integration in the registry, page-count targets, one-page summary tests
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 33-14-PLAN.md - iOS simulator and Android emulator measurements, constants, RC-05, documentation
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 33-16-PLAN.md - Gap closure from the owner's decisions of 2026-10-26: photos 640 px / 0.6, fill factor 0.94, lighter summary basemap
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [x] 33-15-PLAN.md - Owner review of both versions on the iPhone, gap list (validated 2026-10-26)
+
+**Gap plans from the owner's iPhone reviews** *(2026-10-26)*
+
+- [x] 33-17-PLAN.md - Choice sheet (close cross, margins, fitted height), full parcel list, year rule, grouped charts
+- [x] 33-18-PLAN.md - Parcel map on the cover, body map removed, device re-measure
+- [x] 33-19-PLAN.md - The CNPF-like plane and rose, plane only in the summary
+- [x] 33-20-PLAN.md - Device re-measure of the charts, documentation
+
 **UI hint**: yes
 
 ### Phase 34: Extended Photo Recognition, Factor by Factor (INSERTED)
@@ -1262,8 +1312,8 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
 | 30. Route Choice Assistant | 23/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
-| 32. Detailed DMH Information | 0/TBD | Not started | - |
-| 33. PDF Export, Exhaustive and Simplified | 0/TBD | Not started | - |
+| 32. Detailed DMH Information | 37/38 | Complete (32-07 skipped: no timing, owner decision 2026-10-27; owner validated on the iPhone 2026-10-27 and 2026-10-28, later feedback rounds reviewed by the owner on the iPhone 2026-10-29, VoiceOver and the PDF confirmed: see 32-UAT.md; expert reading of the drawings and thresholds done, reported by the owner on 2026-10-30) | 2026-10-30 |
+| 33. PDF Export, Exhaustive and Simplified | 20/20 | Complete (owner validated both versions on the iPhone 2026-10-26) | 2026-10-26 |
 | 34. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
 | 35. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 36. In-depth Quality Audit | 0/TBD | Not started | - |

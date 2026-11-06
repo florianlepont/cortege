@@ -4,6 +4,9 @@ import {
   withoutSprite,
   SNAPSHOT_JPEG_QUALITY,
   SNAPSHOT_JPEG_WIDTH_PX,
+  SNAPSHOT_SUMMARY_JPEG_QUALITY,
+  SNAPSHOT_SUMMARY_WIDTH_PX,
+  snapshotJpegSettings,
   SNAPSHOT_TIMEOUT_MS,
   SNAPSHOT_TIMEOUT_ONLINE_MS,
   snapshotTimeoutFor,
@@ -169,6 +172,42 @@ describe("takeBasemapJpeg", () => {
       compress: SNAPSHOT_JPEG_QUALITY,
       base64: true,
     })
+  })
+
+  test("the default profile is the complete one, 1100 px at 0.8", async () => {
+    expect(SNAPSHOT_JPEG_WIDTH_PX).toBe(1100)
+    expect(SNAPSHOT_JPEG_QUALITY).toBe(0.8)
+    expect(snapshotJpegSettings(undefined)).toEqual({ widthPx: 1100, quality: 0.8 })
+    expect(snapshotJpegSettings("complete")).toEqual({ widthPx: 1100, quality: 0.8 })
+    expect(snapshotJpegSettings("anything else" as never)).toEqual({ widthPx: 1100, quality: 0.8 })
+  })
+
+  test("the summary profile resizes and compresses lighter than the complete one", async () => {
+    expect(SNAPSHOT_SUMMARY_WIDTH_PX).toBeLessThan(SNAPSHOT_JPEG_WIDTH_PX)
+    expect(SNAPSHOT_SUMMARY_JPEG_QUALITY).toBeLessThan(SNAPSHOT_JPEG_QUALITY)
+    const { context, saveAsync, manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    await takeBasemapJpeg({ ...input, profile: "summary" }, {
+      StaticMapImageManager: { createImage: jest.fn(async () => "file:///cache/snap.png") },
+      ImageManipulator: manipulator,
+    } as never)
+    expect(context.resize).toHaveBeenCalledWith({ width: SNAPSHOT_SUMMARY_WIDTH_PX })
+    expect(saveAsync).toHaveBeenCalledWith({
+      format: "jpeg",
+      compress: SNAPSHOT_SUMMARY_JPEG_QUALITY,
+      base64: true,
+    })
+  })
+
+  test("the complete profile given explicitly keeps the sharp width and quality", async () => {
+    const { context, saveAsync, manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    await takeBasemapJpeg({ ...input, profile: "complete" }, {
+      StaticMapImageManager: { createImage: jest.fn(async () => "file:///cache/snap.png") },
+      ImageManipulator: manipulator,
+    } as never)
+    expect(context.resize).toHaveBeenCalledWith({ width: SNAPSHOT_JPEG_WIDTH_PX })
+    expect(saveAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ compress: SNAPSHOT_JPEG_QUALITY }),
+    )
   })
 
   test("a rejected snapshot gives no image", async () => {

@@ -93,9 +93,11 @@ describe("buildSurveyExportInput", () => {
         }),
         canEditSurvey: false,
       }),
+      "complete",
     )
 
     expect(input).toEqual({
+      mode: "complete",
       surveyId: "survey-1",
       siteName: "Bois de la Colline",
       parcelIds: ["12345000AB0123"],
@@ -122,6 +124,7 @@ describe("buildSurveyExportInput", () => {
   test("falls back to the local draft and the creation date without a detail", () => {
     const input = buildSurveyExportInput(
       makeArgs({ localDraftMeta: LOCAL_META, observerName: null, accessToken: null }),
+      "complete",
     )
 
     expect(input.observationYear).toBe(2025)
@@ -140,9 +143,11 @@ describe("buildSurveyExportInput", () => {
 
     const draft = buildSurveyExportInput(
       makeArgs({ detail, localDraftMeta: LOCAL_META, canEditSurvey: true }),
+      "complete",
     )
     const submitted = buildSurveyExportInput(
       makeArgs({ detail, localDraftMeta: LOCAL_META, canEditSurvey: false }),
+      "complete",
     )
 
     expect(draft.method.regionVersion).toBe("M")
@@ -153,13 +158,14 @@ describe("buildSurveyExportInput", () => {
   test("a submitted survey without a detail falls back to the local meta", () => {
     const input = buildSurveyExportInput(
       makeArgs({ localDraftMeta: LOCAL_META, canEditSurvey: false }),
+      "complete",
     )
 
     expect(input.method.regionVersion).toBe("M")
   })
 
   test("has no region and stage when nothing knows them", () => {
-    const input = buildSurveyExportInput(makeArgs())
+    const input = buildSurveyExportInput(makeArgs(), "complete")
 
     expect(input.method.regionVersion).toBeNull()
     expect(input.method.vegetationStage).toBeNull()
@@ -169,8 +175,10 @@ describe("buildSurveyExportInput", () => {
 
   test("keeps a display location only when latitude and longitude are finite", () => {
     const location = (value: unknown) =>
-      buildSurveyExportInput(makeArgs({ detail: makeDetail({ display_location: value as never }) }))
-        .displayLocation
+      buildSurveyExportInput(
+        makeArgs({ detail: makeDetail({ display_location: value as never }) }),
+        "complete",
+      ).displayLocation
 
     expect(location({ lat: 48.4, lng: 2.7 })).toEqual({ lat: 48.4, lng: 2.7 })
     expect(location({ lat: Number.NaN, lng: 2.7 })).toBeNull()
@@ -181,6 +189,74 @@ describe("buildSurveyExportInput", () => {
   })
 })
 
+describe("buildSurveyExportInput, mode (phase 33)", () => {
+  test("a summary asked of a submitted survey stays a summary", () => {
+    const input = buildSurveyExportInput(makeArgs({ canEditSurvey: false }), "summary")
+
+    expect(input.mode).toBe("summary")
+    expect(logMock).not.toHaveBeenCalled()
+  })
+
+  test("a summary asked of a draft becomes the complete PDF and says so in the debug console", () => {
+    const input = buildSurveyExportInput(makeArgs({ canEditSurvey: true }), "summary")
+
+    expect(input.mode).toBe("complete")
+    expect(input.isDraft).toBe(true)
+    expect(logMock).toHaveBeenCalledWith("surveyDetail.exportModeCoerced", {
+      surveyId: "survey-1",
+    })
+  })
+
+  test("a complete export stays complete for a draft and for a submitted survey", () => {
+    expect(buildSurveyExportInput(makeArgs({ canEditSurvey: true }), "complete").mode).toBe(
+      "complete",
+    )
+    expect(buildSurveyExportInput(makeArgs({ canEditSurvey: false }), "complete").mode).toBe(
+      "complete",
+    )
+    expect(logMock).not.toHaveBeenCalled()
+  })
+
+  test("share exports in the mode it is given: a summary of a submitted survey", async () => {
+    exportMock.mockResolvedValue({ shared: true })
+    const { result } = await renderHook(() =>
+      useSurveyPdfExport(makeArgs({ canEditSurvey: false })),
+    )
+
+    await act(async () => {
+      await result.current.share("summary")
+    })
+
+    expect(exportMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "summary" }))
+  })
+
+  test("share exports the complete PDF for a complete request", async () => {
+    exportMock.mockResolvedValue({ shared: true })
+    const { result } = await renderHook(() =>
+      useSurveyPdfExport(makeArgs({ canEditSurvey: false })),
+    )
+
+    await act(async () => {
+      await result.current.share("complete")
+    })
+
+    expect(exportMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "complete" }))
+  })
+
+  test("share of a summary on a draft exports the complete PDF, as a draft (T-33-29)", async () => {
+    exportMock.mockResolvedValue({ shared: true })
+    const { result } = await renderHook(() => useSurveyPdfExport(makeArgs({ canEditSurvey: true })))
+
+    await act(async () => {
+      await result.current.share("summary")
+    })
+
+    expect(exportMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "complete", isDraft: true }),
+    )
+  })
+})
+
 describe("useSurveyPdfExport", () => {
   test("shares once with the input built from the arguments", async () => {
     exportMock.mockResolvedValue({ shared: true })
@@ -188,11 +264,11 @@ describe("useSurveyPdfExport", () => {
     expect(result.current.exporting).toBe(false)
 
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
 
     expect(exportMock).toHaveBeenCalledTimes(1)
-    expect(exportMock).toHaveBeenCalledWith(buildSurveyExportInput(makeArgs()))
+    expect(exportMock).toHaveBeenCalledWith(buildSurveyExportInput(makeArgs(), "complete"))
     expect(alertMock).not.toHaveBeenCalled()
     expect(result.current.exporting).toBe(false)
   })
@@ -204,12 +280,12 @@ describe("useSurveyPdfExport", () => {
 
     let first: Promise<void> = Promise.resolve()
     await act(async () => {
-      first = result.current.share()
+      first = result.current.share("complete")
     })
     expect(result.current.exporting).toBe(true)
 
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
     expect(exportMock).toHaveBeenCalledTimes(1)
 
@@ -221,7 +297,7 @@ describe("useSurveyPdfExport", () => {
 
     exportMock.mockResolvedValue({ shared: true })
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
     expect(exportMock).toHaveBeenCalledTimes(2)
   })
@@ -231,7 +307,7 @@ describe("useSurveyPdfExport", () => {
     const { result } = await renderHook(() => useSurveyPdfExport(makeArgs()))
 
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
 
     expect(alertMock).toHaveBeenCalledWith(
@@ -247,7 +323,7 @@ describe("useSurveyPdfExport", () => {
     const { result } = await renderHook(() => useSurveyPdfExport(makeArgs()))
 
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
 
     expect(logMock).toHaveBeenCalledWith("surveyDetail.exportPdf", error)
@@ -258,7 +334,7 @@ describe("useSurveyPdfExport", () => {
     expect(result.current.exporting).toBe(false)
 
     await act(async () => {
-      await result.current.share()
+      await result.current.share("complete")
     })
     expect(exportMock).toHaveBeenCalledTimes(2)
   })
@@ -273,7 +349,7 @@ describe("useSurveyPdfExport", () => {
 
     await rerender(makeArgs({ activeSiteName: "Renommé" }))
     await act(async () => {
-      await share()
+      await share("complete")
     })
 
     expect(exportMock).toHaveBeenCalledWith(expect.objectContaining({ siteName: "Renommé" }))

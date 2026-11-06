@@ -1,6 +1,6 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
-import { AppGroupedList, type AppGroupedListSection } from "./AppGroupedList"
+import { AppGroupedContainer, AppGroupedList, type AppGroupedListSection } from "./AppGroupedList"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../app/brand-tokens"
@@ -70,6 +70,7 @@ type FlatStyle = {
   width?: number
   height?: number
   flexShrink?: number
+  marginLeft?: number
 }
 
 function flattenStyle(style: unknown): FlatStyle {
@@ -317,5 +318,171 @@ describe("AppGroupedList (ACC-03)", () => {
       .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
       .filter((node) => flattenStyle(node.props.style).width === 28)
     expect(tiles).toHaveLength(0)
+  })
+
+  test("a row passes its testID to the pressable", () => {
+    const { root } = render([
+      { key: "s", rows: [{ key: "row", label: "Guide", testID: "dmh-guide-entry" }] },
+    ])
+    const pressable = root.find(
+      (node: ReactTestInstance) =>
+        (node.type as unknown) === "Pressable" && node.props.testID === "dmh-guide-entry",
+    )
+    expect(pressable.props.accessibilityLabel).toBe("Guide")
+  })
+
+  test("labelLines sets the label lines and wins over multiline", () => {
+    const labelOf = (row: Record<string, unknown>) => {
+      const { root } = render([{ key: "s", rows: [{ key: "row", label: "Libellé long", ...row }] }])
+      const texts = root.findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      return texts.find((node) => node.props.children === "Libellé long")?.props.numberOfLines
+    }
+    expect(labelOf({})).toBe(1)
+    expect(labelOf({ multiline: true })).toBe(2)
+    expect(labelOf({ labelLines: 3 })).toBe(3)
+    expect(labelOf({ multiline: true, labelLines: 3 })).toBe(3)
+  })
+
+  test("a subtitle sits under the label in the footnote size and the secondary ink", () => {
+    const { root, texts } = render([
+      {
+        key: "s",
+        rows: [{ key: "row", label: "Guide", subtitle: "Sans réseau.", onPress: jest.fn() }],
+      },
+    ])
+    expect(texts).toEqual(["Guide", "Sans réseau."])
+    const subtitle = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Sans réseau.")
+    expect(flattenStyle(subtitle?.props.style)).toMatchObject({
+      color: defaultTheme.colors.textSecondary,
+      fontSize: 13,
+      lineHeight: 18,
+    })
+  })
+
+  test("medium sets the label in the 15/21 medium face and minHeight raises the row", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [{ key: "row", label: "Cavités", medium: true, minHeight: 56, onPress: jest.fn() }],
+      },
+    ])
+    const label = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Cavités")
+    expect(flattenStyle(label?.props.style)).toMatchObject({
+      fontFamily: "Sora-Medium",
+      fontSize: 15,
+      lineHeight: 21,
+    })
+    const pressable = root.find((node: ReactTestInstance) => (node.type as unknown) === "Pressable")
+    expect(flattenStyle(pressable.props.style).minHeight).toBe(56)
+  })
+
+  test("a row without those props keeps the 48 pt row and the 16 SemiBold label", () => {
+    const { root } = render([{ key: "s", rows: [{ key: "row", label: "Profil" }] }])
+    const label = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Profil")
+    expect(flattenStyle(label?.props.style)).toMatchObject({
+      fontFamily: "Sora-SemiBold",
+      fontSize: 16,
+    })
+    const pressable = root.find((node: ReactTestInstance) => (node.type as unknown) === "Pressable")
+    expect(flattenStyle(pressable.props.style).minHeight).toBe(48)
+  })
+
+  test("a section title is a header for assistive technology", () => {
+    const { root } = render([{ key: "s", title: "Cavités", rows: [{ key: "row", label: "Pic" }] }])
+    const title = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .find((node) => node.props.children === "Cavités")
+    expect(title?.props.accessibilityRole).toBe("header")
+  })
+
+  test("the hairline of a row after the first starts under the label of a row with an icon", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [
+          { key: "a", label: "A" },
+          { key: "b", label: "B", icon: "mail-outline" },
+          { key: "c", label: "C" },
+        ],
+      },
+    ])
+    const dividers = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
+      .map((node) => flattenStyle(node.props.style))
+      .filter((style) => style.height === 1)
+    expect(dividers.map((style) => style.marginLeft)).toEqual([16 + 28 + 12, 16])
+  })
+})
+
+describe("AppGroupedContainer (phase 32, A-I1)", () => {
+  function renderContainer(element: React.ReactElement) {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(element)
+    })
+    const views = tree!.root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
+      .map((node) => flattenStyle(node.props.style))
+    return { tree: tree!, views }
+  }
+
+  test("is a clipped glass card at the card radius with one hairline between two children", () => {
+    const { views } = renderContainer(
+      <AppGroupedContainer>
+        <Text>un</Text>
+        <Text>deux</Text>
+      </AppGroupedContainer>,
+    )
+    const glass = defaultTheme.visual.glass
+    expect(views.find((style) => style.borderRadius === 22)).toMatchObject({
+      backgroundColor: glass.cardFill,
+      borderColor: glass.cardBorder,
+      boxShadow: glass.cardShadow,
+      overflow: "hidden",
+    })
+    const dividers = views.filter((style) => style.height === 1)
+    expect(dividers).toHaveLength(1)
+    expect(dividers[0]).toMatchObject({
+      backgroundColor: defaultTheme.colors.divider,
+      marginLeft: 16,
+    })
+  })
+
+  test("dividerInset starts the hairlines under the label, as a number or per index", () => {
+    const children = [<Text key="a">a</Text>, <Text key="b">b</Text>, <Text key="c">c</Text>]
+    const fixed = renderContainer(
+      <AppGroupedContainer dividerInset={52}>{children}</AppGroupedContainer>,
+    )
+    expect(fixed.views.filter((style) => style.height === 1).map((s) => s.marginLeft)).toEqual([
+      52, 52,
+    ])
+    const perIndex = renderContainer(
+      <AppGroupedContainer dividerInset={(index) => index * 10}>{children}</AppGroupedContainer>,
+    )
+    expect(perIndex.views.filter((style) => style.height === 1).map((s) => s.marginLeft)).toEqual([
+      10, 20,
+    ])
+  })
+
+  test("a single child, or a null one, draws no hairline", () => {
+    const one = renderContainer(
+      <AppGroupedContainer>
+        <Text>seul</Text>
+      </AppGroupedContainer>,
+    )
+    expect(one.views.filter((style) => style.height === 1)).toHaveLength(0)
+    const withNull = renderContainer(
+      <AppGroupedContainer>
+        {null}
+        <Text>seul</Text>
+      </AppGroupedContainer>,
+    )
+    expect(withNull.views.filter((style) => style.height === 1)).toHaveLength(0)
   })
 })

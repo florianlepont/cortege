@@ -118,4 +118,37 @@ describe("useRouteSurfacePrefill", () => {
     })
     expect(result.current?.fromRoute).toBe(true)
   })
+
+  test("reports the zone from the first render, before the prefill has written into the field", () => {
+    const onChangeSurface = jest.fn()
+    const { result } = mount({
+      zoneSurfaceHa: 1.2,
+      surfaceText: "",
+      onChangeSurface,
+      enabled: true,
+    })
+    expect(result.current).toEqual({ fromRoute: true, zoneHa: 1.2 })
+  })
+
+  test("a zone is compared as the prefill writes it: rounded to two decimals", () => {
+    const onChangeSurface = jest.fn()
+    const { result } = mount({
+      zoneSurfaceHa: 2.345,
+      surfaceText: "2,35",
+      onChangeSurface,
+      enabled: true,
+    })
+    expect(result.current).toEqual({ fromRoute: true, zoneHa: 2.35 })
+  })
+
+  test("no zone: not from the route, whatever the field holds", () => {
+    const onChangeSurface = jest.fn()
+    const { result } = mount({
+      zoneSurfaceHa: null,
+      surfaceText: "",
+      onChangeSurface,
+      enabled: true,
+    })
+    expect(result.current).toEqual({ fromRoute: false, zoneHa: null })
+  })
 })

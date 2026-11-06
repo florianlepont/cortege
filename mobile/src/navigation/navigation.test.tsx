@@ -139,7 +139,9 @@ jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRo
 jest.mock("./routes/CommunityHistoryRoute", () => ({ CommunityHistoryRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/FactorHelpRoute", () => ({ FactorHelpRoute: mockRoute() }))
+jest.mock("./routes/DmhGuideRoute", () => ({ DmhGuideRoute: mockRoute() }))
 jest.mock("./routes/FinishSheetRoute", () => ({ FinishSheetRoute: mockRoute() }))
+jest.mock("./routes/ExportChoiceRoute", () => ({ ExportChoiceRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
@@ -870,6 +872,37 @@ describe("stack options and listeners", () => {
     expect(ios.sheetAllowedDetents).toEqual([0.5, 1])
   })
 
+  test("the dendromicrohabitat guide (phase 32) is registered, a modal on Android and a form sheet on iOS", async () => {
+    await mount(<AppNavigation />)
+    expect(mockScreens.surveyDmhGuide).toBeDefined()
+    const android = mockScreens.surveyDmhGuide.options as Options
+    expect(android.presentation).toBe("modal")
+    expect(android.headerShown).toBe(false)
+    expect(shouldHideTabBar("surveyDmhGuide")).toBe(false)
+    // Owner request 2026-10-28: Accueil opens the same sheet, so the Accueil stack registers it
+    // too, with the same options and the same route component (closing returns to Accueil).
+    const guides = mockRegistrations.filter((record) => record.name === "surveyDmhGuide")
+    // Owner request 2026-10-28 (32-20): the search stack registers it as well, so a guide result
+    // of the global search opens it as a sheet over the search (closing returns to the search).
+    expect(guides).toHaveLength(3)
+    for (const guide of guides) {
+      expect(guide.options).toEqual(guides[0].options)
+      expect(guide.component).toBe(guides[0].component)
+    }
+    const searchNavigator = mockRegistrations.filter((record) => record.name === "searchHome")[0]
+      .navigator
+    expect(guides.map((guide) => guide.navigator)).toContain(searchNavigator)
+    mockPlatform.OS = "ios"
+    const { dmhGuideScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      dmhGuideScreenOptions: (theme: unknown) => Options
+    }
+    const ios = dmhGuideScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.headerShown).toBe(false)
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+  })
+
   test("the finish sheet (phase 29) is registered, a modal on Android and a form sheet on iOS", async () => {
     await mount(<AppNavigation />)
     const android = mockScreens.surveyFinish.options as Options
@@ -883,6 +916,22 @@ describe("stack options and listeners", () => {
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
     expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+  })
+
+  test("the export choice sheet (phase 33) is registered, a modal on Android and a form sheet on iOS", async () => {
+    await mount(<AppNavigation />)
+    const android = mockScreens.surveyExportChoice.options as Options
+    expect(android.presentation).toBe("modal")
+    expect(android.headerShown).toBe(false)
+    mockPlatform.OS = "ios"
+    const { exportChoiceScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      exportChoiceScreenOptions: (theme: unknown) => Options
+    }
+    const ios = exportChoiceScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    // D-22: fitted to its content, never the 0.65 detent (the finish sheet keeps its own).
+    expect(ios.sheetAllowedDetents).toBe("fitToContents")
   })
 
   test("the chooser Choisir le parcours is a modal on Android and a form sheet on iOS, with its own header", async () => {

@@ -36,7 +36,7 @@ jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 
 let tree: ReactTestRenderer
 
-type Kind = "member" | "place" | "parcel"
+type Kind = "member" | "place" | "parcel" | "guide"
 
 function mount(
   extra: {
@@ -89,6 +89,7 @@ describe("SearchResultRow glyphs and text (25-04)", () => {
     ["member", "person-outline"],
     ["place", "location-outline"],
     ["parcel", "grid-outline"],
+    ["guide", "book-outline"],
   ] as const)("a %s row shows the %s glyph, 18 pt, then the chevron", (kind, glyph) => {
     mount({ kind })
     const [lead, chevron] = glyphs()

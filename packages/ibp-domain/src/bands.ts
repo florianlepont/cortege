@@ -12,6 +12,16 @@ export type TotalBand = StandBand
 
 export type ScoreTone = "low" | "mid" | "high"
 
+/**
+ * Lower-inclusive cut points of the five stand bands ("IBP peuplement et gestion", /35): the CNPF
+ * chart ticks (v3.2 p. 24). Exported so the PDF plane (phase 33, D-28) draws the very cuts that
+ * `standBand` applies.
+ */
+export const STAND_BAND_CUT_OFFS = [7, 14, 21, 28] as const
+
+/** Lower-inclusive cut points of the three context levels ("IBP contexte", /15): ticks 5 and 10. */
+export const CONTEXT_BAND_CUT_OFFS = [5, 10] as const
+
 function fiveBands(score: number, cutOffs: readonly [number, number, number, number]): StandBand {
   if (score < cutOffs[0]) return "faible"
   if (score < cutOffs[1]) return "assez_faible"
@@ -22,13 +32,13 @@ function fiveBands(score: number, cutOffs: readonly [number, number, number, num
 
 /** "IBP peuplement et gestion" (/35): CNPF chart ticks 7, 14, 21, 28 (v3.2 p. 24). */
 export function standBand(score: number): StandBand {
-  return fiveBands(score, [7, 14, 21, 28])
+  return fiveBands(score, STAND_BAND_CUT_OFFS)
 }
 
 /** "IBP contexte" (/15): CNPF chart ticks 5 and 10 (v3.2 p. 24). */
 export function contextBand(score: number): ContextBand {
-  if (score < 5) return "faible"
-  if (score < 10) return "moyenne"
+  if (score < CONTEXT_BAND_CUT_OFFS[0]) return "faible"
+  if (score < CONTEXT_BAND_CUT_OFFS[1]) return "moyenne"
   return "forte"
 }
 

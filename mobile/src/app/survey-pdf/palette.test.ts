@@ -3,9 +3,9 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "dark" }))
 
 import { brandColors, brandMapTokens } from "../brand-tokens"
-import { contrastRatio } from "../contrast"
+import { compositeOver, contrastRatio, relativeLuminance } from "../contrast"
 import { buildTheme } from "../theme"
-import { withAlpha } from "../visual-tokens"
+import { contourDrift, forestStops, mixWithWhite, withAlpha } from "../visual-tokens"
 import { buildPdfPalette } from "./palette"
 import type { PdfPalette } from "./types"
 
@@ -33,6 +33,19 @@ const KEYS: Array<keyof PdfPalette> = [
   "parcelStroke",
   "mapCanvas",
   "chartGrid",
+  "forest",
+  "forestDeep",
+  "onForest",
+  "onForestAccent",
+  "onForestBody",
+  "contourSage",
+  "contourMoss",
+  "zoneLow",
+  "zoneLowSoft",
+  "zoneMid",
+  "zoneHighSoft",
+  "zoneHigh",
+  "contextInk",
 ]
 
 const light = buildTheme("light")
@@ -103,5 +116,99 @@ describe("buildPdfPalette", () => {
     expect(palette.mapCanvas).toMatch(/^#[0-9A-Fa-f]{6}$/)
     expect(palette.inkFaint).toMatch(/^#[0-9A-Fa-f]{6}$/)
     expect(palette.chartGrid).toMatch(/^#[0-9A-Fa-f]{6}$/)
+  })
+
+  test("the forest keys come from the token files (phase 33, UI-SPEC Surface B)", () => {
+    expect(palette.forest).toBe(brandColors.forest)
+    expect(palette.forestDeep).toBe(forestStops.a)
+    expect(palette.onForest).toBe(light.visual.forest.title)
+    expect(palette.onForestAccent).toBe(light.visual.forest.titleAccent)
+    expect(palette.onForestBody).toBe(light.visual.forest.body)
+    expect(palette.contourMoss).toBe(light.visual.forest.contourMoss)
+  })
+
+  test("contourSage is the sage at its drift opacity pre-blended over forest, an opaque hex", () => {
+    expect(palette.contourSage).toBe(
+      compositeOver(
+        withAlpha(light.visual.forest.contourSage, contourDrift.sageOpacity),
+        brandColors.forest,
+      ),
+    )
+    expect(palette.contourSage).toMatch(/^#[0-9A-Fa-f]{6}$/)
+  })
+
+  test("text on forest passes 4.5:1 (onForest 9.27, 13.49 on forestDeep, accent 6.32, body 6.90)", () => {
+    expect(contrastRatio(palette.onForest, palette.forest)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForest, palette.forestDeep)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForestAccent, palette.forest)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.onForestBody, palette.forest)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the contour decoration stays visible (2.66 >= 2) and a large title over it passes 3:1 (3.49)", () => {
+    expect(contrastRatio(palette.contourSage, palette.forest)).toBeGreaterThanOrEqual(2)
+    expect(contrastRatio(palette.onForest, palette.contourSage)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("muted ink and accent are readable on the panel and soft fills (4.5:1)", () => {
+    expect(contrastRatio(palette.inkMuted, palette.panel)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.inkMuted, palette.accentSoft)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.accent, palette.accentSoft)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.alert, palette.alertSoft)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the band tones are graphics readable on paper and on the panel (3:1)", () => {
+    for (const band of [palette.bandHigh, palette.bandMid, palette.bandLow]) {
+      expect(contrastRatio(band, palette.paper)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(band, palette.panel)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test("has 36 keys: the 30 of today plus the six of the charts (phase 33, D-27)", () => {
+    expect(Object.keys(palette)).toHaveLength(36)
+  })
+
+  test("the plane tints are strong and soft mixes of the band tones, contextInk the warning ink", () => {
+    expect(palette.zoneLow).toBe(mixWithWhite(light.visual.score.low, 0.4))
+    expect(palette.zoneLowSoft).toBe(mixWithWhite(light.visual.score.low, 0.65))
+    expect(palette.zoneMid).toBe(mixWithWhite(light.visual.score.mid, 0.7))
+    expect(palette.zoneHighSoft).toBe(mixWithWhite(light.visual.score.high, 0.65))
+    expect(palette.zoneHigh).toBe(mixWithWhite(light.visual.score.high, 0.4))
+    expect(palette.contextInk).toBe(light.onSurface.warning)
+  })
+
+  test("the strong tint of a tone is darker than its soft tint, and the five zones are distinct", () => {
+    expect(relativeLuminance(palette.zoneLow)).toBeLessThan(relativeLuminance(palette.zoneLowSoft))
+    expect(relativeLuminance(palette.zoneHigh)).toBeLessThan(
+      relativeLuminance(palette.zoneHighSoft),
+    )
+    const zones = [
+      palette.zoneLow,
+      palette.zoneLowSoft,
+      palette.zoneMid,
+      palette.zoneHighSoft,
+      palette.zoneHigh,
+    ]
+    expect(new Set(zones).size).toBe(5)
+  })
+
+  test("the marker keeps 4:1 and the ink 6:1 on every zone (4.07 to 6.55, 6.02 to 9.68)", () => {
+    const zones = [
+      palette.zoneLow,
+      palette.zoneLowSoft,
+      palette.zoneMid,
+      palette.zoneHighSoft,
+      palette.zoneHigh,
+    ]
+    for (const zone of zones) {
+      expect(contrastRatio(palette.accent, zone)).toBeGreaterThanOrEqual(4)
+      expect(contrastRatio(palette.ink, zone)).toBeGreaterThanOrEqual(6)
+    }
+  })
+
+  test("the rose names are readable on paper and panel (accent 9.27 and 8.56, contextInk 7.47 and 6.90)", () => {
+    expect(contrastRatio(palette.accent, palette.paper)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.accent, palette.panel)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.contextInk, palette.paper)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.contextInk, palette.panel)).toBeGreaterThanOrEqual(4.5)
   })
 })

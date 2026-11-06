@@ -10,41 +10,42 @@ import {
   useWindowDimensions,
   View,
 } from "react-native"
-import { AppText as Text } from "../../ui/AppText"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import {
-  brandRadius,
-  brandShadow,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+  allowedScoresFor,
+  type DmhGroupCode,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
+import { brandShadow, brandSpacing4 } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
-import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
-import { CountingModeChip } from "../factor-detail/CountingModeStrip"
 import type { UncappedEntryProps } from "../factor-detail/UncappedFieldBlock"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
 import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
+import { FactorPagerHeader, TOTAL_CHIP_HEIGHT } from "./FactorPagerHeader"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
 import { AppPressable } from "../../ui/AppPressable"
+import { ScrollLockProvider } from "../../ui/ScrollLockContext"
+import { MaxScoreToast, useMaxScoreToast } from "./MaxScoreToast"
 import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
 
 const t = fr.factorPager
 
 const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
+// F's highest score, read from the package: the toast of the top score is F's only (follow-up 32-26).
+const TOP_F_SCORE = Math.max(...allowedScoresFor("F"))
 
 // The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it. Field
 // sizes (D-05): the bar and the round button stay 46 pt, the total pill 36 pt.
 export const BAR_HEIGHT = STRIP_HEIGHT
-export const TOTAL_CHIP_HEIGHT = 36
+export { TOTAL_CHIP_HEIGHT }
 // D-26: the "Terminer le relevé" pill row above the bar; at least the 50 pt of a large GlassButton
 // (the row is measured, so a label that wraps at a large text size grows the page padding too).
 export const FINISH_ROW_MIN_HEIGHT = 50
@@ -65,12 +66,16 @@ type FactorPagerProps = {
   factorSections: Record<FactorKey, FactorField[]>
   factorRetainedScores: Record<FactorKey, FactorRetainedScore | null>
   methodVersion: IbpMethodVersion | null
+  /** The survey's cas, for A's genus count in the hero card (follow-up 32-29). */
+  ibpCas?: IbpCas | null
   /** The factor now on screen: the route puts its name in the native header. */
   onActiveFactorChange?: (factor: FactorKey) => void
   /** "Terminer" on the last factor: back to the list. */
   onFinish: () => void
-  /** "Que relever ?": opens the help sheet route with the factor's texts. */
+  /** "Aide au relevé": opens the help sheet route with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
+  /** Phase 32 (D-04): opens the dendromicrohabitat guide sheet, on a group or on the catalogue. */
+  onOpenDmhGuide: (group: DmhGroupCode) => void
   /**
    * D-26: on the last factor, a labelled "Terminer le relevé" pill above the bar that finishes the
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".
@@ -96,7 +101,7 @@ type FactorPagerProps = {
 
 /**
  * FLOW-04: a horizontal pager A->J replacing the 20 round trips to the factor grid. OA-98: a slim
- * title row (the factor's name and the running total) under the transparent native header, the page,
+ * title row (the factor's name, its score and the running total) under the transparent native header, the page,
  * and a floating bottom bar in Liquid Glass: the A to J letters (each shows its factor's state; a tap
  * or a slide of the finger along the strip goes to a factor, a bubble names it) and a round button
  * for the next factor ("Terminer" on the last). Going back is a letter or a swipe. D-26: on the
@@ -110,9 +115,11 @@ export const FactorPager = memo(function FactorPager({
   factorSections,
   factorRetainedScores,
   methodVersion,
+  ibpCas = null,
   onActiveFactorChange,
   onFinish,
   onOpenHelp,
+  onOpenDmhGuide,
   finishAction = null,
   factorAnnotations,
   onChangeDoubt,
@@ -127,6 +134,8 @@ export const FactorPager = memo(function FactorPager({
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
+  // Follow-up 32-33: a percent track being dragged holds both scrolls (the pager's and the page's).
+  const [scrollLocked, setScrollLocked] = useState(false)
   const [finishRowHeight, setFinishRowHeight] = useState(FINISH_ROW_MIN_HEIGHT)
   const { width: windowWidth } = useWindowDimensions()
   const hasScrolledToInitial = useRef(false)
@@ -173,6 +182,10 @@ export const FactorPager = memo(function FactorPager({
     () => computeIbpTotalsFromRetainedScores(factorRetainedScores).ibp_total,
     [factorRetainedScores],
   )
+  const maxToast = useMaxScoreToast({
+    active: activeFactor === "F",
+    atTop: factorRetainedScores.F?.score === TOP_F_SCORE,
+  })
   const isLast = activeIndex === lastIndex
   const showFinish = isLast && finishAction !== null
   const barBottom = tabBarClearance + brandSpacing4.sm
@@ -186,29 +199,18 @@ export const FactorPager = memo(function FactorPager({
       (showFinish ? Math.max(FINISH_ROW_MIN_HEIGHT, finishRowHeight) + brandSpacing4.smd : 0)
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
-           * instead of ending in an ellipsis. */}
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {FACTOR_TITLES[activeFactor]}
-          </Text>
-          <View
-            style={styles.totalChip}
-            accessible
-            accessibilityLabel={t.totalA11y(total)}
-            testID="pager-total"
-          >
-            <Text style={styles.totalChipText}>{t.total(total)}</Text>
-          </View>
-        </View>
-        {uncappedFactors.includes(activeFactor) ? <CountingModeChip /> : null}
-      </View>
+      <FactorPagerHeader
+        factor={activeFactor}
+        total={total}
+        factorScore={factorRetainedScores[activeFactor]?.score ?? null}
+        countedInFull={uncappedFactors.includes(activeFactor)}
+      />
 
       <ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
+        scrollEnabled={!scrollLocked}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumEnd}
         style={styles.pages}
@@ -221,6 +223,7 @@ export const FactorPager = memo(function FactorPager({
             // texts are measured on one line and the score line runs off the edge (OA-110).
             style={{ width: pageWidth || windowWidth }}
             contentContainerStyle={[styles.pageContent, { paddingBottom: pageBottom }]}
+            scrollEnabled={!scrollLocked}
             // A tap on the strip or on a chip works with the keyboard up; dragging the page puts the
             // keyboard away; the page makes room for it (UI-SPEC 2.4).
             keyboardShouldPersistTaps="handled"
@@ -230,21 +233,25 @@ export const FactorPager = memo(function FactorPager({
             {/* Only the active page mounts real content: ten factor screens' worth of hint state
              * and validation running at once is wasted work the surveyor never sees. */}
             {index === activeIndex ? (
-              <FactorDetailScreen
-                factor={factor}
-                fields={factorSections[factor]}
-                retainedScore={factorRetainedScores[factor]}
-                methodVersion={methodVersion}
-                onOpenHelp={onOpenHelp}
-                doubt={factorAnnotations[factor]?.doubt === true}
-                note={factorAnnotations[factor]?.note ?? ""}
-                onChangeDoubt={(next) => onChangeDoubt(factor, next)}
-                onChangeNote={(text) => onChangeNote(factor, text)}
-                onCommitNote={onCommitNote}
-                uncappedFactors={uncappedFactors}
-                zoneSurfaceHa={zoneSurfaceHa}
-                uncappedEntry={uncappedEntry}
-              />
+              <ScrollLockProvider value={setScrollLocked}>
+                <FactorDetailScreen
+                  factor={factor}
+                  fields={factorSections[factor]}
+                  retainedScore={factorRetainedScores[factor]}
+                  methodVersion={methodVersion}
+                  ibpCas={ibpCas}
+                  onOpenHelp={onOpenHelp}
+                  onOpenDmhGuide={onOpenDmhGuide}
+                  doubt={factorAnnotations[factor]?.doubt === true}
+                  note={factorAnnotations[factor]?.note ?? ""}
+                  onChangeDoubt={(next) => onChangeDoubt(factor, next)}
+                  onChangeNote={(text) => onChangeNote(factor, text)}
+                  onCommitNote={onCommitNote}
+                  uncappedFactors={uncappedFactors}
+                  zoneSurfaceHa={zoneSurfaceHa}
+                  uncappedEntry={uncappedEntry}
+                />
+              </ScrollLockProvider>
             ) : null}
           </ScrollView>
         ))}
@@ -272,6 +279,12 @@ export const FactorPager = memo(function FactorPager({
           />
         </Animated.View>
       ) : null}
+
+      <MaxScoreToast
+        visible={maxToast.visible && !keyboardVisible}
+        onDismiss={maxToast.dismiss}
+        bottom={barBottom + BAR_HEIGHT + brandSpacing4.smd}
+      />
 
       <Animated.View
         pointerEvents={keyboardVisible ? "none" : "box-none"}
@@ -302,44 +315,6 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     container: {
       flex: 1,
-    },
-    // D-19: the route's ScreenFrame already starts the pager below the transparent header (OA-20).
-    header: {
-      paddingTop: brandSpacing4.sm,
-      paddingHorizontal: brandSpacing4.md,
-      paddingBottom: brandSpacing4.smd,
-      gap: brandSpacing4.smd,
-    },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: brandSpacing4.smd,
-    },
-    // The screen title role (Sora SemiBold 24 on 28): its line is shorter than the 36 pt total
-    // pill, so the row keeps its height (D-05).
-    title: {
-      flex: 1,
-      ...brandTypography.screenTitle,
-      color: theme.semanticColors.textStrong,
-    },
-    // The running total is a small forest pill (variant I): forest gradient over its flat
-    // fallback, white figures, a light hairline, no drop shadow. Same 36 pt height and padding.
-    // The hairline is an inset ring, never a border on the gradient view (12.2-17, see ForestCard).
-    totalChip: {
-      height: TOTAL_CHIP_HEIGHT,
-      borderRadius: brandRadius.pill,
-      paddingHorizontal: brandSpacing4.smd,
-      justifyContent: "center",
-      backgroundColor: theme.visual.forest.fallback,
-      experimental_backgroundImage: theme.visual.forest.image,
-      boxShadow: theme.visual.forest.ring,
-    },
-    totalChipText: {
-      fontSize: brandTypeScale.subhead.fontSize,
-      lineHeight: 20,
-      fontFamily: brandTypography.button.fontFamily,
-      color: theme.visual.forest.title,
     },
     pages: {
       flex: 1,

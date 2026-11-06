@@ -178,6 +178,13 @@ export type BrandVisual = {
     /** Secondary (system `glass`) button: label, fallback fill and outline. */
     secondary: { ink: string; flat: string; hairline: string }
   }
+  /**
+   * Phase 32 (redesign 32-18, owner decision 2026-10-28): the iOS "tertiary fill" of a small
+   * control sitting on a glass card, the stepper capsule and the row's add button. Derived from
+   * existing inks, no new hue: `textPrimary` at 7% in light, white at 10% in dark (a dark ink on
+   * the dark glass would not show). A decorative fill: the glyph on it carries the contrast.
+   */
+  control: { fill: string }
   tab: {
     activeTint: string
     inactiveTint: string
@@ -346,6 +353,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
         hairline: glassCtaSecondary[scheme].hairline,
       },
     },
+    control: { fill: dark ? "rgba(255, 255, 255, 0.1)" : withAlpha(colors.textPrimary, 0.07) },
     tab: {
       activeTint: tabActiveTint[scheme],
       inactiveTint: colors.textSecondary,

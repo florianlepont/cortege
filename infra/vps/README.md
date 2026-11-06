@@ -18,8 +18,8 @@ never the right place for this anyway.
 ```
                   ┌──────────────────── VPS ─────────────────────┐
   mobile app ──►  │  Caddy :443                                  │
-                  │    cortege.algernon.ovh       → :3000  api   │
-                  │    cortege-files.algernon.ovh → :9000  minio │
+                  │    cortege.algernon.is       → :3000  api   │
+                  │    cortege-files.algernon.is → :9000  minio │
                   │                                              │
                   │  postgres (no published port)                │
                   └──────────────────────────────────────────────┘
@@ -34,7 +34,7 @@ on GitHub — no SSH key, no deployment token.
 Attachment URLs are **presigned by the API**, so the mobile app fetches objects
 from MinIO directly. The signature covers the `Host` header, which means
 `OBJECT_STORAGE_ENDPOINT` must be the public name clients call —
-`https://cortege-files.algernon.ovh`, never `http://minio:9000`. Caddy forwards the
+`https://cortege-files.algernon.is`, never `http://minio:9000`. Caddy forwards the
 original `Host` by default, so MinIO validates the signature correctly.
 
 The previous Freebox configuration used the internal address, so attachment
@@ -98,7 +98,7 @@ image runs as the non-root `node` user and reports Docker health from
 built from (since 2026-10-08), so the deployed version can be read from anywhere:
 
 ```bash
-curl -s https://cortege.algernon.ovh/v1/health
+curl -s https://cortege.algernon.is/v1/health
 # {"status":"ok","service":"cortege-api","timestamp":"...","commit":"<full sha>"}
 ```
 
@@ -422,7 +422,7 @@ replacing run also delete the invented parcels of 12.1 (`DEMO0001`...), and neve
 parcel that a real survey links (the output counts those).
 
 The script runs from the image (it uses the compiled API helpers in `api/dist`): deploy the image
-that contains this version first (`curl -s https://cortege.algernon.ovh/v1/health` gives the
+that contains this version first (`curl -s https://cortege.algernon.is/v1/health` gives the
 commit). Piping the script from the host (`node - < ...`) no longer works, it needs its
 `scripts/lib` module.
 

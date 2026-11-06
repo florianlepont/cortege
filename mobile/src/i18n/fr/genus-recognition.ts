@@ -4,7 +4,7 @@
 export const genusRecognitionFr = {
   entryButton: "Identifier par photo",
   modalTitle: "Identifier un genre",
-  // OA-33: the camera opens straight from the button, so the guidance sits under the button.
+  // OA-33: the camera opens straight from the button; the capture guidance is shown in the camera.
   closeCamera: "Fermer la caméra",
   takePhotoButton: "Prendre la photo",
   guideA11y: "Cadre de visée : placez le sujet dans le cadre",

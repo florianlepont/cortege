@@ -215,6 +215,23 @@ describe("computeFactorProgress (FLOW-02: untouched is neutral, not a warning)",
     )
     expect(progress.A.invalid).toBe(1)
   })
+
+  test("a field the package does not need (the lower counter) is left out of the progress", () => {
+    const filled = (value: string, extra: Partial<FactorField> = {}): FactorField => ({
+      ...untouchedField(null),
+      value,
+      ...extra,
+    })
+    const progress = computeFactorProgress(
+      sections([filled("4"), filled("", { notNeeded: true, required: false }), filled("2")]),
+    )
+    expect(progress.A).toEqual({ complete: true, filled: 2, total: 2, invalid: 0 })
+    // Typed but not needed: still left out, so it never makes the factor look more done.
+    const typed = computeFactorProgress(
+      sections([filled("4"), filled("7", { notNeeded: true }), filled("")]),
+    )
+    expect(typed.A).toEqual({ complete: false, filled: 1, total: 2, invalid: 0 })
+  })
 })
 
 describe("factor tiles in variant I glass (12.2-15)", () => {

@@ -265,3 +265,29 @@ describe("countFilledFactors (12.2-14: the one definition of factors filled)", (
     }
   })
 })
+
+// Follow-up 32-25: "no tree carries a dendromicrohabitat" is stored as trees per hectare 0 with no
+// group and no count. The package scores it, so the factor is filled and nothing else is needed.
+describe("factor F stored as 'no tree carries a dendromicrohabitat'", () => {
+  test("trees_per_ha 0 alone is a scored, filled factor (class 0) under both method versions", () => {
+    for (const context of [ACA_COLLINEEN, { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1 }]) {
+      const retained = computeRetainedScoresFromRawFactors({ F: { trees_per_ha: 0 } }, context)
+      expect(retained.F).not.toBeNull()
+      expect(retained.F?.score).toBe(0)
+      expect(countFilledFactors({ ...context, factors: { F: { trees_per_ha: 0 } } })).toBe(1)
+      expect(
+        evaluateSubmitReadinessFromDraft({ ...context, factors: { F: { trees_per_ha: 0 } } })
+          .missing_factors,
+      ).not.toContain("F")
+    }
+  })
+
+  test("an empty group list and empty counts change nothing", () => {
+    const bare = computeRetainedScoresFromRawFactors({ F: { trees_per_ha: 0 } }, ACA_COLLINEEN)
+    const withEmpty = computeRetainedScoresFromRawFactors(
+      { F: { trees_per_ha: 0, dmh_groups: [], dmh_counts: {} } },
+      ACA_COLLINEEN,
+    )
+    expect(withEmpty.F).toEqual(bare.F)
+  })
+})

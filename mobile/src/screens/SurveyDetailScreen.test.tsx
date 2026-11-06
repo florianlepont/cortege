@@ -123,12 +123,15 @@ jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeade
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
 jest.mock("./survey-detail/useHistoryRow", () => ({ useHistoryRow: jest.fn() }))
 let mockCtaKind: "hidden" | "next" = "hidden"
+let mockCtaRouteMissing: unknown = null
 jest.mock("./survey-detail/summary-state", () => ({
   resolveStatusLine: () => ({ status: "Brouillon", sync: "x", syncTone: "ok" }),
-  resolveFinishCta: () =>
-    mockCtaKind === "hidden"
+  resolveFinishCta: (...args: unknown[]) => {
+    mockCtaRouteMissing = args[5]
+    return mockCtaKind === "hidden"
       ? { kind: "hidden" }
-      : { kind: "next", label: "Continuer", factor: "A" },
+      : { kind: "next", label: "Continuer", factor: "A" }
+  },
 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("./survey-detail/useSurveyDetailData", () => ({
@@ -173,6 +176,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onDeleteAttachment: jest.fn(),
     onDeleteSurvey: jest.fn(),
     onOpenFinish: jest.fn(),
+    onDefineRoute: jest.fn(),
     onRetrySurvey: jest.fn(),
     onDiscardSurvey: jest.fn(),
     onRenameSurvey: jest.fn(),
@@ -186,6 +190,8 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onOpenFactor: jest.fn(),
     onOpenHistory: jest.fn(),
     onOpenJournal: jest.fn(),
+    onOpenExportChoice: jest.fn(),
+    onExportRequestHandled: jest.fn(),
   }
 }
 
@@ -434,6 +440,35 @@ describe("SurveyDetailScreen summary", () => {
     mockRoute = null
     const draftRows = byType(mount("draft"), "AppGroupedList")[0].props.sections[0].rows
     expect(draftRows[1].value).toMatch(/ · Parcours à choisir$/)
+  })
+
+  test("route first: only an editable draft with no route tells the button so, and it opens the route step", () => {
+    mockCtaKind = "next"
+    mockRoute = null
+    const props = makeProps("draft")
+    let tree!: ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    expect(mockCtaRouteMissing).toBe(true)
+    act(() => byType(tree, "FinishBar")[0].props.onDefineRoute())
+    expect(props.onDefineRoute).toHaveBeenCalledWith("survey-1")
+
+    mockCanEdit = false
+    mount("submitted")
+    expect(mockCtaRouteMissing).toBe(false)
+    mockCanEdit = true
+
+    mockRoute = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2,
+      guide: { chosen_by: "observer" },
+    }
+    mount("draft")
+    expect(mockCtaRouteMissing).toBe(false)
+    mockRoute = null
   })
 
   test("the source of the summary no longer imports the chart", () => {
@@ -824,17 +859,21 @@ describe("SurveyDetailScreen action sheet (Android / Expo Go, D-02, D-04)", () =
   )
 })
 
-describe("SurveyDetailScreen share (25.1-16)", () => {
+describe("SurveyDetailScreen share (25.1-16, phase 33)", () => {
   const headerMock = useSurveyDetailHeader as jest.Mock
   const exportMock = exportAndShareSurveyPdf as jest.Mock
   type HeaderParams = Parameters<typeof useSurveyDetailHeader>[0]
   const progressNotices = (tree: ReactTestRenderer) =>
     byType(tree, "AppNotice").filter((node) => node.props.message === fr.surveyExport.progress)
+  const lastOnShare = () => (headerMock.mock.calls.at(-1)![0] as HeaderParams).onShare
 
-  function mountShare() {
+  function elementFor(props: SurveyDetailScreenProps) {
+    return <SurveyDetailScreen {...props} observerName="Claire" />
+  }
+  function mountShare(props: SurveyDetailScreenProps = makeProps("draft")) {
     let tree: ReactTestRenderer | undefined
     act(() => {
-      tree = renderer.create(<SurveyDetailScreen {...makeProps("draft")} observerName="Claire" />, {
+      tree = renderer.create(elementFor(props), {
         createNodeMock: (element) =>
           (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
       })
@@ -845,36 +884,98 @@ describe("SurveyDetailScreen share (25.1-16)", () => {
   beforeEach(() => {
     headerMock.mockClear()
     exportMock.mockReset()
+    mockCanEdit = true
+  })
+  afterEach(() => {
+    mockCanEdit = true
   })
 
-  test("the share action exports the survey with the observer, and the progress notice shows meanwhile", async () => {
-    let finish: (value: { shared: boolean }) => void = () => undefined
-    exportMock.mockReturnValue(new Promise((resolve) => (finish = resolve)))
-    const tree = mountShare()
-    expect(progressNotices(tree)).toHaveLength(0)
+  test("the share action opens the export choice sheet and exports nothing", async () => {
+    const props = makeProps("draft")
+    mountShare(props)
 
-    const onShare = (headerMock.mock.calls.at(-1)![0] as HeaderParams).onShare
     await act(async () => {
-      onShare?.()
+      lastOnShare()?.()
+    })
+
+    expect(props.onOpenExportChoice).toHaveBeenCalledTimes(1)
+    expect(props.onOpenExportChoice).toHaveBeenCalledWith("survey-1")
+    expect(exportMock).not.toHaveBeenCalled()
+  })
+
+  test("a summary request on a submitted survey exports once in the summary mode, then is cleared", async () => {
+    mockCanEdit = false
+    exportMock.mockResolvedValue({ shared: true })
+    const props = {
+      ...makeProps("submitted"),
+      exportRequest: { mode: "summary", nonce: 5 } as const,
+    }
+    let tree: ReactTestRenderer | undefined
+    await act(async () => {
+      tree = renderer.create(elementFor(props), {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
     })
 
     expect(exportMock).toHaveBeenCalledTimes(1)
     expect(exportMock).toHaveBeenCalledWith(
       expect.objectContaining({
+        mode: "summary",
         surveyId: "survey-1",
         siteName: "Parcelle A",
-        isDraft: true,
+        isDraft: false,
         observerName: "Claire",
         apiUrl: "http://api",
         accessToken: null,
       }),
     )
-    expect(progressNotices(tree)).toHaveLength(1)
-    expect(progressNotices(tree)[0].props.tone).toBe("info")
+    expect(props.onExportRequestHandled).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      tree!.update(elementFor({ ...props }))
+    })
+    expect(exportMock).toHaveBeenCalledTimes(1)
+    expect(props.onExportRequestHandled).toHaveBeenCalledTimes(1)
+  })
+
+  test("a summary request on a draft exports the complete PDF (T-33-29)", async () => {
+    exportMock.mockResolvedValue({ shared: true })
+    const props = { ...makeProps("draft"), exportRequest: { mode: "summary", nonce: 1 } as const }
+    await act(async () => {
+      renderer.create(elementFor(props), {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+
+    expect(exportMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "complete", isDraft: true }),
+    )
+  })
+
+  test("the progress notice shows while the export runs, and a share tap meanwhile does nothing", async () => {
+    let finish: (value: { shared: boolean }) => void = () => undefined
+    exportMock.mockReturnValue(new Promise((resolve) => (finish = resolve)))
+    const props = { ...makeProps("draft"), exportRequest: { mode: "complete", nonce: 2 } as const }
+    let tree: ReactTestRenderer | undefined
+    await act(async () => {
+      tree = renderer.create(elementFor(props), {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    expect(progressNotices(tree!)).toHaveLength(1)
+    expect(progressNotices(tree!)[0].props.tone).toBe("info")
+
+    await act(async () => {
+      lastOnShare()?.()
+    })
+    expect(props.onOpenExportChoice).not.toHaveBeenCalled()
 
     await act(async () => {
       finish({ shared: true })
     })
-    expect(progressNotices(tree)).toHaveLength(0)
+    expect(progressNotices(tree!)).toHaveLength(0)
   })
 })

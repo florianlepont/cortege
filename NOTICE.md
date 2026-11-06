@@ -58,6 +58,15 @@ documents are not redistributed here — see
 "IBP" and "Indice de Biodiversité Potentielle" designate the CNPF method; this
 project claims no rights over them.
 
+## Dendromicrohabitat guide
+
+The in-app guide of factor F (dendromicrohabitats) is written by the association in its own words
+from the documents listed in [docs/references/README.md](docs/references/README.md): the pocket
+guide of the Swiss Federal Institute for Forest, Snow and Landscape Research WSL (Bütler et al.,
+2024), Larrieu et al. (2018) and IBP FR v3.2. No third-party text, photo or drawing is reproduced.
+The fifteen line drawings of the guide are the association's own work, kept as vector path data in
+`mobile/src/app/dmh-guide/drawings.ts` (no image file), so they need no third-party entry.
+
 ## Dependencies
 
 npm dependencies are not vendored in this repository and remain under their own

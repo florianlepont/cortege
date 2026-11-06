@@ -1,5 +1,7 @@
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import {
   addGenusToListValue,
+  genusListCas,
   parseGenusListValue,
   serializeGenusListValue,
   toggleGenusInListValue,
@@ -55,6 +57,16 @@ describe("factor-a-genus-list", () => {
 
     it("adds to an empty list", () => {
       expect(addGenusToListValue("", "Tilia")).toBe("Tilia")
+    })
+  })
+
+  describe("genusListCas", () => {
+    it("is the survey cas under v3.2, null under v3.0 and for a missing or foreign cas", () => {
+      expect(genusListCas(IBP_METHOD_V3_2, 4)).toBe(4)
+      expect(genusListCas(IBP_METHOD_V3_2, null)).toBeNull()
+      expect(genusListCas(IBP_METHOD_V3_2, 7)).toBeNull()
+      expect(genusListCas(IBP_METHOD_V3_0, 2)).toBeNull()
+      expect(genusListCas(null, 2)).toBeNull()
     })
   })
 })

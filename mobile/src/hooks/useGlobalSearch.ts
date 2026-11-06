@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import type {
+  DmhGroupCode,
   SearchCommunityResponse,
   SearchParcelsResponse,
   SearchPlacesResponse,
@@ -12,6 +13,7 @@ import {
   groupOrder,
   isSearchActive,
   looksLikeParcelQuery,
+  matchGuideGroups,
   matchOwnSurveys,
   pickBestResult,
 } from "../app/global-search"
@@ -39,6 +41,8 @@ export type GlobalSearch = {
   active: boolean
   offline: boolean
   mine: OwnSurveyMatch[]
+  /** The guide groups that match, from the bundled catalogue: no network, offline or online. */
+  guide: DmhGroupCode[]
   community: SearchGroupState<SearchCommunityResponse>
   places: SearchGroupState<SearchPlacesResponse>
   parcels: SearchGroupState<SearchParcelsResponse>
@@ -57,9 +61,10 @@ const EMPTY_PLACES: SearchPlacesResponse = { items: [] }
 const isBusy = (status: SearchGroupStatus) => status === "waiting" || status === "loading"
 
 /**
- * The four groups of the global search for one query (D-02, D-10, D-14, U-09): the member's own
- * surveys matched on every keystroke from local data (by name and by note), and the community, places and parcels
- * groups, each requested, failed and retried on its own. The best result and the group order come
+ * The five groups of the global search for one query (D-02, D-10, D-14, U-09): the member's own
+ * surveys matched on every keystroke from local data (by name and by note), the dendromicrohabitat
+ * guide groups matched the same way from the bundled catalogue (never in the best result), and the
+ * community, places and parcels groups, each requested, failed and retried on its own. The best result and the group order come
  * from the pure rules of `app/global-search`.
  */
 export function useGlobalSearch({
@@ -82,6 +87,8 @@ export function useGlobalSearch({
     () => matchOwnSurveys(surveys, normalized, ownNotes),
     [surveys, normalized, ownNotes],
   )
+
+  const guide = useMemo(() => matchGuideGroups(normalized), [normalized])
 
   const community = useSearchGroup<SearchCommunityResponse>({
     query: normalized,
@@ -131,6 +138,7 @@ export function useGlobalSearch({
   const busy = isBusy(community.status) || isBusy(places.status) || isBusy(parcels.status)
   const resultCount =
     mine.length +
+    guide.length +
     (members?.length ?? 0) +
     (communitySurveys?.length ?? 0) +
     (placeItems?.length ?? 0) +
@@ -141,6 +149,7 @@ export function useGlobalSearch({
     active,
     offline,
     mine,
+    guide,
     community,
     places,
     parcels,
