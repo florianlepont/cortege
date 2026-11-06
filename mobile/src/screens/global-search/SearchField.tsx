@@ -12,11 +12,18 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppPressable } from "../../ui/AppPressable"
 
-const t = fr.search.field
+const defaultTexts: SearchFieldTexts & { a11yHint: string } = fr.search.field
 
 const GLYPH_SIZE = 20
 const CLEAR_GLYPH_SIZE = 18
 const SPINNER_SIZE = 16
+
+/** The three strings a host can replace (the dendromicrohabitat guide searches groups, not places). */
+export type SearchFieldTexts = {
+  placeholder: string
+  a11yLabel: string
+  clear: string
+}
 
 type SearchFieldProps = {
   value: string
@@ -28,6 +35,11 @@ type SearchFieldProps = {
   /** A network group waits for the pause or loads: a small spinner shows. */
   busy: boolean
   inputRef?: Ref<TextInput>
+  /**
+   * Phase 32: the guide's own placeholder, field label and clear label (default `fr.search.field`).
+   * Given, the global search hint is dropped: it names places the host does not search.
+   */
+  texts?: SearchFieldTexts
 }
 
 /**
@@ -44,7 +56,11 @@ export function SearchField({
   onClear,
   busy,
   inputRef,
+  texts,
 }: SearchFieldProps) {
+  const t = texts ?? defaultTexts
+  // The default hint names the places the global search reads: a host with its own texts has none.
+  const hint = texts ? undefined : defaultTexts.a11yHint
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
@@ -66,7 +82,7 @@ export function SearchField({
         maxLength={100}
         accessibilityRole="search"
         accessibilityLabel={t.a11yLabel}
-        accessibilityHint={t.a11yHint}
+        accessibilityHint={hint}
         testID="search-field"
       />
       {busy ? (

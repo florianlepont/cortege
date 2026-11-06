@@ -309,12 +309,18 @@ describe("RouteGuideScreen: one question a screen", () => {
   })
 })
 
+const textOf = (node: ReactTestInstance): string =>
+  node
+    .findAll((n) => (n.type as unknown) === "Text")
+    .flatMap((n) => React.Children.toArray(n.props.children).map(String))
+    .join(" ")
+
 describe("RouteGuideScreen: the suggestion", () => {
   it("shows the suggestion, the reasons and the details once the answers give a route", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
     m.one("route-suggestion")
-    m.one("route-reasons")
+    m.one("route-facts")
     m.one("route-details")
     expect(m.byId("route-glossary")).toHaveLength(0)
     expect(m.byId("route-large-stand")).toHaveLength(0)
@@ -344,34 +350,22 @@ describe("RouteGuideScreen: the suggestion", () => {
     m.one("route-question-surface")
   })
 
-  it("orders the result zone: suggestion, reasons, details, Pour affiner, shortcut", () => {
+  it("orders the result zone: suggestion, facts, details, shortcut", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
-    const order = [
-      "route-suggestion",
-      "route-reasons",
-      "route-details",
-      "route-refine",
-      "route-know-link",
-    ]
+    const order = ["route-suggestion", "route-facts", "route-details", "route-know-link"]
     const flat = JSON.stringify(m.tree.toJSON())
     const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect([...positions].sort((a, b) => a - b)).toEqual(positions)
   })
 
-  it("puts the advice in the folded Pour affiner footer, information only", () => {
+  it("shows the surface and the estimated duration in tiles under the suggestion, and no Pour affiner", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
-    const refine = m.one("route-refine")
-    expect(m.byId("route-advice")).toHaveLength(0)
-    const header = refine.findAll(
-      (node) =>
-        (node.type as unknown) === "Pressable" &&
-        typeof node.props.accessibilityState?.expanded === "boolean",
-    )[0]
-    act(() => header.props.onPress())
-    expect(m.byId("route-advice")).toHaveLength(1)
+    expect(m.byId("route-refine")).toHaveLength(0)
+    expect(textOf(m.one("route-fact-surface"))).toContain("ha")
+    expect(textOf(m.one("route-fact-duration"))).toContain("min")
     const before = m.state().view.selection
     act(() => m.actions().setHoursText("0,5"))
     expect(m.state().view.selection).toEqual(before)
@@ -410,14 +404,18 @@ describe("RouteGuideScreen: the suggestion", () => {
     expect(m.state().view.chosenBy).toBe("guide")
   })
 
-  it("keeps the reasons for the suggestion only, not for an own choice", () => {
+  it("puts the reasons in the parcours sheet for the suggestion only, not for an own choice", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
-    m.one("route-reasons")
+    const sheetOf = () =>
+      m.tree.root.findAll(
+        (node) => typeof node.props.term === "string" && typeof node.props.text === "string",
+      )[0].props.text as string
+    expect(sheetOf()).toContain(fr.routeGuide.suggestion.reasonsTitle)
     act(() =>
       m.actions().applyPick({ method: "full", counting: "uncapped", uncappedFactors: ["A"] }),
     )
-    expect(m.byId("route-reasons")).toHaveLength(0)
+    expect(sheetOf()).not.toContain(fr.routeGuide.suggestion.reasonsTitle)
     m.one("route-suggestion")
   })
 

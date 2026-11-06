@@ -7,20 +7,31 @@ import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import {
   WORST_ROUTE,
+  exportFixtureLowScore,
+  exportFixtureManyParcels,
+  exportFixtureSummary,
+  exportFixtureSummaryLowScore,
+  exportFixtureSummaryWorst,
+  exportFixtureTypical,
+  exportFixtureTypicalConditioned,
   exportFixtureV30Draft,
   exportFixtureV32Submitted,
   exportFixtureWorstCase,
+  summaryVariant,
 } from "../../../test/survey-export-fixtures"
+import type { SummaryVariantKind } from "../../../test/survey-export-fixtures"
 import { buildSurveyExportHtml } from "./build-html"
 import { buildConditionsBlock } from "./conditions-section"
+import { buildCoverBlocks } from "./cover-section"
 import { buildFactorChartBlock } from "./factor-chart-svg"
 import { buildFactorBlocks } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
+import { buildIdentityBlocks } from "./identity"
 import { PAGE_FILL_FACTOR } from "./paginate"
 import { buildRouteBlock } from "./route-section"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
 import { buildPdfPalette } from "./palette"
-import { buildScoreSummaryBlock } from "./score-section"
+import { sectionsFor } from "./sections"
 import { DRAFT_BANNER_HEIGHT, PAGE_FOOTER_HEIGHT, PAGE_HEADER_HEIGHT } from "./styles"
 import { PDF_CSP, PDF_CLASS } from "./styles"
 import type { SurveyExportData } from "./types"
@@ -79,17 +90,19 @@ describe("buildSurveyExportHtml document head", () => {
     expect(countOf(css, "@font-face")).toBe(exportFixtureV32Submitted.assets.fonts.length)
     for (const marker of [
       `.${PDF_CLASS.root} {`,
+      ".cover-",
       ".identity-heading",
-      ".score-",
       ".chart-card",
       ".factor-card",
-      ".map-",
+      ".map-frame",
       ".trend-",
       ".photos-",
     ]) {
       expect(css).toContain(marker)
     }
-    expectInOrder(css, ["@font-face", "@page", ".identity-heading"])
+    expectInOrder(css, ["@font-face", "@page", ".cover-", ".identity-heading"])
+    // The old score card is gone from the body (phase 33, D-01): its CSS goes with it.
+    expect(css).not.toContain(".score-tile")
   })
 
   it("holds the pages in one pdf-root and counts them", () => {
@@ -121,15 +134,15 @@ describe("buildSurveyExportHtml page order", () => {
   const { html } = buildSurveyExportHtml(exportFixtureWorstCase)
   const body = bodyOf(html)
 
-  it("follows the sheet: identity, method, scores, chart, factors, map, trend, photos", () => {
+  it("follows the sheet: cover with the map, identity, method, chart, factors, trend, photos", () => {
     expectInOrder(body, [
+      'class="cover-page"',
+      t.map.heading,
       t.identity.heading,
       t.method.heading,
-      t.scores.totalHeading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
       t.factors.contextGroup,
-      t.map.heading,
       t.trend.heading,
       t.photos.heading,
     ])
@@ -150,24 +163,43 @@ describe("buildSurveyExportHtml page order", () => {
     expect(context).toBeLessThan(hAt)
   })
 
-  it("puts identity, method and the score summary on the first page", () => {
-    const first = pagesOf(html)[0]
-    expect(first).toContain(t.identity.heading)
-    expect(first).toContain(t.method.heading)
-    expect(first).toContain(t.scores.totalHeading)
+  it("opens with the cover alone: page 1 is a cover page with no running header", () => {
+    const pages = pagesOf(html)
+    expect(pages[0].startsWith(` ${PDF_CLASS.pageCover}"`)).toBe(true)
+    expect(pages[0]).not.toContain(`class="${PDF_CLASS.header}"`)
+    expect(pages[0]).not.toContain(t.identity.heading)
+    for (const page of pages.slice(1)) {
+      expect(page).toContain(`class="${PDF_CLASS.header}"`)
+      expect(page).not.toContain(PDF_CLASS.pageCover)
+    }
   })
 
-  it("gives the chart of a light sheet the first page too", () => {
-    const light = buildSurveyExportHtml(exportFixtureV30Draft)
-    expect(pagesOf(light.html)[0]).toContain(t.scores.chartHeading)
+  it("puts the total, both sub-scores and their band lines on the cover (D-01: nothing lost)", () => {
+    const cover = pagesOf(html)[0]
+    expect(cover).toContain(t.scores.standHeading)
+    expect(cover).toContain(t.scores.contextHeading)
+    expect(cover).toContain('class="cover-numeral')
+    // The total pill and the two sub-score tiles each print a band line.
+    expect(countOf(cover, escapeHtml(t.scores.band({ band: "" })))).toBe(3)
+    expect(bodyOf(html).indexOf(t.scores.standHeading)).toBeLessThan(
+      bodyOf(html).indexOf(t.identity.heading),
+    )
   })
 
-  it("gives the chart the first page of an ordinary submitted survey with a full identity", () => {
-    // Measured on iOS and Android (plan 25.1-17): identity 245 + method 93 + scores 136 + chart 206
-    // fills 680 of the 740 of the body, so the chart stays on page 1 and does not leave it 40 % empty.
-    const submitted = buildSurveyExportHtml(exportFixtureV32Submitted)
-    expect(pagesOf(submitted.html)[0]).toContain(t.scores.chartHeading)
-    expect(pagesOf(submitted.html)[0]).not.toContain(t.factors.standGroup)
+  it("gives page 2 the identity card with the method and the factor chart, light sheet or not", () => {
+    for (const data of [exportFixtureV30Draft, exportFixtureV32Submitted, exportFixtureWorstCase]) {
+      const second = pagesOf(buildSurveyExportHtml(data).html)[1]
+      expect(second).toContain(t.identity.heading)
+      expect(second).toContain(t.method.heading)
+      expect(second).toContain(t.charts.heading)
+    }
+  })
+
+  it("has no score card in the body any more", () => {
+    const body = pagesOf(buildSurveyExportHtml(exportFixtureV32Submitted).html).slice(1).join("")
+    expect(body).not.toContain("score-card")
+    expect(body).not.toContain("score-tile")
+    expect(body).not.toContain(t.scores.totalHeading)
   })
 
   it("renders the worst case with every section present", () => {
@@ -219,15 +251,14 @@ const MAXIMAL = maximalSurvey(1)
 const MAXIMAL_PARAGRAPHS = maximalSurvey(2)
 
 describe("buildSurveyExportHtml conditions block (phase 27)", () => {
-  it("sits after the identity and method blocks and before the score summary", () => {
+  it("sits after the identity and method blocks and before the factor chart", () => {
     const { html } = buildSurveyExportHtml(WITH_CONDITIONS)
 
     expectInOrder(bodyOf(html), [
       t.identity.heading,
       t.method.heading,
       t.conditions.heading,
-      t.scores.totalHeading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
     ])
   })
@@ -244,7 +275,7 @@ describe("buildSurveyExportHtml conditions block (phase 27)", () => {
     const { html } = buildSurveyExportHtml(WITH_CONDITIONS)
     const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
 
-    expectInOrder(css, [".identity-heading", ".conditions-card", ".score-"])
+    expectInOrder(css, [".identity-heading", ".conditions-card", ".chart-card"])
   })
 
   it("prints the Météo-France source and the escaped note", () => {
@@ -268,14 +299,14 @@ describe("buildSurveyExportHtml conditions block (phase 27)", () => {
     expect(countOf(html, `<div class="${PDF_CLASS.banner}">`)).toBe(pageCount)
   })
 
-  it("shows the doubt badge and the note on every card and leaves scores and chart alone", () => {
+  it("shows the doubt badge and the note on every card and leaves the cover scores and the chart alone", () => {
     const { html } = buildSurveyExportHtml(MAXIMAL)
     const palette = buildPdfPalette()
 
     expect(countOf(html, `class="factor-badge"`)).toBe(FACTOR_KEYS.length)
     expect(countOf(html, `class="factor-user-note"`)).toBe(FACTOR_KEYS.length)
-    expect(buildScoreSummaryBlock(MAXIMAL, palette)).toEqual(
-      buildScoreSummaryBlock(exportFixtureV32Submitted, palette),
+    expect(buildCoverBlocks(MAXIMAL, palette)).toEqual(
+      buildCoverBlocks(exportFixtureV32Submitted, palette),
     )
     expect(buildFactorChartBlock(MAXIMAL, palette)).toEqual(
       buildFactorChartBlock(exportFixtureV32Submitted, palette),
@@ -362,7 +393,7 @@ describe("buildSurveyExportHtml draft and submitted (D-10)", () => {
     const { html, pageCount } = buildSurveyExportHtml(exportFixtureV30Draft)
     expect(countOf(html, `<div class="${PDF_CLASS.banner}">`)).toBe(pageCount)
     expect(countOf(html, `<div class="${PDF_CLASS.watermark}">`)).toBe(pageCount)
-    expect(countOf(html, `class="${PDF_CLASS.page} ${PDF_CLASS.draft}"`)).toBe(pageCount)
+    expect(countOf(html, `class="${PDF_CLASS.page} ${PDF_CLASS.draft}`)).toBe(pageCount)
   })
 
   it("marks the factors of a draft that are not filled", () => {
@@ -460,7 +491,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
   const WITH_ROUTE: SurveyExportData = { ...exportFixtureV32Submitted, route: WORST_ROUTE }
   const WITH_BOTH: SurveyExportData = { ...WITH_CONDITIONS, route: WORST_ROUTE }
 
-  it("sits right after the conditions block and before the score summary", () => {
+  it("sits right after the conditions block and before the factor chart", () => {
     const { html } = buildSurveyExportHtml(WITH_BOTH)
 
     expectInOrder(bodyOf(html), [
@@ -468,8 +499,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
       t.method.heading,
       t.conditions.heading,
       rt.heading,
-      t.scores.totalHeading,
-      t.scores.chartHeading,
+      t.charts.heading,
       t.factors.standGroup,
     ])
   })
@@ -482,7 +512,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
       t.identity.heading,
       t.method.heading,
       rt.heading,
-      t.scores.totalHeading,
+      t.charts.heading,
     ])
   })
 
@@ -490,7 +520,7 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
     const { html } = buildSurveyExportHtml(WITH_BOTH)
     const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
 
-    expectInOrder(css, [".identity-heading", ".conditions-card", ".route-card", ".score-"])
+    expectInOrder(css, [".identity-heading", ".conditions-card", ".route-card", ".chart-card"])
   })
 
   it("removes the identity row Mode de relevé when the block prints, and only then", () => {
@@ -537,21 +567,6 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
     expect(html).toContain(`>${rt.complement}</th>`)
   })
 
-  // The page counts are those of the jsdom-free estimate (block heights against the page capacity),
-  // not a device measurement: plan 30-24 measures the real page count on iOS and Android. A survey
-  // without a route keeps its old count; with the block, an ordinary survey loses the room for the
-  // chart on page 1 (identity 226 + method 93 + route 181 + scores 136 leaves 44 of 680), which
-  // costs one page.
-  it.each([
-    ["a v3.0 draft without a route", exportFixtureV30Draft, 4],
-    ["a v3.2 submitted survey without a route", exportFixtureV32Submitted, 4],
-    ["a v3.2 submitted survey with the fullest route", WITH_ROUTE, 5],
-    ["the worst case sheet (fullest route, 24 photos)", exportFixtureWorstCase, 10],
-    ["the worst case sheet without its route", { ...exportFixtureWorstCase, route: null }, 10],
-  ])("pins the page count of %s at %i", (_label, data, expected) => {
-    expect(buildSurveyExportHtml(data).pageCount).toBe(expected)
-  })
-
   it("keeps the route block whole, once, on a single page, never taller than a page", () => {
     const block = buildRouteBlock(exportFixtureWorstCase, buildPdfPalette())
     const capacity =
@@ -566,5 +581,312 @@ describe("buildSurveyExportHtml route block (phase 30)", () => {
 
   it("never prints an em dash in the block", () => {
     expect(buildRouteBlock(exportFixtureWorstCase, buildPdfPalette())?.html).not.toContain(EM_DASH)
+  })
+})
+
+// Phase 33 (D-10): the sections come from the registry (`sections.ts`), and `build-html.ts` names
+// none of them: the cover and the summary joined the documents by two registry entries.
+describe("buildSurveyExportHtml section registry", () => {
+  it("keeps the CSS order: fonts, shell, then the sections in sheet order", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureWorstCase)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+    expectInOrder(css, [
+      "@font-face",
+      "@page",
+      ".cover-",
+      ".map-frame",
+      ".identity-heading",
+      ".conditions-",
+      ".route-",
+      ".chart-card",
+      ".factor-card",
+      ".trend-",
+      ".photos-",
+    ])
+  })
+
+  it("prints the sections of the complete mode, and only those, in the registry order", () => {
+    const ids = sectionsFor("complete").map((section) => section.id)
+    expect(ids[0]).toBe("cover")
+    expect(ids).not.toContain("summary")
+    expect(sectionsFor("summary").map((section) => section.id)).toEqual(["summary"])
+  })
+})
+
+// Phase 33 (D-03, D-11, D-24, UI-SPEC B.11): the page-count targets with the cover and the map on it.
+// The counts are those of the block-height estimate against the page capacity, not a device
+// measurement: plans 33-14 and 33-18 compare them with `pdfinfo` on Chrome, the iOS simulator and the
+// Android emulator. The exact number is in each test name; the target is the upper bound.
+describe("buildSurveyExportHtml page counts (B.11)", () => {
+  const WITH_ROUTE: SurveyExportData = { ...exportFixtureV32Submitted, route: WORST_ROUTE }
+
+  it.each([
+    { label: "a v3.0 draft (target 4)", data: exportFixtureV30Draft, pages: 4, target: 4 },
+    {
+      label: "a low-score v3.2 survey, every factor at 0 or 2 (target 4)",
+      data: exportFixtureLowScore,
+      pages: 4,
+      target: 4,
+    },
+    { label: "the typical survey (target 6)", data: exportFixtureTypical, pages: 5, target: 6 },
+    {
+      label: "the typical survey with conditions and route (target 7)",
+      data: exportFixtureTypicalConditioned,
+      pages: 6,
+      target: 7,
+    },
+    {
+      label: "the worst case sheet (target 10)",
+      data: exportFixtureWorstCase,
+      pages: 9,
+      target: 10,
+    },
+    {
+      label: "the worst case sheet without its route (target 10)",
+      data: { ...exportFixtureWorstCase, route: null },
+      pages: 9,
+      target: 10,
+    },
+  ])("pins the page count of $label at $pages", ({ data, pages, target }) => {
+    const { pageCount } = buildSurveyExportHtml(data)
+    expect(pageCount).toBe(pages)
+    expect(pageCount).toBeLessThanOrEqual(target)
+  })
+
+  // Plan 33-16 (owner decision 2026-10-26): PAGE_FILL_FACTOR 0.92 -> 0.94. Plan 33-18 (D-24, D-25):
+  // the body has no map and the year row is gone when it equals the date's year. Plan 33-19 (D-27):
+  // the chart card grows from 214 to 228 (the source line and the counted border). Page 2 holds the
+  // identity card (271 with the year rule), the chart card (228) and the stand heading with factor A
+  // (190), 689 against a capacity of 695.6, so the factors still start on page 2 and the closing
+  // notes share the last page. The devices printed the same content in about 2 units less than the
+  // estimate (33-14-MEASUREMENTS.md). 6.6 units of slack: a chart block of 236 moves the typical
+  // survey to 6 pages, so no pin may be raised to make room.
+  it("pins the page count of a v3.2 submitted survey at 4, the B.11 target", () => {
+    expect(buildSurveyExportHtml(exportFixtureV32Submitted).pageCount).toBe(4)
+  })
+
+  it.each([
+    ["a v3.2 submitted survey", exportFixtureV32Submitted],
+    ["the typical survey", exportFixtureTypical],
+    ["the low-score survey", exportFixtureLowScore],
+  ])(
+    "keeps the identity card, the chart card, the stand heading and factor A on page 2 for %s",
+    (_label, data) => {
+      const second = pagesOf(buildSurveyExportHtml(data).html)[1]
+      expectInOrder(second, [
+        t.identity.heading,
+        t.charts.heading,
+        'class="chart-plane"',
+        'class="chart-rose"',
+        escapeHtml(t.charts.source).slice(0, 24),
+        t.factors.standGroup,
+        '<span class="factor-letter">A</span>',
+      ])
+      expect(second).not.toContain('<span class="factor-letter">B</span>')
+    },
+  )
+
+  it("pins a v3.2 submitted survey with the fullest route at 4 (it was 5 with the body map)", () => {
+    expect(buildSurveyExportHtml(WITH_ROUTE).pageCount).toBe(4)
+  })
+
+  it.each([
+    ["the typical survey", exportFixtureTypical],
+    ["the typical survey with conditions and route", exportFixtureTypicalConditioned],
+    ["the worst case sheet", exportFixtureWorstCase],
+  ])("draws the map once, on page 1, with its heading, for %s", (_label, data) => {
+    const { html } = buildSurveyExportHtml(data)
+    const pages = pagesOf(html)
+    expect(pages[0]).toContain(`<div class="cover-map-heading">${t.map.heading}</div>`)
+    expect(countOf(pages[0], 'class="map-frame"')).toBe(1)
+    expect(countOf(bodyOf(html), 'class="map-frame"')).toBe(1)
+    expect(countOf(bodyOf(html), t.map.heading)).toBe(1)
+    for (const page of pages.slice(1)) expect(page).not.toContain("map-frame")
+  })
+
+  it.each([
+    ["the typical survey", exportFixtureTypical],
+    ["the worst case sheet", exportFixtureWorstCase],
+  ])(
+    "puts the trend after the factors, on the page of the factor J card, for %s",
+    (_label, data) => {
+      const pages = pagesOf(buildSurveyExportHtml(data).html)
+      const trendPage = pages.findIndex((page) => page.includes(t.trend.heading))
+      expect(trendPage).toBeGreaterThan(1)
+      const lastFactor = pages.findIndex((page) =>
+        page.includes('<span class="factor-letter">J</span>'),
+      )
+      expect(trendPage).toBe(lastFactor)
+      const page = pages[trendPage]
+      expect(page.indexOf('<span class="factor-letter">J</span>')).toBeLessThan(
+        page.indexOf(t.trend.heading),
+      )
+      const photoPage = pages.findIndex((entry) => entry.includes(t.photos.heading))
+      expect(photoPage).toBeGreaterThan(trendPage)
+    },
+  )
+
+  it("keeps one trend block for a six-point history", () => {
+    expect(exportFixtureWorstCase.history?.items).toHaveLength(6)
+    const pages = pagesOf(buildSurveyExportHtml(exportFixtureWorstCase).html)
+    expect(pages.filter((page) => page.includes(t.trend.heading))).toHaveLength(1)
+  })
+
+  it("prints all 30 parcel ids of the many-parcels fixture and no ellipsis in the whole document (D-23)", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureManyParcels)
+    const body = bodyOf(html)
+    for (const id of exportFixtureManyParcels.parcelIds) expect(body).toContain(id)
+    expect(body).not.toContain(String.fromCharCode(0x2026))
+    // The cover prints no parcel id at all: the list is on page 2 only.
+    expect(pagesOf(html)[0]).not.toContain(exportFixtureManyParcels.parcelIds[0])
+  })
+
+  it("starts the first photo page after the trend, never beside it", () => {
+    const pages = pagesOf(buildSurveyExportHtml(exportFixtureTypical).html)
+    const photo = pages.findIndex((page) => page.includes(t.photos.heading))
+    expect(photo).toBe(pages.length - 1)
+    expect(pages[photo]).not.toContain(t.trend.heading)
+  })
+})
+
+describe("buildSurveyExportHtml whole blocks and photo pages (B.11)", () => {
+  const palette = buildPdfPalette()
+
+  it.each([
+    ["a v3.2 submitted survey", exportFixtureV32Submitted],
+    ["a v3.0 draft", exportFixtureV30Draft],
+    ["the typical survey", exportFixtureTypical],
+    ["the typical survey with conditions and route", exportFixtureTypicalConditioned],
+    ["the worst case sheet", exportFixtureWorstCase],
+    ["a survey on 30 parcels", exportFixtureManyParcels],
+  ])("prints every block of the complete mode whole, on exactly one page: %s", (_label, data) => {
+    const pages = pagesOf(buildSurveyExportHtml(data).html)
+    const blocks = sectionsFor("complete").flatMap((section) => section.build(data, palette))
+    expect(blocks.length).toBeGreaterThan(10)
+    for (const block of blocks) {
+      expect(pages.filter((page) => page.includes(block.html))).toHaveLength(1)
+    }
+  })
+
+  it("lists the 30 ids of the many-parcels fixture in the identity block, shortened nowhere", () => {
+    const identity = buildIdentityBlocks(exportFixtureManyParcels, palette)[0].html
+    for (const id of exportFixtureManyParcels.parcelIds) expect(identity).toContain(id)
+    expect(identity).not.toContain("…")
+  })
+
+  function withPhotos(count: number): SurveyExportData {
+    const items = exportFixtureWorstCase.photos.items.slice(0, count)
+    return { ...exportFixtureTypical, photos: { items, total: count, unavailable: 0 } }
+  }
+
+  /** The number of photo cells on each page that holds one, in page order, with the last flag. */
+  function photoPages(data: SurveyExportData): { cells: number; last: boolean }[] {
+    const pages = pagesOf(buildSurveyExportHtml(data).html)
+    return pages.flatMap((page, index) => {
+      const cells = countOf(page, `class="photos-cell"`)
+      return cells === 0 ? [] : [{ cells, last: index === pages.length - 1 }]
+    })
+  }
+
+  it.each([
+    ["the typical survey with conditions", exportFixtureTypicalConditioned],
+    ["the worst case sheet", exportFixtureWorstCase],
+    ["the typical survey with 1 photo", withPhotos(1)],
+    ["the typical survey with 7 photos", withPhotos(7)],
+    ["the typical survey with 13 photos", withPhotos(13)],
+    ["the typical survey with 24 photos", withPhotos(24)],
+  ])("leaves no photo page before the last with fewer than two photos: %s", (_label, data) => {
+    const holders = photoPages(data)
+    expect(holders.length).toBeGreaterThan(0)
+    for (const holder of holders.filter((entry) => !entry.last)) {
+      expect(holder.cells).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it("prints every photo of the fixtures once", () => {
+    for (const count of [1, 7, 13, 24]) {
+      const total = photoPages(withPhotos(count)).reduce((sum, entry) => sum + entry.cells, 0)
+      expect(total).toBe(count)
+    }
+  })
+})
+
+describe("buildSurveyExportHtml summary document (D-07)", () => {
+  const KINDS: SummaryVariantKind[] = [
+    "noBasemap",
+    "noGeometry",
+    "noParcel",
+    "noHistory",
+    "firstSurvey",
+    "staleCache",
+  ]
+  const CASES: [string, SurveyExportData][] = [
+    ["the typical summary", exportFixtureSummary],
+    ["the fullest summary", exportFixtureSummaryWorst],
+    ["the low-score summary", exportFixtureSummaryLowScore],
+    ...KINDS.map((kind): [string, SurveyExportData] => [
+      `the ${kind} fallback`,
+      summaryVariant(kind),
+    ]),
+  ]
+
+  it.each(CASES)("prints %s as exactly one summary page, with 1 page", (_label, data) => {
+    const { html, pageCount } = buildSurveyExportHtml(data)
+    expect(pageCount).toBe(1)
+    const pages = pagesOf(html)
+    expect(pages).toHaveLength(1)
+    expect(pages[0].startsWith(` ${PDF_CLASS.pageSummary}"`)).toBe(true)
+    expect(pages[0]).not.toContain(`class="${PDF_CLASS.header}"`)
+    expect(pages[0]).not.toContain(PDF_CLASS.pageCover)
+  })
+
+  it.each(CASES)("holds none of the complete-only markup or CSS for %s", (_label, data) => {
+    const { html } = buildSurveyExportHtml(data)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+    expect(css).toContain(".summary-")
+    expect(css).toContain(".map-frame")
+    for (const rule of [".identity-card", ".factor-card", ".photos-", ".cover-", ".score-"]) {
+      expect(css).not.toContain(rule)
+    }
+    const body = bodyOf(html)
+    for (const marker of [
+      "identity-card",
+      "factor-card",
+      "photos-cell",
+      "cover-page",
+      t.photos.heading,
+      t.identity.heading,
+    ]) {
+      expect(body).not.toContain(marker)
+    }
+  })
+
+  it("keeps the content security policy and no script or address in the summary", () => {
+    for (const [, data] of CASES) {
+      const { html } = buildSurveyExportHtml(data)
+      expect(html).toContain(`<meta http-equiv="Content-Security-Policy" content="${PDF_CSP}">`)
+      for (const needle of ["<script", "http:", "https:", "file:", EM_DASH]) {
+        expect(html).not.toContain(needle)
+      }
+    }
+  })
+
+  it("never prints the photos of a survey in its summary, whatever the data holds", () => {
+    const { html } = buildSurveyExportHtml({
+      ...exportFixtureSummary,
+      photos: exportFixtureWorstCase.photos,
+    })
+    expect(bodyOf(html)).not.toContain("photos-cell")
+    expect(bodyOf(html)).not.toContain(t.photos.heading)
+  })
+})
+
+describe("buildSurveyExportHtml draft cover (D-10)", () => {
+  it("keeps the banner and the watermark on the cover of a draft too", () => {
+    const { html } = buildSurveyExportHtml(exportFixtureV30Draft)
+    const cover = pagesOf(html)[0]
+    expect(cover).toContain(PDF_CLASS.pageCover)
+    expect(cover).toContain(`<div class="${PDF_CLASS.banner}">`)
+    expect(cover).toContain(`<div class="${PDF_CLASS.watermark}">`)
   })
 })

@@ -101,7 +101,7 @@ None. T-29-34 (stale docs re-deriving visibility by hand) is mitigated: contract
 
 ## Tasks 3 and 4 (closed 2026-10-14)
 
-- Task 3: owner device checks approved on 2026-10-13 (DV-29-01 to DV-29-04, one global approval). DV-29-04 was validated by the owner on the production server on 2026-10-14, after the server updated to commit `647699d9`. DV-29-05 (Android emulator) was not run and moves to Phase 35.
+- Task 3: owner device checks approved on 2026-10-13 (DV-29-01 to DV-29-04, one global approval). DV-29-04 was validated by the owner on the production server on 2026-10-14, after the server updated to commit `647699d9`. DV-29-05 (Android emulator) was not run and moves to Phase 37.
 - Task 4: done in commit `633ac20f` (rows DV-29-01 to DV-29-05 in `docs/user-tests/device-checks.md`, `REQ-C-privacy-choice` traced, ROADMAP Depends on Phase 11, STATE). The follow-up fix #301 removed the visibility line of a draft (owner decision 2026-10-14).
 
 ## Self-Check: PASSED

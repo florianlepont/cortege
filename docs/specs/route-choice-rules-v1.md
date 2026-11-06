@@ -246,7 +246,7 @@ et la raison du mode de relevé en dernier.
 | R-09 | 1 < S ≤ 5 ha, `difficulty=false`, `homogeneity=homogeneous` | `partial` (bande si `narrow=true`, sinon placette, R-12a et R-12b), `capped` ; raison de tête `partial_homogeneous` | M p. 4 | T | `surface_ha=2`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, `capped`, zone 1, raisons [`partial_homogeneous`, `partial_plot_why`, `complement_advised`, `capped_default`], aucun avertissement |
 | R-10 | 1 < S ≤ 5 ha, `difficulty=false`, `homogeneity=heterogeneous` | `full`, `capped`, zone = S ; raisons `whole_stand_heterogeneous` puis `capped_default` | M p. 4 ; S p. 18 | T | `surface_ha=4.5`, `homogeneity=heterogeneous`, `difficulty=false` → `full`, `capped`, zone 4.5 |
 | R-11 | 5 < S ≤ T | `partial`, `capped` ; raison de tête `partial_medium_stand` ; la forme (bande ou placette) suit R-12a et R-12b ; `difficulty` n'est posée que si le peuplement est `homogeneous` | M p. 4 | T (le seuil 10 ou 20 selon l'hétérogénéité est J, décision O-02) | `surface_ha=15`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, `capped`, zone 1.5, raisons [`partial_medium_stand`, `partial_plot_why`, `complement_advised`, `capped_default`] |
-| R-11b | S > T | aucun parcours tant que l'observateur n'a pas choisi ; **deux options seulement**, dans l'ordre : `subdivide` (préselectionnée et étiquetée « Conseillé », décision O-03), `partial` ; raison `large_stand` ; `subdivide` n'est pas un parcours : l'assistant redemande la surface d'un morceau et enregistre `subdivided=true` ; `partial` renvoie le résultat de R-12a ou R-12b avec les raisons `large_stand` et `partial_medium_stand` | M p. 4 | J (décision O-03) | `surface_ha=12`, `homogeneity=heterogeneous` → options [`subdivide`, `partial`], `subdivide` préselectionnée, raison [`large_stand`], aucun parcours |
+| R-11b | S > T | aucun parcours tant que l'observateur n'a pas choisi ; **deux options seulement**, dans l'ordre : `subdivide`, `partial` ; l'option étiquetée « Conseillé » est `subdivide` pour un peuplement varié (décision O-03) et `partial` pour un peuplement homogène (décision du 2026-10-23) ; raison `large_stand` ; `subdivide` n'est pas un parcours : l'assistant redemande la surface d'un morceau et enregistre `subdivided=true` ; `partial` renvoie le résultat de R-12a ou R-12b avec les raisons `large_stand` et `partial_medium_stand` | M p. 4 | J (décision O-03) | `surface_ha=12`, `homogeneity=heterogeneous` → options [`subdivide`, `partial`], `subdivide` préselectionnée, raison [`large_stand`], aucun parcours |
 
 **Étape 2 : paramètres d'un parcours partiel**
 
@@ -298,7 +298,7 @@ bornes. Chaque identifiant `R-nn#étiquette` désigne la règle `R-nn` dont il f
 | R-11#homo-between-10-and-20ha | R-11 | M p. 4 | `surface_ha=12`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, zone 1.2, pas d'options |
 | R-11#homo-at-20ha | R-11 | M p. 4 | `surface_ha=20`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, zone 2, pas d'options |
 | R-11b#hetero-above-10ha | R-11b | M p. 4 | `surface_ha=10.01`, `homogeneity=heterogeneous` → options [`subdivide`, `partial`], aucun parcours |
-| R-11b#homo-above-20ha | R-11b | M p. 4 | `surface_ha=20.01`, `homogeneity=homogeneous` → options [`subdivide`, `partial`], aucun parcours |
+| R-11b#homo-above-20ha | R-11b | M p. 4 | `surface_ha=20.01`, `homogeneity=homogeneous` → options [`subdivide`, `partial`], `partial` préselectionnée, aucun parcours |
 | R-11b#choose-partial | R-11b | M p. 4 | `surface_ha=12`, `homogeneity=heterogeneous`, option `partial` choisie → `partial_strip`, zone 2.4, raisons [`large_stand`, `partial_medium_stand`, `partial_strip_why`, `complement_advised`] |
 | R-12a#narrow | R-12a | M p. 8 | `surface_ha=8`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=true` → `partial_strip` |
 | R-13#at-half | R-13 | M p. 7 | `surface_ha=2`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → zone 1 (exactement la moitié), aucun avertissement `partial_over_half` |
@@ -388,7 +388,7 @@ longue, plus le relevé l'est : le texte officiel demande de choisir les facteur
 | B | nombre de strates présentes (couvrant au moins 20 % de la surface échantillonnée) | couvert de chaque strate, en pourcentage de la surface échantillonnée | **nouvelle saisie** `strata_cover` (section 7) |
 | C et D | au plus 3 bois morts de grosse dimension et 1 de dimension moyenne par hectare | tous les bois morts | rien de plus : les comptes sont déjà sans plafond ; textes et indices changent |
 | E | au plus 5 très gros bois et 1 gros bois par hectare | tous les très gros bois et gros bois | idem |
-| F | au plus 2 arbres par hectare et par groupe de dendromicrohabitats, au plus 8 au total | tous les arbres porteurs, groupe par groupe | **nouvelle saisie** `dmh_counts` (section 7) |
+| F | au plus 2 arbres par hectare et par groupe de dendromicrohabitats, au plus 8 au total | tous les arbres porteurs, groupe par groupe | **nouvelle saisie** `dmh_counts` (section 7) ; en plafonné aussi, un compteur de 0 à 2 arbres par hectare par groupe (section 7, suite de la phase 32) |
 | G | pourcentage de milieux ouverts, avec arrêt à 5 % (score maximal) | pourcentage sans arrêt à 5 % (M p. 24) | rien de plus : le pourcentage est déjà saisi sans plafond |
 | H | classe | sans objet | rien |
 | I et J | au plus 2 types comptés | tous les types observés | rien de plus : le nombre de types est déjà saisi sans plafond |
@@ -421,6 +421,20 @@ les groupes sont additionnés (M p. 9 et p. 17). Le calcul est un utilitaire pur
 (`dmhDensityPerHa`). La nouvelle clé n'est **pas** `dmh_group_counts` : cette clé existe déjà,
 c'est un tableau de nombres que le calculateur actuel plafonne à 2 sans jamais diviser par une
 surface ; lui donner un autre sens changerait le score de relevés existants.
+
+**F en relevé plafonné : `dmh_counts` par hectare (suite de la phase 32, décision du propriétaire du
+2026-10-28).** La fiche officielle demande aussi en relevé plafonné « au maximum 2 arbres/ha par
+groupe de DMH et total plafonné à 8 arbres/ha ». Le relevé plafonné a donc lui aussi un compteur par
+groupe, mais l'unité n'est pas la même : la valeur est un nombre entier d'arbres **par hectare** de
+0 à 2 (`DMH_GROUP_DENSITY_CAP_PER_HA`), sans surface et sans division, sans fraction. L'application
+écrit `dmh_counts` avec `dmh_groups` et une clé notée `trees_per_ha` dérivée, la somme des
+compteurs (`cappedDmhTotalPerHa`, chaque groupe tenu à 2) ; elle n'écrit pas `surface_ha`. Le total
+n'est pas ramené à 8 : les classes de score s'arrêtent déjà à 8, le plafond de 8 de la fiche n'est
+qu'un affichage. Le nombre global d'arbres par hectare reste modifiable tant qu'aucun compteur n'est
+au-dessus de 0 ; ensuite il est dérivé et non modifiable. Toucher un compteur reprend la main sur un
+nombre tapé : le total dérivé le remplace. Un relevé plafonné enregistré avant (nombre tapé et
+cases cochées seulement) s'ouvre tel quel et reste valide. La règle U-O10 reste vraie : aucun
+calculateur ne lit `dmh_counts` (cas de parité `MAT-F-CAP-01` et `MAT-F-CAP-02`).
 
 **Règle U-O10 (valeur proposée).** Une clé de détail n'est jamais lue par un calculateur de score.
 Tant qu'un facteur est compté en entier, l'application écrit sa clé notée (`strata_count`,
@@ -766,4 +780,8 @@ version et la valide par écrit plus tard.
 - Le sélecteur dit que le relevé déplafonné est réservé aux situations extrêmes et aux études, et que le relevé plafonné suffit dans la grande majorité des cas (S p. 18 : « seuls quelques cas particuliers »).
 - Le préréglage `mature` disparaît : le texte officiel dit que les peuplements matures sont un cas particulier des peuplements aux scores maximaux. `always_max` (A C D E F I J proposés au départ, à réduire) le couvre. Les préréglages sont quatre : `all_factors`, `always_max`, `minimum`, `custom`. L'enregistrement ne change pas (il ne garde que `counting` et `uncapped_factors`).
 - Chaque préréglage s'affiche comme une carte avec son explication visible, comme les parcours et les modes de relevé.
+
+### 2026-10-23, option conseillée pour un grand peuplement homogène
+
+À la demande du propriétaire : au-dessus de la limite de découpage, l'option « Conseillé » dépend de l'aspect du peuplement. Un peuplement varié reste à découper en morceaux homogènes (O-03). Un peuplement homogène est déjà « la plus petite partie du boisement, homogène » (S p. 18, note 1) : le découper a peu de sens, donc « Parcours partiel, sans découper » est conseillé. Les deux options restent offertes dans le même ordre ; seule l'étiquette change (`preselectedLargeStandOption` du package).
 

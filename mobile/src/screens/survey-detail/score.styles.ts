@@ -116,7 +116,7 @@ export function createScoreStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.colors.ochre,
     },
-    // Phase 27: the "Douteux" chip sits left aligned under the title, 4 pt below it.
+    // Phase 27: the "Incertitude" chip sits left aligned under the title, 4 pt below it.
     rowChip: {
       alignSelf: "flex-start",
       marginTop: brandSpacing4.xs,

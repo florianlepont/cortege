@@ -22,6 +22,7 @@ import { SelectedSurveyGate } from "./SelectedSurveyGate"
  */
 export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   navigation,
+  route,
 }: SurveyDetailRouteProps) {
   const { state: session } = useSession()
   const accessToken = useAccessToken()
@@ -45,8 +46,21 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const onOpenFinish = useLatestCallback((surveyId: string) =>
     navigation.navigate("surveyFinish", { surveyId }),
   )
+  // Route first: a draft with no route opens the route step in edit mode (the summary's bottom
+  // button), the same entry as the guided choice of the "Parcelles" page.
+  const onDefineRoute = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyRouteGuide", { surveyId, mode: "edit", surfaceHa: null }),
+  )
   const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
   const onOpenJournal = useLatestCallback(() => navigation.navigate("surveyJournal"))
+  // Phase 33 (D-05, D-14): "Partager" opens the export choice sheet; its answer comes back as the
+  // `exportRequest` parameter, which the screen applies once and this route then clears.
+  const onOpenExportChoice = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyExportChoice", { surveyId }),
+  )
+  const onExportRequestHandled = useLatestCallback(() =>
+    navigation.setParams({ exportRequest: undefined }),
+  )
   const onSimulateMissingAttachmentFile = useMemo(
     () => devOnlyHandler(syncActions.handleSimulateMissingAttachmentFile),
     [syncActions],
@@ -72,6 +86,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
             onDeleteAttachment={actions.deleteAttachment}
             onDeleteSurvey={actions.confirmDeleteSurvey}
             onOpenFinish={onOpenFinish}
+            onDefineRoute={onDefineRoute}
             onRetrySurvey={actions.retrySurvey}
             onDiscardSurvey={actions.discardSurvey}
             onRenameSurvey={actions.renameSurvey}
@@ -85,6 +100,9 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
             onOpenFactor={onOpenFactor}
             onOpenHistory={onOpenHistory}
             onOpenJournal={onOpenJournal}
+            exportRequest={route.params?.exportRequest}
+            onOpenExportChoice={onOpenExportChoice}
+            onExportRequestHandled={onExportRequestHandled}
             onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
             onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
           />

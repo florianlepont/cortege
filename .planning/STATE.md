@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 30
-current_phase_name: Route Choice Assistant (INSERTED, V1)
-status: executing
-stopped_at: "Phase 30: waves 1 to 11 done (23/25 plans); remaining: 30-24 (device checks and owner wording review), 30-25 (recorded tester session)"
-last_updated: "2026-10-14T08:00:00.000Z"
-last_activity: 2026-10-14
-last_activity_desc: Phase 30 spec validated by the owner (gate 30-02 passed); phase 29 merged into the branch
+current_phase: 32
+current_phase_name: Detailed DMH Information (INSERTED, V1)
+status: complete
+stopped_at: "Phase 32 complete and merged (PR #316, db43306f, 2026-10-30; 37/38 plans, 32-07 skipped): list and guide validated by the owner on the iPhone; plans 32-20 to 32-35 reviewed by the owner on the iPhone 2026-10-29, VoiceOver ok, PDF seen on the device, dark mode checked on simulators; verification status passed (32-VERIFICATION.md)"
+last_updated: "2026-10-28T12:00:00.000Z"
+last_activity: 2026-10-28
+last_activity_desc: Phase 32 merged (PR 316) after the owner's feedback rounds of 2026-10-28 to 2026-10-30; UAT and verification recorded
 progress:
   total_phases: 39
-  completed_phases: 21
+  completed_phases: 23
   total_plans: 220
-  completed_plans: 295
+  completed_plans: 296
   percent: 46
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 30 — Route Choice Assistant (INSERTED, V1)
+**Current focus:** Phase 32 closed (Detailed DMH Information, INSERTED, V1); next: Phase 31 (Parcel Annotation & Remarkable Elements)
 
 ## Current Position
 
-Phase: 30 (Route Choice Assistant (INSERTED, V1)) — EXECUTING
-Plan: 2 of 25
-Status: Executing Phase 30 (gate 30-02 passed; next wave 3)
-Last activity: 2026-10-14 — owner validated the route-choice spec
+Phase: 32 (Detailed DMH Information (INSERTED, V1)) — COMPLETE
+Plan: 37 of 38 done (32-07, the timing campaign, skipped by the owner's decision of 2026-10-27)
+Status: Phase 32 closed and merged 2026-10-30 (owner validations on 2026-10-27 and 2026-10-28, feedback rounds until 2026-10-30); the expert has read the 15 drawings and the thresholds and found them right (reported by the owner on 2026-10-30; name and date in the spec, section 12); owner iPhone review, VoiceOver and the updated PDF confirmed (PRs #319 to #321 merged)
+Last activity: 2026-10-28 — Phase 32 (Detailed DMH Information) complete: F group list, guide sheet with 15 original drawings, entry on Accueil, native-feel redesign; validated by the owner on the iPhone, branch claude/practical-bhaskara-39c526 (merged with origin/main) not pushed. Before: 2026-10-26 Phase 33 (PDF Export, Exhaustive and Simplified) complete: 20 plans (15 planned, 5 gap plans from the owner's decisions and iPhone reviews), both versions validated on the iPhone. Branch claude/intelligent-agnesi-22f0a3 not pushed.
 
-Progress: [█████████░] 29/39 phases complete
+Progress: [█████████░] 33/39 phases complete
 
 ## Performance Metrics
 
@@ -282,5 +282,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-13T17:49:24.125Z
-Stopped at: Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)
-Resume file: .planning/phases/30-route-choice-assistant-inserted-v1/30-01-PLAN.md
+Stopped at: Phase 32 planned (16 plans, verified); awaiting the owner for the WSL edition check and the drawings
+Resume file: .planning/phases/32-detailed-dmh-information-inserted-v1/32-01-PLAN.md

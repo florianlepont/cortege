@@ -49,7 +49,7 @@ type WizardHeadingProps = {
   /** The question, as the large heading. */
   title: string
   /** The one-sentence helper under it, in the lighter body style. */
-  lead: string
+  lead?: string
   /** A control beside the heading (the (i) glyph of the route step's questions). */
   trailing?: ReactNode
 }
@@ -80,7 +80,7 @@ export function WizardHeading({ title, lead, trailing }: WizardHeadingProps) {
           <View style={{ minHeight: TITLE_LINE_HEIGHT, justifyContent: "center" }}>{trailing}</View>
         </View>
       )}
-      <Text style={styles.lead}>{lead}</Text>
+      {lead === undefined ? null : <Text style={styles.lead}>{lead}</Text>}
     </>
   )
 }

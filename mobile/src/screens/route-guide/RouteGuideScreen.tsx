@@ -139,7 +139,6 @@ export function RouteGuideScreen({
             <View style={styles.result} testID="route-result">
               <WizardHeading
                 title={suggested ? resultText.suggestedTitle : resultText.chosenTitle}
-                lead={suggested ? resultText.suggestedLead : resultText.chosenLead}
               />
               {selection === null ? null : (
                 <ResultBody

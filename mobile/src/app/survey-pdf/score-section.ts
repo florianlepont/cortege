@@ -1,25 +1,34 @@
 import {
+  ALLOWED_SCORES_BY_FACTOR,
+  CONTEXT_BAND_CUT_OFFS,
   FACTOR_KEYS,
   IBP_MAX,
+  STAND_BAND_CUT_OFFS,
   bandTone,
   contextBand,
   standBand,
   totalBand,
 } from "@cortege/ibp-domain"
-import type { ScoreTone } from "@cortege/ibp-domain"
+import type { ContextBand, ScoreTone, StandBand } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
-import type { DisplayedFactorResult } from "../../screens/survey-detail/useLocalDraftSummary"
-import { escapeHtml, formatDecimal, svgNumber } from "./html"
-import { PDF_FONT_FAMILIES } from "./types"
-import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
+import type {
+  DisplayedFactorResult,
+  DisplayedScores,
+} from "../../screens/survey-detail/useLocalDraftSummary"
+import type { PdfPalette, SurveyExportData } from "./types"
 
-// The score summary at the top of the sheet (phase 25.1, D-02, D-10): the total out of 50, the
-// stand and management sub-score out of 35 and the context sub-score out of 15, each with its CNPF
-// band. Pure: the bands and their tones come from the domain, the band names from the catalogue
-// the survey detail screen uses (`fr.surveyDetail.bands`); there is no threshold in this file.
+// The score helpers of the sheet (phase 25.1, D-02, D-10; phase 33, D-01): the filled points of a
+// factor, the count of missing factors, the tone colours and the three scores with their CNPF bands.
+// The score card that printed them in the body is gone (phase 33): its content moved to the cover,
+// and these helpers stay the one source of bands for the cover, the summary, the factor cards and
+// the factor chart. Pure: the bands and their tones come from the domain, the band names from the
+// catalogue the survey detail screen uses (`fr.surveyDetail.bands`); there is no threshold in this
+// file. Phase 33 (D-28) adds the zones of the plane and the ring scores of the rose to the same
+// one source: the cut points are the package's own constants (`STAND_BAND_CUT_OFFS`,
+// `CONTEXT_BAND_CUT_OFFS`) and the ring scores are the scores every factor may take, so the charts
+// can never draw a cut the band functions do not apply.
 
-const t = fr.surveyExport
 const bandNames = fr.surveyDetail.bands
 
 // The printed sentinel of a factor without a retained class (as `useLocalDraftSummary` writes it).
@@ -29,17 +38,6 @@ const NOT_FILLED_CLASS = "Not filled"
 
 type Entries = SurveyExportData["factorEntries"]
 type Entry = DisplayedFactorResult | undefined
-
-// Height estimate, in design units of the 595 x 842 page (plan 25.1-07).
-const CARD_PADDING = 20 // 10 top and 10 bottom
-const CARD_TITLE = 24
-const PROVISIONAL_HEIGHT = 20
-// Padding 16, heading 12, value 28, band 16, track 4 + 6 = 82 as printed on iOS and Android (device
-// pre-check of plan 25.1-17), plus 2 spare. The 92 first written counted 14 of gaps that are not
-// there and, with the identity estimates, pushed the factor chart off page 1.
-const TILE_HEIGHT = 84
-const CARD_MARGIN = 10
-const TILE_GAP = 8
 
 /** The points of a filled factor, or null when the entry is absent, the sentinel, or point-less. */
 export function filledPoints(entry: Entry): number | null {
@@ -70,94 +68,100 @@ export function toneColor(tone: ScoreTone, palette: PdfPalette): string {
   }
 }
 
-type Tile = {
-  heading: string
+/**
+ * The fill of a chart zone for a tone (phase 33, D-27): the strong tint (the ends of the plane's
+ * stand axis) or the soft one, a mid tone having a single tint. Palette keys only.
+ */
+export function zoneTint(tone: ScoreTone, strong: boolean, palette: PdfPalette): string {
+  switch (tone) {
+    case "low":
+      return strong ? palette.zoneLow : palette.zoneLowSoft
+    case "mid":
+      return palette.zoneMid
+    default:
+      return strong ? palette.zoneHigh : palette.zoneHighSoft
+  }
+}
+
+/** One score with its CNPF band: points (null when not a number), maximum, band name and tone. */
+export type ScoreBand = {
   points: number | null
   max: number
   bandName: string | null
   tone: ScoreTone | null
 }
 
-function isScore(value: number | null): value is number {
-  return value !== null && Number.isFinite(value)
+function isScore(value: number | null | undefined): value is number {
+  return value !== null && value !== undefined && Number.isFinite(value)
 }
 
-function tileOf(
-  heading: string,
-  value: number | null,
+function bandOf(
+  value: number | null | undefined,
   max: number,
   band: (score: number) => { name: string; tone: ScoreTone },
-): Tile {
-  if (!isScore(value)) return { heading, points: null, max, bandName: null, tone: null }
+): ScoreBand {
+  if (!isScore(value)) return { points: null, max, bandName: null, tone: null }
   const { name, tone } = band(value)
-  return { heading, points: value, max, bandName: name, tone }
+  return { points: value, max, bandName: name, tone }
 }
 
-function tileHtml(tile: Tile, palette: PdfPalette): string {
-  if (tile.points === null) {
-    return `<div class="score-tile"><div class="score-tile-heading">${escapeHtml(tile.heading)}</div><div class="score-value score-value-empty">${escapeHtml(t.scores.notFilled)}</div></div>`
-  }
-  const color = escapeHtml(tile.tone === null ? palette.bandTrack : toneColor(tile.tone, palette))
-  const outOf = t.scores.outOf({ points: formatDecimal(tile.points, 0), max: String(tile.max) })
-  const ratio = Math.min(1, Math.max(0, tile.points / tile.max))
-  const band = tile.bandName
-    ? `<div class="score-band"><span class="score-dot" style="background: ${color}"></span>${escapeHtml(t.scores.band({ band: tile.bandName }))}</div>`
-    : ""
-  return `<div class="score-tile"><div class="score-tile-heading">${escapeHtml(tile.heading)}</div><div class="score-value">${escapeHtml(outOf)}</div>${band}<div class="score-track"><div class="score-fill" style="width: ${svgNumber(ratio * 100)}%; background: ${color}"></div></div></div>`
-}
-
-/** The score card: title, the provisional line of a draft, and the three tiles with their bands. */
-export function buildScoreSummaryBlock(data: SurveyExportData, palette: PdfPalette): PdfBlock {
-  const scores = data.scores
-  const tiles = [
-    tileOf(t.scores.totalHeading, scores?.ibp_total ?? null, IBP_MAX.total, (score) => {
+/**
+ * The three scores of a survey with their band names and tones, the one source the cover tiles and
+ * the summary read (phase 33): the bands come from the domain, the names from the
+ * survey detail catalogue, and no threshold is written here. The total's band name keeps the stand
+ * names, as the app's total does.
+ */
+export function scoreBands(scores: DisplayedScores | null): {
+  total: ScoreBand
+  stand: ScoreBand
+  context: ScoreBand
+} {
+  return {
+    total: bandOf(scores?.ibp_total, IBP_MAX.total, (score) => {
       const band = totalBand(score)
       return { name: bandNames.stand[band], tone: bandTone(band) }
     }),
-    tileOf(
-      t.scores.standHeading,
-      scores?.ibp_peuplement_gestion ?? null,
-      IBP_MAX.stand,
-      (score) => {
-        const band = standBand(score)
-        return { name: bandNames.stand[band], tone: bandTone(band) }
-      },
-    ),
-    tileOf(t.scores.contextHeading, scores?.ibp_contexte ?? null, IBP_MAX.context, (score) => {
+    stand: bandOf(scores?.ibp_peuplement_gestion, IBP_MAX.stand, (score) => {
+      const band = standBand(score)
+      return { name: bandNames.stand[band], tone: bandTone(band) }
+    }),
+    context: bandOf(scores?.ibp_contexte, IBP_MAX.context, (score) => {
       const band = contextBand(score)
       return { name: bandNames.context[band], tone: bandTone(band) }
     }),
-  ]
-  const missing = countMissingFactors(data.factorEntries)
-  const provisional = data.isDraft && missing > 0
-  const provisionalHtml = provisional
-    ? `<p class="score-provisional" style="color: ${escapeHtml(palette.alert)}">${escapeHtml(t.scores.provisional({ count: missing }))}</p>`
-    : ""
-  const html = `<section class="score-card">
-<h2 class="score-title">${escapeHtml(t.scores.title)}</h2>
-${provisionalHtml}<div class="score-tiles">${tiles.map((tile) => tileHtml(tile, palette)).join("")}</div>
-</section>`
-  const height =
-    CARD_PADDING + CARD_TITLE + (provisional ? PROVISIONAL_HEIGHT : 0) + TILE_HEIGHT + CARD_MARGIN
-  return { id: "score-summary", html, height }
+  }
 }
 
-/** CSS of the score card; every class is prefixed `score-`, every colour is a palette value. */
-export function scoreSectionCss(palette: PdfPalette): string {
-  const font = PDF_FONT_FAMILIES
-  return `
-.score-card { display: block; box-sizing: border-box; margin: 0 0 ${CARD_MARGIN}px; padding: 10px; border: 1px solid ${palette.line}; border-radius: 6px; background: ${palette.panel}; }
-.score-title { margin: 0; height: ${CARD_TITLE}px; font-family: ${font.heading}; font-size: 11px; line-height: ${CARD_TITLE}px; color: ${palette.ink}; }
-.score-provisional { margin: 0; height: ${PROVISIONAL_HEIGHT}px; font-family: ${font.label}; font-size: 9px; line-height: ${PROVISIONAL_HEIGHT}px; color: ${palette.alert}; }
-.score-tiles { display: flex; }
-.score-tile { flex: 1; box-sizing: border-box; margin-right: ${TILE_GAP}px; padding: 8px 10px; border-radius: 6px; background: ${palette.paper}; }
-.score-tile:last-child { margin-right: 0; }
-.score-tile-heading { height: 12px; font-family: ${font.label}; font-size: 8px; line-height: 12px; color: ${palette.inkMuted}; }
-.score-value { height: 28px; font-family: ${font.numeral}; font-size: 20px; line-height: 28px; color: ${palette.ink}; }
-.score-value-empty { font-family: ${font.body}; font-size: 10px; color: ${palette.inkMuted}; }
-.score-band { height: 16px; font-family: ${font.body}; font-size: 8.5px; line-height: 16px; color: ${palette.ink}; }
-.score-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 4px; }
-.score-track { height: 6px; margin-top: 4px; border-radius: 3px; background: ${palette.bandTrack}; overflow: hidden; }
-.score-fill { height: 6px; border-radius: 3px; }
-`
+/** One zone of a chart axis: its bounds, the band name and the band tone. */
+export type ChartZone = { from: number; to: number; name: string; tone: ScoreTone }
+
+function zonesOf<Band extends StandBand | ContextBand>(
+  cutOffs: readonly number[],
+  max: number,
+  bandAt: (score: number) => Band,
+  names: Readonly<Record<Band, string>>,
+): ChartZone[] {
+  const bounds = [0, ...cutOffs, max]
+  return bounds.slice(0, -1).map((from, index) => {
+    const band = bandAt(from)
+    return { from, to: bounds[index + 1], name: names[band], tone: bandTone(band) }
+  })
+}
+
+/** The five stand and management zones of the plane (/35), cut where `standBand` cuts. */
+export function standZones(): ChartZone[] {
+  return zonesOf(STAND_BAND_CUT_OFFS, IBP_MAX.stand, standBand, bandNames.stand)
+}
+
+/** The three context levels of the plane (/15), cut where `contextBand` cuts. */
+export function contextLevels(): ChartZone[] {
+  return zonesOf(CONTEXT_BAND_CUT_OFFS, IBP_MAX.context, contextBand, bandNames.context)
+}
+
+/** The scores every factor A to J may take, ascending: the rings of the rose (0, 2, 5 today). */
+export function roseRingScores(): number[] {
+  const [first, ...others] = FACTOR_KEYS.map((key) => ALLOWED_SCORES_BY_FACTOR[key])
+  return first
+    .filter((score) => others.every((scores) => scores.includes(score)))
+    .sort((a, b) => a - b)
 }

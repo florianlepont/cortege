@@ -46,11 +46,13 @@ const mockForm = {
     factorSections: {},
     factorRetainedScores: {},
     ibpMethodVersion: null,
+    ibpCas: 2,
     factorAnnotations: {} as FactorAnnotationDraft,
     uncapped: {
       strataCoverText: { very_low: "25" },
       dmhCounts: { dmh_01: 2 },
       fSurfaceText: "1,2",
+      openAreasHa: [0.3],
     },
   },
   actions: {
@@ -59,7 +61,13 @@ const mockForm = {
     setFactorNote: jest.fn(),
     setStratumCover: jest.fn(),
     setDmhCount: jest.fn(),
+    bumpDmhGroup: jest.fn(),
+    markNoDmhGroup: jest.fn(),
     setFSurface: jest.fn(),
+    addOpenArea: jest.fn(),
+    setOpenArea: jest.fn(),
+    removeOpenArea: jest.fn(),
+    markNoOpenArea: jest.fn(),
   },
 }
 jest.mock("../../state/survey-form-context", () => ({ useSurveyFormState: () => mockForm }))
@@ -125,6 +133,13 @@ const pager = () =>
     onChangeNote: (factor: string, text: string) => void
     onCommitNote: () => void
   }
+
+describe("FactorDetailRoute survey context (follow-up 32-29)", () => {
+  test("hands the survey's cas to the pager, for A's genus count", () => {
+    mount()
+    expect((mockPagerProps.value as { ibpCas: unknown }).ibpCas).toBe(2)
+  })
+})
 
 describe("FactorDetailRoute doubt and note (D-16)", () => {
   test("hands the form's annotations and the note setter to the pager", () => {
@@ -263,12 +278,24 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
       state: unknown
       setStratumCover: unknown
       setDmhCount: unknown
+      bumpDmhGroup: unknown
+      markNoDmhGroup: unknown
       setFSurface: unknown
+      addOpenArea: unknown
+      setOpenArea: unknown
+      removeOpenArea: unknown
+      markNoOpenArea: unknown
     }
     expect(entry.state).toBe(mockForm.state.uncapped)
     expect(entry.setStratumCover).toBe(mockForm.actions.setStratumCover)
     expect(entry.setDmhCount).toBe(mockForm.actions.setDmhCount)
+    expect(entry.bumpDmhGroup).toBe(mockForm.actions.bumpDmhGroup)
+    expect(entry.markNoDmhGroup).toBe(mockForm.actions.markNoDmhGroup)
     expect(entry.setFSurface).toBe(mockForm.actions.setFSurface)
+    expect(entry.addOpenArea).toBe(mockForm.actions.addOpenArea)
+    expect(entry.setOpenArea).toBe(mockForm.actions.setOpenArea)
+    expect(entry.removeOpenArea).toBe(mockForm.actions.removeOpenArea)
+    expect(entry.markNoOpenArea).toBe(mockForm.actions.markNoOpenArea)
   })
 
   test("the object is stable while the form's details do not change", () => {
@@ -276,5 +303,17 @@ describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-1
     const first = mockPagerProps.value.uncappedEntry
     update()
     expect(mockPagerProps.value.uncappedEntry).toBe(first)
+  })
+})
+
+describe("FactorDetailRoute dendromicrohabitat guide (Phase 32, D-04)", () => {
+  const open = () => mockPagerProps.value.onOpenDmhGuide as (group: string) => void
+
+  beforeEach(() => navigation.navigate.mockClear())
+
+  test("a group opens the guide on its page", () => {
+    mount()
+    open()("dmh_05")
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyDmhGuide", { group: "dmh_05" })
   })
 })

@@ -49,7 +49,7 @@ const SAMPLES: Record<string, () => string> = {
     fr.routeGuide.questions.surface.valueEstimated("2,4"),
   "routeGuide.questions.refine.hoursValue": () =>
     `${fr.routeGuide.questions.refine.hoursValue({ hours: 1, text: "1" })}|${fr.routeGuide.questions.refine.hoursValue({ hours: 3, text: "3" })}`,
-  "routeGuide.suggestion.surfaceLine": () => fr.routeGuide.suggestion.surfaceLine("1,2"),
+  "routeGuide.facts.hectares": () => fr.routeGuide.facts.hectares("2,4"),
   "routeGuide.advice.duration": () => fr.routeGuide.advice.duration({ range: "25 à 30 minutes" }),
   "routeGuide.advice.durationMinutes": () =>
     `${fr.routeGuide.advice.durationMinutes({ min: 25, max: 30 })}|${fr.routeGuide.advice.durationMinutes({ min: 1, max: 1 })}|${fr.routeGuide.advice.durationMinutes({ min: 30, max: 30 })}`,
@@ -98,10 +98,10 @@ const SAMPLES: Record<string, () => string> = {
     `${fr.surveyExport.route.choiceGuide({ answers: "peuplement de 8 ha" })}|${fr.surveyExport.route.choiceGuide({ answers: null })}`,
   "factorDetailCountingMode.zoneLine": () =>
     fr.factorDetail.countingMode.zoneLine({ hectares: "1,2" }),
+  "factorDetailCountingMode.surfaceFromRoute": () =>
+    fr.factorDetail.countingMode.surfaceFromRoute({ hectares: "2,0" }),
   "factorDetailCountingMode.strataCounted": () =>
     `${fr.factorDetail.countingMode.strataCounted({ count: 1 })}|${fr.factorDetail.countingMode.strataCounted({ count: 3 })}`,
-  "factorDetailCountingMode.strataFieldA11y": () =>
-    fr.factorDetail.countingMode.strataFieldA11y({ label: "Très basse" }),
 }
 
 const ALLOWED_METHOD_WORDS = [join("méthode officielle de l", "'IBP"), join("Méthode", " IBP")]

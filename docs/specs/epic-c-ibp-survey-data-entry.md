@@ -245,11 +245,11 @@ Acceptance criteria
 
 When the observer is not sure of an observation, they can say so without changing the data they entered. The doubt is information for the readers of the survey; it is not a score input.
 
-As a contributor, I want to flag a factor as "Douteux" so the readers of my survey know how much to trust it.
+As a contributor, I want to flag a factor as "Incertitude" so the readers of my survey know how much to trust it.
 
 Acceptance criteria
 
-- Each factor A to J has a "Douteux" switch in its strip, off ("Sûr") by default; only "Douteux" is set by the observer.
+- Each factor A to J has an "Incertitude" toggle, off by default; only "Incertitude" is set by the observer. Since follow-up 32-27 it is a small pill at the top of the factor page, in one row with a "Note" pill, under the "Aide au relevé" link or the intro paragraph.
 
 - The doubt is shown wherever the factor is shown: the score page, another member's view of the submitted survey, and the PDF.
 

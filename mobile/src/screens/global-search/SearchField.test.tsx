@@ -149,4 +149,23 @@ describe("SearchField (25-11)", () => {
     expect(queryAll("search-field-busy")).toHaveLength(1)
     expect(queryAll("search-clear")).toHaveLength(0)
   })
+
+  test("a host can give its own placeholder, field label and clear label", () => {
+    act(() => {
+      tree = renderer.create(
+        <SearchField
+          value="ab"
+          busy={false}
+          onChangeText={jest.fn()}
+          onSubmit={jest.fn()}
+          onClear={jest.fn()}
+          texts={{ placeholder: "Un groupe", a11yLabel: "Chercher un groupe", clear: "Vider" }}
+        />,
+      )
+    })
+    expect(input().props.placeholder).toBe("Un groupe")
+    expect(input().props.accessibilityLabel).toBe("Chercher un groupe")
+    expect(input().props.accessibilityHint).toBeUndefined()
+    expect(tree.root.findByProps({ testID: "search-clear" }).props.accessibilityLabel).toBe("Vider")
+  })
 })

@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react"
+import type { DmhGroupCode } from "@cortege/ibp-domain"
 import type { FactorKey } from "../../app/types"
 import { useSurveyRoute } from "../../hooks/useSurveyRoute"
 import { fr } from "../../i18n"
@@ -40,6 +41,9 @@ const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
  * Phase 30 (plan 30-19): the typed detail inputs of the relevé déplafonné (B cover per stratum, F
  * counts per group and F's surface) and their three setters travel as one `uncappedEntry` object;
  * the pager hands it to the factor page, which shows it only for B or F counted in full.
+ *
+ * Phase 32 (D-04): the group list of factor F opens the dendromicrohabitat guide sheet
+ * (`surveyDmhGuide`), on that group's page, from the info button of a row.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -64,10 +68,42 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
   )
   const zoneSurfaceHa = surveyRoute?.zone_surface_ha ?? null
   const { uncapped } = state
-  const { setStratumCover, setDmhCount, setFSurface } = actions
+  const {
+    setStratumCover,
+    setDmhCount,
+    bumpDmhGroup,
+    markNoDmhGroup,
+    setFSurface,
+    addOpenArea,
+    setOpenArea,
+    removeOpenArea,
+    markNoOpenArea,
+  } = actions
   const uncappedEntry = useMemo<UncappedEntryProps>(
-    () => ({ state: uncapped, setStratumCover, setDmhCount, setFSurface }),
-    [uncapped, setStratumCover, setDmhCount, setFSurface],
+    () => ({
+      state: uncapped,
+      setStratumCover,
+      setDmhCount,
+      bumpDmhGroup,
+      markNoDmhGroup,
+      setFSurface,
+      addOpenArea,
+      setOpenArea,
+      removeOpenArea,
+      markNoOpenArea,
+    }),
+    [
+      uncapped,
+      setStratumCover,
+      setDmhCount,
+      bumpDmhGroup,
+      markNoDmhGroup,
+      setFSurface,
+      addOpenArea,
+      setOpenArea,
+      removeOpenArea,
+      markNoOpenArea,
+    ],
   )
 
   const handleActiveFactorChange = useCallback(
@@ -99,6 +135,10 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
   const handleOpenHelp = useCallback(
     (help: string, hints: readonly string[]) =>
       navigation.navigate("surveyFactorHelp", { help, hints: [...hints] }),
+    [navigation],
+  )
+  const handleOpenDmhGuide = useCallback(
+    (group: DmhGroupCode) => navigation.navigate("surveyDmhGuide", { group }),
     [navigation],
   )
   // Back to the summary, also when the pager was opened from the Score page.
@@ -135,9 +175,11 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         factorSections={state.factorSections}
         factorRetainedScores={state.factorRetainedScores}
         methodVersion={state.ibpMethodVersion}
+        ibpCas={state.ibpCas}
         onActiveFactorChange={handleActiveFactorChange}
         onFinish={handleFinish}
         onOpenHelp={handleOpenHelp}
+        onOpenDmhGuide={handleOpenDmhGuide}
         finishAction={finishAction}
         factorAnnotations={factorAnnotations}
         onChangeDoubt={handleChangeDoubt}

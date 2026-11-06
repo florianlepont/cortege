@@ -231,7 +231,7 @@ Visible par les membres qui peuvent lire ce relevé.    (13 Regular)           1
 
 ### 1.6 Keyboard, focus and scrolling (context page)
 
-- The page scroll view forwards `keyboardShouldPersistTaps="handled"`, `keyboardDismissMode="on-drag"`, `automaticallyAdjustKeyboardInsets` (iOS). Android relies on the window resizing for the keyboard; the focused field and, for the note, its counter line must end above the keyboard (verify in the Android pass of Phase 35, charter 13.9).
+- The page scroll view forwards `keyboardShouldPersistTaps="handled"`, `keyboardDismissMode="on-drag"`, `automaticallyAdjustKeyboardInsets` (iOS). Android relies on the window resizing for the keyboard; the focused field and, for the note, its counter line must end above the keyboard (verify in the Android pass of Phase 37, charter 13.9).
 - On `onFocus` of any Conditions field the page scrolls it into view with its label (measured `y`, `animated` unless Reduce Motion).
 - No field takes focus automatically when the page opens, including when arriving through the summary card.
 - Focus order for screen readers: header, status line, sky group, the four fields, source line, note label, note field.
@@ -622,7 +622,7 @@ None blocks planning or building. To confirm on the phone (each can be vetoed an
 1. Conditions sit at the bottom of "Contexte et parcelles", reached through the new summary card (U-01).
 2. "Remplir à nouveau" exists as the way back to Météo-France values after hand edits (U-03).
 3. "Douteux" is drawn in the warning (ochre) family with a tinted row when on (U-08); alternative: neutral grey with the label only.
-4. The A to J letter strip does not show which factors are doubtful (it is Liquid Glass chrome shared with Phase 12); a small marker on the letters is a candidate for Phase 37.
+4. The A to J letter strip does not show which factors are doubtful (it is Liquid Glass chrome shared with Phase 12); a small marker on the letters is a candidate for Phase 35.
 
 ---
 

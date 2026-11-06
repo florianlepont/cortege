@@ -231,7 +231,10 @@ describe("replay of the package's decision table", () => {
         })
       }
       if (view.recommendation.status === "options") {
-        expect(view.open).toMatchObject({ id: "largeStand", preselected: "subdivide" })
+        expect(view.open).toMatchObject({
+          id: "largeStand",
+          preselected: view.recommendation.preselected_option,
+        })
         expect(view.open).toHaveProperty("selected", undefined)
         expect(view.canUse).toBe(false)
       }
@@ -342,7 +345,18 @@ describe("changing an answer", () => {
 })
 
 describe("above the subdivision bound (R-11b, O-03)", () => {
-  it("offers subdivide (pre-selected) and partial, with no parcours until one is chosen", () => {
+  it("advises partial, not subdivide, for a homogeneous stand (owner, 2026-10-23)", () => {
+    const model = run([...surface("25"), hom("homogeneous")])
+    const view = selectGuideView(model)
+    expect(view.recommendation.status).toBe("options")
+    expect(view.open).toMatchObject({
+      id: "largeStand",
+      options: ["subdivide", "partial"],
+      preselected: "partial",
+    })
+  })
+
+  it("offers subdivide (advised for a varied stand) and partial, with no parcours until one is chosen", () => {
     const model = run([...surface("15"), hom("heterogeneous")])
     const view = selectGuideView(model)
     expect(view.recommendation.status).toBe("options")

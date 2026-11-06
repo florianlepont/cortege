@@ -12,6 +12,7 @@ jest.mock("react-native", () => {
       ReactRef.createElement(name, props, children)
   return {
     Modal: mockComponent("Modal"),
+    ScrollView: mockComponent("ScrollView"),
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),

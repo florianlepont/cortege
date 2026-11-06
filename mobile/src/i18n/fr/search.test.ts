@@ -52,6 +52,7 @@ describe("fr.search", () => {
     expect(searchFr.rows.parcelTitle({ section: "AB", number: "0123" })).toBe("Parcelle AB 0123")
     expect(searchFr.rows.parcelA11y({ title: "T", meta: "M" })).toBe("T, M")
     expect(searchFr.rows.memberA11y({ name: "N", meta: "M" })).toBe("Membre : N, M")
+    expect(searchFr.rows.guideA11y({ name: "N", meta: "M" })).toBe("Guide : N, M")
     expect(searchFr.start.recentOpenA11y("q")).toBe("Chercher « q »")
     expect(searchFr.start.recentRemoveA11y("q")).toBe("Retirer « q » des recherches récentes")
     expect(searchFr.noResult.offlineTitle("q")).toBe("Aucun de vos relevés ne correspond à « q »")

@@ -4,11 +4,13 @@ import { buildEntriesFromOwn, buildParcelHistory } from "../parcel-history"
 import type { DeltaCardState, ParcelHistoryModel, TrendSummary } from "../parcel-history"
 import {
   TREND_HEIGHT,
+  TREND_PLOT_BOTTOM,
   TREND_VALUE_OFFSET,
   TREND_YEAR_BASELINE,
   buildTrend,
 } from "../trend-geometry"
 import { escapeHtml, formatDateFr, formatDecimal, svgNumber } from "./html"
+import { sectionTitleCss } from "./styles"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
@@ -16,6 +18,10 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 // string from the geometry the "Historique de la parcelle" page uses (`trend-geometry.ts`), and the
 // block around it. Pure: the arithmetic stays in `parcel-history.ts` and `trend-geometry.ts`, the
 // wording in `fr.parcelHistory` and `fr.surveyExport.trend`, the colours in the palette.
+// Phase 33 (D-02, D-18, UI-SPEC B.5): a soft solid area under each segment, open past points, a
+// solid larger current point, Sora totals and Jost-SemiBold years; and `resolveTrend` /
+// `trendSummaryParts`, the one place where the one-page summary and the complete
+// PDF read the trend state and its summary line.
 
 const t = fr.surveyExport.trend
 const screenTexts = fr.parcelHistory.page
@@ -29,9 +35,11 @@ const SEGMENT_WIDTH = 3
 const LINK_WIDTH = 2
 const LINK_DASH = "4 4"
 const POINT_RADIUS = 4
+const POINT_STROKE_WIDTH = 2
 const CURRENT_RADIUS = 6
-const CURRENT_STROKE_WIDTH = 2
-const LABEL_FONT_SIZE = 12
+const VALUE_FONT_SIZE = 12
+const CURRENT_VALUE_FONT_SIZE = 13
+const YEAR_FONT_SIZE = 10
 
 const attr = (value: string): string => escapeHtml(value)
 
@@ -39,11 +47,30 @@ const attr = (value: string): string => escapeHtml(value)
 const pathData = (d: string): string =>
   d.replace(/-?\d+(?:\.\d+)?/g, (match) => svgNumber(Number(match)))
 
+/**
+ * The closed area under one segment: the segment path, then down to the plot bottom at its last and
+ * first x, closed. The geometry writes a segment as `M x y L x y ...`, so its first and last pairs
+ * of numbers are the first and last points.
+ */
+function areaPathOf(segmentD: string, baselineY: number): string {
+  const numbers = segmentD.match(/-?\d+(?:\.\d+)?/g) ?? []
+  const firstX = numbers[0] ?? "0"
+  const lastX = numbers[numbers.length - 2] ?? firstX
+  const base = svgNumber(baselineY)
+  return `${pathData(segmentD)} L ${svgNumber(Number(lastX))} ${base} L ${svgNumber(Number(firstX))} ${base} Z`
+}
+
 /** The curve of the totals as one `svg` element; segments, dashed links, points, totals and years. */
 export function buildTrendSvg(model: ParcelHistoryModel, palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   const geometry = buildTrend(model.drawn, TREND_PRINT_WIDTH)
 
+  const areas = geometry.segments
+    .map(
+      (segment) =>
+        `<path class="trend-area" d="${attr(areaPathOf(segment.d, TREND_PLOT_BOTTOM))}" fill="${attr(palette.accentSoft)}" stroke="none"/>`,
+    )
+    .join("")
   const segments = geometry.segments
     .map(
       (segment) =>
@@ -59,24 +86,26 @@ export function buildTrendSvg(model: ParcelHistoryModel, palette: PdfPalette): s
   const circles = geometry.points
     .map((point) =>
       point.isCurrent
-        ? `<circle class="trend-point-current" cx="${svgNumber(point.x)}" cy="${svgNumber(point.y)}" r="${svgNumber(CURRENT_RADIUS)}" fill="${attr(palette.ink)}" stroke="${attr(palette.accent)}" stroke-width="${svgNumber(CURRENT_STROKE_WIDTH)}"/>`
-        : `<circle class="trend-point" cx="${svgNumber(point.x)}" cy="${svgNumber(point.y)}" r="${svgNumber(POINT_RADIUS)}" fill="${attr(palette.accent)}"/>`,
+        ? `<circle class="trend-point-current" cx="${svgNumber(point.x)}" cy="${svgNumber(point.y)}" r="${svgNumber(CURRENT_RADIUS)}" fill="${attr(palette.accent)}"/>`
+        : `<circle class="trend-point" cx="${svgNumber(point.x)}" cy="${svgNumber(point.y)}" r="${svgNumber(POINT_RADIUS)}" fill="${attr(palette.paper)}" stroke="${attr(palette.accent)}" stroke-width="${svgNumber(POINT_STROKE_WIDTH)}"/>`,
     )
     .join("")
   const values = geometry.points
-    .map(
-      (point) =>
-        `<text class="trend-value" x="${svgNumber(point.x)}" y="${svgNumber(point.y - TREND_VALUE_OFFSET)}" text-anchor="middle" font-family="${attr(font.numeral)}" font-size="${svgNumber(LABEL_FONT_SIZE)}" fill="${attr(palette.ink)}">${escapeHtml(formatDecimal(point.total))}</text>`,
-    )
+    .map((point) => {
+      const family = point.isCurrent ? font.heading : font.strong
+      const size = point.isCurrent ? CURRENT_VALUE_FONT_SIZE : VALUE_FONT_SIZE
+      const className = point.isCurrent ? "trend-value trend-value-current" : "trend-value"
+      return `<text class="${className}" x="${svgNumber(point.x)}" y="${svgNumber(point.y - TREND_VALUE_OFFSET)}" text-anchor="middle" font-family="${attr(family)}" font-size="${svgNumber(size)}" fill="${attr(palette.ink)}">${escapeHtml(formatDecimal(point.total))}</text>`
+    })
     .join("")
   const years = geometry.points
     .map(
       (point) =>
-        `<text class="trend-year" x="${svgNumber(point.x)}" y="${svgNumber(TREND_YEAR_BASELINE)}" text-anchor="middle" font-family="${attr(font.label)}" font-size="${svgNumber(LABEL_FONT_SIZE)}" fill="${attr(palette.inkMuted)}">${escapeHtml(point.year !== null ? formatDecimal(point.year, 0) : unknownYear)}</text>`,
+        `<text class="trend-year" x="${svgNumber(point.x)}" y="${svgNumber(TREND_YEAR_BASELINE)}" text-anchor="middle" font-family="${attr(font.label)}" font-size="${svgNumber(YEAR_FONT_SIZE)}" fill="${attr(palette.inkMuted)}">${escapeHtml(point.year !== null ? formatDecimal(point.year, 0) : unknownYear)}</text>`,
     )
     .join("")
 
-  return `<svg class="trend-svg" role="img" aria-label="${attr(t.curveA11y)}" width="${svgNumber(TREND_PRINT_WIDTH)}" height="${svgNumber(TREND_HEIGHT)}" viewBox="0 0 ${svgNumber(TREND_PRINT_WIDTH)} ${svgNumber(TREND_HEIGHT)}">${segments}${links}${circles}${values}${years}</svg>`
+  return `<svg class="trend-svg" role="img" aria-label="${attr(t.curveA11y)}" width="${svgNumber(TREND_PRINT_WIDTH)}" height="${svgNumber(TREND_HEIGHT)}" viewBox="0 0 ${svgNumber(TREND_PRINT_WIDTH)} ${svgNumber(TREND_HEIGHT)}">${areas}${segments}${links}${circles}${values}${years}</svg>`
 }
 
 // ---- the block ------------------------------------------------------------------------------
@@ -108,7 +137,7 @@ function noteBlock(text: string): PdfBlock {
 }
 
 /** The two parts of the summary line, worded like `TrendCard`; null when the trend is "none". */
-function summaryParts(trend: TrendSummary): [string, string] | null {
+export function trendSummaryParts(trend: TrendSummary): [string, string] | null {
   if (trend.kind === "none") return null
   if (trend.kind === "change") {
     return [
@@ -184,21 +213,61 @@ function deltasPart(
 }
 
 /**
+ * What the trend of a survey can print: no parcel, no history cached on the phone, the parcel's
+ * first survey, or a model ready to draw. `hasCurrent` tells whether the current survey is in the
+ * cached history (a stale cache may lack it: the summary then shows its own unavailable panel,
+ * the complete PDF draws the past as before); `cachedAt` is the long French cache date, or null.
+ */
+export type TrendState =
+  | { kind: "noParcel" }
+  | { kind: "unavailable" }
+  | { kind: "first" }
+  | { kind: "ready"; model: ParcelHistoryModel; hasCurrent: boolean; cachedAt: string | null }
+
+/** The one place where the trend state of a survey is decided, from the data the export holds. */
+export function resolveTrend(data: SurveyExportData): TrendState {
+  if (data.parcelIds.length === 0) return { kind: "noParcel" }
+  if (data.history === null) return { kind: "unavailable" }
+  const entries = buildEntriesFromOwn(data.history.items, data.surveyId)
+  const model = buildParcelHistory(entries)
+  if (model.isFirst) return { kind: "first" }
+  const cachedDate = formatDateFr(data.history.fetchedAt, "")
+  return {
+    kind: "ready",
+    model,
+    hasCurrent: entries.some((entry) => entry.isCurrent),
+    cachedAt: cachedDate === "" ? null : cachedDate,
+  }
+}
+
+/**
  * The parcel trend: the summary line, the curve of the totals and the per-factor changes against
  * the survey just before, all from the history cached on the phone; or a short note when the
  * survey has no parcel, no history is cached, or it is the parcel's first survey.
  */
 export function buildTrendBlock(data: SurveyExportData, palette: PdfPalette): PdfBlock {
-  if (data.parcelIds.length === 0) return noteBlock(t.noParcel)
-  if (data.history === null) return noteBlock(t.unavailable)
-  const model = buildParcelHistory(buildEntriesFromOwn(data.history.items, data.surveyId))
-  if (model.isFirst) return noteBlock(t.first)
+  const state = resolveTrend(data)
+  switch (state.kind) {
+    case "noParcel":
+      return noteBlock(t.noParcel)
+    case "unavailable":
+      return noteBlock(t.unavailable)
+    case "first":
+      return noteBlock(t.first)
+    default:
+      return readyBlock(state.model, state.cachedAt, palette)
+  }
+}
 
-  const parts = summaryParts(model.trend)
+function readyBlock(
+  model: ParcelHistoryModel,
+  cachedDate: string | null,
+  palette: PdfPalette,
+): PdfBlock {
+  const parts = trendSummaryParts(model.trend)
   const mixed = model.trend.kind !== "none" && model.trend.mixed
   const deltas = deltasPart(model.deltaCard, palette)
-  const cachedDate = formatDateFr(data.history.fetchedAt, "")
-  const cached = cachedDate === "" ? null : t.cachedAt({ date: cachedDate })
+  const cached = cachedDate === null ? null : t.cachedAt({ date: cachedDate })
 
   const sections = [
     headingHtml(),
@@ -229,7 +298,7 @@ export function trendSectionCss(palette: PdfPalette): string {
   const font = PDF_FONT_FAMILIES
   return `
 .trend-card { display: block; margin: 0 0 ${CARD_MARGIN}px; }
-.trend-heading { margin: 0; height: ${HEADING_HEIGHT}px; font-family: ${font.heading}; font-size: 11px; line-height: ${HEADING_HEIGHT}px; color: ${palette.ink}; }
+${sectionTitleCss(".trend-heading", palette)}
 .trend-summary { margin: 0; height: ${SUMMARY_HEIGHT}px; font-size: 13px; line-height: ${SUMMARY_HEIGHT}px; color: ${palette.ink}; }
 .trend-summary-strong { font-family: ${font.title}; color: ${palette.ink}; }
 .trend-summary-accent { font-family: ${font.title}; color: ${palette.accent}; }

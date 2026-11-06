@@ -31,6 +31,7 @@ import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { resolveVisibilityLine } from "./survey-detail/visibility-line"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
+import { useExportRequest } from "./survey-detail/useExportRequest"
 import { useSurveyPdfExport } from "./survey-detail/useSurveyPdfExport"
 import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
@@ -86,6 +87,7 @@ export function SurveyDetailScreen({
   onDeleteAttachment,
   onDeleteSurvey,
   onOpenFinish,
+  onDefineRoute,
   onRetrySurvey,
   onDiscardSurvey,
   onRenameSurvey,
@@ -99,6 +101,9 @@ export function SurveyDetailScreen({
   onOpenFactor,
   onOpenHistory,
   onOpenJournal,
+  exportRequest,
+  onOpenExportChoice,
+  onExportRequestHandled,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
@@ -152,6 +157,8 @@ export function SurveyDetailScreen({
     apiUrl,
     accessToken,
   })
+  // Phase 33: the choice sheet hands back its mode; the export runs here, once per request.
+  useExportRequest(exportRequest, share, onExportRequestHandled)
   const changeNote = useLatestCallback((text: string) => void onChangeNote(selectedSurvey.id, text))
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
@@ -184,19 +191,25 @@ export function SurveyDetailScreen({
     siteName: activeSiteName,
     largeTitle,
     onRename: largeTitle && canEditSurvey ? handleRename : undefined,
-    onShare: () => void share(),
+    onShare: () => (exporting ? undefined : onOpenExportChoice(selectedSurvey.id)),
     onDelete: handleDelete,
     onOpenJournal,
     onOpenMenu: handleOpenMenu,
   })
 
   const statusLine = resolveStatusLine(selectedSurvey, data.isComplete)
+  // Phase 30 (U-O9, moved on 2026-10-14): the "Parcelles et parcours" row carries the short route
+  // label after the parcel count, or says the parcours is still to choose on a draft without one.
+  // Route first: that same draft's bottom button defines the parcours before the notation starts.
+  const routeLabel = route !== null ? routeShortLabel(route) : null
+  const routePending = routeLoaded && route === null && canEditSurvey
   const cta = resolveFinishCta(
     selectedSurvey,
     data.canFinishNow,
     data.isComplete,
     data.filledFactorCount,
     data.nextFactor,
+    routePending,
   )
   const historyRow = useHistoryRow({
     apiUrl,
@@ -210,10 +223,6 @@ export function SurveyDetailScreen({
   // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
   const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
   const contentStyle = useSubPageContentStyle(styles.content, barHeight, noteKeyboard.keyboardInset)
-  // Phase 30 (U-O9, moved on 2026-10-14): the "Parcelles et parcours" row carries the short route
-  // label after the parcel count, or says the parcours is still to choose on a draft without one.
-  const routeLabel = route !== null ? routeShortLabel(route) : null
-  const routePending = routeLoaded && route === null && canEditSurvey
   const rowSections = buildSummaryRowSections({ ...data, routeLabel, routePending }, historyRow, {
     onOpenContext,
     onOpenParcelsPage,
@@ -354,6 +363,7 @@ export function SurveyDetailScreen({
         accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
         onFinish={() => onOpenFinish(selectedSurvey.id)}
         onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
+        onDefineRoute={() => onDefineRoute(selectedSurvey.id)}
         onLayout={onBarLayout}
       />
 

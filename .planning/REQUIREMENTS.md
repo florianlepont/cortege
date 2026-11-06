@@ -29,7 +29,7 @@ prefixes `ML` (species recognition groundwork), `INF` (infrastructure), `QA` (qu
 ### A — Access and Security
 
 Five of six are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases);
-two of those five carry open defects, fixed in Phase 35. Account deletion is Partial: the API path
+two of those five carry open defects, fixed in Phase 37. Account deletion is Partial: the API path
 is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 11.
 Social login was found unbuilt on 2026-09-27 (no code anywhere in `mobile/src`, despite this
 document previously marking it "Built") and is moved to **Deferred — Next Milestone** below —
@@ -58,7 +58,7 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-C-submit** — Submission is blocked until all ten factors are scoreable and parcel linkage metadata is present, blocked past 7 days, states the explicit reason when blocked, and transitions to `submitted` + read-only with automatic sync. *(Built)*
 - [x] **REQ-C-help** — Each complex field exposes on-demand pedagogical help that does not lose form progress. *(Built)*
 - [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 11)*
-- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 15, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 35's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/15-genus-recognition-factor-a/`)*
+- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 15, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 37's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/15-genus-recognition-factor-a/`)*
 - [x] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(Built — Phase 19)*; rebuilt in Phase 25.1 (CNPF sheet content, photos, map, trend)
 
 ### D — Offline and Synchronization
@@ -103,8 +103,8 @@ every binding contract (conflict-report warning 5).
 - [x] **REQ-B-nearby-parcels-home** — The Home lists the parcels near the user and starts a survey on the chosen one, with clear empty, offline and location-refused states. *(New — owner decision 2026-10-07, SEED-004; built within Phase 23)*
 - [x] **REQ-C-history-split** — The survey change log and the history of earlier surveys on the same parcel are two distinct entries, and another member's survey shows the parcel history only. *(New — owner decision 2026-10-07, SEED-002 / OA-124, Phase 24)*
 - [x] **REQ-B-global-search** — One search covers the whole app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes, with grouped results that lead straight to the item. *(New — owner decision 2026-10-07, SEED-003, Phase 25)*
-- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 37)*
-- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 38)*
+- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 35)*
+- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 36)*
 
 ### DOC — Documentation Accuracy
 
@@ -168,7 +168,7 @@ The V1 features that make up the beta (Phases 27 to 34). Same `REQ-{epic}-{slug}
 
 Carried from `.planning/intel/requirements.md`. These are rules that constrain the requirements
 above rather than deliverables in their own right, so they are not exclusively phase-mapped; they
-are verified within the phases that touch them and in the Phase 35 field tests.
+are verified within the phases that touch them and in the Phase 37 field tests.
 
 | Rule | Status this milestone |
 |------|----------------------|
@@ -190,7 +190,7 @@ are verified within the phases that touch them and in the Phase 35 field tests.
 
 ## Non-Functional Requirements
 
-Active for this milestone; verified in Phase 35 alongside the field tests.
+Active for this milestone; verified in Phase 37 alongside the field tests.
 
 | ID | Requirement |
 |----|-------------|
@@ -228,8 +228,8 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 
 | Feature | Reason |
 |---------|--------|
-| Hosting migration | Revised 2026-10-10: the server, the store accounts, Auth0 and the domain move to the association's name in Phase 36; the previous ratification of the current VPS no longer holds |
-| alwaysdata + Cloudflare R2 | Revised 2026-10-10: OVH is recommended by the board; the alwaysdata contract details are reviewed in Phase 36 to see whether it can be reused |
+| Hosting migration | Revised 2026-10-10: the server, the store accounts, Auth0 and the domain move to the association's name in Phase 38; the previous ratification of the current VPS no longer holds |
+| alwaysdata + Cloudflare R2 | Revised 2026-10-10: OVH is recommended by the board; the alwaysdata contract details are reviewed in Phase 38 to see whether it can be reused |
 | PDF export API endpoint | Export must work offline; on-device generation is the only way |
 | Direct Google Drive OAuth | The OS share sheet reaches Drive, Wimi, mail and AirDrop without integrating any of them |
 | Private/public visibility toggle | Returned in Phase 29 as a choice before submission (`REQ-C-privacy-choice`), read-only after submit |
@@ -238,12 +238,24 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 
 ---
 
-- [ ] **REQ-DOC-route-rules** — The CNPF rules for choosing the survey route and the counting mode are written in a French spec (`docs/specs/route-choice-rules-v1.md`), each rule citing its CNPF page with one test case, and validated by the owner in writing before any screen is built. *(New — Phase 30, seminar card "Aide au choix du parcours")*
-- [ ] **REQ-C-route-guide** — A skippable step in survey creation, after the parcel choice, suggests the route and the counting mode from the parcel and the observer's answers and explains each choice in plain French; the observer can change it or choose directly; it works offline. *(New — Phase 30)*
-- [ ] **REQ-C-route-record** — The route used (method, counting mode and lifted factors, evaluated surface, complement in the non-sampled zone, group name, the reasons) is stored with the survey, syncs, is draft-only to edit and read-only after submit. *(New — Phase 30, card "Parcours utilisé"; the map display is Phase 31)*
-- [ ] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
-- [ ] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
-- [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4)*
+- [x] **REQ-DOC-route-rules** — The CNPF rules for choosing the survey route and the counting mode are written in a French spec (`docs/specs/route-choice-rules-v1.md`), each rule citing its CNPF page with one test case, and validated by the owner in writing before any screen is built. *(New — Phase 30, seminar card "Aide au choix du parcours")*
+- [x] **REQ-C-route-guide** — A mandatory step in survey creation (one question per screen, with a quick path "Je connais déjà mon parcours"), after the parcel choice, suggests the route and the counting mode from the parcel and the observer's answers and explains each choice in plain French; the observer can change it or choose directly; it works offline. *(New — Phase 30)*
+- [x] **REQ-C-route-record** — The route used (parcours, counting mode and factors counted in full, surface described, complement in the non-sampled zone, the reasons; no group name since the group of plots is out of scope) is stored with the survey, syncs, is draft-only to edit and read-only after submit. *(New — Phase 30, card "Parcours utilisé"; the map display is Phase 31)*
+- [x] **REQ-C-route-display** — The route used is shown as text in the survey detail (Contexte) and in the PDF; surveys without a route keep their current display. *(New — Phase 30)*
+- [x] **REQ-C-uncapped-entry** — In the full counting mode the factor screens take the extra detail inputs (B cover per stratum, F counts per dmh group) without ever changing a capped score, proved by parity cases in the package, the API adapter and the mobile adapter. *(New — Phase 30)*
+- [ ] **REQ-FT-route-test** — A tester who does not know the method completes the route choice without help, in a recorded test with an anonymised report. *(New — Phase 30, criterion 4. Deferred to the field tests by the owner on 2026-10-23: the protocol and the scenario sheets are ready, no tester is available before them.)*
+- [x] **REQ-DOC-dmh-sources** — The sources, authors, licence status, retrieval date and SHA-256 of every document the DMH guide draws on are recorded in `docs/references/README.md`; the IBP-to-WSL crosswalk and the group texts are written as a French spec (`docs/specs/dmh-guide-content-v1.md`) and validated in writing by the owner before any screen uses them. *(New - Phase 32)*
+- [x] **REQ-C-dmh-guide** — From the factor F screen the observer opens, offline, a sheet per DMH group (what counts for the IBP, how to recognise it, frequent confusions, the types of the pocket guide) and a searchable catalogue of the 15 groups, with sources shown. *(New - Phase 32)*
+- [x] **REQ-C-dmh-illustrations** — Each of the 15 groups shows an original drawing owned by the association, shown static (no animation), offline, checked for accuracy by a domain expert (first waived by the owner on 2026-10-27; the expert has since read it and found it right, reported by the owner on 2026-10-30). *(New - Phase 32)*
+- [x] **REQ-C-dmh-fast-entry** — Entering factor F with many groups is simpler than before (fewer taps and less scrolling); the stored payload and every score are unchanged. *(New - Phase 32)*
+- [x] **REQ-FT-dmh-speed** — Simplicity is confirmed by the owner on their own phone with the new F list (no timing: owner decision 2026-10-27), next to the automated press-count proxy. *(New - Phase 32)*
+
+- [x] **REQ-C-pdf-two-versions** — At export time the member chooses between a complete PDF and a one-page summary through a choice sheet; nothing is remembered; the summary is disabled on a draft with one explanatory sentence. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-summary-page** — The summary is one A4 page for patrons and partners: logo, site name, date, score /50, parcel map, the CNPF-like plane of context against stand and management, and the trend; offline first, no photo, submitted surveys only. *(New — Phase 33, built and validated by the owner on the iPhone 2026-10-26; the plane replaced the ten-factor chart by owner decision D-28)*
+- [x] **REQ-C-pdf-modern-layout** — The complete PDF has a cover page with the parcel map, a title hierarchy, worked graphics (the CNPF-like plane and rose, the trend) and charter colours, always light, with no network resource. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-lean-export** — Fewer pages, cleaner page breaks and a lighter file, with the layout constants re-measured on a device. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-C-pdf-commune-row** — The identity block prints one "Commune" row (code and département) instead of two rows. *(New — Phase 33, built and validated 2026-10-26)*
+- [x] **REQ-QA-pdf-sections-registry** — PDF sections register through one ordered list with a per-section mode filter, so a later phase adds a section by appending one entry. *(New — Phase 33, built and validated 2026-10-26)*
 
 ## Traceability
 
@@ -295,7 +307,24 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-D-offline-layers | New | Phase 28 | Build |
 | REQ-D-offline-percent | New | Phase 28 | Build |
 | REQ-C-privacy-choice | New | Phase 29 | Build |
+| REQ-DOC-route-rules | New | Phase 30 | Build |
+| REQ-C-route-guide | New | Phase 30 | Build |
+| REQ-C-route-record | New | Phase 30 | Build |
+| REQ-C-route-display | New | Phase 30 | Build |
+| REQ-C-uncapped-entry | New | Phase 30 | Build |
+| REQ-FT-route-test | New | Phase 30 | Verify (deferred to the field tests) |
+| REQ-DOC-dmh-sources | New | Phase 32 | Build |
+| REQ-C-dmh-guide | New | Phase 32 | Build |
+| REQ-C-dmh-illustrations | New | Phase 32 | Build |
+| REQ-C-dmh-fast-entry | New | Phase 32 | Build |
+| REQ-FT-dmh-speed | New | Phase 32 | Verify (simplicity confirmed by the owner, no timing) |
 | REQ-C-pdf-export | New | Phase 19 | Build |
+| REQ-C-pdf-two-versions | New | Phase 33 | Build |
+| REQ-C-pdf-summary-page | New | Phase 33 | Build |
+| REQ-C-pdf-modern-layout | New | Phase 33 | Build |
+| REQ-C-pdf-lean-export | New | Phase 33 | Build |
+| REQ-C-pdf-commune-row | New | Phase 33 | Build |
+| REQ-QA-pdf-sections-registry | New | Phase 33 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |
 | REQ-INF-backups | New | Phase 20 | Build |
@@ -304,33 +333,33 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-QA-ibp-version | New | Phase 2 | Build |
 | REQ-QA-sql-injection | New | Phase 20 | Build |
 | REQ-QA-indexes | New | Phase 20 | Build |
-| REQ-DOC-taxonomy | New | Phase 35 | Build |
-| REQ-DOC-epicd-ids | New | Phase 35 | Build |
-| REQ-QA-bug-a3-4 | New | Phase 35 | Build |
-| REQ-QA-bug-a6-2 | New | Phase 35 | Build |
-| REQ-QA-screen-tests | New | Phase 35 | Build |
+| REQ-DOC-taxonomy | New | Phase 37 | Build |
+| REQ-DOC-epicd-ids | New | Phase 37 | Build |
+| REQ-QA-bug-a3-4 | New | Phase 37 | Build |
+| REQ-QA-bug-a6-2 | New | Phase 37 | Build |
+| REQ-QA-screen-tests | New | Phase 37 | Build |
 | REQ-QA-visual-modernisation | New | Phase 23 | Build |
 | REQ-B-nearby-parcels-home | New | Phase 23 | Build |
 | REQ-C-history-split | New | Phase 24 | Built |
 | REQ-B-global-search | New | Phase 25 | Built |
-| REQ-QA-ux-audit | New | Phase 37 | Build |
-| REQ-QA-deep-audit | New | Phase 38 | Build |
-| REQ-FT-field-tests | New | Phase 35 | Build |
-| REQ-A-login | Built | Phase 35 | Verify |
-| REQ-A-logout | Built | Phase 35 | Verify |
-| REQ-A-signup | Built | Phase 35 | Verify (+ `BUG-A3-4` fix) |
-| REQ-A-profile | Built | Phase 35 | Verify |
-| REQ-A-forgot-password | Built | Phase 35 | Verify (+ `BUG-A6-2` fix) |
-| REQ-B-survey-list | Built | Phase 35 | Verify |
-| REQ-C-guided-entry | Built | Phase 35 | Verify |
-| REQ-C-save-draft | Built | Phase 35 | Verify |
-| REQ-C-photos | Built | Phase 35 | Verify |
-| REQ-C-parcel-linkage | Built | Phase 35 | Verify |
-| REQ-C-submit | Built | Phase 35 | Verify |
-| REQ-C-help | Built | Phase 35 | Verify |
-| REQ-D-offline-work | Built | Phase 35 | Verify |
-| REQ-D-auto-sync | Built | Phase 35 | Verify |
-| REQ-D-conflict-resolution | Built | Phase 35 | Verify |
+| REQ-QA-ux-audit | New | Phase 35 | Build |
+| REQ-QA-deep-audit | New | Phase 36 | Build |
+| REQ-FT-field-tests | New | Phase 37 | Build |
+| REQ-A-login | Built | Phase 37 | Verify |
+| REQ-A-logout | Built | Phase 37 | Verify |
+| REQ-A-signup | Built | Phase 37 | Verify (+ `BUG-A3-4` fix) |
+| REQ-A-profile | Built | Phase 37 | Verify |
+| REQ-A-forgot-password | Built | Phase 37 | Verify (+ `BUG-A6-2` fix) |
+| REQ-B-survey-list | Built | Phase 37 | Verify |
+| REQ-C-guided-entry | Built | Phase 37 | Verify |
+| REQ-C-save-draft | Built | Phase 37 | Verify |
+| REQ-C-photos | Built | Phase 37 | Verify |
+| REQ-C-parcel-linkage | Built | Phase 37 | Verify |
+| REQ-C-submit | Built | Phase 37 | Verify |
+| REQ-C-help | Built | Phase 37 | Verify |
+| REQ-D-offline-work | Built | Phase 37 | Verify |
+| REQ-D-auto-sync | Built | Phase 37 | Verify |
+| REQ-D-conflict-resolution | Built | Phase 37 | Verify |
 | REQ-C-survey-note | Built | Phase 27 | Build |
 | REQ-C-factor-note | Built | Phase 27 | Build |
 | REQ-C-doubt-flag | Built | Phase 27 | Build |
@@ -343,7 +372,7 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 - MVP requirements: **71** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
 - Mapped to phases: **71** ✓
 - Unmapped: **0** ✓
-- Of which carry build work: **56** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 11, 2026-09-27); 15 are already built and are verified in Phase 35
+- Of which carry build work: **56** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 11, 2026-09-27); 15 are already built and are verified in Phase 37
 - Deferred to next milestone: 20 · Deferred to V2: 4
 - V1 requirements (beta): **6** added 2026-10-11 for Phase 27 (`REQ-C-survey-note`, `REQ-C-factor-note`, `REQ-C-doubt-flag`, `REQ-C-weather-provider`, `REQ-C-weather-prefill`, `REQ-C-conditions-sync`), all mapped ✓
 

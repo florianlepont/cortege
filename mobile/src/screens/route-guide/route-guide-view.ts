@@ -1,5 +1,6 @@
 import {
   LARGE_STAND_OPTIONS,
+  preselectedLargeStandOption,
   ROUTE_ZONE_ISSUE_SEVERITY,
   UNCAPPABLE_FACTORS,
   isPartialRoute,
@@ -291,7 +292,7 @@ function openQuestion(model: RouteGuideModel, id: GuideOpenId | null): OpenQuest
       return {
         id,
         options: [...LARGE_STAND_OPTIONS],
-        preselected: "subdivide",
+        preselected: preselectedLargeStandOption(model.homogeneity),
         selected: model.largeStandDraft ?? model.largeStandOption,
       }
   }

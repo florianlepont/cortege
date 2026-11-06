@@ -176,6 +176,7 @@ export async function exportAndShareSurveyPdf(
     observationYear: data.observationYear,
     dateIso: data.dateIso,
     isDraft: data.isDraft,
+    mode: data.mode,
   })
   const uri = await moveToExportName(printed.uri, name, deps)
   const shared = await shareSurveyExportPdf(uri, data.siteName, deps)

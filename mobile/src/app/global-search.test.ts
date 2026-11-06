@@ -18,11 +18,13 @@ import {
   isCapped,
   isSearchActive,
   looksLikeParcelQuery,
+  matchGuideGroups,
   matchOwnSurveys,
   memberMatches,
   pickBestResult,
   summaryRows,
 } from "./global-search"
+import { searchDmhGroups } from "./dmh-guide/search"
 
 function survey(id: string, siteName: string, extra: Partial<LocalSurvey> = {}): LocalSurvey {
   return {
@@ -304,8 +306,29 @@ describe("pickBestResult", () => {
 
 describe("groupOrder", () => {
   it("is fixed, with parcels first when a parcel was found", () => {
-    expect(groupOrder(false)).toEqual(["mine", "community", "places", "parcels"])
-    expect(groupOrder(true)).toEqual(["parcels", "mine", "community", "places"])
+    expect(groupOrder(false)).toEqual(["mine", "community", "places", "parcels", "guide"])
+    expect(groupOrder(true)).toEqual(["parcels", "mine", "community", "places", "guide"])
+  })
+})
+
+describe("matchGuideGroups", () => {
+  it("finds the groups by common name, ignoring case and accents, in IBP order", () => {
+    // "pic" is a keyword of the woodpecker cavities; the order is the catalogue's.
+    const found = matchGuideGroups("  PIC ")
+    expect(found.length).toBeGreaterThan(0)
+    expect(found).toEqual(searchDmhGroups("pic"))
+    expect(matchGuideGroups("ecorce")).toEqual(matchGuideGroups("Écorce"))
+    expect(matchGuideGroups("ecorce").length).toBeGreaterThan(0)
+  })
+
+  it("returns nothing under the minimum length, so an empty query lists no group", () => {
+    expect(matchGuideGroups("")).toEqual([])
+    expect(matchGuideGroups("   ")).toEqual([])
+    expect(matchGuideGroups("p")).toEqual([])
+  })
+
+  it("returns nothing when no group carries the text", () => {
+    expect(matchGuideGroups("zzzzqx")).toEqual([])
   })
 })
 

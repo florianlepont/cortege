@@ -31,7 +31,7 @@ Maximal fixture: 6 pages against 4 (builder pagination and headless Chrome), +2.
 
 ## Reported to other phases (owner decision 2026-10-12)
 
-Phase 27 is closed with nothing open. DC-27-02 (factor note above the keyboard on a small screen), DC-27-03 (offline weather catch-up) and DC-27-04 (tap count) go to Phase 35 (criterion 7); DC-27-05 (VoiceOver, TalkBack, largest text) and SEED-007 (survey without network) go to Phase 37.
+Phase 27 is closed with nothing open. DC-27-02 (factor note above the keyboard on a small screen), DC-27-03 (offline weather catch-up) and DC-27-04 (tap count) go to Phase 37 (criterion 7); DC-27-05 (VoiceOver, TalkBack, largest text) and SEED-007 (survey without network) go to Phase 35.
 
 ## Not done before the report (open, carried in device-checks.md)
 

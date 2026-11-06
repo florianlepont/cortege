@@ -16,6 +16,7 @@ import {
   brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
+import { fr } from "../i18n"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppFieldProps = {
@@ -59,6 +60,7 @@ export function AppField({
         inputStyle,
       ]}
       placeholderTextColor={placeholderTextColor ?? theme.colors.textSecondary}
+      inputAccessoryViewButtonLabel={fr.common.actions.keyboardDone}
       testID={testID}
       onFocus={(event) => {
         setFocused(true)

@@ -1,6 +1,7 @@
 import { brandColors, brandMapTokens } from "../brand-tokens"
 import { buildTheme } from "../theme"
-import { mixWithWhite, withAlpha } from "../visual-tokens"
+import { compositeOver } from "../contrast"
+import { contourDrift, forestStops, mixWithWhite, withAlpha } from "../visual-tokens"
 import type { PdfPalette } from "./types"
 
 // D-07: print is always light. Every colour of the PDF comes from the light theme and the token
@@ -17,6 +18,13 @@ const WATERMARK_ALPHA = 0.07
 const INK_FAINT_TINT = 0.45
 const CHART_GRID_TINT = 0.75
 const MAP_CANVAS_TINT = 0.7
+
+// Phase 33, D-27: the CNPF order of the plane (red, orange, yellow, light green, dark green) kept
+// as strong and soft tints of the three band tones, so that the survey marker keeps 4:1 on every
+// band and no text sits on a band tone (UI-SPEC Color amendment (charts)).
+const ZONE_STRONG_TINT = 0.4
+const ZONE_SOFT_TINT = 0.65
+const ZONE_MID_TINT = 0.7
 
 /** The only colours the PDF builders use, built once from the light theme and the token files. */
 export function buildPdfPalette(): PdfPalette {
@@ -48,5 +56,23 @@ export function buildPdfPalette(): PdfPalette {
     parcelStroke: brandMapTokens.parcelSelected,
     mapCanvas: mixWithWhite(brandColors.sage, MAP_CANVAS_TINT),
     chartGrid: mixWithWhite(colors.textSecondary, CHART_GRID_TINT),
+    // Phase 33 (UI-SPEC Surface B): the forest panel and the inks on it. The sage contour is
+    // blended over the panel here, once, so the SVG needs no opacity (not safe in every print path).
+    forest: brandColors.forest,
+    forestDeep: forestStops.a,
+    onForest: visual.forest.title,
+    onForestAccent: visual.forest.titleAccent,
+    onForestBody: visual.forest.body,
+    contourSage: compositeOver(
+      withAlpha(visual.forest.contourSage, contourDrift.sageOpacity),
+      brandColors.forest,
+    ),
+    contourMoss: visual.forest.contourMoss,
+    zoneLow: mixWithWhite(visual.score.low, ZONE_STRONG_TINT),
+    zoneLowSoft: mixWithWhite(visual.score.low, ZONE_SOFT_TINT),
+    zoneMid: mixWithWhite(visual.score.mid, ZONE_MID_TINT),
+    zoneHighSoft: mixWithWhite(visual.score.high, ZONE_SOFT_TINT),
+    zoneHigh: mixWithWhite(visual.score.high, ZONE_STRONG_TINT),
+    contextInk: onSurface.warning,
   }
 }

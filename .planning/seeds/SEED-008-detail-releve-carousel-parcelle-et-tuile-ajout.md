@@ -3,7 +3,7 @@ id: SEED-008
 status: dormant
 planted: 2026-10-12
 planted_during: Phase 27 closing (first written as SEED-007, renumbered because another seed took that number the same day)
-trigger_when: Phase 37 (UX/UI Audit) at the latest, or any phase that reworks the survey detail summary
+trigger_when: Phase 35 (UX/UI Audit) at the latest, or any phase that reworks the survey detail summary
 scope: small
 ---
 
@@ -18,7 +18,7 @@ Deux retouches du résumé d'un relevé (`surveyDetail`), demandées par le prop
 
 ## When to Surface
 
-**Trigger:** la phase 27 a ajouté la note libre, la météo et la certitude au relevé, ce qui allonge le résumé. Si une phase retouche `surveyDetail`, traiter ces deux points en même temps. Au plus tard, l'audit UX/UI (Phase 37).
+**Trigger:** la phase 27 a ajouté la note libre, la météo et la certitude au relevé, ce qui allonge le résumé. Si une phase retouche `surveyDetail`, traiter ces deux points en même temps. Au plus tard, l'audit UX/UI (Phase 35).
 
 ## Scope Estimate
 

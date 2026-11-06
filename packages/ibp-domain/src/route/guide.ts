@@ -128,6 +128,17 @@ export type RouteSurfaceErrorCode = (typeof ROUTE_SURFACE_ERROR_CODES)[number]
 export const LARGE_STAND_OPTIONS = ["subdivide", "partial"] as const
 export type LargeStandOption = (typeof LARGE_STAND_OPTIONS)[number]
 
+/**
+ * The option shown as "Conseillé" above the subdivision bound (R-11b). A varied stand is cut into
+ * homogeneous pieces (O-03); a stand that is already homogeneous is one stand by definition (S
+ * p. 18, note 1), so it is described in part without cutting it (owner, 2026-10-23).
+ */
+export function preselectedLargeStandOption(
+  homogeneity: RouteHomogeneity | undefined,
+): LargeStandOption {
+  return homogeneity === "homogeneous" ? "partial" : "subdivide"
+}
+
 /** Checks of the described surface, in the order of the spec table (section "Controles"). */
 export const ROUTE_ZONE_ISSUE_CODES = [
   "zone_not_positive",
@@ -630,7 +641,7 @@ export function recommendRoute(
     return {
       status: "options",
       options: [...LARGE_STAND_OPTIONS],
-      preselected_option: "subdivide",
+      preselected_option: preselectedLargeStandOption(answers.homogeneity),
       reasons: ["large_stand"],
     }
   }

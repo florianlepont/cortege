@@ -1,10 +1,11 @@
 import { View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { useBrandTheme } from "../../app/theme"
+import { DmhGuideRoute } from "../routes/DmhGuideRoute"
 import { HomeRoute } from "../routes/HomeRoute"
 import { styles } from "../styles"
 import type { HomeStackParamList } from "../types"
-import { createBaseStackScreenOptions } from "./stack-options"
+import { createBaseStackScreenOptions, dmhGuideScreenOptions } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -24,6 +25,13 @@ export function HomeTabNavigator() {
         screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
       >
         <HomeStack.Screen name="homeRoot" component={HomeRoute} />
+        <HomeStack.Screen
+          name="surveyDmhGuide"
+          // Phase 32 (owner request): the same guide sheet as in the survey stack, opened from the
+          // Outils section; closing it returns to Accueil.
+          options={dmhGuideScreenOptions(theme)}
+          component={DmhGuideRoute}
+        />
         <HomeStack.Screen
           name="accountHome"
           options={makeAccountHomeOptions(theme)}

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons"
 import { useMemo } from "react"
 import { StyleSheet, Switch, View } from "react-native"
 import {
@@ -63,6 +64,23 @@ const ZONE_FIELD_ISSUES: readonly RouteZoneIssueCode[] = [
   "partial_below_minimum",
 ]
 
+/** What the information glyph of the surface field says: the figures and the field advice. */
+function zoneSheetText(method: RouteMethod): string {
+  const parts: string[] = [fr.routeGuide.glossary.terms.surfaceDecrite.text]
+  if (method === "partial_strip") parts.push(details.zoneHelperPartial, details.stripAdvice)
+  if (method === "partial_plot") {
+    parts.push(details.zoneHelperPartial, details.plotAdvice, details.plotsAdded)
+  }
+  // The one glyph of the card also explains the switch under it.
+  if (method !== "full") {
+    parts.push(
+      `${fr.routeGuide.glossary.terms.resteDuPeuplement.term} : ${fr.routeGuide.glossary.terms.resteDuPeuplement.text}`,
+      details.complementHint,
+    )
+  }
+  return parts.join("\n\n")
+}
+
 /**
  * "Détails du parcours" (UI-SPEC section 6, spec sections 5 and 9), shared by the route step and the
  * chooser, each owning the typed `value`. Nothing is required: the owner prefills the zone from the
@@ -114,9 +132,19 @@ export function RouteDetailsCard({
   return (
     <AppCard variant="glass" padding={brandSpacing4.md}>
       <View style={styles.root} testID="route-details">
-        <Text style={styles.title} accessibilityRole="header">
-          {details.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <View style={styles.badge}>
+            <Ionicons
+              name="options-outline"
+              size={20}
+              color={theme.semanticColors.accent}
+              accessible={false}
+            />
+          </View>
+          <Text style={styles.title} accessibilityRole="header">
+            {details.title}
+          </Text>
+        </View>
 
         {!showZoneField && standHa !== null ? (
           <Text style={styles.line}>{details.fullLine(formatHectares(standHa))}</Text>
@@ -135,19 +163,10 @@ export function RouteDetailsCard({
             />
             <View style={styles.helperRow}>
               <Text style={styles.helper}>
-                {partial ? details.zoneHelperPartial : details.zoneHelperFull}
+                {partial ? details.zoneShort : details.zoneHelperFull}
               </Text>
-              <GlossaryInfo term="surfaceDecrite" />
+              <GlossaryInfo term="surfaceDecrite" text={zoneSheetText(method)} />
             </View>
-            {method === "partial_strip" ? (
-              <Text style={styles.helper}>{details.stripAdvice}</Text>
-            ) : null}
-            {method === "partial_plot" ? (
-              <>
-                <Text style={styles.helper}>{details.plotAdvice}</Text>
-                <Text style={styles.helper}>{details.plotsAdded}</Text>
-              </>
-            ) : null}
             {zoneWarnings.map((code) => (
               <View key={code} accessibilityLiveRegion="polite" testID={`route-zone-issue-${code}`}>
                 <AppNotice
@@ -165,7 +184,6 @@ export function RouteDetailsCard({
             <View style={styles.switchRow}>
               <View style={styles.switchCopy}>
                 <Text style={styles.switchLabel}>{details.complementLabel}</Text>
-                <GlossaryInfo term="resteDuPeuplement" />
               </View>
               <Switch
                 value={value.complementDone}
@@ -178,8 +196,6 @@ export function RouteDetailsCard({
                 testID="route-complement-switch"
               />
             </View>
-            {/* Under the row, so it runs the full width of the card instead of beside the switch. */}
-            <Text style={styles.helper}>{details.complementHint}</Text>
             {value.complementDone ? (
               <AppField
                 label={details.totalLabel}
@@ -222,8 +238,22 @@ function createStyles(theme: BrandTheme) {
     root: {
       gap: brandSpacing4.md,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+    },
+    badge: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.surfaceSoft,
+    },
     title: {
-      ...brandTypeScale.headline,
+      flex: 1,
+      ...brandTypeScale.title3,
       fontFamily: brandTypography.navTitle.fontFamily,
       color: theme.colors.textPrimary,
     },

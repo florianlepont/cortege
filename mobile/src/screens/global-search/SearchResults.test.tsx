@@ -11,6 +11,7 @@ import type { SearchGroupState, SearchGroupStatus } from "../../hooks/useSearchG
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { SearchResults } from "./SearchResults"
+import { guideLabels } from "./result-labels"
 
 const originalConsoleError = console.error
 
@@ -120,6 +121,7 @@ function defaults(overrides: Partial<Props> = {}) {
     onOpenMember: jest.fn(),
     onOpenPlace: jest.fn(),
     onOpenParcel: jest.fn(),
+    onOpenGuide: jest.fn(),
     onSeeAll: jest.fn(),
   }
   const props: Props = {
@@ -129,9 +131,10 @@ function defaults(overrides: Partial<Props> = {}) {
     community: group(null),
     places: group(null),
     parcels: group(null),
+    guide: [],
     parcelsShown: false,
     best: null,
-    order: ["mine", "community", "places", "parcels"],
+    order: ["mine", "community", "places", "parcels", "guide"],
     surveyDetails: {},
     ...handlers,
     ...overrides,
@@ -525,9 +528,60 @@ describe("SearchResults no-result block", () => {
   })
 })
 
+describe("SearchResults Guide des dendromicrohabitats", () => {
+  const codes = ["dmh_01", "dmh_02", "dmh_03", "dmh_04", "dmh_05"] as const
+
+  test("draws the matching groups as rows with their name and form, below the other groups", () => {
+    const { handlers } = mount({ guide: [codes[0], codes[1]], mine: [makeSurvey("a")] })
+    expect(groupIds()).toEqual(["search-group-mine", "search-group-guide"])
+    const rows = hostsOf("SearchResultRow").filter((row) => row.props.kind === "guide")
+    expect(rows.map((row) => row.props.testID)).toEqual([
+      "search-guide-dmh_01",
+      "search-guide-dmh_02",
+    ])
+    expect(rows[0].props.title).toBe(guideLabels(codes[0]).title)
+    expect(rows[0].props.meta).toBe(guideLabels(codes[0]).meta)
+    act(() => rows[1].props.onPress())
+    expect(handlers.onOpenGuide).toHaveBeenCalledWith("dmh_02")
+    expect(queryAll("search-see-all-guide")).toHaveLength(0)
+  })
+
+  test("at most three rows, then 'Voir les N' naming the guide group", () => {
+    const { handlers } = mount({ guide: [...codes] })
+    expect(hostsOf("SearchResultRow")).toHaveLength(3)
+    const link = byTestId("search-see-all-guide")
+    expect(link.props.accessibilityLabel).toBe(
+      "Voir les 5 résultats : Guide des dendromicrohabitats",
+    )
+    act(() => link.props.onPress())
+    expect(handlers.onSeeAll).toHaveBeenCalledWith("guide")
+  })
+
+  test("no group is drawn without a match, and a guide match alone is not 'no result'", () => {
+    mount({ guide: [] })
+    expect(queryAll("search-group-guide")).toHaveLength(0)
+    expect(queryAll("search-no-result")).toHaveLength(1)
+    act(() => tree.unmount())
+    mount({ guide: [codes[0]] })
+    expect(queryAll("search-group-guide")).toHaveLength(1)
+    expect(queryAll("search-no-result")).toHaveLength(0)
+  })
+
+  test("the guide is drawn after a parcel group that moved to the front", () => {
+    mount({
+      guide: [codes[0]],
+      mine: [makeSurvey("a")],
+      parcels: group({ items: [parcel("x1")] }),
+      parcelsShown: true,
+      order: ["parcels", "mine", "community", "places", "guide"],
+    })
+    expect(groupIds()).toEqual(["search-group-parcels", "search-group-mine", "search-group-guide"])
+  })
+})
+
 describe("SearchResults types", () => {
   test("every key of the order has a renderer", () => {
-    const keys: SearchGroupKey[] = ["mine", "community", "places", "parcels"]
+    const keys: SearchGroupKey[] = ["mine", "community", "places", "parcels", "guide"]
     expect(() => mount({ order: keys })).not.toThrow()
   })
 })
